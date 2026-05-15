@@ -1,0 +1,2927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+/* Portable API base: strip hardcoded localhost:3000 → relative URL on any host */
+(function() {
+  var _f = window.fetch.bind(window);
+  window.fetch = function(url, opts) {
+    if (typeof url === 'string' && url.startsWith('http://localhost:3000'))
+      url = url.slice('http://localhost:3000'.length);
+    return _f(url, opts);
+  };
+})();
+</script>
+    <!-- FILE:// REDIRECT — if opened as a local file, switch to the server -->
+    <script>
+      if (window.location.protocol === 'file:') {
+        var page = window.location.pathname.split('/').pop();
+        var hash = window.location.hash || '';
+        window.location.replace('http://localhost:3000/' + page + hash);
+      }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Patelwadi Ganesh Mitramandal</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS for client-side Excel parsing -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            background: #F5F6FA;
+        }
+        
+        .admin-dashboard {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .admin-sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #2C3E50 0%, #34495E 100%);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .admin-sidebar-header {
+            padding: 30px 20px;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .admin-sidebar-header h2 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-size: 1.5rem;
+        }
+        
+        .admin-sidebar-header p {
+            color: #BDC3C7;
+            font-size: 0.9rem;
+        }
+        
+        .admin-menu {
+            list-style: none;
+            padding: 20px 0;
+        }
+        
+        .admin-menu li {
+            margin: 5px 0;
+        }
+        
+        .admin-menu a {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 25px;
+            color: #BDC3C7;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .admin-menu a:hover,
+        .admin-menu a.active {
+            background: rgba(255,107,53,0.15);
+            color: var(--primary-color);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .admin-menu a i {
+            width: 24px;
+            font-size: 1.2rem;
+        }
+        
+        /* Main Content */
+        .admin-main {
+            flex: 1;
+            margin-left: 280px;
+        }
+        
+        /* Top Bar */
+        .admin-topbar {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .admin-topbar h1 {
+            color: var(--dark-color);
+            font-size: 1.8rem;
+        }
+        
+        .admin-user-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .admin-notifications {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .admin-notifications i {
+            font-size: 1.5rem;
+            color: var(--dark-color);
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        
+        .admin-user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 15px;
+            background: #F8F9FA;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-user-profile:hover {
+            background: var(--light-color);
+        }
+        
+        .admin-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        /* Content Area */
+        .admin-content {
+            padding: 30px;
+        }
+        
+        /* Dashboard Cards */
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .admin-stat-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        
+        .stat-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        
+        .stat-icon.blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .stat-icon.green { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .stat-icon.orange { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+        .stat-icon.purple { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; }
+        
+        .stat-details h3 {
+            font-size: 2.2rem;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+        
+        .stat-details p {
+            color: #7F8C8D;
+            font-size: 0.95rem;
+        }
+        
+        .stat-trend {
+            color: var(--success);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        /* Card */
+        .admin-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #F0F0F0;
+        }
+        
+        .card-header h3 {
+            color: var(--dark-color);
+            font-size: 1.4rem;
+        }
+        
+        .btn-small {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+        }
+        
+        /* Table */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .admin-table thead {
+            background: #F8F9FA;
+        }
+        
+        .admin-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark-color);
+            border-bottom: 2px solid #E0E0E0;
+        }
+        
+        .admin-table td {
+            padding: 15px;
+            border-bottom: 1px solid #F0F0F0;
+            color: #555;
+        }
+        
+        .admin-table tr:hover {
+            background: #F8F9FA;
+        }
+        
+        /* Badges */
+        .badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: #D5F4E6;
+            color: var(--success);
+        }
+        
+        .badge-warning {
+            background: #FFF3E0;
+            color: var(--warning);
+        }
+        
+        .badge-danger {
+            background: #FFEBEE;
+            color: var(--danger);
+        }
+        
+        .badge-info {
+            background: #E3F2FD;
+            color: #2196F3;
+        }
+        
+        /* Action Buttons */
+        .action-btns {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-edit {
+            background: #E3F2FD;
+            color: #2196F3;
+        }
+        
+        .btn-edit:hover {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-delete {
+            background: #FFEBEE;
+            color: var(--danger);
+        }
+        
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .modal-close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .modal-close:hover {
+            color: var(--danger);
+        }
+        
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--dark-color);
+            font-weight: 600;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #E0E0E0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        /* Content Sections */
+        .content-section {
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        /* Charts Placeholder */
+        .chart-container {
+            height: 300px;
+            background: #F8F9FA;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+        }
+        
+        /* ── Admin Passbook Receipts styles ───────────────────────────── */
+        #adminPbLightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.88);
+            z-index: 9000;
+            align-items: center;
+            justify-content: center;
+        }
+        #adminPbLightbox.active { display: flex; }
+        #adminPbLightbox img {
+            max-width: 90vw;
+            max-height: 88vh;
+            border-radius: 12px;
+            box-shadow: 0 8px 40px rgba(0,0,0,.6);
+        }
+        #adminPbLightboxClose {
+            position: absolute;
+            top: 18px; right: 24px;
+            font-size: 2.4rem;
+            color: #fff;
+            cursor: pointer;
+            line-height: 1;
+            user-select: none;
+        }
+        #adminEditModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.55);
+            z-index: 9100;
+            align-items: center;
+            justify-content: center;
+        }
+        #adminEditModal.active { display: flex; }
+        #adminEditModal .adm-edit-box {
+            background: #fff;
+            padding: 32px 28px;
+            border-radius: 14px;
+            width: 360px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.2);
+        }
+        #adminEditModal h4 { margin-bottom: 6px; color: var(--dark-color); }
+        #adminEditModal .adm-edit-sub {
+            font-size: .85rem; color: #777; margin-bottom: 16px;
+        }
+        #adminEditModal input {
+            width: 100%; padding: 10px 12px;
+            border: 2px solid #E0E0E0; border-radius: 8px;
+            font-size: 1rem; margin-bottom: 16px;
+            box-sizing: border-box;
+        }
+        #adminEditModal input:focus { outline: none; border-color: var(--primary-color); }
+        .adm-edit-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        /* Passbook table receipt-id column */
+        .pb-receipt-id {
+            font-size: .78rem;
+            color: #999;
+            font-family: monospace;
+        }
+
+        /* ── Expenses Management styles ─────────────────────────────────── */
+        .exp-summary-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+        .exp-filter-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .exp-filter-bar input,
+        .exp-filter-bar select {
+            padding: 9px 13px;
+            border: 2px solid #E0E0E0;
+            border-radius: 8px;
+            font-size: .92rem;
+            font-family: inherit;
+            transition: border-color .3s;
+        }
+        .exp-filter-bar input:focus,
+        .exp-filter-bar select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        .exp-filter-bar .exp-search  { flex: 1; min-width: 200px; }
+        .exp-tfoot-total td {
+            padding: 14px 15px;
+            font-weight: 700;
+            font-size: 1rem;
+            background: #f8f9fa;
+        }
+        .exp-cat-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: .78rem;
+            font-weight: 600;
+            background: #E3F2FD;
+            color: #1565C0;
+            white-space: nowrap;
+        }
+        .exp-modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 600px) {
+            .exp-modal-grid { grid-template-columns: 1fr; }
+        }
+        .exp-section-label {
+            font-size: .78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--primary-color);
+            margin: 14px 0 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px dashed #F0C0A0;
+        }
+
+        /* ── Financial Statement styles ───────────────────────────────── */
+        .fin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .95rem;
+        }
+        .fin-table thead tr {
+            background: linear-gradient(135deg, #2C3E50, #34495E);
+            color: #fff;
+        }
+        .fin-table th {
+            padding: 13px 15px;
+            text-align: right;
+            font-weight: 600;
+            font-size: .88rem;
+            white-space: nowrap;
+        }
+        .fin-table th:first-child { text-align: left; }
+        .fin-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #F0F0F0;
+            color: #444;
+            text-align: right;
+        }
+        .fin-table td:first-child { text-align: left; font-weight: 600; }
+        .fin-table tr:hover { background: #FAFAFA; }
+        .fin-table .fin-total-row td {
+            background: #FFF8F0;
+            font-weight: 700;
+            color: var(--primary-color);
+            border-top: 2px solid var(--primary-color);
+            font-size: 1rem;
+        }
+        .fin-table .fin-balance-row td {
+            background: #F0FFF4;
+            font-weight: 700;
+            color: #1E7E34;
+            border-top: 2px solid #27AE60;
+            font-size: 1rem;
+        }
+        .fin-year-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #FF6B35, #FF8C42);
+            color: #fff;
+            font-size: .82rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+        }
+        .fin-summary-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+        .fin-modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 600px) {
+            .fin-modal-grid { grid-template-columns: 1fr; }
+        }
+        /* Responsive */
+        @media (max-width: 968px) {
+            .admin-sidebar {
+                width: 70px;
+            }
+            
+            .admin-main {
+                margin-left: 70px;
+            }
+            
+            .admin-sidebar-header,
+            .admin-menu span {
+                display: none;
+            }
+            
+            .admin-menu a {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-dashboard">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-header">
+                <h2>Admin Panel</h2>
+                <p id="adminName">Administrator</p>
+            </div>
+            
+            <ul class="admin-menu">
+                <li>
+                    <a href="#" class="active" onclick="showAdminSection('dashboard')">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('users')">
+                        <i class="fas fa-users"></i>
+                        <span>Manage Users</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('volunteers')">
+                        <i class="fas fa-user-friends"></i>
+                        <span>Volunteers</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('committeeMembers')">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Committee Members</span>
+                    </a>
+                </li>
+                
+                <li>
+                    <a href="#" onclick="showAdminSection('donationTracking')">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <span>Donations</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#" onclick="showAdminSection('expenses')">
+                        <i class="fas fa-wallet"></i>
+                        <span>Expenses</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('gallery')">
+                        <i class="fas fa-images"></i>
+                        <span>Gallery</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('events')">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Events</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('reports')">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('donationEntries')">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>Donation Data Entry</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('balanceRecovery')">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <span>Balance/Pending Recovery</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('donations')">
+                        <i class="fas fa-file-excel"></i>
+                        <span>Upload Excel</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('settings')">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="adminLogout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Top Bar -->
+            <div class="admin-topbar">
+                <h1 id="pageTitle">Dashboard Overview</h1>
+                <div class="admin-user-section">
+                    <div class="admin-notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">5</span>
+                    </div>
+                    <div class="admin-user-profile">
+                        <div class="admin-avatar">A</div>
+                        <div>
+                            <strong>Admin User</strong>
+                            <p style="font-size: 0.8rem; color: #777; margin: 0;">Administrator</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Content Area -->
+            <div class="admin-content">
+                <!-- Dashboard Section -->
+                <div id="dashboard" class="content-section active">
+                    <!-- Stats Cards -->
+                    <div class="admin-stats">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon blue">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>150</h3>
+                                <p>Total Volunteers</p>
+                                <span class="stat-trend">↑ 12% this month</span>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-stat-card">
+                            <div class="stat-icon green">
+                                <i class="fas fa-rupee-sign"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>₹5,50,000</h3>
+                                <p>Total Donations</p>
+                                <span class="stat-trend">↑ 28% this month</span>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-stat-card">
+                            <div class="stat-icon orange">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>12</h3>
+                                <p>Upcoming Events</p>
+                                <span class="stat-trend">Next: 5 days</span>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-stat-card">
+                            <div class="stat-icon purple">
+                                <i class="fas fa-images"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>245</h3>
+                                <p>Gallery Photos</p>
+                                <span class="stat-trend">↑ 45 new</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Row -->
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:28px;">
+                        <!-- One-Click Excel Upload Card -->
+                        <div id="quickUploadCard" style="background:linear-gradient(135deg,#1D6F42 0%,#2E7D32 50%,#1B5E20 100%);border-radius:16px;padding:22px 24px;color:#fff;display:flex;align-items:center;gap:18px;box-shadow:0 6px 24px rgba(29,111,66,.35);cursor:pointer;transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden;" onclick="triggerQuickUpload()" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 32px rgba(29,111,66,.45)'" onmouseout="this.style.transform='';this.style.boxShadow='0 6px 24px rgba(29,111,66,.35)'">
+                            <div style="background:rgba(255,255,255,.15);border-radius:14px;width:56px;height:56px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fas fa-file-excel" style="font-size:1.8rem;"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-weight:700;font-size:1.05rem;letter-spacing:.02em;">Upload Donation Excel</div>
+                                <div style="font-size:.82rem;opacity:.85;margin-top:3px;">Click to select &amp; upload instantly</div>
+                                <div id="quickUploadBadge" style="display:inline-block;margin-top:6px;background:rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:.75rem;font-weight:600;">One-Click Upload</div>
+                            </div>
+                            <i class="fas fa-cloud-upload-alt" style="font-size:2.2rem;opacity:.2;position:absolute;right:16px;bottom:10px;"></i>
+                            <input type="file" id="quickUploadInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleQuickUpload(event)">
+                        </div>
+                        <!-- Upload mode toggle -->
+                        <div style="background:#fff;border-radius:16px;padding:20px 22px;box-shadow:0 2px 12px rgba(0,0,0,.07);border:1.5px solid #e8f5e9;">
+                            <div style="font-weight:700;color:#2E7D32;margin-bottom:10px;"><i class="fas fa-sliders-h" style="margin-right:6px;"></i>Upload Mode</div>
+                            <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer;font-size:.9rem;color:#333;">
+                                <input type="radio" name="quickUploadMode" value="append" checked id="quickModeAppend"> <span>Append to existing records</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;color:#333;">
+                                <input type="radio" name="quickUploadMode" value="replace" id="quickModeReplace"> <span>Replace all data (fresh upload)</span>
+                            </label>
+                            <div id="quickUploadStatus" style="display:none;margin-top:10px;padding:8px 12px;border-radius:8px;font-size:.85rem;font-weight:600;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Live Recent Donations -->
+                    <div class="admin-card" style="position:relative;">
+                        <div class="card-header">
+                            <h3 style="display:flex;align-items:center;gap:10px;">Recent Pauti Submissions
+                                <span id="liveBadge" style="display:inline-flex;align-items:center;gap:5px;background:#FFEBEE;color:#C62828;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.04em;">
+                                    <span style="width:7px;height:7px;border-radius:50%;background:#E53935;animation:livePulse 1.2s infinite;"></span>LIVE
+                                </span>
+                            </h3>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <span id="liveLastRefreshed" style="font-size:.75rem;color:#aaa;"></span>
+                                <button class="btn btn-primary btn-small" onclick="loadLiveRecentDonations()">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <button class="btn btn-small" style="background:#E8F5E9;color:#1B5E20;" onclick="showAdminSection('pautiBooks')">
+                                    <i class="fas fa-book-open"></i> All Slips
+                                </button>
+                            </div>
+                        </div>
+                        <style>@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.3)}}</style>
+                        <div style="overflow-x:auto;">
+                        <table class="admin-table" id="liveRecentDonationsTable">
+                            <thead>
+                                <tr>
+                                    <th>Slip #</th>
+                                    <th>Donor Name</th>
+                                    <th>Amount (&#8377;)</th>
+                                    <th>Mode</th>
+                                    <th style="color:#3949AB;">Volunteer</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="liveRecentDonationsTbody">
+                                <tr><td colspan="6" style="text-align:center;color:#aaa;padding:24px;">Loading live data&hellip;</td></tr>
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+
+                    <!-- Analytics placeholder -->
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3>Donation Analytics</h3>
+                        </div>
+                        <div class="chart-container">
+                            <i class="fas fa-chart-bar" style="font-size: 3rem;"></i>
+                            <p style="margin-left: 20px;">Chart visualization here</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Users Management Section -->
+                <div id="users" class="content-section">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3>User Management</h3>
+                            <button class="btn btn-primary btn-small" onclick="openModal('addUser')">
+                                <i class="fas fa-plus"></i> Add User
+                            </button>
+                        </div>
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                                <tr>
+                                    <td>Rajesh Kumar</td>
+                                    <td>rajesh@email.com</td>
+                                    <td><span class="badge badge-info">Volunteer</span></td>
+                                    <td><span class="badge badge-success">Active</span></td>
+                                    <td>
+                                        <div class="action-btns">
+                                            <button class="btn-icon btn-edit"><i class="fas fa-edit"></i></button>
+                                            <button class="btn-icon btn-delete"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Amit Patel</td>
+                                    <td>amit@email.com</td>
+                                    <td><span class="badge badge-warning">Committee</span></td>
+                                    <td><span class="badge badge-success">Active</span></td>
+                                    <td>
+                                        <div class="action-btns">
+                                            <button class="btn-icon btn-edit"><i class="fas fa-edit"></i></button>
+                                            <button class="btn-icon btn-delete"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Volunteers Section -->
+                <div id="volunteers" class="content-section">
+                    <!-- Stats strip -->
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;margin-bottom:22px;" id="volStatsStrip">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                            <div class="stat-details">
+                                <h3 id="volStatTotal" style="font-size:1.6rem;">0</h3>
+                                <p>Total Volunteers</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="stat-icon green"><i class="fas fa-user-check"></i></div>
+                            <div class="stat-details">
+                                <h3 id="volStatActive" style="font-size:1.6rem;">0</h3>
+                                <p>Active</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="stat-icon orange"><i class="fas fa-user-slash"></i></div>
+                            <div class="stat-details">
+                                <h3 id="volStatBlocked" style="font-size:1.6rem;">0</h3>
+                                <p>Blocked</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-user-friends" style="color:var(--primary-color);margin-right:8px;"></i>Volunteer Management</h3>
+                            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                                <button class="btn btn-primary btn-small" onclick="loadVolunteers()">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <button class="btn btn-small" style="background:linear-gradient(135deg,#1D6F42,#2E7D32);color:#fff;" onclick="volExportCSV()">
+                                    <i class="fas fa-download"></i> Export CSV
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Status message -->
+                        <div id="volStatus" style="display:none;padding:10px 16px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
+
+                        <!-- Search bar -->
+                        <div style="margin-bottom:14px;">
+                            <input type="text" id="volSearchInput" placeholder="🔍 Search by name or username…"
+                                style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.92rem;box-sizing:border-box;"
+                                oninput="volFilter()">
+                        </div>
+
+                        <div style="overflow-x:auto;">
+                            <table class="admin-table" id="volTable">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Name</th>
+                                        <th>Username</th>
+                                        <th>Password</th>
+                                        <th>Role</th>
+                                        <th>Email</th>
+                                        <th>Department</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="volTbody">
+                                    <tr><td colspan="9" style="text-align:center;color:#aaa;padding:30px;">Loading volunteers…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Donation Tracking Section -->
+                <div id="donationTracking" class="content-section">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3>Donation Tracking</h3>
+                            <button class="btn btn-primary btn-small" onclick="loadDonationTrackingCards()">
+                                <i class="fas fa-sync-alt"></i> Refresh Live Data
+                            </button>
+                        </div>
+                        <!-- Live stat cards -->
+                        <div class="admin-stats" style="margin-top:20px;">
+                            <!-- Received card -->
+                            <div class="admin-stat-card" id="dtReceivedCard"
+                                 style="cursor:pointer;border:2px solid transparent;transition:all .2s;"
+                                 onclick="navToBalanceRecovery('received')"
+                                 onmouseover="this.style.borderColor='#27AE60'" onmouseout="this.style.borderColor='transparent'">
+                                <div class="stat-icon green"><i class="fas fa-money-bill-wave"></i></div>
+                                <div class="stat-details">
+                                    <h3 id="dtTotalReceived" style="color:#1B5E20;">&#8377;&mdash;</h3>
+                                    <p>Total Received <i class="fas fa-arrow-right" style="font-size:.7rem;color:#27AE60;"></i></p>
+                                    <small id="dtReceivedCount" style="color:#888;"></small>
+                                </div>
+                            </div>
+                            <!-- Pending card -->
+                            <div class="admin-stat-card" id="dtPendingCard"
+                                 style="cursor:pointer;border:2px solid transparent;transition:all .2s;"
+                                 onclick="navToBalanceRecovery('pending')"
+                                 onmouseover="this.style.borderColor='#E67E22'" onmouseout="this.style.borderColor='transparent'">
+                                <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
+                                <div class="stat-details">
+                                    <h3 id="dtTotalPending" style="color:#E65100;">&#8377;&mdash;</h3>
+                                    <p>Pending <i class="fas fa-arrow-right" style="font-size:.7rem;color:#E67E22;"></i></p>
+                                    <small id="dtPendingCount" style="color:#888;"></small>
+                                </div>
+                            </div>
+                            <!-- Slips card -->
+                            <div class="admin-stat-card">
+                                <div class="stat-icon blue"><i class="fas fa-receipt"></i></div>
+                                <div class="stat-details">
+                                    <h3 id="dtTotalSlips">0</h3>
+                                    <p>Total Slips Submitted</p>
+                                    <small id="dtSlipRange" style="color:#888;"></small>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Hint -->
+                        <p style="font-size:.82rem;color:#aaa;margin-top:4px;">&#x1F4A1; Click <strong>Received</strong> or <strong>Pending</strong> to view details in Balance Recovery.</p>
+                    </div>
+                </div>
+
+
+                <!-- Expenses Management Section -->
+                <div id="expenses" class="content-section">
+
+                    <!-- Summary strip -->
+                    <div class="exp-summary-strip" id="expSummaryStrip">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon blue"><i class="fas fa-rupee-sign"></i></div>
+                            <div class="stat-details">
+                                <h3 id="expGrandTotal" style="font-size:1.6rem;">&#8377;0</h3>
+                                <p>Grand Total</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="stat-icon green"><i class="fas fa-list-ol"></i></div>
+                            <div class="stat-details">
+                                <h3 id="expEntryCount" style="font-size:1.6rem;">0</h3>
+                                <p>Total Entries</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="stat-icon orange"><i class="fas fa-filter"></i></div>
+                            <div class="stat-details">
+                                <h3 id="expFilteredCount" style="font-size:1.6rem;">0</h3>
+                                <p>Filtered Entries</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="stat-icon purple"><i class="fas fa-search-dollar"></i></div>
+                            <div class="stat-details">
+                                <h3 id="expFilteredTotal" style="font-size:1.6rem;">&#8377;0</h3>
+                                <p>Filtered Total</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-wallet" style="color:var(--primary-color);margin-right:8px;"></i>Expenses Management</h3>
+                            <div style="display:flex;gap:10px;">
+                                <button class="btn btn-primary btn-small" onclick="loadExpenses()">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <button class="btn btn-primary btn-small" onclick="openExpenseModal()" id="expAddBtn">
+                                    <i class="fas fa-plus"></i> Add Expense
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Filter bar -->
+                        <div class="exp-filter-bar">
+                            <input type="text" class="exp-search" id="expFilterSearch"
+                                   placeholder="Search particulars, reference, common header..."
+                                   oninput="renderExpensesTable()">
+                            <select id="expFilterCategory" onchange="renderExpensesTable()">
+                                <option value="">All Categories</option>
+                                <option>Advertising and Printing</option>
+                                <option>Ganpati Expenses</option>
+                                <option>Mandap and Decoration Expense</option>
+                                <option>Electricity Expense</option>
+                                <option>Transportation Expense</option>
+                                <option>Sound and Banjo Expense</option>
+                                <option>Satyanarayan Pooja and Pooja Expense</option>
+                                <option>Ganpati Aagman</option>
+                                <option>Ganpati Visarjan</option>
+                                <option>Other Expenses</option>
+                            </select>
+                            <input type="date" id="expFilterFrom" title="From date" onchange="renderExpensesTable()">
+                            <input type="date" id="expFilterTo"   title="To date"   onchange="renderExpensesTable()">
+                            <button class="btn btn-small" style="background:#eee;color:#555;" onclick="clearExpenseFilters()">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                        </div>
+
+                        <!-- Table -->
+                        <div style="overflow-x:auto;">
+                            <table class="admin-table" id="expensesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Sr. No.</th>
+                                        <th>Date</th>
+                                        <th>Common Header</th>
+                                        <th>Category</th>
+                                        <th>Subcategory / Details</th>
+                                        <th>Particulars</th>
+                                        <th>Ref. No.</th>
+                                        <th>Amount (&#8377;)</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expensesTbody">
+                                    <tr><td colspan="9" style="text-align:center;color:#aaa;padding:30px;">Loading expenses&hellip;</td></tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="exp-tfoot-total">
+                                        <td colspan="7" style="text-align:right;">Filtered Total:</td>
+                                        <td id="expFooterTotal">&#8377;0</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ Pauti Books Section ═══════════ -->
+                <div id="pautiBooks" class="content-section">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-book-open" style="color:var(--primary-color);margin-right:8px;"></i>Pauti Book Management</h3>
+                            <button class="btn btn-primary btn-small" onclick="loadPautiBooks()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                        <!-- Auto-assignment info banner -->
+                        <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,#EEF2FF,#E8F5E9);border:1.5px solid #C5CAE9;border-radius:10px;padding:12px 18px;margin-bottom:16px;">
+                            <i class="fas fa-magic" style="color:#3949AB;font-size:1.3rem;"></i>
+                            <div>
+                                <strong style="color:#1A237E;font-size:.92rem;">Automatic Sequential Assignment</strong>
+                                <p style="margin:2px 0 0;font-size:.83rem;color:#555;">Books are created automatically as volunteers submit slips. Every submission claims the next available slip number — no manual assignment needed.</p>
+                                <span id="pautiGlobalStats" style="font-size:.8rem;color:#3949AB;font-weight:600;"></span>
+                            </div>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="admin-table" id="pautiBooksTable">
+                                <thead>
+                                    <tr>
+                                        <th>Book #</th>
+                                        <th>Slip Range</th>
+                                        <th>Uploaded Slips</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pautiBooksTbody">
+                                    <tr><td colspan="5" style="text-align:center;color:#aaa;padding:30px;">Loading Pauti Books&hellip;</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Slip detail panel (shown when admin clicks View Slips) -->
+                    <div class="admin-card" id="pautiSlipPanel" style="display:none;">
+                        <div class="card-header">
+                            <h3 id="pautiSlipPanelTitle"><i class="fas fa-receipt" style="color:var(--primary-color);margin-right:8px;"></i>Book Slips</h3>
+                            <button class="btn btn-small" style="background:#eee;color:#555;" onclick="closePautiSlipPanel()">&#10005; Close</button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="admin-table" id="pautiSlipsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Slip #</th>
+                                        <th>Donor Name</th>
+                                        <th>Amount (&#8377;)</th>
+                                        <th>Mode</th>
+                                        <th>Check #</th>
+                                        <th style="color:#3949AB;">Submitted By</th>
+                                        <th>Photo</th>
+                                        <th>Uploaded</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pautiSlipsTbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ Balance/Pending Recovery Section ═══════════ -->
+                <div id="balanceRecovery" class="content-section">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-hand-holding-usd" style="color:var(--primary-color);margin-right:8px;"></i>Balance/Pending Recovery</h3>
+                            <button class="btn btn-primary btn-small" onclick="loadBalanceRecovery()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                        <!-- Tab bar -->
+                        <div id="brTabBar" style="display:flex;gap:0;border-bottom:2px solid #E0E0E0;margin-bottom:20px;">
+                            <button id="brTabPending" onclick="switchBrTab('pending')"
+                                style="padding:10px 24px;border:none;background:none;font-size:.92rem;font-weight:600;color:var(--primary-color);border-bottom:3px solid var(--primary-color);cursor:pointer;transition:all .2s;">
+                                <i class="fas fa-clock" style="margin-right:6px;"></i>Pending Balances
+                            </button>
+                            <button id="brTabReceived" onclick="switchBrTab('received')"
+                                style="padding:10px 24px;border:none;background:none;font-size:.92rem;font-weight:600;color:#999;border-bottom:3px solid transparent;cursor:pointer;transition:all .2s;">
+                                <i class="fas fa-check-circle" style="margin-right:6px;"></i>Year Total (Received)
+                            </button>
+                        </div>
+                        <!-- Pending tab -->
+                        <div id="brPanelPending">
+                            <p style="color:#888;font-size:.9rem;margin-bottom:16px;">Shows all Pauti slips submitted with payment mode <strong>Balance</strong> or where payment is pending. Admin can Edit, Mark as Received, or delete each entry.</p>
+                            <div style="overflow-x:auto;">
+                                <table class="admin-table" id="balRecTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Receipt ID</th>
+                                            <th>Donor Name</th>
+                                            <th>Amount (&#8377;)</th>
+                                            <th>Photo</th>
+                                            <th>Submitted By</th>
+                                            <th>Submitted Date &amp; Time</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="balRecTbody">
+                                        <tr><td colspan="8" style="text-align:center;color:#aaa;padding:30px;">Loading&hellip;</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- Received / Year Total tab -->
+                        <div id="brPanelReceived" style="display:none;">
+                            <p style="color:#888;font-size:.9rem;margin-bottom:16px;">Year-to-date total from all Pauti slips (Slip #1 onward). Admin can edit the override amount.</p>
+                            <!-- Summary -->
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px;">
+                                <div class="admin-stat-card">
+                                    <div class="stat-icon green"><i class="fas fa-rupee-sign"></i></div>
+                                    <div class="stat-details">
+                                        <h3 id="brReceivedTotal" style="font-size:1.4rem;">&#8377;0</h3>
+                                        <p>Total from Pauti Slips</p>
+                                    </div>
+                                </div>
+                                <div class="admin-stat-card">
+                                    <div class="stat-icon blue"><i class="fas fa-receipt"></i></div>
+                                    <div class="stat-details">
+                                        <h3 id="brReceivedSlipCount" style="font-size:1.4rem;">0</h3>
+                                        <p>Slips with Amounts</p>
+                                    </div>
+                                </div>
+                                <div class="admin-stat-card" style="background:#FFFDE7;">
+                                    <div class="stat-icon orange"><i class="fas fa-edit"></i></div>
+                                    <div class="stat-details">
+                                        <p style="margin-bottom:6px;font-size:.85rem;font-weight:600;color:#555;">Override Total (admin)</p>
+                                        <div style="display:flex;gap:8px;align-items:center;">
+                                            <input type="number" id="brOverrideInput" placeholder="Enter override &#8377;"
+                                                style="flex:1;padding:7px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.9rem;">
+                                            <button class="btn btn-primary btn-small" onclick="saveBrOverride()">Save</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Yearly breakdown table -->
+                            <div style="overflow-x:auto;">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Slip Range</th>
+                                            <th>Slip Count</th>
+                                            <th>Amount Total (&#8377;)</th>
+                                            <th>Avg per Slip</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="brReceivedBreakdownTbody">
+                                        <tr><td colspan="4" style="text-align:center;color:#aaa;padding:24px;">Loading&hellip;</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports & Analytics Section -->
+                <div id="reports" class="content-section">
+
+                    <!-- Summary strip -->
+                    <div class="fin-summary-strip">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon blue"><i class="fas fa-history"></i></div>
+                            <div class="stat-details">
+                                <h3 id="finSumLastBal" style="font-size:1.4rem;">&#8377;0</h3>
+                                <p>Last Year Balance</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="stat-icon green"><i class="fas fa-hand-holding-usd"></i></div>
+                            <div class="stat-details">
+                                <h3 id="finSumDonations" style="font-size:1.4rem;">&#8377;0</h3>
+                                <p>Total Donations</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="stat-icon orange"><i class="fas fa-coins"></i></div>
+                            <div class="stat-details">
+                                <h3 id="finSumCollection" style="font-size:1.4rem;">&#8377;0</h3>
+                                <p>Total Collection</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="stat-icon purple"><i class="fas fa-file-invoice-dollar"></i></div>
+                            <div class="stat-details">
+                                <h3 id="finSumExpenses" style="font-size:1.4rem;">&#8377;0</h3>
+                                <p>Total Expenses</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-balance-scale" style="color:var(--primary-color);margin-right:8px;"></i>Financial Statements</h3>
+                            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                                <button class="btn btn-primary btn-small" onclick="loadFinancials()">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <button class="btn btn-primary btn-small" onclick="openFinancialModal()">
+                                    <i class="fas fa-plus"></i> Add Year
+                                </button>
+                                <button class="btn btn-small" style="background:linear-gradient(135deg,#27AE60,#2ECC71);color:#fff;" onclick="exportFinancialsExcel()">
+                                    <i class="fas fa-file-excel"></i> Export Excel
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="overflow-x:auto;">
+                            <table class="fin-table" id="financialsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Year</th>
+                                        <th>Last Year Balance (&#8377;)</th>
+                                        <th>Donations (&#8377;)</th>
+                                        <th>Donation Growth</th>
+                                        <th>Cash in Hand (&#8377;)</th>
+                                        <th>Cash at Bank (&#8377;)</th>
+                                        <th>Withdrawn from Bank (&#8377;)</th>
+                                        <th>Total Collection (&#8377;)</th>
+                                        <th>Collection Growth</th>
+                                        <th>Expenses (&#8377;)</th>
+                                        <th>Expense Growth</th>
+                                        <th>Balance (&#8377;)</th>
+                                        <th>Balance Growth</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="financialsTbody">
+                                    <tr><td colspan="14" style="text-align:center;color:#aaa;padding:30px;">Loading financial records&hellip;</td></tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="fin-total-row" id="finTotalsRow" style="display:none;">
+                                        <td>Grand Total</td>
+                                        <td id="finTotLastBal"></td>
+                                        <td id="finTotDonations"></td>
+                                        <td></td>
+                                        <td id="finTotCashHand"></td>
+                                        <td id="finTotCashBank"></td>
+                                        <td id="finTotWithdrawn"></td>
+                                        <td id="finTotCollection"></td>
+                                        <td></td>
+                                        <td id="finTotExpenses"></td>
+                                        <td></td>
+                                        <td id="finTotBalance"></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <!-- ═══════════ Upload Excel Section ═══════════ -->
+                <div id="donations" class="content-section">
+
+                    <!-- Upload Card -->
+                    <div class="admin-card" id="donUploadCard">
+                        <div class="card-header">
+                            <h3><i class="fas fa-file-excel" style="color:#1D6F42;margin-right:8px;"></i>Upload Excel — Donation Records
+                                <span id="donExplorerRecordBadge" style="display:none;margin-left:10px;background:#E8F5E9;color:#1B5E20;font-size:.72rem;padding:3px 10px;border-radius:20px;font-weight:700;"></span>
+                            </h3>
+                            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                                <label style="font-size:.85rem;color:#555;display:flex;align-items:center;gap:6px;">
+                                    <input type="radio" name="uploadMode" value="append" checked id="modeAppend"> Append to existing
+                                </label>
+                                <label style="font-size:.85rem;color:#555;display:flex;align-items:center;gap:6px;">
+                                    <input type="radio" name="uploadMode" value="replace" id="modeReplace"> Replace all data
+                                </label>
+                                <button class="btn btn-small"
+                                    style="background:#FFEBEE;color:#C62828;border:1.5px solid #FFCDD2;display:flex;align-items:center;gap:6px;"
+                                    onclick="deleteDonationData()"
+                                    title="Permanently delete all uploaded donation records">
+                                    <i class="fas fa-trash-alt"></i> Delete All Data
+                                </button>
+                            </div>
+                        </div>
+                        <div id="donDropZone" style="border:2.5px dashed #C8E6C9;border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;background:#F1F8E9;transition:all .2s;" onclick="document.getElementById('donFileInput').click()" ondragover="donDragOver(event)" ondragleave="donDragLeave(event)" ondrop="donDrop(event)">
+                            <i class="fas fa-cloud-upload-alt" style="font-size:2.8rem;color:#4CAF50;margin-bottom:12px;"></i>
+                            <p style="font-size:1.1rem;font-weight:600;color:#2E7D32;margin:0;">Drag &amp; drop Excel file here</p>
+                            <p style="color:#888;font-size:.88rem;margin:6px 0 0;">.xlsx or .xls &bull; Max 10 MB &bull; Row 1 = Column Headers</p>
+                            <input type="file" id="donFileInput" style="display:none;" accept=".xlsx,.xls,.csv" onchange="donFileSelected(event)">
+                        </div>
+                        <div id="donUploadStatus" style="display:none;margin-top:14px;padding:12px 16px;border-radius:8px;font-weight:500;"></div>
+                        <div id="donUploadProgress" style="display:none;margin-top:10px;">
+                            <div style="background:#e0e0e0;border-radius:6px;height:8px;"><div id="donProgressBar" style="background:#4CAF50;height:100%;border-radius:6px;width:0%;transition:width .3s;"></div></div>
+                            <p id="donProgressLabel" style="font-size:.82rem;color:#555;margin:4px 0 0;">Parsing file…</p>
+                        </div>
+                    </div>
+
+                    <!-- Stats Bar -->
+                    <div id="donStatsBar" style="display:none;">
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;">
+                            <div class="admin-stat-card"><div class="stat-icon blue"><i class="fas fa-users"></i></div><div class="stat-details"><h3 id="donStatTotal">0</h3><p>Total Records</p></div></div>
+                            <div class="admin-stat-card"><div class="stat-icon green"><i class="fas fa-filter"></i></div><div class="stat-details"><h3 id="donStatFiltered">0</h3><p>Matching Filters</p></div></div>
+                            <div class="admin-stat-card"><div class="stat-icon orange"><i class="fas fa-rupee-sign"></i></div><div class="stat-details"><h3 id="donStatSum">₹0</h3><p>Filtered Total Amount</p></div></div>
+                            <div class="admin-stat-card"><div class="stat-icon purple"><i class="fas fa-columns"></i></div><div class="stat-details"><h3 id="donStatCols">0</h3><p>Columns Detected</p></div></div>
+                        </div>
+                    </div>
+
+                    <!-- Essential Filters (3 only) -->
+                    <div class="admin-card" id="donFilterCard" style="display:none;">
+                        <div class="card-header" style="margin-bottom:16px;padding-bottom:14px;">
+                            <h3><i class="fas fa-filter" style="color:var(--primary-color);margin-right:8px;"></i>Filter Donations</h3>
+                            <button class="btn btn-small" style="background:#FFEBEE;color:#c62828;border:none;" onclick="donClearFilters()">
+                                <i class="fas fa-times"></i> Clear Filters
+                            </button>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;align-items:end;">
+                            <!-- Location -->
+                            <div>
+                                <label style="font-size:.8rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:6px;margin-bottom:7px;">
+                                    <i class="fas fa-map-marker-alt" style="color:var(--primary-color);"></i> Location
+                                    <span id="donLocHint" style="font-size:.72rem;color:#aaa;font-weight:400;text-transform:none;letter-spacing:0;"></span>
+                                </label>
+                                <input type="text" id="donLocSearch" placeholder="Road, area, ward…"
+                                    style="width:100%;padding:9px 13px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:.9rem;transition:border-color .2s;box-sizing:border-box;"
+                                    onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='#e0e0e0'"
+                                    oninput="donApplyFilters()">
+                            </div>
+                            <!-- Landmark -->
+                            <div>
+                                <label style="font-size:.8rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:6px;margin-bottom:7px;">
+                                    <i class="fas fa-building" style="color:#3949AB;"></i> Landmark
+                                    <span id="donLandHint" style="font-size:.72rem;color:#aaa;font-weight:400;text-transform:none;letter-spacing:0;"></span>
+                                </label>
+                                <input type="text" id="donLandSearch" placeholder="Building, society, complex…"
+                                    style="width:100%;padding:9px 13px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:.9rem;transition:border-color .2s;box-sizing:border-box;"
+                                    onfocus="this.style.borderColor='#3949AB'" onblur="this.style.borderColor='#e0e0e0'"
+                                    oninput="donApplyFilters()">
+                            </div>
+                            <!-- Amount -->
+                            <div>
+                                <label style="font-size:.8rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:6px;margin-bottom:7px;">
+                                    <i class="fas fa-rupee-sign" style="color:#E67E22;"></i> Amount Range
+                                    <span id="donAmtDetected" style="font-size:.72rem;color:#aaa;font-weight:400;text-transform:none;letter-spacing:0;"></span>
+                                </label>
+                                <div style="display:flex;gap:8px;align-items:center;">
+                                    <input type="number" id="donAmtMin" placeholder="Min ₹" min="0"
+                                        style="flex:1;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:.9rem;transition:border-color .2s;box-sizing:border-box;"
+                                        onfocus="this.style.borderColor='#E67E22'" onblur="this.style.borderColor='#e0e0e0'"
+                                        oninput="donApplyFilters()">
+                                    <span style="color:#bbb;font-size:.9rem;">–</span>
+                                    <input type="number" id="donAmtMax" placeholder="Max ₹" min="0"
+                                        style="flex:1;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:.9rem;transition:border-color .2s;box-sizing:border-box;"
+                                        onfocus="this.style.borderColor='#E67E22'" onblur="this.style.borderColor='#e0e0e0'"
+                                        oninput="donApplyFilters()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Table — grouped by year -->
+                    <div class="admin-card" id="donTableCard" style="display:none;">
+                        <div class="card-header">
+                            <h3 id="donTableTitle"><i class="fas fa-table" style="color:var(--primary-color);margin-right:8px;"></i>Donation Records</h3>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                                <input type="text" id="donGlobalSearch" placeholder="🔍 Global search…"
+                                    style="padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.88rem;width:200px;" oninput="donApplyFilters()">
+                                <button class="btn btn-small" style="background:#1D6F42;color:#fff;" onclick="donExportCSV()">
+                                    <i class="fas fa-download"></i> Export CSV
+                                </button>
+                            </div>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="admin-table" id="donTable">
+                                <thead id="donThead"></thead>
+                                <tbody id="donTbody"></tbody>
+                            </table>
+                        </div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0 0;flex-wrap:wrap;gap:8px;">
+                            <span id="donPaginationInfo" style="font-size:.85rem;color:#888;"></span>
+                            <div style="display:flex;gap:6px;" id="donPaginationBtns"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div id="settings" class="content-section">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3>System Settings</h3>
+
+                        </div>
+                        <div class="form-group">
+                            <label>Website Title</label>
+                            <input type="text" value="Patelwadi Sarvajanik Ganesh Mitramandal">
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Email</label>
+                            <input type="email" value="info@patelwadiganesh.org">
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Phone</label>
+                            <input type="tel" value="+91 98765 43210">
+                        </div>
+                        <button class="btn btn-primary">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New User</h3>
+                <span class="modal-close" onclick="closeModal('addUser')">&times;</span>
+            </div>
+            <form id="addUserForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select required>
+                        <option value="">Select Role</option>
+                        <option value="volunteer">Volunteer</option>
+                        <option value="committee">Committee</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Add User</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Admin Passbook Lightbox ───────────────────────────────────── -->
+    <div id="adminPbLightbox">
+        <span id="adminPbLightboxClose" onclick="closeAdminPbLightbox()">&times;</span>
+        <img id="adminPbLightboxImg" src="" alt="Passbook image">
+    </div>
+
+    <!-- ── Admin Edit Amount Modal ────────────────────────────────── -->
+    <div id="adminEditModal">
+        <div class="adm-edit-box">
+            <h4><i class="fas fa-edit" style="color:var(--primary-color);margin-right:8px;"></i>Edit Donation Amount</h4>
+            <p class="adm-edit-sub" id="admEditSubtitle">Receipt ID: —</p>
+            <input type="number" id="admEditAmountInput" placeholder="New amount (₹)" min="1">
+            <div class="adm-edit-actions">
+                <button class="btn" style="background:#eee;color:#555;" onclick="closeAdminEdit()">Cancel</button>
+                <button class="btn btn-primary" id="admEditSaveBtn" onclick="saveAdminEditAmount()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Expenses Add / Edit Modal ──────────────────────────────────── -->
+    <div id="expenseModal" class="modal">
+        <div class="modal-content" style="max-width:680px;">
+            <div class="modal-header">
+                <h3 id="expModalTitle"><i class="fas fa-plus-circle" style="color:var(--primary-color);margin-right:8px;"></i>Add Expense</h3>
+                <span class="modal-close" onclick="closeExpenseModal()">&times;</span>
+            </div>
+            <form id="expenseForm" onsubmit="saveExpenseRecord(event)">
+                <!-- Row 1 -->
+                <div class="exp-modal-grid">
+                    <div class="form-group">
+                        <label>Date <span style="color:red;">*</span></label>
+                        <input type="date" id="expDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Serial Number <span style="color:red;">*</span></label>
+                        <input type="text" id="expSerialNo" placeholder="e.g. 001" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Common Header</label>
+                        <input type="text" id="expCommonHeader" placeholder="e.g. Ganesh Utsav 2024">
+                    </div>
+                    <div class="form-group">
+                        <label>Reference Number</label>
+                        <input type="text" id="expRefNo" placeholder="e.g. REF-001">
+                    </div>
+                </div>
+                <!-- Particulars -->
+                <div class="form-group">
+                    <label>Particulars <span style="color:red;">*</span></label>
+                    <input type="text" id="expParticulars" placeholder="Details of this expense" required>
+                </div>
+                <!-- Category -->
+                <p class="exp-section-label">Category &amp; Subcategory</p>
+                <div class="form-group">
+                    <label>Category <span style="color:red;">*</span></label>
+                    <select id="expCategory" required onchange="onExpCategoryChange()">
+                        <option value="">-- Select Category --</option>
+                        <option>Advertising and Printing</option>
+                        <option>Ganpati Expenses</option>
+                        <option>Mandap and Decoration Expense</option>
+                        <option>Electricity Expense</option>
+                        <option>Transportation Expense</option>
+                        <option>Sound and Banjo Expense</option>
+                        <option>Satyanarayan Pooja and Pooja Expense</option>
+                        <option>Ganpati Aagman</option>
+                        <option>Ganpati Visarjan</option>
+                        <option>Other Expenses</option>
+                    </select>
+                </div>
+                <!-- Normal subcategory -->
+                <div id="expSubcatSection" style="display:none;">
+                    <div class="form-group">
+                        <label>Subcategory <span style="color:red;">*</span></label>
+                        <select id="expSubcategory" onchange="onExpSubcategoryChange()">
+                            <option value="">-- Select Subcategory --</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Sound &amp; Banjo special fields -->
+                <div id="expSoundBanjoSection" style="display:none;">
+                    <div class="exp-modal-grid">
+                        <div class="form-group">
+                            <label>Event <span style="color:red;">*</span></label>
+                            <select id="expSoundEvent">
+                                <option value="">-- Select Event --</option>
+                                <option>Aagman</option>
+                                <option>Visarjan</option>
+                                <option>Both</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Expense Type <span style="color:red;">*</span></label>
+                            <select id="expSoundType" onchange="onExpSubcategoryChange()">
+                                <option value="">-- Select Type --</option>
+                                <option>Banjo</option>
+                                <option>Puneri</option>
+                                <option>DJ</option>
+                                <option>Light Setup</option>
+                                <option>Other Expenses</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <!-- Reason field (Other Expenses) -->
+                <div id="expReasonSection" style="display:none;">
+                    <div class="form-group">
+                        <label>Reason / Description <span style="color:red;">*</span></label>
+                        <textarea id="expReason" rows="2" placeholder="Enter reason or description..."
+                                  style="width:100%;padding:10px 14px;border:2px solid #E0E0E0;border-radius:8px;font-family:inherit;font-size:1rem;resize:vertical;"></textarea>
+                    </div>
+                </div>
+                <!-- Amount -->
+                <p class="exp-section-label">Amount</p>
+                <div class="form-group">
+                    <label>Amount (&#8377;) <span style="color:red;">*</span></label>
+                    <input type="number" id="expAmount" placeholder="0.00" min="0" step="0.01" required>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px;">
+                    <button type="button" class="btn" style="background:#eee;color:#555;" onclick="closeExpenseModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="expSaveBtn">Save Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- ── Financial Statement Add / Edit Modal ────────────────────────── -->
+    <div id="financialModal" class="modal">
+        <div class="modal-content" style="max-width:720px;">
+            <div class="modal-header">
+                <h3 id="finModalTitle"><i class="fas fa-plus-circle" style="color:var(--primary-color);margin-right:8px;"></i>Add Financial Record</h3>
+                <span class="modal-close" onclick="closeFinancialModal()">&times;</span>
+            </div>
+            <form id="financialForm" onsubmit="saveFinancialRecord(event)">
+                <div class="form-group">
+                    <label>Financial Year <span style="color:red;">*</span></label>
+                    <input type="text" id="finYear" placeholder="e.g. 2024-25" required style="font-size:1.1rem;font-weight:600;">
+                </div>
+                <p class="exp-section-label">Receipts &amp; Income</p>
+                <div class="fin-modal-grid">
+                    <div class="form-group">
+                        <label>Last Year Balance (&#8377;)</label>
+                        <input type="number" id="finLastBal" placeholder="0.00" min="0" step="0.01" oninput="finAutoCalc()">
+                    </div>
+                    <div class="form-group">
+                        <label>Current Year Donations (&#8377;)</label>
+                        <input type="number" id="finDonations" placeholder="0.00" min="0" step="0.01" oninput="finAutoCalc()">
+                    </div>
+                    <div class="form-group">
+                        <label>Cash in Hand (&#8377;)</label>
+                        <input type="number" id="finCashHand" placeholder="0.00" min="0" step="0.01" oninput="finAutoCalc()">
+                    </div>
+                    <div class="form-group">
+                        <label>Cash at Bank (&#8377;)</label>
+                        <input type="number" id="finCashBank" placeholder="0.00" min="0" step="0.01" oninput="finAutoCalc()">
+                    </div>
+                    <div class="form-group">
+                        <label>Cash Withdrawn from Bank (&#8377;)</label>
+                        <input type="number" id="finWithdrawn" placeholder="0.00" min="0" step="0.01" oninput="finAutoCalc()">
+                    </div>
+                    <div class="form-group">
+                        <label style="display:flex;align-items:center;gap:6px;">Total Collection (&#8377;) <span style="font-size:.75rem;color:#888;font-weight:400;">(auto)</span></label>
+                        <input type="number" id="finTotalColl" placeholder="Auto-calculated" min="0" step="0.01" oninput="finAutoCalc()" style="background:#f8fff8;border-color:#27AE60;">
+                    </div>
+                </div>
+                <p class="exp-section-label">Expenditure</p>
+                <div class="form-group">
+                    <label>Expenses for Current Year (&#8377;) <span style="color:red;">*</span></label>
+                    <input type="number" id="finExpenses" placeholder="0.00" min="0" step="0.01" required oninput="finAutoCalc()">
+                </div>
+                <!-- Live preview panel -->
+                <div id="finCalcPreview" style="display:none;background:linear-gradient(135deg,#f8f9ff,#f0fff4);border:1.5px solid #dce8f5;border-radius:10px;padding:14px 18px;margin:10px 0 14px;">
+                    <p style="font-size:.75rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">&#9889; Live Calculation Preview</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                        <div style="text-align:center;">
+                            <div style="font-size:.78rem;color:#888;margin-bottom:3px;">Total Collection</div>
+                            <div id="finPrevCollection" style="font-size:1.15rem;font-weight:700;color:#2980B9;">&#8377;0</div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div style="font-size:.78rem;color:#888;margin-bottom:3px;">Total Expenses</div>
+                            <div id="finPrevExpenses" style="font-size:1.15rem;font-weight:700;color:#E74C3C;">&#8377;0</div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div style="font-size:.78rem;color:#888;margin-bottom:3px;">Net Balance</div>
+                            <div id="finPrevBalance" style="font-size:1.15rem;font-weight:700;color:#27AE60;">&#8377;0</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes / Remarks</label>
+                    <textarea id="finNotes" rows="2" placeholder="Optional remarks or comments..."
+                              style="width:100%;padding:10px 14px;border:2px solid #E0E0E0;border-radius:8px;font-family:inherit;font-size:1rem;resize:vertical;box-sizing:border-box;"></textarea>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px;">
+                    <button type="button" class="btn" style="background:#eee;color:#555;" onclick="closeFinancialModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="finSaveBtn">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- \u2500\u2500 Assign Pauti Book Modal \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 -->
+    <div id="assignBookModal" class="modal">
+        <div class="modal-content" style="max-width:480px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-book-open" style="color:var(--primary-color);margin-right:8px;"></i>Assign Pauti Book</h3>
+                <span class="modal-close" onclick="closeAssignBookModal()">&times;</span>
+            </div>
+            <form id="assignBookForm" onsubmit="saveAssignBook(event)">
+                <div class="form-group">
+                    <label>Book Number <span style="color:red;">*</span><small style="color:#888;margin-left:6px;">(1–50)</small></label>
+                    <input type="number" id="abBookNumber" min="1" max="50" placeholder="e.g. 1" required style="font-size:1.1rem;font-weight:600;">
+                    <small id="abSlipRange" style="color:#888;display:block;margin-top:4px;"></small>
+                </div>
+                <div class="form-group">
+                    <label>Assign To (Volunteer Name) <span style="color:red;">*</span></label>
+                    <input type="text" id="abAssignedTo" placeholder="Enter volunteer name" required>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                    <button type="button" class="btn" style="background:#eee;color:#555;" onclick="closeAssignBookModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="abSaveBtn">Assign Book</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- \u2500\u2500 Edit Slip Modal \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 -->
+    <div id="editSlipModal" class="modal">
+        <div class="modal-content" style="max-width:480px;">
+            <div class="modal-header">
+                <h3 id="editSlipTitle"><i class="fas fa-edit" style="color:var(--primary-color);margin-right:8px;"></i>Edit Slip</h3>
+                <span class="modal-close" onclick="closeEditSlipModal()">&times;</span>
+            </div>
+            <form id="editSlipForm" onsubmit="saveEditSlip(event)">
+                <div class="form-group">
+                    <label>Donor Name</label>
+                    <input type="text" id="esName" placeholder="Donor name">
+                </div>
+                <div class="form-group">
+                    <label>Amount (&#8377;)</label>
+                    <input type="number" id="esAmount" placeholder="0.00" min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Payment Mode</label>
+                    <select id="esMode" onchange="esToggleCheck()">
+                        <option value="cash">Cash</option>
+                        <option value="upi">UPI</option>
+                        <option value="check">Check</option>
+                        <option value="balance">Balance</option>
+                    </select>
+                </div>
+                <div class="form-group" id="esCheckGroup" style="display:none;">
+                    <label>Check Number</label>
+                    <input type="text" id="esCheckNumber" placeholder="Enter check number">
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                    <button type="button" class="btn" style="background:#eee;color:#555;" onclick="closeEditSlipModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="esSaveBtn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- ── Edit Donation Modal ─────────────────────────────────────────────── -->
+    <div id="editDonationModal" class="modal">
+        <div class="modal-content" style="max-width:600px;max-height:85vh;overflow-y:auto;">
+            <div class="modal-header">
+                <h3 id="editDonTitle"><i class="fas fa-edit" style="color:var(--primary-color);margin-right:8px;"></i>Edit Donation Record</h3>
+                <span class="modal-close" onclick="closeEditDonModal()">&times;</span>
+            </div>
+            <!-- Fields injected dynamically by JS -->
+            <form id="editDonForm" onsubmit="saveEditDon(event)" style="padding-top:8px;">
+                <div id="editDonFields"></div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+                    <button type="button" class="btn" style="background:#eee;color:#555;" onclick="closeEditDonModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="editDonSaveBtn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+    <script src="donations.js"></script>
+
+    <!-- ══════════ BALANCE/PENDING RECOVERY EDIT MODAL ══════════ -->
+    <div id="brEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:3000;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:460px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h3 style="margin:0;color:var(--dark-color);"><i class="fas fa-edit" style="color:var(--primary-color);margin-right:8px;"></i>Edit Recovery Entry</h3>
+                <span onclick="closeBrEditModal()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <div id="brEditStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
+            <form id="brEditForm" onsubmit="saveBrEditEntry(event)" autocomplete="off">
+                <input type="hidden" id="brEditReceiptId">
+                <input type="hidden" id="brEditIsPauti" value="false">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;"><label>Book Number</label><input type="number" id="brEditBook" class="form-control" min="1" max="50" placeholder="Book #"></div>
+                    <div class="form-group" style="margin:0;"><label>Receipt Number</label><input type="number" id="brEditReceiptNum" class="form-control" min="1" placeholder="Receipt #"></div>
+                </div>
+                <div class="form-group">
+                    <label>Donor Name</label>
+                    <input type="text" id="brEditName" class="form-control" placeholder="Donor name" required>
+                </div>
+                <div class="form-group">
+                    <label>Amount (&#8377;)</label>
+                    <input type="number" id="brEditAmount" class="form-control" placeholder="0.00" min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="brEditStatusSel" class="form-control">
+                        <option value="pending">Pending</option>
+                        <option value="received">Received</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Payment Mode</label>
+                    <select id="brEditMode" class="form-control">
+                        <option value="cash">Cash</option>
+                        <option value="upi">UPI</option>
+                        <option value="check">Cheque</option>
+                        <option value="balance">Balance</option>
+                        <option value="online">Online</option>
+                    </select>
+                </div>
+                <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:14px;margin-bottom:14px;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:8px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Receipt Photo</div>
+                    <div id="brEditCurPhoto" style="display:none;margin-bottom:8px;">
+                        <img id="brEditCurPhotoImg" src="" alt="Current" style="max-width:100%;max-height:120px;border-radius:8px;border:1.5px solid #e0e0e0;object-fit:contain;cursor:pointer;">
+                    </div>
+                    <button type="button" onclick="document.getElementById('brEditPhotoInput').click()" style="width:100%;padding:10px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Upload / Replace Photo</button>
+                    <input type="file" id="brEditPhotoInput" style="display:none;" accept="image/*">
+                    <div id="brEditPhotoPreview" style="display:none;margin-top:8px;">
+                        <img id="brEditPhotoThumb" src="" alt="Preview" style="max-width:100%;max-height:120px;border-radius:8px;border:1.5px solid #ffe0d0;object-fit:contain;">
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+                    <button type="button" class="btn" style="background:#eee;color:#555;" onclick="closeBrEditModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="brEditSaveBtn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════ DONATION ENTRIES ADMIN SECTION HTML ══════════ -->
+    <!-- Section injected via JS into admin-content -->
+    <script>
+    // Inject the section HTML on DOM ready
+    (function injectDESection() {
+        const section = document.createElement('div');
+        section.id = 'donationEntries';
+        section.className = 'content-section';
+        section.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px;">
+            <div>
+                <h2 style="color:var(--dark-color);margin:0 0 4px;">Donation Data Entry</h2>
+                <p style="color:#777;margin:0;">All donation receipt entries — full CRUD control</p>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button onclick="adeBuildingModal()" class="btn btn-small" style="background:#3949AB;color:#fff;"><i class="fas fa-building" style="margin-right:6px;"></i>Manage Buildings</button>
+                <button onclick="adeAreaModal()" class="btn btn-small" style="background:#00796B;color:#fff;"><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Manage Areas</button>
+                <button onclick="adeLandmarkModal()" class="btn btn-small" style="background:#6A1B9A;color:#fff;"><i class="fas fa-flag" style="margin-right:6px;"></i>Manage Landmarks</button>
+                <button onclick="adeLoad()" class="btn btn-small" style="background:#f4f4f4;color:#555;"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div id="adeStatus" style="display:none;padding:12px 18px;border-radius:10px;margin-bottom:16px;font-weight:600;"></div>
+
+        <!-- Filters -->
+        <div class="admin-card" style="padding:20px;margin-bottom:18px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Search Name</label>
+                    <input type="text" id="adeSearchName" class="form-control" placeholder="Donor / Business" oninput="adeFilter()" style="padding:9px 12px;">
+                </div>
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Book No.</label>
+                    <input type="number" id="adeFilterBook" class="form-control" placeholder="1–50" min="1" max="50" oninput="adeFilter()" style="padding:9px 12px;">
+                </div>
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Area</label>
+                    <select id="adeFilterArea" class="form-control" onchange="adeFilter()" style="padding:9px 12px;"><option value="">All Areas</option></select>
+                </div>
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Payment Mode</label>
+                    <select id="adeFilterMode" class="form-control" onchange="adeFilter()" style="padding:9px 12px;">
+                        <option value="">All Modes</option>
+                        <option>Cash</option><option>Cheque</option><option>UPI</option><option>RTGS</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Donor Type</label>
+                    <select id="adeFilterType" class="form-control" onchange="adeFilter()" style="padding:9px 12px;">
+                        <option value="">All Types</option><option>Individual</option><option>Business</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:flex-end;">
+                    <button onclick="adeClearFilters()" class="btn btn-small" style="background:#eee;color:#666;width:100%;padding:9px;">Clear Filters</button>
+                </div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:12px;font-size:.85rem;color:#777;flex-wrap:wrap;">
+                <span>Total: <strong id="adeSummaryTotal">—</strong></span>
+                <span>Filtered: <strong id="adeSummaryFiltered">—</strong></span>
+                <span>Total Amount: <strong id="adeSummaryAmt" style="color:#2E7D32;">—</strong></span>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="admin-card" style="padding:0;overflow:hidden;">
+            <div style="overflow-x:auto;">
+                <table class="admin-table" id="adeTable">
+                    <thead>
+                        <tr>
+                            <th>#</th><th>Book</th><th>Receipt</th><th>Donor</th><th>Type</th>
+                            <th>WhatsApp</th><th>Mobile</th><th>Building</th><th>Area</th>
+                            <th>Amount</th><th>Mode</th><th>Ref No.</th><th>Landmark</th><th>Photo</th><th>Submitted By</th><th>Date</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adeTbody">
+                        <tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+        document.querySelector('.admin-content')?.appendChild(section);
+    })();
+
+    // ── Admin Donation Entries JS ─────────────────────────────────
+    let _adeAll = [], _adeFiltered = [];
+
+    async function adeLoad() {
+        const tbody = document.getElementById('adeTbody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">Loading…</td></tr>';
+        try {
+            const [entRes, areaRes] = await Promise.all([
+                fetch('/api/donation-entries'),
+                fetch('/api/areas')
+            ]);
+            const entData  = await entRes.json();
+            const areaData = await areaRes.json();
+            _adeAll = entData.entries || [];
+            // Populate area filter dropdown
+            const areaSel = document.getElementById('adeFilterArea');
+            if (areaSel) {
+                areaSel.innerHTML = '<option value="">All Areas</option>';
+                (areaData.areas || []).forEach(a => areaSel.innerHTML += `<option>${a.name}</option>`);
+            }
+            adeFilter();
+        } catch(e) {
+            tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#c00;padding:30px;">Error loading data.</td></tr>';
+        }
+    }
+
+    function adeFilter() {
+        const name = (document.getElementById('adeSearchName')?.value || '').toLowerCase();
+        const book = document.getElementById('adeFilterBook')?.value;
+        const area = document.getElementById('adeFilterArea')?.value;
+        const mode = document.getElementById('adeFilterMode')?.value;
+        const type = document.getElementById('adeFilterType')?.value;
+        _adeFiltered = _adeAll.filter(e => {
+            const donor = e.donorType === 'Business'
+                ? (e.businessName || '')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
+            if (name && !donor.toLowerCase().includes(name)) return false;
+            if (book && String(e.bookNumber) !== String(book)) return false;
+            if (area && e.area !== area) return false;
+            if (mode && e.paymentMode !== mode) return false;
+            if (type && e.donorType !== type) return false;
+            return true;
+        });
+        adeRender();
+    }
+
+    function adeClearFilters() {
+        ['adeSearchName','adeFilterBook'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+        ['adeFilterArea','adeFilterMode','adeFilterType'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+        adeFilter();
+    }
+
+    function adeRender() {
+        const tbody = document.getElementById('adeTbody');
+        if (!tbody) return;
+        const totalAmt = _adeFiltered.reduce((s,e) => s + (e.amount||0), 0);
+        document.getElementById('adeSummaryTotal')    && (document.getElementById('adeSummaryTotal').textContent    = _adeAll.length);
+        document.getElementById('adeSummaryFiltered') && (document.getElementById('adeSummaryFiltered').textContent = _adeFiltered.length);
+        document.getElementById('adeSummaryAmt')      && (document.getElementById('adeSummaryAmt').textContent      = '₹' + totalAmt.toLocaleString('en-IN'));
+        if (!_adeFiltered.length) { tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">No entries found.</td></tr>'; return; }
+        tbody.innerHTML = _adeFiltered.slice().reverse().map((e, i) => {
+            const donor = e.donorType === 'Business'
+                ? (e.businessName || '—')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+            const dtObj = new Date(e.submittedAt);
+            const dtTime = dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
+            const dtDate = dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+            const dt = `<span style="font-size:.8rem;white-space:nowrap;">${dtTime}<br><span style="color:#aaa;">${dtDate}</span></span>`;
+            const amt = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '—';
+            return `<tr id="ade-row-${e.entryId}">
+                <td style="color:#aaa;font-size:.8rem;">${i+1}</td>
+                <td style="font-weight:700;">Bk ${e.bookNumber}</td>
+                <td>#${e.receiptNumber}</td>
+                <td style="font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${donor}">${donor}</td>
+                <td><span style="padding:2px 9px;border-radius:10px;font-size:.75rem;font-weight:700;background:${e.donorType==='Business'?'#E3F2FD':'#E8F5E9'};color:${e.donorType==='Business'?'#1565C0':'#1B5E20'};">${e.donorType}</span></td>
+                <td style="color:#555;font-size:.85rem;">${e.whatsappNumber||'—'}</td>
+                <td style="color:#555;font-size:.85rem;">${e.mobileNumber||'—'}</td>
+                <td style="font-size:.85rem;">${e.buildingName||'—'}</td>
+                <td style="font-size:.85rem;">${e.area||'—'}</td>
+                <td style="color:#2E7D32;font-weight:700;">${amt}</td>
+                <td><span style="padding:3px 10px;border-radius:12px;background:#FFF3E0;color:#E65100;font-size:.75rem;font-weight:700;">${e.paymentMode}</span></td>
+                <td style="font-size:.82rem;color:#777;">${e.referenceNumber||'—'}</td>
+                <td style="font-size:.82rem;color:#555;">${e.landmark||'—'}</td>
+                <td style="text-align:center;">${e.photoUrl ? `<img src="http://localhost:3000${e.photoUrl}?t=${Date.now()}" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openAdminLightbox('http://localhost:3000${e.photoUrl}')" title="View photo">` : '<span style="color:#ccc;">—</span>'}</td>
+                <td style="font-size:.82rem;color:#888;">${e.submittedBy||'—'}</td>
+                <td style="color:#888;font-size:.82rem;">${dt}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="btn-icon btn-edit" title="Edit" onclick="adeOpenEdit('${e.entryId}')"><i class="fas fa-edit"></i></button>
+                        <button class="btn-icon btn-delete" title="Delete" onclick="adeDelete('${e.entryId}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function adeDelete(id) {
+        if (!confirm('Delete this donation entry? This cannot be undone.')) return;
+        try {
+            const res = await fetch(`/api/donation-entries/${encodeURIComponent(id)}`, { method:'DELETE' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                adeShowStatus('✅ Entry deleted.', 'success');
+                _adeAll = _adeAll.filter(e => e.entryId !== id);
+                adeFilter();
+            } else { adeShowStatus('❌ ' + (data.message||'Delete failed.'), 'error'); }
+        } catch(e) { adeShowStatus('❌ Server error.', 'error'); }
+    }
+
+    // ── Edit modal ─────────────────────────────────────────────────
+    let _adeEditId = null;
+    function adeOpenEdit(id) {
+        const e = _adeAll.find(x => x.entryId === id);
+        if (!e) return;
+        _adeEditId = id;
+        const isDonorBiz = e.donorType === 'Business';
+        const modal = document.createElement('div');
+        modal.id = 'adeEditModal';
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
+        modal.innerHTML = `
+        <div style="background:#fff;border-radius:16px;padding:30px 28px;max-width:680px;width:94%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h3 style="margin:0;color:var(--dark-color);"><i class="fas fa-edit" style="color:var(--primary-color);margin-right:8px;"></i>Edit Entry</h3>
+                <span onclick="document.getElementById('adeEditModal').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <div id="adeEditStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
+            <form onsubmit="adeSaveEdit(event)" autocomplete="off">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div class="form-group"><label>Book Number</label><input name="bookNumber" class="form-control" type="number" value="${e.bookNumber}" min="1" max="50" required></div>
+                    <div class="form-group"><label>Receipt Number</label><input name="receiptNumber" class="form-control" type="number" value="${e.receiptNumber}" min="1" max="2500" required></div>
+                </div>
+                <div class="form-group"><label>Donor Type</label>
+                    <select name="donorType" class="form-control" onchange="this.closest('form').querySelector('.ade-ind-grp').style.display=this.value==='Individual'?'grid':'none';this.closest('form').querySelector('.ade-biz-grp').style.display=this.value==='Business'?'block':'none';">
+                        <option ${!isDonorBiz?'selected':''}>Individual</option>
+                        <option ${isDonorBiz?'selected':''}>Business</option>
+                    </select>
+                </div>
+                <div class="ade-ind-grp" style="display:${!isDonorBiz?'grid':'none'};grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>First Name</label><input name="firstName" class="form-control" value="${e.firstName||''}" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label>Middle Name</label><input name="middleName" class="form-control" value="${e.middleName||''}" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label>Last Name</label><input name="lastName" class="form-control" value="${e.lastName||''}" oninput="this.value=this.value.toUpperCase()"></div>
+                </div>
+                <div class="ade-biz-grp" style="display:${isDonorBiz?'block':'none'};">
+                    <div class="form-group"><label>Business Name</label><input name="businessName" class="form-control" value="${e.businessName||''}" oninput="this.value=this.value.toUpperCase()"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>WhatsApp</label><input name="whatsappNumber" class="form-control" value="${e.whatsappNumber||''}" maxlength="10"></div>
+                    <div class="form-group"><label>Mobile</label><input name="mobileNumber" class="form-control" value="${e.mobileNumber||''}" maxlength="10"></div>
+                    <div class="form-group"><label>Mail ID</label><input name="mailId" class="form-control" value="${e.mailId||''}"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>Building Name</label><input name="buildingName" class="form-control" value="${e.buildingName||''}"></div>
+                    <div class="form-group"><label>Area</label><input name="area" class="form-control" value="${e.area||''}"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>Amount (₹)</label><input name="amount" class="form-control" type="number" value="${e.amount||''}" min="0"></div>
+                    <div class="form-group"><label>Payment Mode</label>
+                        <select name="paymentMode" class="form-control">
+                            <option ${e.paymentMode==='Cash'?'selected':''}>Cash</option>
+                            <option ${e.paymentMode==='Cheque'?'selected':''}>Cheque</option>
+                            <option ${e.paymentMode==='UPI'?'selected':''}>UPI</option>
+                            <option ${e.paymentMode==='RTGS'?'selected':''}>RTGS</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Reference No.</label><input name="referenceNumber" class="form-control" value="${e.referenceNumber||''}"></div>
+                </div>
+                <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:16px;margin-bottom:14px;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:10px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Receipt Photo</div>
+                    <div id="adeEditCurPhotoDiv" style="display:none;margin-bottom:10px;">
+                        <p style="font-size:.8rem;color:#777;margin:0 0 6px;">Current photo:</p>
+                        <img id="adeEditCurPhotoImg" src="" alt="Current" style="max-width:100%;max-height:130px;border-radius:8px;border:1.5px solid #e0e0e0;object-fit:contain;cursor:pointer;">
+                    </div>
+                    <button type="button" onclick="document.getElementById('adeEditPhotoInput').click()" style="width:100%;padding:11px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Upload / Replace Photo</button>
+                    <input type="file" id="adeEditPhotoInput" style="display:none;" accept="image/*">
+                    <div id="adeEditPhotoPreview" style="display:none;margin-top:10px;">
+                        <img id="adeEditPhotoThumb" src="" alt="Preview" style="max-width:100%;max-height:130px;border-radius:8px;border:1.5px solid #ffe0d0;object-fit:contain;">
+                        <p id="adeEditPhotoName" style="font-size:.8rem;color:#555;margin:6px 0 0;"></p>
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                    <button type="button" class="btn" style="background:#eee;color:#555;" onclick="document.getElementById('adeEditModal').remove()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="adeSaveBtnModal">Save Changes</button>
+                </div>
+            </form>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', ev => { if (ev.target === modal) modal.remove(); });
+        // Show nameHistory if present
+        if (e.nameHistory && e.nameHistory.length) {
+            const histDiv = document.createElement('div');
+            histDiv.style.cssText = 'margin-bottom:16px;border:1.5px solid #E3F2FD;border-radius:10px;padding:14px;background:#F8FBFF;';
+            histDiv.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#1565C0;margin-bottom:10px;"><i class="fas fa-history" style="margin-right:6px;"></i>Name Change History</div>' +
+                e.nameHistory.map(function(h) {
+                    const dt = new Date(h.changedAt).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+                    return '<div style="padding:8px 12px;background:#fff;border-radius:8px;border:1px solid #E3F2FD;margin-bottom:6px;font-size:.82rem;">' +
+                        '<span style="color:#888;">From:</span> <strong>' + (h.from||'—') + '</strong> &rarr; <span style="color:#888;">To:</span> <strong>' + (h.to||'—') + '</strong><br>' +
+                        '<span style="color:#888;">Reason:</span> ' + (h.reason||'—') + ' &nbsp;<span style="color:#aaa;font-size:.75rem;">' + dt + ' by ' + (h.changedBy||'—') + '</span>' +
+                    '</div>';
+                }).join('');
+            const form = modal.querySelector('form');
+            if (form) form.insertBefore(histDiv, form.firstChild);
+        }
+        // Populate current photo
+        const curPDiv = document.getElementById('adeEditCurPhotoDiv');
+        const curPImg = document.getElementById('adeEditCurPhotoImg');
+        if (e.photoUrl && curPDiv && curPImg) {
+            curPImg.src = 'http://localhost:3000' + e.photoUrl + '?t=' + Date.now();
+            curPImg.onclick = () => openAdminLightbox('http://localhost:3000' + e.photoUrl);
+            curPDiv.style.display = '';
+        } else if (curPDiv) { curPDiv.style.display = 'none'; }
+        const aePreview = document.getElementById('adeEditPhotoPreview');
+        if (aePreview) aePreview.style.display = 'none';
+        window._adeEditPhotoBlob = null;
+        const aeInput = document.getElementById('adeEditPhotoInput');
+        if (aeInput) {
+            aeInput.value = '';
+            aeInput.onchange = function(ev2) {
+                const f = ev2.target.files[0]; if (!f) return;
+                const reader = new FileReader();
+                reader.onload = function(re) {
+                    const thumb = document.getElementById('adeEditPhotoThumb');
+                    const name  = document.getElementById('adeEditPhotoName');
+                    const prev  = document.getElementById('adeEditPhotoPreview');
+                    if (thumb) thumb.src = re.target.result;
+                    if (name)  name.textContent = '\u2705 ' + f.name + ' (' + (f.size < 1048576 ? (f.size/1024).toFixed(1)+' KB' : (f.size/1048576).toFixed(2)+' MB') + ')';
+                    if (prev)  prev.style.display = '';
+                    window._adeEditPhotoBlob = f;
+                };
+                reader.readAsDataURL(f);
+            };
+        }
+    }
+
+    async function adeSaveEdit(ev) {
+        ev.preventDefault();
+        const form = ev.target;
+        const btn  = document.getElementById('adeSaveBtnModal');
+        if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+        const fd = new FormData(form);
+        const payload = { _isAdmin: true };
+        fd.forEach((v, k) => { payload[k] = ['bookNumber','receiptNumber','amount'].includes(k) ? Number(v) : v; });
+        try {
+            const res  = await fetch(`/api/donation-entries/${encodeURIComponent(_adeEditId)}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                document.getElementById('adeEditModal')?.remove();
+                adeShowStatus('\u2705 Entry updated successfully.', 'success');
+                // Upload photo if selected
+                if (window._adeEditPhotoBlob) {
+                    try {
+                        const fd2 = new FormData();
+                        fd2.append('passbook', window._adeEditPhotoBlob, window._adeEditPhotoBlob.name || 'receipt.jpg');
+                        fd2.append('entryId', _adeEditId);
+                        await fetch('/api/upload-passbook', { method:'POST', body:fd2 });
+                        window._adeEditPhotoBlob = null;
+                    } catch(_px) {}
+                }
+                await adeLoad();
+            } else {
+                const st = document.getElementById('adeEditStatus');
+                if (st) { st.style.display='block'; st.style.background='#FFEBEE'; st.style.color='#c00'; st.textContent = data.message||'Update failed.'; }
+            }
+        } catch(e) { alert('Server error.'); }
+        finally { if (btn) { btn.disabled=false; btn.textContent='Save Changes'; } }
+    }
+
+    // ── Building/Area Management modals ──────────────────────────
+    async function adeBuildingModal() {
+        const res  = await fetch('/api/buildings');
+        const data = await res.json();
+        const modal = document.createElement('div');
+        modal.id = 'adeBldgModal';
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
+        modal.innerHTML = `
+        <div style="background:#fff;border-radius:16px;padding:28px;max-width:440px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;"><i class="fas fa-building" style="color:#3949AB;margin-right:8px;"></i>Manage Buildings</h3>
+                <span onclick="document.getElementById('adeBldgModal').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:16px;">
+                <input type="text" id="adeBldgInput" class="form-control" placeholder="New building name" style="flex:1;">
+                <button onclick="adeAddBldg()" class="btn btn-primary btn-small">Add</button>
+            </div>
+            <div id="adeBldgList" style="display:flex;flex-direction:column;gap:8px;">
+                ${(data.buildings||[]).map(b => `
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8f9fa;border-radius:8px;">
+                    <span style="flex:1;font-weight:600;">${b.name}</span>
+                    <button onclick="adeDeleteBldg('${b.id}',this)" style="border:none;background:#FFEBEE;color:#c0392b;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;"><i class="fas fa-trash"></i></button>
+                </div>`).join('')}
+            </div>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', ev => { if (ev.target === modal) modal.remove(); });
+    }
+
+    async function adeAddBldg() {
+        const name = document.getElementById('adeBldgInput')?.value.trim();
+        if (!name) return;
+        const res  = await fetch('/api/buildings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name }) });
+        const data = await res.json();
+        if (res.ok && data.success) { document.getElementById('adeBldgModal')?.remove(); adeBuildingModal(); }
+        else alert(data.message || 'Could not add.');
+    }
+
+    async function adeDeleteBldg(id, btn) {
+        if (!confirm('Remove this building?')) return;
+        const res = await fetch(`/api/buildings/${encodeURIComponent(id)}`, { method:'DELETE' });
+        if (res.ok) { btn.closest('div').remove(); }
+        else alert('Could not delete.');
+    }
+
+    async function adeAreaModal() {
+        const res  = await fetch('/api/areas');
+        const data = await res.json();
+        const modal = document.createElement('div');
+        modal.id = 'adeAreaModalEl';
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
+        modal.innerHTML = `
+        <div style="background:#fff;border-radius:16px;padding:28px;max-width:440px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;"><i class="fas fa-map-marker-alt" style="color:#00796B;margin-right:8px;"></i>Manage Areas</h3>
+                <span onclick="document.getElementById('adeAreaModalEl').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:16px;">
+                <input type="text" id="adeAreaInput" class="form-control" placeholder="New area name" style="flex:1;">
+                <button onclick="adeAddArea()" class="btn btn-primary btn-small">Add</button>
+            </div>
+            <div id="adeAreaList" style="display:flex;flex-direction:column;gap:8px;">
+                ${(data.areas||[]).map(a => `
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8f9fa;border-radius:8px;">
+                    <span style="flex:1;font-weight:600;">${a.name}</span>
+                    <button onclick="adeDeleteArea('${a.id}',this)" style="border:none;background:#FFEBEE;color:#c0392b;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;"><i class="fas fa-trash"></i></button>
+                </div>`).join('')}
+            </div>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', ev => { if (ev.target === modal) modal.remove(); });
+    }
+
+    async function adeAddArea() {
+        const name = document.getElementById('adeAreaInput')?.value.trim();
+        if (!name) return;
+        const res  = await fetch('/api/areas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name }) });
+        const data = await res.json();
+        if (res.ok && data.success) { document.getElementById('adeAreaModalEl')?.remove(); adeAreaModal(); }
+        else alert(data.message || 'Could not add.');
+    }
+
+    async function adeDeleteArea(id, btn) {
+        if (!confirm('Remove this area?')) return;
+        const res = await fetch(`/api/areas/${encodeURIComponent(id)}`, { method:'DELETE' });
+        if (res.ok) { btn.closest('div').remove(); }
+        else alert('Could not delete.');
+    }
+
+    function adeShowStatus(msg, type) {
+        const el = document.getElementById('adeStatus');
+        if (!el) return;
+        el.textContent = msg;
+        el.style.display = 'block';
+        el.style.background = type === 'success' ? '#D5F4E6' : '#FFEBEE';
+        el.style.color      = type === 'success' ? '#1a7a45' : '#c0392b';
+        el.style.border     = type === 'success' ? '1px solid #a3e6c1' : '1px solid #f5b7b1';
+        setTimeout(() => el.style.display = 'none', 5000);
+    }
+
+    // ── Admin lightbox ───────────────────────────────────────────────────────
+    function openAdminLightbox(src) {
+        let lb = document.getElementById('adminLightbox');
+        if (!lb) {
+            lb = document.createElement('div');
+            lb.id = 'adminLightbox';
+            lb.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;cursor:zoom-out;';
+            lb.innerHTML = '<img id="adminLbImg" style="max-width:92vw;max-height:92vh;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.6);">';
+            lb.onclick = () => lb.style.display = 'none';
+            document.body.appendChild(lb);
+        }
+        document.getElementById('adminLbImg').src = src;
+        lb.style.display = 'flex';
+    }
+
+    // ── Admin New Entry Form ─────────────────────────────────────────────────
+    (function injectAdminNewEntryForm() {
+        const sec = document.getElementById('donationEntries');
+        if (!sec) return;
+        const formCard = document.createElement('div');
+        formCard.style.cssText = 'background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:22px;overflow:hidden;';
+        formCard.innerHTML = `
+        <div id="aneToggleBar" onclick="aneToggle()" style="display:flex;align-items:center;justify-content:space-between;padding:16px 22px;cursor:pointer;background:linear-gradient(135deg,#1a237e,#3949AB);color:#fff;">
+            <span style="font-weight:700;font-size:1rem;"><i class="fas fa-plus-circle" style="margin-right:8px;"></i>New Donation Entry (Admin)</span>
+            <i id="aneChevron" class="fas fa-chevron-down" style="transition:transform .3s;"></i>
+        </div>
+        <div id="aneFormBody" style="display:none;padding:24px 22px;">
+            <div id="aneStatus" style="display:none;padding:10px 16px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
+            <form id="aneForm" onsubmit="aneSave(event)" autocomplete="off">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;"><label>Book Number</label><select id="aneBook" class="form-control" onchange="aneBookChange()"><option value="">— Select —</option></select></div>
+                    <div class="form-group" style="margin:0;"><label>Receipt Number <button type="button" onclick="aneAutoReceipt()" style="margin-left:8px;padding:2px 10px;border:none;border-radius:8px;background:#E8F5E9;color:#1B5E20;font-size:.75rem;font-weight:700;cursor:pointer;"><i class="fas fa-magic"></i> Auto</button></label><select id="aneReceipt" class="form-control" disabled><option>— Select Book first —</option></select></div>
+                </div>
+                <!-- Donor Type -->
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label>Donor Type</label>
+                  <div style="display:flex;gap:10px;margin-top:6px;">
+                    <button type="button" id="aneBtnInd" onclick="aneSetType('Individual')" style="padding:7px 20px;border:2px solid var(--primary-color);border-radius:20px;background:var(--primary-color);color:#fff;font-weight:700;cursor:pointer;">Individual</button>
+                    <button type="button" id="aneBtnBiz" onclick="aneSetType('Business')" style="padding:7px 20px;border:2px solid #ddd;border-radius:20px;background:#f9f9f9;color:#555;font-weight:700;cursor:pointer;">Business</button>
+                    <input type="hidden" id="aneDonorType" value="Individual">
+                  </div>
+                </div>
+                <!-- Individual fields -->
+                <div id="aneIndFields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;"><label>First Name</label><input id="aneFirst" class="form-control" placeholder="FIRST" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group" style="margin:0;"><label>Middle Name</label><input id="aneMid" class="form-control" placeholder="MIDDLE" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group" style="margin:0;"><label>Last Name</label><input id="aneLast" class="form-control" placeholder="LAST" oninput="this.value=this.value.toUpperCase()"></div>
+                </div>
+                <!-- Business fields -->
+                <div id="aneBizFields" style="display:none;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;"><label>Business Name</label><input id="aneBizName" class="form-control" placeholder="BUSINESS NAME" oninput="this.value=this.value.toUpperCase()"></div>
+                </div>
+                <!-- Contact fields (both types) -->
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;"><label>WhatsApp Number</label><input id="aneWA" class="form-control" placeholder="10 digits" maxlength="10"></div>
+                    <div class="form-group" style="margin:0;"><label>Mobile Number</label><input id="aneMobile" class="form-control" placeholder="10 digits" maxlength="10"></div>
+                    <div class="form-group" style="margin:0;"><label>Email ID</label><input id="aneEmail" class="form-control" placeholder="name" oninput="aneEmailHint(this)"><small id="aneEmailHint" style="color:#888;font-size:.78rem;"></small></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;"><label>Area</label><select id="aneArea" class="form-control"><option value="">— Select Area —</option><option>Patelwadi</option><option>Shindewadi</option><option>Gurkhawadi</option></select></div>
+                    <div class="form-group" style="margin:0;"><label>Building Name</label><select id="aneBuilding" class="form-control"><option value="">— Select Building —</option></select></div>
+                    <div class="form-group" style="margin:0;"><label>Common Landmark</label><select id="aneLandmark" class="form-control"><option value="">— Select Landmark —</option></select></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;"><label>Amount (&#8377;)</label><input type="number" id="aneAmount" class="form-control" min="0" placeholder="0"></div>
+                    <div class="form-group" style="margin:0;"><label>Reference No. <span style="color:#aaa;font-size:.8rem;">(optional)</span></label><input id="aneRef" class="form-control" placeholder=""></div>
+                </div>
+                <div class="form-group" style="margin-bottom:14px;"><label>Payment Mode</label><select id="aneMode" class="form-control"><option>Cash</option><option>Cheque</option><option>UPI</option><option>RTGS</option></select></div>
+                <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:14px;margin-bottom:16px;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:10px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Receipt Photo <span style="color:#aaa;font-weight:400;">(optional)</span></div>
+                    <button type="button" onclick="document.getElementById('anePhotoInput').click()" style="width:100%;padding:11px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Choose Photo</button>
+                    <input type="file" id="anePhotoInput" style="display:none;" accept="image/*">
+                    <div id="anePhotoPreview" style="display:none;margin-top:10px;">
+                        <img id="anePhotoThumb" src="" alt="Preview" style="max-width:100%;max-height:130px;border-radius:8px;border:1.5px solid #ffe0d0;object-fit:contain;">
+                        <p id="anePhotoName" style="font-size:.8rem;color:#555;margin:6px 0 0;"></p>
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button type="button" class="btn" style="background:#eee;color:#555;" onclick="aneReset()">Reset</button>
+                    <button type="submit" class="btn btn-primary" id="aneSaveBtn"><i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry</button>
+                </div>
+            </form>
+        </div>
+        `;
+        sec.insertBefore(formCard, sec.firstChild);
+    })();
+
+    let _aneOpen = false;
+    let _anePhotoFile = null;
+    function aneToggle() {
+        _aneOpen = !_aneOpen;
+        document.getElementById('aneFormBody').style.display = _aneOpen ? '' : 'none';
+        const ch = document.getElementById('aneChevron');
+        if (ch) ch.style.transform = _aneOpen ? 'rotate(180deg)' : '';
+        if (_aneOpen) { anePopulateBooks(); aneLoadAreas(); }
+    }
+    function anePopulateBooks() {
+        const sel = document.getElementById('aneBook'); if (!sel || sel.options.length > 1) return;
+        for (let b=1;b<=50;b++) { const o=document.createElement('option'); o.value=b; o.textContent=`Book ${b}  (${(b-1)*50+1}–${b*50})`; sel.appendChild(o); }
+    }
+    async function aneLoadAreas() {
+        try { const r=await fetch('/api/areas'); const d=await r.json(); const sel=document.getElementById('aneArea'); if(!sel) return; (d.areas||[]).forEach(a=>{ if(!['Patelwadi','Shindewadi','Gurkhawadi'].includes(a.name)){ const o=document.createElement('option'); o.value=a.name; o.textContent=a.name; sel.appendChild(o); } }); } catch(e){}
+    }
+    async function aneBookChange() {
+        const bn = Number(document.getElementById('aneBook').value);
+        const sel = document.getElementById('aneReceipt');
+        if (!bn) { sel.innerHTML='<option>— Select Book first —</option>'; sel.disabled=true; return; }
+        sel.disabled=true; sel.innerHTML='<option>Loading…</option>';
+        let used=[];
+        try { const r=await fetch(`/api/donation-entries/used-receipts/${bn}`); const d=await r.json(); used=d.usedReceipts||[]; } catch(e){}
+        const from=(bn-1)*50+1, to=bn*50;
+        sel.innerHTML='<option value="">— Select Receipt —</option>';
+        for(let n=from;n<=to;n++){const taken=used.includes(n);const o=document.createElement('option');o.value=n;o.textContent=n+(taken?' (used)':'');if(taken)o.disabled=true;sel.appendChild(o);}
+        sel.disabled=false;
+    }
+    document.getElementById('anePhotoInput')?.addEventListener('change', function(ev) {
+        const f=ev.target.files[0]; if(!f) return;
+        window._anePhotoFile=f;
+        const r=new FileReader(); r.onload=function(re){ const t=document.getElementById('anePhotoThumb'); if(t) t.src=re.target.result; const n=document.getElementById('anePhotoName'); if(n) n.textContent='\u2705 '+f.name; const p=document.getElementById('anePhotoPreview'); if(p) p.style.display=''; }; r.readAsDataURL(f);
+    });
+    function aneShowStatus(msg, type) {
+        const el=document.getElementById('aneStatus'); if(!el) return;
+        el.style.display=''; el.textContent=msg;
+        el.style.background=type==='success'?'#D5F4E6':'#FFEBEE';
+        el.style.color=type==='success'?'#1a7a45':'#c0392b';
+        el.style.border=type==='success'?'1px solid #a3e6c1':'1px solid #f5b7b1';
+    }
+    function aneReset() {
+        document.getElementById('aneForm')?.reset();
+        document.getElementById('aneBook').value='';
+        const rs=document.getElementById('aneReceipt'); if(rs){rs.innerHTML='<option>— Select Book first —</option>';rs.disabled=true;}
+        const pp=document.getElementById('anePhotoPreview'); if(pp) pp.style.display='none';
+        _anePhotoFile=null;
+        window._anePhotoFile=null;
+        document.getElementById('anePhotoInput').value='';
+        document.getElementById('aneStatus').style.display='none';
+    }
+    async function aneSave(ev) {
+        ev.preventDefault();
+        const btn=document.getElementById('aneSaveBtn');
+        if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Saving…';}
+        const bn=Number(document.getElementById('aneBook').value);
+        const rn=Number(document.getElementById('aneReceipt').value);
+        const fn=(document.getElementById('aneFirst').value||'').trim().toUpperCase();
+        const mn=(document.getElementById('aneMid').value||'').trim().toUpperCase();
+        const ln=(document.getElementById('aneLast').value||'').trim().toUpperCase();
+        if(!bn||!rn){aneShowStatus('\u274c Select Book and Receipt Number.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
+        if(!fn||!mn||!ln){aneShowStatus('\u274c First, Middle, and Last Name are required.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser')||'null');
+        const payload={
+            bookNumber:bn, receiptNumber:rn, donorType:'Individual',
+            firstName:fn, middleName:mn, lastName:ln,
+            area:document.getElementById('aneArea').value||null,
+            amount:document.getElementById('aneAmount').value!==''?Number(document.getElementById('aneAmount').value):null,
+            paymentMode:document.getElementById('aneMode').value||'Cash',
+            referenceNumber:document.getElementById('aneRef').value.trim()||null,
+            submittedBy:currentUser?currentUser.name:'Admin',
+            submittedByUserId:currentUser?currentUser.id:null
+        };
+        try {
+            const res=await fetch('/api/donation-entries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            const data=await res.json();
+            if(res.ok&&data.success){
+                if(_anePhotoFile&&data.entry&&data.entry.entryId){
+                    try{
+                        const fd=new FormData();
+                        fd.append('passbook',_anePhotoFile,_anePhotoFile.name);
+                        fd.append('entryId',data.entry.entryId);
+                        fd.append('userId',currentUser?String(currentUser.id):'');
+                        await fetch('/api/upload-passbook',{method:'POST',body:fd});
+                    }catch(_px){} finally{ window._anePhotoFile=null; }
+                }
+                aneShowStatus('\u2705 Entry saved! Book '+data.entry.bookNumber+', Receipt #'+data.entry.receiptNumber,'success');
+                aneReset();
+                await adeLoad();
+            } else { aneShowStatus('\u274c '+(data.message||'Submission failed.'),'error'); }
+        } catch(err){ aneShowStatus('\u274c '+err.message,'error'); }
+        finally{ if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';} }
+    }
+
+    // ── Donor type toggle for admin new entry form ───────────────────────────
+    function aneSetType(type) {
+        document.getElementById('aneDonorType').value = type;
+        const isInd = type === 'Individual';
+        const actS = 'padding:7px 20px;border:2px solid var(--primary-color);border-radius:20px;background:var(--primary-color);color:#fff;font-weight:700;cursor:pointer;';
+        const inactS = 'padding:7px 20px;border:2px solid #ddd;border-radius:20px;background:#f9f9f9;color:#555;font-weight:700;cursor:pointer;';
+        document.getElementById('aneBtnInd').style.cssText = isInd ? actS : inactS;
+        document.getElementById('aneBtnBiz').style.cssText = !isInd ? actS : inactS;
+        document.getElementById('aneIndFields').style.display = isInd ? 'grid' : 'none';
+        document.getElementById('aneBizFields').style.display = !isInd ? 'block' : 'none';
+    }
+
+    // ── Email hint auto-append @gmail.com ───────────────────────────────────
+    function aneEmailHint(inp) {
+        const hint = document.getElementById('aneEmailHint');
+        if (!inp.value.includes('@') && inp.value.trim()) {
+            if (hint) hint.textContent = inp.value.trim() + '@gmail.com';
+        } else { if (hint) hint.textContent = ''; }
+    }
+
+    // ── Auto-receipt: pick next free slot ───────────────────────────────────
+    async function aneAutoReceipt() {
+        try {
+            const resp = await fetch('/api/donation-entries/next-receipt');
+            const slot = await resp.json();
+            if (!slot.bookNumber) { alert('All receipt numbers are used.'); return; }
+            const bookSel = document.getElementById('aneBook');
+            if (bookSel) bookSel.value = slot.bookNumber;
+            await aneBookChange();
+            const receiptSel = document.getElementById('aneReceipt');
+            if (receiptSel) receiptSel.value = slot.receiptNumber;
+            aneShowStatus('✅ Auto-assigned: Book ' + slot.bookNumber + ', Receipt #' + slot.receiptNumber, 'success');
+        } catch(e) { alert('Could not fetch next receipt: ' + e.message); }
+    }
+
+    // ── Load buildings into ane form ────────────────────────────────────────
+    async function aneLoadBuildings() {
+        try {
+            const r = await fetch('/api/buildings'); const d = await r.json();
+            const sel = document.getElementById('aneBuilding'); if (!sel) return;
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">— Select Building —</option>';
+            (d.buildings||[]).forEach(b => sel.innerHTML += `<option value="${b.name}" ${b.name===cur?'selected':''}>${b.name}</option>`);
+        } catch(e) {}
+    }
+
+    // ── Load landmarks into ane form ────────────────────────────────────────
+    async function aneLoadLandmarks() {
+        try {
+            const r = await fetch('/api/landmarks'); const d = await r.json();
+            const sel = document.getElementById('aneLandmark'); if (!sel) return;
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">— Select Landmark —</option>';
+            (d.landmarks||[]).forEach(l => sel.innerHTML += `<option value="${l.name}" ${l.name===cur?'selected':''}>${l.name}</option>`);
+        } catch(e) {}
+    }
+
+    // ── Manage Landmarks modal ───────────────────────────────────────────────
+    async function adeLandmarkModal() {
+        const res = await fetch('/api/landmarks');
+        const data = await res.json();
+        const modal = document.createElement('div');
+        modal.id = 'adeLmModal';
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
+        modal.innerHTML = `<div style="background:#fff;border-radius:16px;padding:28px;max-width:440px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;"><i class="fas fa-flag" style="color:#6A1B9A;margin-right:8px;"></i>Manage Landmarks</h3>
+                <span onclick="document.getElementById('adeLmModal').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:16px;">
+                <input type="text" id="adeLmInput" class="form-control" placeholder="New landmark name" style="flex:1;">
+                <button onclick="adeAddLandmark()" class="btn btn-primary btn-small">Add</button>
+            </div>
+            <div id="adeLmList" style="display:flex;flex-direction:column;gap:8px;">
+                ${(data.landmarks||[]).map(l => `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8f9fa;border-radius:8px;">
+                    <span style="flex:1;font-weight:600;">${l.name}</span>
+                    <button onclick="adeDeleteLandmark('${l.id}',this)" style="border:none;background:#FFEBEE;color:#c0392b;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;"><i class="fas fa-trash"></i></button>
+                </div>`).join('')}
+            </div>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', ev => { if(ev.target===modal) modal.remove(); });
+    }
+    async function adeAddLandmark() {
+        const name = document.getElementById('adeLmInput')?.value.trim(); if(!name) return;
+        const res = await fetch('/api/landmarks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+        const d = await res.json();
+        if(res.ok&&d.success){document.getElementById('adeLmModal')?.remove();adeLandmarkModal();}
+        else alert(d.message||'Could not add.');
+    }
+    async function adeDeleteLandmark(id, btn) {
+        if(!confirm('Remove this landmark?')) return;
+        const res = await fetch(`/api/landmarks/${encodeURIComponent(id)}`,{method:'DELETE'});
+        if(res.ok) btn.closest('div').remove(); else alert('Could not delete.');
+    }
+
+    // ── Override aneToggle to also load buildings + landmarks ───────────────
+    const _origAneToggle = window.aneToggle;
+    window.aneToggle = function() {
+        _origAneToggle && _origAneToggle();
+        aneLoadBuildings();
+        aneLoadLandmarks();
+    };
+
+    // ── Override aneSave to include new fields ──────────────────────────────
+    window.aneSave = async function(ev) {
+        ev.preventDefault();
+        const btn = document.getElementById('aneSaveBtn');
+        if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Saving…';}
+        const aneShowStatus = function(msg,type){
+            const el=document.getElementById('aneStatus');if(!el)return;
+            el.style.display='';el.textContent=msg;
+            el.style.background=type==='success'?'#D5F4E6':'#FFEBEE';
+            el.style.color=type==='success'?'#1a7a45':'#c0392b';
+            el.style.border=type==='success'?'1px solid #a3e6c1':'1px solid #f5b7b1';
+        };
+        const donorType = document.getElementById('aneDonorType')?.value || 'Individual';
+        const bn = Number(document.getElementById('aneBook').value);
+        const rn = Number(document.getElementById('aneReceipt').value);
+        const fn = (document.getElementById('aneFirst')?.value||'').trim().toUpperCase();
+        const mn = (document.getElementById('aneMid')?.value||'').trim().toUpperCase();
+        const ln = (document.getElementById('aneLast')?.value||'').trim().toUpperCase();
+        const biz = (document.getElementById('aneBizName')?.value||'').trim().toUpperCase();
+        const emailRaw = (document.getElementById('aneEmail')?.value||'').trim();
+        const emailFull = emailRaw ? (emailRaw.includes('@') ? emailRaw : emailRaw+'@gmail.com') : null;
+        if(!bn||!rn){aneShowStatus('❌ Select Book and Receipt Number.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
+        if(donorType==='Individual'&&(!fn||!mn||!ln)){aneShowStatus('❌ First, Middle, and Last Name are required.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
+        if(donorType==='Business'&&!biz){aneShowStatus('❌ Business Name is required.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser')||'null');
+        const payload = {
+            bookNumber:bn, receiptNumber:rn, donorType,
+            firstName:donorType==='Individual'?fn:null, middleName:donorType==='Individual'?mn:null, lastName:donorType==='Individual'?ln:null,
+            businessName:donorType==='Business'?biz:null,
+            whatsappNumber:document.getElementById('aneWA')?.value.trim()||null,
+            mobileNumber:document.getElementById('aneMobile')?.value.trim()||null,
+            mailId:emailFull,
+            buildingName:document.getElementById('aneBuilding')?.value||null,
+            area:document.getElementById('aneArea').value||null,
+            landmark:document.getElementById('aneLandmark')?.value||null,
+            amount:document.getElementById('aneAmount').value!==''?Number(document.getElementById('aneAmount').value):null,
+            paymentMode:document.getElementById('aneMode').value||'Cash',
+            referenceNumber:document.getElementById('aneRef')?.value.trim()||null,
+            submittedBy:currentUser?currentUser.name:'Admin',
+            submittedByUserId:currentUser?currentUser.id:null
+        };
+        try {
+            const res=await fetch('/api/donation-entries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            const data=await res.json();
+            if(res.ok&&data.success){
+                if(window._anePhotoFile&&data.entry&&data.entry.entryId){
+                    try{
+                        const fd=new FormData();fd.append('passbook',window._anePhotoFile,window._anePhotoFile.name);
+                        fd.append('entryId',data.entry.entryId);fd.append('userId',currentUser?String(currentUser.id):'');
+                        await fetch('/api/upload-passbook',{method:'POST',body:fd});
+                    }catch(_px){}
+                }
+                aneShowStatus('✅ Entry saved! Book '+data.entry.bookNumber+', Receipt #'+data.entry.receiptNumber,'success');
+                aneReset();await adeLoad();
+            } else { aneShowStatus('❌ '+(data.message||'Submission failed.'),'error'); }
+        } catch(err){ aneShowStatus('❌ '+err.message,'error'); }
+        finally{ if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';} }
+    };
+
+    // ── Committee Members section ────────────────────────────────────────────
+    (function injectCommitteeSection() {
+        const container = document.querySelector('.admin-content');
+        if (!container || document.getElementById('committeeMembers')) return;
+        const sec = document.createElement('div');
+        sec.id = 'committeeMembers';
+        sec.className = 'content-section';
+        sec.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px;">
+            <div><h2 style="color:var(--dark-color);margin:0 0 4px;">Committee Members</h2><p style="color:#777;margin:0;">Manage committee — visible to all volunteers</p></div>
+            <button onclick="cmOpenAdd()" class="btn btn-primary"><i class="fas fa-plus" style="margin-right:6px;"></i>Add Member</button>
+        </div>
+        <div id="cmStatus" style="display:none;padding:12px 18px;border-radius:10px;margin-bottom:16px;font-weight:600;"></div>
+        <div id="cmGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;">
+            <div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">Loading…</div>
+        </div>`;
+        container.appendChild(sec);
+    })();
+
+    let _cmAll = [];
+    async function cmLoad() {
+        const grid = document.getElementById('cmGrid'); if(!grid) return;
+        grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">Loading…</div>';
+        try {
+            const r = await fetch('/api/committee-members'); const d = await r.json();
+            _cmAll = d.members || [];
+            if(!_cmAll.length){grid.innerHTML='<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">No members yet. Click Add Member.</div>';return;}
+            grid.innerHTML = _cmAll.map(m => `<div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;text-align:center;">
+                ${m.photoUrl?
+                    `<img src="http://localhost:3000${m.photoUrl}" style="width:100%;height:160px;object-fit:cover;" onclick="openAdminLightbox('http://localhost:3000${m.photoUrl}')">`:
+                    `<div style="width:100%;height:160px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="font-size:3rem;color:#fff;opacity:.5;"></i></div>`}
+                <div style="padding:14px 12px 16px;">
+                    <div style="font-weight:700;font-size:1rem;margin-bottom:4px;">${m.name}</div>
+                    <div style="font-size:.82rem;color:var(--primary-color);font-weight:600;margin-bottom:6px;">${m.role||m.department||'Member'}</div>
+                    ${m.phone?'<div style="font-size:.8rem;color:#666;margin-bottom:4px;"><i class="fas fa-phone" style="margin-right:4px;"></i>'+m.phone+'</div>':''}
+                    ${m.memberId?'<div style="font-size:.78rem;color:#aaa;margin-bottom:8px;">ID: '+m.memberId+'</div>':''}
+                    <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">
+                        <button onclick="cmOpenEdit('${m.id}')" style="padding:5px 12px;border:none;border-radius:8px;background:#E3F2FD;color:#1565C0;cursor:pointer;font-size:.8rem;"><i class="fas fa-edit"></i></button>
+                        <button onclick="cmDelete('${m.id}')" style="padding:5px 12px;border:none;border-radius:8px;background:#FFEBEE;color:#c0392b;cursor:pointer;font-size:.8rem;"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>`).join('');
+        } catch(e) { grid.innerHTML='<div style="text-align:center;color:#c00;padding:40px;grid-column:1/-1;">⚠ Cannot load members.</div>'; }
+    }
+
+    function cmShowStatus(msg,type){
+        const el=document.getElementById('cmStatus');if(!el)return;
+        el.style.display='';el.textContent=msg;
+        el.style.background=type==='success'?'#D5F4E6':'#FFEBEE';
+        el.style.color=type==='success'?'#1a7a45':'#c0392b';
+        el.style.border=type==='success'?'1px solid #a3e6c1':'1px solid #f5b7b1';
+        setTimeout(()=>el.style.display='none',5000);
+    }
+
+    function cmOpenAdd() { cmOpenModal(null); }
+    function cmOpenEdit(id) { cmOpenModal(_cmAll.find(m=>m.id===id)); }
+    let _cmPhotoFile = null;
+    function cmOpenModal(member) {
+        _cmPhotoFile = null;
+        const isEdit = !!member;
+        const modal = document.createElement('div');
+        modal.id = 'cmModal';
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
+        modal.innerHTML = `<div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:480px;width:94%;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;">${isEdit?'Edit':'Add'} Committee Member</h3>
+                <span onclick="document.getElementById('cmModal').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <div id="cmModalStatus" style="display:none;padding:10px;border-radius:8px;margin-bottom:12px;font-weight:600;"></div>
+            <div class="form-group"><label>Full Name *</label><input id="cmName" class="form-control" value="${member?member.name:''}"></div>
+            <div class="form-group"><label>Member ID</label><input id="cmMemberId" class="form-control" value="${member?member.memberId:''}"></div>
+            <div class="form-group"><label>Phone Number</label><input id="cmPhone" class="form-control" maxlength="10" value="${member?member.phone:''}"></div>
+            <div class="form-group"><label>Department</label><input id="cmDept" class="form-control" value="${member?member.department:''}"></div>
+            <div class="form-group"><label>Role / Position</label><input id="cmRole" class="form-control" value="${member?member.role:''}"></div>
+            <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:14px;margin-bottom:16px;">
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:10px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Member Photo</div>
+                ${member&&member.photoUrl?'<img src="http://localhost:3000'+member.photoUrl+'" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;margin-bottom:10px;">':''}
+                <button type="button" onclick="document.getElementById('cmPhotoInput').click()" style="width:100%;padding:10px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Upload Photo</button>
+                <input type="file" id="cmPhotoInput" style="display:none;" accept="image/*">
+                <div id="cmPhotoPreview" style="display:none;margin-top:10px;">
+                    <img id="cmPhotoThumb" src="" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;">
+                    <span id="cmPhotoName" style="font-size:.8rem;color:#555;margin-left:10px;"></span>
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button class="btn" style="background:#eee;color:#555;" onclick="document.getElementById('cmModal').remove()">Cancel</button>
+                <button class="btn btn-primary" onclick="cmSave('${member?member.id:''}')"><i class="fas fa-save" style="margin-right:6px;"></i>Save</button>
+            </div>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', ev => { if(ev.target===modal) modal.remove(); });
+        document.getElementById('cmPhotoInput').onchange = function(ev) {
+            const f = ev.target.files[0]; if(!f) return;
+            _cmPhotoFile = f;
+            const r = new FileReader();
+            r.onload = function(re) {
+                document.getElementById('cmPhotoThumb').src = re.target.result;
+                document.getElementById('cmPhotoName').textContent = f.name;
+                document.getElementById('cmPhotoPreview').style.display = '';
+            };
+            r.readAsDataURL(f);
+        };
+    }
+
+    async function cmSave(editId) {
+        const name = document.getElementById('cmName')?.value.trim();
+        if(!name){alert('Name is required.');return;}
+        const payload = {
+            name, memberId:document.getElementById('cmMemberId')?.value.trim()||'',
+            phone:document.getElementById('cmPhone')?.value.trim()||'',
+            department:document.getElementById('cmDept')?.value.trim()||'',
+            role:document.getElementById('cmRole')?.value.trim()||''
+        };
+        try {
+            let res, d;
+            if(editId){
+                res=await fetch(`/api/committee-members/${encodeURIComponent(editId)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            } else {
+                res=await fetch('/api/committee-members',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            }
+            d=await res.json();
+            if(!res.ok||!d.success){alert(d.message||'Save failed.');return;}
+            const memberId = d.member.id;
+            if(_cmPhotoFile){
+                try{
+                    const fd=new FormData();fd.append('photo',_cmPhotoFile,_cmPhotoFile.name);fd.append('memberId',memberId);
+                    await fetch('/api/upload-committee-photo',{method:'POST',body:fd});
+                }catch(_px){}
+            }
+            document.getElementById('cmModal').remove();
+            cmShowStatus('✅ Member saved!','success');
+            await cmLoad();
+        } catch(err){alert('Error: '+err.message);}
+    }
+
+    async function cmDelete(id) {
+        if(!confirm('Delete this committee member?')) return;
+        try {
+            const res=await fetch(`/api/committee-members/${encodeURIComponent(id)}`,{method:'DELETE'});
+            const d=await res.json();
+            if(res.ok&&d.success){cmShowStatus('✅ Member deleted.','success');await cmLoad();}
+            else alert(d.message||'Delete failed.');
+        }catch(e){alert('Server error.');}
+    }
+
+    // ── Hook into admin section switcher ────────────────────────────────────
+    // Hook into admin section switcher so we auto-load on navigate
+    const _origShowAdmin = window.showAdminSection;
+    window.showAdminSection = function(id) {
+        if (typeof _origShowAdmin === 'function') _origShowAdmin(id);
+        if (id === 'donationEntries') adeLoad();
+        if (id === 'committeeMembers') { if(typeof cmLoad==='function') cmLoad(); }
+    };
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,169 @@
+[
+  {
+    "receiptId": "RCP-1778564010683",
+    "name": "Rajesh Kumar",
+    "amount": 1500,
+    "userId": 2,
+    "submittedAt": "2026-05-12T05:33:30.677Z",
+    "status": "pending_review",
+    "deleted": true,
+    "updatedAt": "2026-05-14T13:10:22.703Z"
+  },
+  {
+    "receiptId": "RCP-1778564044668",
+    "name": "Rajesh Kumar",
+    "amount": 1500,
+    "userId": 2,
+    "submittedAt": "2026-05-12T05:34:04.660Z",
+    "status": "pending_review"
+  },
+  {
+    "receiptId": "RCP-1778564159186",
+    "name": "hello",
+    "amount": 101,
+    "userId": 2,
+    "submittedAt": "2026-05-12T05:35:59.178Z",
+    "status": "pending_review"
+  },
+  {
+    "receiptId": "RCP-1778569578348",
+    "name": "het",
+    "amount": 80,
+    "userId": 2,
+    "submittedAt": "2026-05-12T07:06:18.343Z",
+    "status": "pending_review",
+    "updatedAt": "2026-05-13T19:13:40.597Z"
+  },
+  {
+    "receiptId": "RCP-1778569730519",
+    "name": "hh",
+    "amount": 99,
+    "userId": 2,
+    "submittedAt": "2026-05-12T07:08:50.513Z",
+    "status": "pending_review"
+  },
+  {
+    "receiptId": "RCP-1778570644129",
+    "name": "5",
+    "amount": 5,
+    "userId": 2,
+    "submittedAt": "2026-05-12T07:24:04.122Z",
+    "status": "pending_review"
+  },
+  {
+    "receiptId": "RCP-1778699667188",
+    "name": "Rishi",
+    "amount": 10100000,
+    "userId": 2,
+    "submittedAt": "2026-05-13T19:14:27.184Z",
+    "status": "pending_review",
+    "passbookFile": "1778699675933_dark-souls-warrior-black-white-desktop-wallpaper.jpg",
+    "passbookUrl": "/uploads/1778699675933_dark-souls-warrior-black-white-desktop-wallpaper.jpg",
+    "updatedAt": "2026-05-13T19:16:15.466Z"
+  },
+  {
+    "receiptId": "RCP-1778704451652",
+    "name": "jk",
+    "amount": null,
+    "userId": 2,
+    "submittedAt": "2026-05-13T20:34:11.650Z",
+    "status": "pending_review",
+    "passbookFile": "1778704459699_Cool_Ninja_Pfp.jpg",
+    "passbookUrl": "/uploads/1778704459699_Cool_Ninja_Pfp.jpg",
+    "updatedAt": "2026-05-14T12:39:58.654Z"
+  },
+  {
+    "receiptId": "RCP-1778715039901",
+    "name": "jk",
+    "amount": 100,
+    "userId": 2,
+    "submittedAt": "2026-05-13T23:30:39.893Z",
+    "status": "received",
+    "paymentMode": "balance",
+    "checkNumber": null,
+    "type": "balance",
+    "deleted": true,
+    "updatedAt": "2026-05-14T12:39:38.438Z"
+  },
+  {
+    "receiptId": "RCP-1778715256849",
+    "name": "rishi",
+    "amount": 1000,
+    "userId": 2,
+    "submittedAt": "2026-05-13T23:34:16.845Z",
+    "status": "received",
+    "paymentMode": "balance",
+    "checkNumber": null,
+    "type": "balance",
+    "deleted": true,
+    "passbookFile": "1778715256866_dark-souls-warrior-black-white-desktop-wallpaper.jpg",
+    "passbookUrl": "/uploads/1778715256866_dark-souls-warrior-black-white-desktop-wallpaper.jpg",
+    "updatedAt": "2026-05-14T13:43:47.977Z"
+  },
+  {
+    "receiptId": "RCP-1778763933198",
+    "name": "yy",
+    "amount": 100,
+    "userId": 2,
+    "submittedAt": "2026-05-14T13:05:33.193Z",
+    "status": "pending_review",
+    "paymentMode": "cash",
+    "checkNumber": null,
+    "type": "slip",
+    "deleted": false
+  },
+  {
+    "receiptId": "RCP-1778766175579",
+    "name": "ggg",
+    "amount": 5665,
+    "userId": 2,
+    "submittedAt": "2026-05-14T13:42:55.574Z",
+    "status": "pending_review",
+    "paymentMode": "balance",
+    "checkNumber": null,
+    "type": "balance",
+    "deleted": true,
+    "updatedAt": "2026-05-14T13:45:03.586Z"
+  },
+  {
+    "receiptId": "RCP-1778766184449",
+    "name": "ttr",
+    "amount": 444,
+    "userId": 2,
+    "submittedAt": "2026-05-14T13:43:04.134Z",
+    "status": "pending_review",
+    "paymentMode": "balance",
+    "checkNumber": null,
+    "type": "balance",
+    "deleted": true,
+    "updatedAt": "2026-05-14T13:45:01.041Z"
+  },
+  {
+    "receiptId": "RCP-1778783440481",
+    "name": "het",
+    "amount": 1234,
+    "userId": 2,
+    "submittedAt": "2026-05-14T18:30:40.177Z",
+    "status": "pending_review",
+    "paymentMode": "cash",
+    "checkNumber": null,
+    "type": "slip",
+    "deleted": false,
+    "passbookFile": "1778783446171_Cool_Ninja_Pfp.jpg",
+    "passbookUrl": "/uploads/1778783446171_Cool_Ninja_Pfp.jpg",
+    "updatedAt": "2026-05-14T18:31:26.498Z"
+  },
+  {
+    "receiptId": "RCP-1778783512574",
+    "name": "hhh",
+    "amount": 100,
+    "userId": 2,
+    "submittedAt": "2026-05-14T18:31:52.256Z",
+    "status": "received",
+    "paymentMode": "balance",
+    "checkNumber": null,
+    "type": "balance",
+    "deleted": false,
+    "updatedAt": "2026-05-15T18:54:46.052Z"
+  }
+]

@@ -1,0 +1,2483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+/* Portable API base: strip hardcoded localhost:3000 → relative URL on any host */
+(function() {
+  var _f = window.fetch.bind(window);
+  window.fetch = function(url, opts) {
+    if (typeof url === 'string' && url.startsWith('http://localhost:3000'))
+      url = url.slice('http://localhost:3000'.length);
+    return _f(url, opts);
+  };
+})();
+</script>
+    <!-- FILE:// REDIRECT — if opened as a local file, switch to the server -->
+    <script>
+      if (window.location.protocol === 'file:') {
+        var page = window.location.pathname.split('/').pop();
+        var hash = window.location.hash || '';
+        window.location.replace('http://localhost:3000/' + page + hash);
+      }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Patelwadi Ganesh Mitramandal</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .dashboard {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ── Mobile hamburger ──────────────────────────────────── */
+        .hamburger-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            color: var(--dark-color);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.45);
+            z-index: 999;
+        }
+        .sidebar-overlay.active { display: block; }
+
+        @media (max-width: 900px) {
+            .hamburger-btn { display: block; }
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                z-index: 1000;
+                transition: left .3s ease;
+            }
+            .sidebar.open { left: 0; }
+            .main-content { margin-left: 0 !important; }
+            .content-area { padding: 16px !important; }
+            .top-bar { padding: 14px 16px !important; }
+            #deIndFields, #deBizFields { grid-template-columns: 1fr !important; }
+            #dsTopBar { flex-wrap: wrap; gap: 8px; }
+            .dashboard-cards { grid-template-columns: 1fr 1fr !important; }
+            .ds-scroll { max-height: 55vh; }
+        }
+        @media (max-width: 600px) {
+            .dashboard-cards { grid-template-columns: 1fr !important; }
+            .dash-card { padding: 16px; }
+            .card { padding: 16px; }
+            .table th, .table td { padding: 10px 8px; font-size:.82rem; }
+            #deIndFields { grid-template-columns: 1fr !important; }
+            .de-payment-grid { grid-template-columns: repeat(2,1fr) !important; }
+            #donorHeroBanner { flex-direction: column; gap: 12px; padding: 16px; }
+            .top-bar h2 { font-size: 1rem; }
+        }
+        
+        .sidebar {
+            width: 260px;
+            background: var(--dark-color);
+            color: var(--white);
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar-header h3 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 20px 0;
+        }
+        
+        .sidebar-menu li {
+            margin: 5px 0;
+        }
+        
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            color: #BDC3C7;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background: rgba(255,107,53,0.1);
+            color: var(--primary-color);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .sidebar-menu i {
+            width: 20px;
+        }
+        
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            background: #F5F6FA;
+        }
+        
+        .top-bar {
+            background: var(--white);
+            padding: 20px 30px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: 700;
+        }
+        
+        .content-area {
+            padding: 30px;
+        }
+
+        /* ── Donor Search ─────────────────────────────────── */
+        #dsTopBar {
+            background: #fff;
+            border: 1px solid #e8eaf0;
+            border-radius: 12px;
+            padding: 11px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,.06);
+            margin-bottom: 12px;
+        }
+        #dsTopBar input[type=text] {
+            flex: 1;
+            min-width: 180px;
+            padding: 8px 10px 8px 32px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 9px;
+            font-size: .88rem;
+            outline: none;
+            transition: border-color .2s;
+            background: #fff;
+        }
+        #dsTopBar input[type=text]:focus { border-color: var(--primary-color); }
+        #dsFilterPanel {
+            background: #FAFBFF;
+            border: 1px solid #e8eaf0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+        #dsTableWrap {
+            border: 1px solid #eef0f6;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,.05);
+        }
+        .ds-scroll {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: calc(100vh - 290px);
+        }
+        #dsTableWrap table { width: 100%; border-collapse: collapse; }
+        #dsTableWrap thead th {
+            position: sticky; top: 0; z-index: 2;
+            padding: 8px 12px;
+            background: #f4f6fb;
+            font-size: .71rem;
+            font-weight: 700;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            white-space: nowrap;
+            border-bottom: 2px solid #e8eaf0;
+            text-align: left;
+        }
+        #dsTableWrap tbody td {
+            padding: 7px 12px;
+            border-bottom: 1px solid #f0f2f8;
+            font-size: .83rem;
+            vertical-align: middle;
+        }
+        #dsTableWrap tbody tr:nth-child(even) { background: #f9fafe; }
+        #dsTableWrap tbody tr:hover { background: #eef2ff !important; }
+        .ds-chip {
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: .73rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        
+
+        .page-title {
+            margin-bottom: 30px;
+        }
+        
+        .page-title h1 {
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+        
+        .page-title p {
+            color: #777;
+        }
+        
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .dash-card {
+            background: var(--white);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .dash-card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+        
+        .dash-card-icon.blue {
+            background: #E3F2FD;
+            color: #2196F3;
+        }
+        
+        .dash-card-icon.green {
+            background: #E8F5E9;
+            color: #4CAF50;
+        }
+        
+        .dash-card-icon.orange {
+            background: #FFF3E0;
+            color: #FF9800;
+        }
+        
+        .dash-card-icon.red {
+            background: #FFEBEE;
+            color: #F44336;
+        }
+        
+        .dash-card-content h3 {
+            font-size: 2rem;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+        
+        .dash-card-content p {
+            color: #777;
+            font-size: 0.9rem;
+        }
+        
+        .card {
+            background: var(--white);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #F0F0F0;
+        }
+        
+        .card-header h3 {
+            color: var(--dark-color);
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table thead {
+            background: #F8F9FA;
+        }
+        
+        .table th,
+        .table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #E0E0E0;
+        }
+        
+        .table th {
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .badge-success {
+            background: #D5F4E6;
+            color: var(--success);
+        }
+        
+        .badge-pending {
+            background: #FFF3E0;
+            color: var(--warning);
+        }
+        
+        .btn-sm {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+        
+        .upload-area {
+            border: 2px dashed #D0D0D0;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background: #FFF5F2;
+        }
+        
+        .upload-area i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        /* ── Lightbox modal ────────────────────────────────────────── */
+        #pbLightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.85);
+            z-index: 9000;
+            align-items: center;
+            justify-content: center;
+        }
+        #pbLightbox.active { display: flex; }
+        #pbLightbox img {
+            max-width: 90vw;
+            max-height: 88vh;
+            border-radius: 10px;
+            box-shadow: 0 8px 40px rgba(0,0,0,.6);
+        }
+        #pbLightboxClose {
+            position: absolute;
+            top: 18px; right: 22px;
+            font-size: 2.2rem;
+            color: #fff;
+            cursor: pointer;
+            line-height: 1;
+            user-select: none;
+        }
+        /* ── Edit-Amount mini modal ────────────────────────────────── */
+        #pbEditModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.55);
+            z-index: 9100;
+            align-items: center;
+            justify-content: center;
+        }
+        #pbEditModal.active { display: flex; }
+        #pbEditModal .pb-edit-box {
+            background: #fff;
+            padding: 32px 28px;
+            border-radius: 14px;
+            width: 340px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.2);
+        }
+        #pbEditModal h4 { margin-bottom: 16px; color: var(--dark-color); }
+        #pbEditModal input {
+            width: 100%; padding: 10px 12px;
+            border: 2px solid #E0E0E0; border-radius: 8px;
+            font-size: 1rem; margin-bottom: 16px;
+        }
+        #pbEditModal input:focus { outline: none; border-color: var(--primary-color); }
+        .pb-edit-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3>Dashboard</h3>
+                <p id="userName">Welcome User</p>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li><a href="#overview" class="active" onclick="showSection('overview');closeSidebar()">
+                    <i class="fas fa-home"></i> Overview
+                </a></li>
+                <li><a href="#donorSearch" onclick="showSection('donorSearch');closeSidebar()" id="sidebarDonorSearchLink" style="position:relative;">
+                    <i class="fas fa-search"></i> Donor Search
+                    <span id="sidebarDonorBadge" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--primary-color);color:#fff;border-radius:10px;padding:1px 7px;font-size:.7rem;font-weight:700;">LIVE</span>
+                </a></li>
+                <li><a href="#profile" onclick="showSection('profile');closeSidebar()">
+                    <i class="fas fa-user"></i> My Profile
+                </a></li>
+                <li><a href="#donations" onclick="showSection('donations');closeSidebar()">
+                    <i class="fas fa-hand-holding-heart"></i> My Donations
+                </a></li>
+                <li><a href="#donationEntry" onclick="showSection('donationEntry');closeSidebar()" id="sidebarDonationEntryLink">
+                    <i class="fas fa-file-invoice-dollar"></i> Donation Data Entry
+                </a></li>
+                <li><a href="#documents" onclick="showSection('documents');closeSidebar()">
+                    <i class="fas fa-folder"></i> Documents
+                </a></li>
+                <li><a href="#" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a></li>
+            </ul>
+        </aside>
+        
+        <!-- Overlay for mobile sidebar -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <button class="hamburger-btn" id="hamburgerBtn" onclick="openSidebar()" aria-label="Open menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2 style="margin:0;">Volunteer Dashboard</h2>
+                </div>
+                <div class="user-profile">
+                    <div class="user-avatar" id="userAvatar">V</div>
+                    <div>
+                        <strong id="topBarName">Volunteer</strong>
+                        <p style="font-size: 0.85rem; color: #777;">Volunteer</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="content-area">
+                <!-- Overview Section -->
+                <div id="overview" class="content-section">
+                    <div class="page-title">
+                        <h1>Dashboard Overview</h1>
+                        <p>Welcome back! Here's your activity summary</p>
+                    </div>
+                    
+                    <div class="dashboard-cards">
+                        <div class="dash-card">
+                            <div class="dash-card-icon blue">
+                                <i class="fas fa-rupee-sign"></i>
+                            </div>
+                            <div class="dash-card-content">
+                                <h3>₹5,000</h3>
+                                <p>Total Donations</p>
+                            </div>
+                        </div>
+                        
+                        <div class="dash-card">
+                            <div class="dash-card-icon green">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="dash-card-content">
+                                <h3>8</h3>
+                                <p>Tasks Completed</p>
+                            </div>
+                        </div>
+                        
+                        <div class="dash-card">
+                            <div class="dash-card-icon orange">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="dash-card-content">
+                                <h3>3</h3>
+                                <p>Pending Tasks</p>
+                            </div>
+                        </div>
+                        
+                        <div class="dash-card">
+                            <div class="dash-card-icon red">
+                                <i class="fas fa-calendar"></i>
+                            </div>
+                            <div class="dash-card-content">
+                                <h3>5</h3>
+                                <p>Days to Event</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Donor Search Hero Banner ──────────────────────────── -->
+                    <div id="donorHeroBanner"
+                         onclick="showSection('donorSearch')"
+                         style="background:linear-gradient(135deg,#1a237e 0%,#283593 45%,#3949ab 100%);border-radius:16px;padding:22px 26px;color:#fff;display:flex;align-items:center;gap:20px;margin-bottom:22px;cursor:pointer;box-shadow:0 6px 28px rgba(26,35,126,.3);transition:transform .2s,box-shadow .2s;"
+                         onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 36px rgba(26,35,126,.42)'"
+                         onmouseout="this.style.transform='';this.style.boxShadow='0 6px 28px rgba(26,35,126,.3)'">
+                        <div style="background:rgba(255,255,255,.15);border-radius:14px;width:58px;height:58px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-search" style="font-size:1.7rem;"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-weight:700;font-size:1.1rem;letter-spacing:.02em;">Donor Search &amp; Lookup</div>
+                            <div style="font-size:.85rem;opacity:.85;margin-top:3px;">Search, filter, and explore all donation records by name, road, building, amount &amp; more</div>
+                            <div style="margin-top:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                                <span id="heroDonorCount" style="background:rgba(255,255,255,.2);border-radius:20px;padding:3px 12px;font-size:.78rem;font-weight:600;">Loading&#x2026;</span>
+                                <span style="font-size:.78rem;opacity:.75;"><i class="fas fa-sync-alt" style="margin-right:4px;"></i>Auto-syncs when admin uploads</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-arrow-right" style="font-size:1.3rem;opacity:.6;"></i>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Recent Activities</h3>
+                        </div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Activity</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>10 Sept 2024</td>
+                                    <td>Donation - ₹2,000</td>
+                                    <td><span class="badge badge-success">Completed</span></td>
+                                    <td><button class="btn btn-sm btn-primary">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>12 Sept 2024</td>
+                                    <td>Decoration Task</td>
+                                    <td><span class="badge badge-pending">Pending</span></td>
+                                    <td><button class="btn btn-sm btn-primary">Update</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Profile Section -->
+                <div id="profile" class="content-section" style="display:none;">
+                    <div class="page-title">
+                        <h1>My Profile</h1>
+                        <p>Manage your personal information</p>
+                    </div>
+                    
+                    <div class="card">
+                        <form id="profileForm">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input type="text" class="form-control" value="Volunteer Name">
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" class="form-control" value="volunteer@email.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Phone</label>
+                                <input type="tel" class="form-control" value="+91 98765 43210">
+                            </div>
+                            <div class="form-group">
+                                <label>Department</label>
+                                <select class="form-control">
+                                    <option>Decoration</option>
+                                    <option>Food & Prasad</option>
+                                    <option>Security</option>
+                                    <option>Cultural</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Update Profile</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Donations Section -->
+                <div id="donations" class="content-section" style="display:none;">
+                    <div class="page-title">
+                        <h1>My Donations</h1>
+                        <p>Track your contribution history</p>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Donation History</h3>
+                            <button class="btn btn-primary">Add Donation</button>
+                        </div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Payment Method</th>
+                                    <th>Receipt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>10 Sept 2024</td>
+                                    <td>&#8377;2,000</td>
+                                    <td>UPI</td>
+                                    <td><a href="#" class="btn btn-sm btn-primary">Download</a></td>
+                                </tr>
+                                <tr>
+                                    <td>5 Sept 2024</td>
+                                    <td>&#8377;3,000</td>
+                                    <td>Cash</td>
+                                    <td><a href="#" class="btn btn-sm btn-primary">Download</a></td>
+                                </tr>
+                                <tr>
+                                    <td>2 Sept 2024</td>
+                                    <td>&#8377;1,500</td>
+                                    <td>Check</td>
+                                    <td><a href="#" class="btn btn-sm btn-primary">Download</a></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Donor Search Section -->
+                <div id="donorSearch" class="content-section" style="display:none;">
+                    <div class="page-title">
+                        <h1><i class="fas fa-search" style="color:var(--primary-color);margin-right:10px;"></i>Donor Search</h1>
+                        <p>Search and filter all donation records</p>
+                    </div>
+                    <div style="background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.06);">
+                        <!-- Top bar: search + chips + buttons -->
+                        <div id="dsTopBar">
+                            <div style="font-weight:700;font-size:.95rem;color:#1a237e;display:flex;align-items:center;gap:7px;white-space:nowrap;">
+                                <i class="fas fa-search" style="font-size:.85rem;"></i>Donor Search
+                            </div>
+                            <div style="flex:1;min-width:180px;position:relative;">
+                                <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#bbb;font-size:.78rem;pointer-events:none;"></i>
+                                <input type="text" id="dsGlobalSearch" placeholder="Search name, road, building, amount&#x2026;" oninput="dsApplyFilters()">
+                            </div>
+                            <span id="dsChipTotal" class="ds-chip" style="background:#E3F2FD;color:#1565C0;">&#x2014; total</span>
+                            <span id="dsChipMatch" class="ds-chip" style="background:#E8F5E9;color:#2E7D32;">&#x2014; shown</span>
+                            <span id="dsChipSum"   class="ds-chip" style="background:#FFF3E0;color:#E65100;">&#x20B9;&#x2014;</span>
+                            <button id="dsToggleFiltersBtn" onclick="dsToggleFilters()" style="padding:6px 12px;border:1.5px solid #e0e0e0;border-radius:8px;background:#f8f9fa;color:#444;font-size:.81rem;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                                <i class="fas fa-sliders-h"></i><span id="dsToggleBtnLabel">Filters</span>
+                            </button>
+                            <button onclick="dsClearFilters()" title="Clear filters" style="padding:6px 10px;border:1.5px solid #ffcdd2;border-radius:8px;background:#fff;color:#c62828;font-size:.81rem;cursor:pointer;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button onclick="dsExportCSV()" style="padding:6px 12px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;font-size:.81rem;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                                <i class="fas fa-download"></i>CSV
+                            </button>
+                        </div>
+
+                        <!-- Filters -->
+                        <div id="dsFilterPanel" style="display:none;">
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;align-items:end;">
+                                <div>
+                                    <label style="font-size:.77rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px;margin-bottom:6px;">
+                                        <i class="fas fa-map-marker-alt" style="color:var(--primary-color);"></i> Location
+                                    </label>
+                                    <input type="text" id="dsLocSearch" placeholder="Road, area, ward&#x2026;" style="width:100%;padding:7px 11px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.85rem;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='#e0e0e0'" oninput="dsApplyFilters()">
+                                </div>
+                                <div>
+                                    <label style="font-size:.77rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px;margin-bottom:6px;">
+                                        <i class="fas fa-building" style="color:#3949AB;"></i> Landmark
+                                    </label>
+                                    <input type="text" id="dsLandSearch" placeholder="Building, society&#x2026;" style="width:100%;padding:7px 11px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.85rem;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='#3949AB'" onblur="this.style.borderColor='#e0e0e0'" oninput="dsApplyFilters()">
+                                </div>
+                                <div>
+                                    <label style="font-size:.77rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px;margin-bottom:6px;">
+                                        <i class="fas fa-rupee-sign" style="color:#E67E22;"></i> Amount Range
+                                    </label>
+                                    <div style="display:flex;gap:6px;align-items:center;">
+                                        <input type="number" id="dsAmtMin" placeholder="Min &#x20B9;" min="0" style="flex:1;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.85rem;box-sizing:border-box;" onfocus="this.style.borderColor='#E67E22'" onblur="this.style.borderColor='#e0e0e0'" oninput="dsApplyFilters()">
+                                        <span style="color:#bbb;">&#x2013;</span>
+                                        <input type="number" id="dsAmtMax" placeholder="Max &#x20B9;" min="0" style="flex:1;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.85rem;box-sizing:border-box;" onfocus="this.style.borderColor='#E67E22'" onblur="this.style.borderColor='#e0e0e0'" oninput="dsApplyFilters()">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loading / table / empty state -->
+                        <div id="dsLoadingMsg" style="text-align:center;color:#aaa;padding:48px 20px;font-size:.92rem;">
+                            <i class="fas fa-spinner fa-spin" style="font-size:1.3rem;margin-bottom:10px;display:block;color:#ccc;"></i>
+                            Loading donor records&#x2026;
+                        </div>
+                        <div id="dsTableWrap" style="display:none;">
+                            <div class="ds-scroll">
+                                <table><thead id="dsThead"></thead><tbody id="dsTbody"></tbody></table>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid #eef0f6;background:#fafbff;flex-wrap:wrap;gap:8px;">
+                                <span id="dsPaginationInfo" style="font-size:.78rem;color:#888;"></span>
+                                <div id="dsPaginationBtns" style="display:flex;gap:4px;"></div>
+                            </div>
+                        </div>
+                        <div id="dsNoResults" style="display:none;text-align:center;padding:40px 20px;color:#aaa;font-size:.88rem;">
+                            <i class="fas fa-search" style="font-size:1.6rem;margin-bottom:10px;display:block;opacity:.25;"></i>
+                            No records match your filters.
+                        </div>
+                    </div>
+                </div>
+                <!-- ══════════ END DONOR SEARCH SECTION ══════════ -->
+
+
+
+
+
+                <!-- ══════════ DONATION DATA ENTRY SECTION ══════════ -->
+                <div id="donationEntry" class="content-section" style="display:none;">
+                    <div class="page-title">
+                        <h1><i class="fas fa-file-invoice-dollar" style="color:var(--primary-color);margin-right:10px;"></i>Donation Data Entry</h1>
+                        <p>Record a new donation receipt — Book &amp; Receipt numbers are auto-sequenced</p>
+                    </div>
+
+
+                    <!-- Status message -->
+                    <div id="deStatus" style="display:none;padding:14px 18px;border-radius:10px;margin-bottom:18px;font-weight:600;font-size:.95rem;"></div>
+
+                    <div class="card">
+                        <form id="donationEntryForm" novalidate autocomplete="off">
+
+                            <!-- ── Section A: Receipt Details ── -->
+                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
+                                <i class="fas fa-book-open" style="margin-right:6px;"></i>Receipt Details
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deBookNumber">Book Number <span style="color:red;">*</span> <button type="button" onclick="deAutoReceipt()" style="margin-left:6px;padding:2px 9px;border:none;border-radius:8px;background:#E8F5E9;color:#1B5E20;font-size:.72rem;font-weight:700;cursor:pointer;"><i class="fas fa-magic"></i> Auto</button></label>
+                                    <select id="deBookNumber" class="form-control" onchange="deOnBookChange()">
+                                        <option value="">— Select Book —</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deReceiptNumber">Receipt Number <span style="color:red;">*</span></label>
+                                    <select id="deReceiptNumber" class="form-control" disabled>
+                                        <option value="">— Select Book first —</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- ── Section B: Donor Type ── -->
+                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
+                                <i class="fas fa-user-circle" style="margin-right:6px;"></i>Donor Type
+                            </div>
+                            <div style="display:flex;gap:10px;margin-bottom:18px;">
+                                <label id="deBtnInd" onclick="deSetDonorType('Individual')" style="display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid var(--primary-color);border-radius:20px;cursor:pointer;font-weight:600;font-size:.82rem;background:var(--primary-color);color:#fff;transition:all .2s;">
+                                    <i class="fas fa-user" style="font-size:.78rem;"></i> Individual
+                                </label>
+                                <label id="deBtnBiz" onclick="deSetDonorType('Business')" style="display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid #ddd;border-radius:20px;cursor:pointer;font-weight:600;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                                    <i class="fas fa-building" style="font-size:.78rem;"></i> Business
+                                </label>
+                            </div>
+                            <input type="hidden" id="deDonorType" value="Individual">
+
+                            <!-- Individual name fields -->
+                            <div id="deIndFields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;">
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deFirstName">First Name <span style="color:red;">*</span></label>
+                                    <input type="text" id="deFirstName" class="form-control" placeholder="FIRST" oninput="this.value=this.value.toUpperCase()" required>
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deMiddleName">Middle Name <span style="color:red;">*</span></label>
+                                    <input type="text" id="deMiddleName" class="form-control" placeholder="MIDDLE" oninput="this.value=this.value.toUpperCase()" required>
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deLastName">Last Name <span style="color:red;">*</span></label>
+                                    <input type="text" id="deLastName" class="form-control" placeholder="LAST" oninput="this.value=this.value.toUpperCase()" required>
+                                </div>
+                            </div>
+
+                            <!-- Business name field -->
+                            <div id="deBizFields" style="display:none;margin-bottom:20px;">
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deBusinessName">Business Name <span style="color:red;">*</span></label>
+                                    <input type="text" id="deBusinessName" class="form-control" placeholder="BUSINESS NAME" oninput="this.value=this.value.toUpperCase()">
+                                </div>
+                            </div>
+
+                            <!-- ── Section C: Contact ── -->
+                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
+                                <i class="fas fa-address-book" style="margin-right:6px;"></i>Contact Information
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;">
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deWhatsapp"><i class="fab fa-whatsapp" style="color:#25D366;"></i> WhatsApp Number</label>
+                                    <input type="tel" id="deWhatsapp" class="form-control" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}">
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deMobile"><i class="fas fa-mobile-alt" style="color:#3949AB;"></i> Mobile Number</label>
+                                    <input type="tel" id="deMobile" class="form-control" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}">
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deMail"><i class="fas fa-envelope" style="color:#E67E22;"></i> Mail ID</label>
+                                    <input type="email" id="deMail" class="form-control" placeholder="email@example.com">
+                                </div>
+                            </div>
+
+                            <!-- ── Section D: Landmark ── -->
+                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
+                                <i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Landmark
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deBuildingName">Building Name</label>
+                                    <div style="display:flex;gap:8px;">
+                                        <select id="deBuildingName" class="form-control" style="flex:1;"></select>
+                                        <button type="button" id="deAddBldgBtn" onclick="deAddBuilding()" style="display:none;padding:0 14px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;cursor:pointer;font-size:.85rem;white-space:nowrap;">＋ Add</button>
+                                    </div>
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deArea">Area</label>
+                                    <div style="display:flex;gap:8px;">
+                                        <select id="deArea" class="form-control" style="flex:1;">
+                                            <option value="">— Select Area —</option>
+                                            <option value="Patelwadi">Patelwadi</option>
+                                            <option value="Shindewadi">Shindewadi</option>
+                                            <option value="Gurkhawadi">Gurkhawadi</option>
+                                        </select>
+                                        <button type="button" id="deAddAreaBtn" onclick="deAddArea()" style="display:none;padding:0 14px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;cursor:pointer;font-size:.85rem;white-space:nowrap;">＋ Add</button>
+                                    </div>
+                                </div>
+                            <div class="form-group" style="margin-top:12px;">
+                                <label for="deLandmark">Common Landmark</label>
+                                <select id="deLandmark" class="form-control">
+                                    <option value="">— Select Landmark (optional) —</option>
+                                </select>
+                            </div>
+                            </div>
+
+                            <!-- ── Section E: Payment ── -->
+                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
+                                <i class="fas fa-rupee-sign" style="margin-right:6px;"></i>Amount &amp; Payment
+                            </div>
+                            <div class="form-group">
+                                <label for="deAmount">Donation Amount (₹)</label>
+                                <input type="number" id="deAmount" class="form-control" placeholder="Enter amount" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Payment Mode <span style="color:red;">*</span></label>
+                                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+                                    <label class="de-mode-btn active" id="deModeCash" onclick="deSetMode('Cash')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border:2px solid var(--primary-color);border-radius:10px;cursor:pointer;font-weight:700;font-size:.82rem;background:var(--primary-color);color:#fff;transition:all .2s;">
+                                        <i class="fas fa-money-bill-wave" style="font-size:1.2rem;"></i>Cash
+                                    </label>
+                                    <label class="de-mode-btn" id="deModeChq" onclick="deSetMode('Cheque')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                                        <i class="fas fa-file-alt" style="font-size:1.2rem;"></i>Cheque
+                                    </label>
+                                    <label class="de-mode-btn" id="deModeUPI" onclick="deSetMode('UPI')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                                        <i class="fas fa-qrcode" style="font-size:1.2rem;"></i>UPI
+                                    </label>
+                                    <label class="de-mode-btn" id="deModeRTGS" onclick="deSetMode('RTGS')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                                        <i class="fas fa-university" style="font-size:1.2rem;"></i>RTGS
+                                    </label>
+                                </div>
+                            </div>
+                            <input type="hidden" id="dePaymentMode" value="Cash">
+                            <div class="form-group" id="deRefGroup">
+                                <label for="deReference" id="deRefLabel">Reference Number <span style="color:#aaa;font-weight:400;font-size:.85rem;">(optional)</span></label>
+                                <input type="text" id="deReference" class="form-control" placeholder="Reference / Transaction / Cheque number">
+                            </div>
+
+                            <!-- ── Section F: Passbook Document Upload ── -->
+                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;margin-top:8px;">
+                                <i class="fas fa-camera" style="margin-right:6px;"></i>Passbook Document
+                            </div>
+                            <div class="card" style="margin-bottom:0;box-shadow:none;border:1.5px solid #ffe0d0;padding:18px;">
+                                <div id="pbDocStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:500;"></div>
+                                <!-- Camera / Gallery button — uses capture=environment for rear camera on mobile -->
+                                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+                                    <button type="button" id="pbCameraBtn"
+                                        onclick="document.getElementById('pbDocCamera').click()"
+                                        style="flex:1;min-width:140px;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                                        <i class="fas fa-camera" style="font-size:1.3rem;"></i> Take Photo / Select Image
+                                    </button>
+                                </div>
+                                <!-- Hidden file inputs: one for camera, one for gallery -->
+                                <input type="file" id="pbDocCamera" style="display:none;" accept="image/*" capture="environment">
+                                <!-- Compress status -->
+                                <div id="pbCompressStatus" style="display:none;font-size:.82rem;color:#888;margin-bottom:10px;">
+                                    <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Compressing image…
+                                </div>
+                                <!-- Preview -->
+                                <div id="pbDocPreview" style="display:none;margin-bottom:14px;">
+                                    <img id="pbDocThumb" src="" alt="Receipt preview" style="max-width:100%;max-height:220px;border-radius:10px;border:1.5px solid #e0e0e0;object-fit:contain;">
+                                    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
+                                        <span id="pbDocFileName" style="font-size:.83rem;color:#555;flex:1;"></span>
+                                        <span id="pbDocFileSize" style="font-size:.78rem;color:#27ae60;font-weight:600;"></span>
+                                        <button type="button" onclick="pbClearDoc()" style="background:none;border:none;color:#E74C3C;cursor:pointer;font-size:.85rem;"><i class="fas fa-times"></i> Remove</button>
+                                    </div>
+                                </div>
+                                <p style="font-size:.78rem;color:#aaa;margin:0;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Image is automatically compressed to under 1 MB. Works on Android, iOS, and desktop.</p>
+                            </div>
+
+                            <!-- ── Submit ── -->
+                            <button type="submit" id="deSubmitBtn" class="btn btn-primary" style="min-width:200px;padding:14px 30px;font-size:1rem;border-radius:10px;margin-top:8px;">
+                                <i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- My Submitted Entries table -->
+                    <div class="card" style="margin-top:20px;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-list" style="color:var(--primary-color);margin-right:8px;"></i>My Submitted Entries</h3>
+                            <button onclick="deLoadMyEntries()" class="btn btn-small" style="background:#f4f4f4;color:#555;font-size:.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+                        </div>
+                        <div id="deMyEntriesWrap" style="overflow-x:auto;">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Book</th><th>Receipt</th><th>Donor</th><th>Area</th>
+                                        <th>Amount (₹)</th><th>Mode</th><th>Photo</th><th>Date</th><th>Edit</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deMyEntriesTbody">
+                                    <tr><td colspan="9" style="text-align:center;color:#999;">Loading…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- ══════════ END DONATION DATA ENTRY SECTION ══════════ -->
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ── Lightbox Modal ─────────────────────────────────────────── -->
+    <div id="pbLightbox">
+        <span id="pbLightboxClose" onclick="closePbLightbox()">&times;</span>
+        <img id="pbLightboxImg" src="" alt="Passbook image">
+    </div>
+
+    <!-- ── Volunteer Entry Edit Modal ──────────────────────────────── -->
+    <div id="deVolEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
+        <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:560px;width:94%;margin:auto;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;color:#222;"><i class="fas fa-edit" style="color:var(--primary-color);margin-right:8px;"></i>Edit Entry</h3>
+                <span onclick="deCloseVolEdit()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <div id="deVolEditStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
+            <form id="deVolEditForm" onsubmit="deSaveVolEdit(event)" autocomplete="off">
+                <input type="hidden" id="deVolEditId">
+                <!-- Book & Receipt -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;">
+                        <label>Book Number <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                        <select id="deVolEditBook" class="form-control" onchange="deVolEditBookChange()"></select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>Receipt Number <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                        <select id="deVolEditReceipt" class="form-control" disabled></select>
+                    </div>
+                </div>
+                <!-- Area -->
+                <div class="form-group">
+                    <label>Area <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                    <select id="deVolEditArea" class="form-control"></select>
+                </div>
+                <!-- Amount & Mode -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;">
+                        <label>Amount (&#8377;) <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                        <input type="number" id="deVolEditAmount" class="form-control" min="0" placeholder="0">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>Payment Mode <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                        <select id="deVolEditMode" class="form-control">
+                            <option>Cash</option><option>Cheque</option><option>UPI</option><option>RTGS</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Photo section -->
+                <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:16px;margin-bottom:16px;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--primary-color);margin-bottom:12px;">
+                        <i class="fas fa-camera" style="margin-right:6px;"></i>Receipt Photo
+                    </div>
+                    <!-- Current photo -->
+                    <div id="deVolEditCurrentPhoto" style="display:none;margin-bottom:10px;">
+                        <p style="font-size:.8rem;color:#777;margin:0 0 6px;">Current photo:</p>
+                        <img id="deVolEditCurrentImg" src="" alt="Current receipt" style="max-width:100%;max-height:160px;border-radius:8px;border:1.5px solid #e0e0e0;object-fit:contain;cursor:pointer;">
+                    </div>
+                    <!-- Upload new -->
+                    <button type="button" onclick="document.getElementById('deVolEditPhotoInput').click()"
+                        style="width:100%;padding:12px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.88rem;font-weight:600;">
+                        <i class="fas fa-upload" style="margin-right:6px;color:var(--primary-color);"></i>Upload / Replace Photo
+                    </button>
+                    <input type="file" id="deVolEditPhotoInput" style="display:none;" accept="image/*" capture="environment">
+                    <div id="deVolEditPhotoPreview" style="display:none;margin-top:10px;">
+                        <img id="deVolEditPhotoThumb" src="" alt="Preview" style="max-width:100%;max-height:160px;border-radius:8px;border:1.5px solid #ffe0d0;object-fit:contain;">
+                        <p id="deVolEditPhotoName" style="font-size:.8rem;color:#555;margin:6px 0 0;"></p>
+                    </div>
+                </div>
+                <!-- Donor name (editable with reason) -->
+                <div style="border:1.5px solid #E3F2FD;border-radius:10px;padding:14px;margin-bottom:14px;background:#F8FBFF;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#1565C0;margin-bottom:10px;"><i class="fas fa-user" style="margin-right:6px;"></i>Donor Name <span style="font-weight:400;color:#777;">(edit with reason)</span></div>
+                    <div id="deVolNameIndFields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+                        <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">First Name</label><input id="deVolEditFirst" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+                        <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Middle Name</label><input id="deVolEditMid" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+                        <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Last Name</label><input id="deVolEditLast" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+                    </div>
+                    <div id="deVolNameBizFields" style="display:none;margin-bottom:10px;">
+                        <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Business Name</label><input id="deVolEditBiz" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+                    </div>
+                    <div id="deVolNameReasonWrap" style="margin-top:8px;">
+                        <label style="font-size:.78rem;color:#c0392b;font-weight:700;"><i class="fas fa-exclamation-circle" style="margin-right:4px;"></i>Reason for Name Change <span style="color:#c0392b;">*</span> <span style="color:#aaa;font-weight:400;">(required if name changed)</span></label>
+                        <input id="deVolEditReason" class="form-control" placeholder="e.g. Spelling correction, wrong entry..." style="margin-top:4px;">
+                    </div>
+                    <p style="font-size:.76rem;color:#aaa;margin:8px 0 0;"><i class="fas fa-info-circle" style="margin-right:3px;"></i>Submission date cannot be changed. Name changes are logged for admin review.</p>
+                </div>
+
+                <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button type="button" class="btn" style="background:#eee;color:#555;" onclick="deCloseVolEdit()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="deVolEditSaveBtn"><i class="fas fa-save" style="margin-right:6px;"></i>Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        } else {
+            document.getElementById('userName').textContent = 'Welcome ' + currentUser.name;
+            document.getElementById('topBarName').textContent = currentUser.name;
+            document.getElementById('userAvatar').textContent = currentUser.name.charAt(0);
+        }
+        
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            // Show selected section
+            const target = document.getElementById(sectionId);
+            if (target) target.style.display = 'block';
+
+            // Update active menu item
+            document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                link.classList.remove('active');
+            });
+            if (event && event.target) {
+                const link = event.target.closest('a');
+                if (link) link.classList.add('active');
+            }
+
+            // Load donation entries when that section is opened
+            if (sectionId === 'donationEntry') { deLoadDropdowns(); deLoadMyEntries(); }
+            // Load donor search when that section is opened
+            if (sectionId === 'donorSearch') {
+                if (typeof loadDonorSearch === 'function') loadDonorSearch();
+            }
+        }
+
+        // Mobile sidebar helpers
+        function openSidebar() {
+            document.querySelector('.sidebar').classList.add('open');
+            document.getElementById('sidebarOverlay').classList.add('active');
+        }
+        function closeSidebar() {
+            document.querySelector('.sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                sessionStorage.removeItem('currentUser');
+                window.location.href = 'login.html';
+            }
+        }
+        
+        // ==================== PASSBOOK DOCUMENT — Camera + Auto-Compress ====================
+        // Works on Android, iOS (via capture=environment) and desktop (file picker)
+        let _pbDocBlob = null;  // compressed Blob ready to upload
+
+        // Canvas-based compression: reduces image to ≤1 MB (or targetKB) using quality loop
+        function _compressImage(file, targetKB, callback) {
+            const MAX_BYTES = (targetKB || 950) * 1024;
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = function() {
+                URL.revokeObjectURL(url);
+                // Determine render size (max 1920px wide)
+                let w = img.naturalWidth, h = img.naturalHeight;
+                const MAX_DIM = 1920;
+                if (w > MAX_DIM) { h = Math.round(h * MAX_DIM / w); w = MAX_DIM; }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+                // Binary-search quality until file fits
+                let lo = 0.1, hi = 0.92, q = 0.82, blob = null;
+                function tryQ(quality) {
+                    canvas.toBlob(function(b) {
+                        blob = b;
+                        if (b.size <= MAX_BYTES || (hi - lo) < 0.03) {
+                            callback(blob);
+                        } else {
+                            hi = quality;
+                            q = (lo + hi) / 2;
+                            tryQ(q);
+                        }
+                    }, 'image/jpeg', quality);
+                }
+                if (file.size <= MAX_BYTES) {
+                    // Already small enough — still convert to JPEG for uniformity
+                    canvas.toBlob(function(b) { callback(b); }, 'image/jpeg', 0.9);
+                } else {
+                    tryQ(q);
+                }
+            };
+            img.onerror = function() { callback(null); }; // fallback: no compression
+            img.src = url;
+        }
+
+        function _fmtBytes(b) {
+            return b < 1024 ? b + ' B' : b < 1048576 ? (b/1024).toFixed(1) + ' KB' : (b/1048576).toFixed(2) + ' MB';
+        }
+
+        document.getElementById('pbDocCamera')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            // Non-image? reject.
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a JPG or PNG image.');
+                this.value = ''; return;
+            }
+            // Show compression spinner
+            const cmpEl  = document.getElementById('pbCompressStatus');
+            const preEl  = document.getElementById('pbDocPreview');
+            const thumbEl = document.getElementById('pbDocThumb');
+            const nameEl  = document.getElementById('pbDocFileName');
+            const sizeEl  = document.getElementById('pbDocFileSize');
+            if (cmpEl)  cmpEl.style.display  = '';
+            if (preEl)  preEl.style.display  = 'none';
+            _pbDocBlob = null;
+
+            _compressImage(file, 950, function(blob) {
+                if (cmpEl) cmpEl.style.display = 'none';
+                if (!blob) {
+                    alert('Could not process image. Please try a different file.');
+                    return;
+                }
+                _pbDocBlob = blob;
+                // Show thumbnail
+                const objURL = URL.createObjectURL(blob);
+                if (thumbEl) { thumbEl.src = objURL; }
+                if (nameEl)  nameEl.textContent  = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+                if (sizeEl)  sizeEl.textContent  = '✅ ' + _fmtBytes(blob.size) + (file.size > blob.size ? '  (compressed from ' + _fmtBytes(file.size) + ')' : '');
+                if (preEl)  preEl.style.display  = '';
+            });
+        });
+
+        function pbClearDoc() {
+            _pbDocBlob = null;
+            const inp = document.getElementById('pbDocCamera');
+            if (inp) inp.value = '';
+            const preEl = document.getElementById('pbDocPreview');
+            if (preEl) preEl.style.display = 'none';
+            const thumb = document.getElementById('pbDocThumb');
+            if (thumb) thumb.src = '';
+        }
+
+        // ==================== LIGHTBOX ====================
+        function openPbLightbox(url) {
+            const lb = document.getElementById('pbLightbox');
+            const img = document.getElementById('pbLightboxImg');
+            img.src = url;
+            lb.classList.add('active');
+        }
+        function closePbLightbox() {
+            document.getElementById('pbLightbox').classList.remove('active');
+            document.getElementById('pbLightboxImg').src = '';
+        }
+        document.getElementById('pbLightbox').addEventListener('click', function(e) {
+            if (e.target === this) closePbLightbox();
+        });
+
+        // ==================== EDIT AMOUNT MODAL ====================
+        let _editReceiptId = null;
+        function openPbEdit(receiptId, currentAmount) {
+            _editReceiptId = receiptId;
+            document.getElementById('pbEditAmountInput').value = currentAmount || '';
+            document.getElementById('pbEditModal').classList.add('active');
+        }
+        function closePbEdit() {
+            _editReceiptId = null;
+            document.getElementById('pbEditModal').classList.remove('active');
+        }
+        async function savePbEditAmount() {
+            const newAmt = Number(document.getElementById('pbEditAmountInput').value);
+            if (!_editReceiptId || isNaN(newAmt) || newAmt <= 0) {
+                alert('Please enter a valid positive amount.');
+                return;
+            }
+            const btn = document.getElementById('pbEditSaveBtn');
+            btn.disabled = true; btn.textContent = 'Saving…';
+            try {
+                const res = await fetch(`http://localhost:3000/api/receipts/${encodeURIComponent(_editReceiptId)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: newAmt })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    closePbEdit();
+                    loadVolunteerPassbooks();
+                } else {
+                    alert('Error: ' + (data.message || 'Could not save.'));
+                }
+            } catch(e) {
+                alert('Cannot reach server. Make sure server.js is running.');
+            } finally {
+                btn.disabled = false; btn.textContent = 'Save';
+            }
+        }
+
+        // ==================== LOAD VOLUNTEER RECEIPTS ====================
+        async function loadVolunteerPassbooks() {
+            const tbody = document.getElementById('uploadedDocsList');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Loading…</td></tr>';
+            try {
+                const res = await fetch('http://localhost:3000/api/receipts');
+                const data = await res.json();
+                const myId = currentUser ? (currentUser.id ?? null) : null;
+                // Show all receipts belonging to this user (or all if userId is null)
+                const myReceipts = (data.receipts || []).filter(r =>
+                    myId === null || String(r.userId) === String(myId)
+                );
+                if (myReceipts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">No receipts submitted yet.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = myReceipts.map(r => {
+                    const dateStr = new Date(r.submittedAt).toLocaleDateString('en-IN',
+                        { day: 'numeric', month: 'short', year: 'numeric' });
+                    const amtDisplay = (r.amount !== null && r.amount !== undefined)
+                        ? '₹' + Number(r.amount).toLocaleString('en-IN')
+                        : '<span style="color:#aaa;">—</span>';
+                    const isPdf = r.passbookFile && r.passbookFile.toLowerCase().match(/\.pdf$/);
+                    const hasFile = !!r.passbookUrl;
+                    const viewBtn = hasFile
+                        ? (isPdf
+                            ? `<button class="btn btn-sm btn-primary" onclick="window.open('http://localhost:3000${r.passbookUrl}','_blank')"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>View PDF</button>`
+                            : `<button class="btn btn-sm btn-primary" onclick="openPbLightbox('http://localhost:3000${r.passbookUrl}')"><i class="fas fa-image" style="margin-right:4px;"></i>View</button>`)
+                        : `<span style="color:#bbb;font-size:.85rem;">No file</span>`;
+                    return `
+                        <tr id="vol-row-${r.receiptId}">
+                            <td style="font-size:.8rem;color:#888;">${r.receiptId}</td>
+                            <td>${r.name}</td>
+                            <td>${amtDisplay}</td>
+                            <td>${dateStr}</td>
+                            <td>${viewBtn}</td>
+                            <td>
+                                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                    <button class="btn btn-sm" style="background:#E3F2FD;color:#1565C0;" onclick="openPbEdit('${r.receiptId}',${r.amount ?? 0})">
+                                        <i class="fas fa-edit"></i> Edit Amount
+                                    </button>
+                                    <button class="btn btn-sm" style="background:#FFF3E0;color:#E65100;" onclick="reUpload('${r.receiptId}')">
+                                        <i class="fas fa-upload"></i> Re-Upload
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>`;
+                }).join('');
+            } catch(e) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#c0392b;">⚠ Could not load receipts. Is server.js running?</td></tr>';
+            }
+        }
+
+        // ==================== RE-UPLOAD (link file to a specific receipt) ====================
+        let _reUploadReceiptId = null;
+        function reUpload(receiptId) {
+            _reUploadReceiptId = receiptId;
+            // Reuse the existing file input
+            document.getElementById('fileInput').click();
+        }
+
+        // ==================== FILE UPLOAD HANDLER ====================
+        let selectedUploadFile = null;
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        function clearFileSelection() {
+            selectedUploadFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('filePreviewBar').style.display = 'none';
+            document.getElementById('fileUploadStatus').style.display = 'none';
+        }
+
+        function showFileStatus(message, type) {
+            const el = document.getElementById('fileUploadStatus');
+            el.textContent = message;
+            el.style.display = 'block';
+            if (type === 'success') {
+                el.style.background = '#D5F4E6';
+                el.style.color      = '#1a7a45';
+                el.style.border     = '1px solid #a3e6c1';
+            } else {
+                el.style.background = '#FFEBEE';
+                el.style.color      = '#c0392b';
+                el.style.border     = '1px solid #f5b7b1';
+            }
+            if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 7000);
+        }
+
+        // Show preview bar when a file is chosen
+        document.getElementById('fileInput')?.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // 5 MB guard
+            if (file.size > 5 * 1024 * 1024) {
+                showFileStatus('❌ File is too large. Maximum allowed size is 5 MB.', 'error');
+                this.value = '';
+                return;
+            }
+
+            selectedUploadFile = file;
+            document.getElementById('selectedFileName').textContent = file.name;
+            document.getElementById('selectedFileSize').textContent  = formatBytes(file.size);
+
+            const bar = document.getElementById('filePreviewBar');
+            bar.style.display = 'flex';   // reveal the bar
+            document.getElementById('fileUploadStatus').style.display = 'none';
+        });
+
+        // Upload button click → send file via FormData to the server
+        document.getElementById('uploadFileBtn')?.addEventListener('click', async function () {
+            if (!selectedUploadFile) return;
+
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Uploading…';
+
+            try {
+                const formData = new FormData();
+                formData.append('passbook', selectedUploadFile);
+                formData.append('userId',   currentUser ? currentUser.id   : '');
+                formData.append('userName', currentUser ? currentUser.name : '');
+                // Link to the last submitted receipt (if any)
+                // Prefer re-upload target, then the last submitted receipt
+                const linkedId = _reUploadReceiptId
+                    || document.getElementById('linkedReceiptId')?.value
+                    || window._lastReceiptId
+                    || '';
+                if (linkedId) formData.append('receiptId', linkedId);
+
+                const response = await fetch('http://localhost:3000/api/upload-passbook', {
+                    method: 'POST',
+                    body: formData   // browser sets multipart boundary automatically
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showFileStatus(`✅ "${data.fileName}" uploaded successfully!`, 'success');
+                    clearFileSelection();
+                    _reUploadReceiptId = null;   // reset re-upload target
+                    // Refresh the receipts table to show updated passbook link
+                    loadVolunteerPassbooks();
+                } else {
+                    const err = await response.json().catch(() => ({}));
+                    showFileStatus('❌ Upload failed: ' + (err.message || response.statusText), 'error');
+                }
+            } catch (netErr) {
+                showFileStatus('❌ Cannot reach the server. Make sure server.js is running on port 3000.', 'error');
+                console.error('File upload error:', netErr);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-upload" style="margin-right:8px;"></i>Upload Now';
+            }
+        });
+
+        // ==================== DONOR SEARCH & SYNC ====================
+        // (showSection already handles donorSearch loading — no override needed)
+
+        // Load live record count for hero banner on page load
+        async function _loadHeroCount() {
+            try {
+                const res  = await fetch('http://localhost:3000/api/donations');
+                if (!res.ok) return;
+                const data = await res.json();
+                const count = (data.records || []).length;
+                const el    = document.getElementById('heroDonorCount');
+                const badge = document.getElementById('sidebarDonorBadge');
+                if (el) el.textContent = count > 0
+                    ? `${count.toLocaleString('en-IN')} Records Available`
+                    : 'No data uploaded yet';
+                if (badge && count > 0) badge.style.display = '';
+            } catch (_) { /* server offline — ignore */ }
+        }
+        _loadHeroCount();
+
+        // BroadcastChannel: auto-refresh when admin uploads new data
+        try {
+            const _donBC = new BroadcastChannel('donations_update');
+            _donBC.onmessage = function(e) {
+                if (e.data && e.data.type === 'refresh') {
+                    // Silently refresh donor data in background
+                    if (typeof loadDonorSearch === 'function') loadDonorSearch();
+                    // Update hero count badge
+                    _loadHeroCount();
+                    // Visual pulse on the banner to indicate new data
+                    const banner = document.getElementById('donorHeroBanner');
+                    if (banner) {
+                        banner.style.boxShadow = '0 0 0 4px rgba(255,255,255,.6), 0 6px 28px rgba(26,35,126,.5)';
+                        const countEl = document.getElementById('heroDonorCount');
+                        if (countEl) countEl.textContent = `\u2705 ${(e.data.uploaded||0).toLocaleString('en-IN')} new records synced!`;
+                        setTimeout(() => {
+                            banner.style.boxShadow = '0 6px 28px rgba(26,35,126,.3)';
+                            _loadHeroCount(); // restore real count
+                        }, 4000);
+                    }
+                }
+            };
+        } catch (_) { /* BroadcastChannel not available */ }
+        // ==================== PAUTI BOOK SLIP SUBMISSION ====================
+
+        function pautiToggleCheck() {
+            const mode = document.getElementById('psMode')?.value;
+            const grp  = document.getElementById('psCheckGroup');
+            if (grp) grp.style.display = mode === 'check' ? '' : 'none';
+        }
+
+        function _pautiStatus(msg, type) {
+            const el = document.getElementById('pautiSlipStatus');
+            if (!el) return;
+            el.style.display    = '';
+            el.style.background = type === 'success' ? '#E8F5E9' : '#FFEBEE';
+            el.style.color      = type === 'success' ? '#1B5E20' : '#B71C1C';
+            el.textContent      = msg;
+        }
+
+        document.getElementById('pautiSlipForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const name   = document.getElementById('psName')?.value.trim();
+            const amount = parseFloat(document.getElementById('psAmount')?.value || '');
+            const mode   = document.getElementById('psMode')?.value || 'cash';
+            const check  = document.getElementById('psCheck')?.value.trim() || null;
+
+            if (!name)           { _pautiStatus('❌ Donor name is required.', 'error'); return; }
+            if (!amount || amount <= 0) { _pautiStatus('❌ A valid positive amount is required.', 'error'); return; }
+
+            const btn = document.getElementById('pautiSlipBtn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Submitting…'; }
+
+            try {
+                const res  = await fetch('http://localhost:3000/api/pauti-books/next-slip', {
+                    method : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body   : JSON.stringify({
+                        donorName       : name,
+                        amount          : amount,
+                        paymentMode     : mode,
+                        checkNumber     : check,
+                        uploadedBy      : currentUser?.name  || 'Unknown',
+                        uploadedByUserId: currentUser?.id    || null,
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    // Hide form, show confirmation
+                    document.getElementById('pautiSlipStatus').style.display = 'none';
+                    document.getElementById('pautiSlipForm').reset();
+                    pautiToggleCheck();
+                    const confirm = document.getElementById('pautiSlipConfirm');
+                    const numEl   = document.getElementById('pautiConfirmSlipNum');
+                    const bookEl  = document.getElementById('pautiConfirmBook');
+                    if (numEl)  numEl.textContent  = `Slip #${data.slipNumber}`;
+                    if (bookEl) bookEl.textContent = `Book #${data.bookNumber} (Slips ${data.slipsFrom}–${data.slipsTo})`;
+                    if (confirm) { confirm.style.display = ''; confirm.scrollIntoView({ behavior:'smooth', block:'center' }); }
+                    // Auto-hide confirmation after 8s
+                    setTimeout(() => { if (confirm) confirm.style.display = 'none'; }, 8000);
+                    // Refresh my slips list
+                    loadMyPautiSlips();
+                } else {
+                    _pautiStatus('❌ ' + (data.message || 'Could not claim slip. Try again.'), 'error');
+                }
+            } catch (err) {
+                _pautiStatus('❌ Cannot reach server. Make sure server.js is running on port 3000.', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit & Claim Slip'; }
+            }
+        });
+
+        async function loadMyPautiSlips() {
+            const tbody = document.getElementById('myPautiSlipsList');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;">Loading…</td></tr>';
+            try {
+                const res  = await fetch('http://localhost:3000/api/pauti-books');
+                const data = await res.json();
+                const myName   = (currentUser?.name  || '').toLowerCase();
+                const myUserId = currentUser?.id || null;
+                const mySlips  = [];
+                (data.pautiBooks || []).forEach(book => {
+                    (book.slips || []).forEach(slip => {
+                        if (!slip.uploadedAt || slip.deleted) return;
+                        const matchName = slip.uploadedBy && slip.uploadedBy.toLowerCase() === myName;
+                        const matchId   = myUserId && slip.uploadedByUserId && String(slip.uploadedByUserId) === String(myUserId);
+                        if (matchName || matchId) {
+                            mySlips.push({ ...slip, bookNumber: book.bookNumber });
+                        }
+                    });
+                });
+                mySlips.sort((a, b) => b.slipNumber - a.slipNumber);
+                if (mySlips.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;">No slips submitted by you yet.</td></tr>';
+                    return;
+                }
+                const fmt = n => n ? '₹' + Number(n).toLocaleString('en-IN') : '—';
+                tbody.innerHTML = mySlips.map((s, i) => {
+                    const bg   = i % 2 === 0 ? '#fff' : '#f9fafe';
+                    const date = s.uploadedAt
+                        ? new Date(s.uploadedAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })
+                        : '—';
+                    const mode = s.paymentMode
+                        ? `<span style="background:#EEF2FF;color:#3730A3;padding:2px 8px;border-radius:12px;font-size:.78rem;font-weight:600;">${s.paymentMode.toUpperCase()}</span>`
+                        : '—';
+                    return `<tr style="background:${bg};">
+                        <td><strong style="color:var(--primary-color);">#${s.slipNumber}</strong></td>
+                        <td>Book #${s.bookNumber}</td>
+                        <td>${s.donorName || '—'}</td>
+                        <td><strong style="color:#2E7D32;">${fmt(s.amount)}</strong></td>
+                        <td>${mode}</td>
+                        <td style="font-size:.85rem;color:#777;">${date}</td>
+                    </tr>`;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#c0392b;">⚠ Cannot reach server.</td></tr>';
+            }
+        }
+
+        // ── Receipt photo file handler ────────────────────────────
+        let _deReceiptPhotoFile = null;
+        document.getElementById('deReceiptPhotoInput')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 1 * 1024 * 1024) {
+                alert('File too large. Maximum allowed size is 1 MB. Please compress the image first.');
+                this.value = ''; return;
+            }
+            _deReceiptPhotoFile = file;
+            document.getElementById('deReceiptPhotoName').textContent = file.name;
+            document.getElementById('deReceiptPhotoSize').textContent =
+                file.size < 1024 ? file.size + ' B' :
+                file.size < 1048576 ? (file.size/1024).toFixed(1) + ' KB' :
+                (file.size/1048576).toFixed(2) + ' MB';
+            const prev = document.getElementById('deReceiptPhotoPreview');
+            if (prev) prev.style.display = 'flex';
+        });
+        function deClearReceiptPhoto() {
+            _deReceiptPhotoFile = null;
+            const inp = document.getElementById('deReceiptPhotoInput');
+            if (inp) inp.value = '';
+            const prev = document.getElementById('deReceiptPhotoPreview');
+            if (prev) prev.style.display = 'none';
+        }
+
+    </script>
+
+    <!-- Donor Search Section -->
+    <script src="donations.js"></script>
+    <script>
+    // ── Volunteer Donor Search ─────────────────────────────────────────────────
+    // Volunteers see ONLY 4 key fields: Donor Name, Address, Landmark, Amount.
+    // All financial columns are hidden. Records grouped by year.
+
+    let _dsRecords  = [], _dsColumns = [], _dsFiltered = [], _dsPage = 1;
+    let _dsAmtCol   = null;  // detected amount column
+    let _dsYearCol  = null;  // detected year column
+    let _dsNameCol  = null;  // detected donor name column
+    let _dsAddrCols = [];    // detected address/location columns
+    let _dsLandCols = [];    // detected landmark/building columns
+    let _dsVolCols  = [];    // final 4 columns shown to volunteer
+    const DS_PAGE   = 30;
+    let _dsFiltersOpen = false;
+
+    // ── Keyword detectors ───────────────────────────────────────────────────────
+    const _KW_AMT   = /amount|amt|donation|don|rupee|\brs\b|inr/i;
+    const _KW_YEAR  = /year|yr|varshe|वर्ष/i;
+    const _KW_NAME  = /donor|name|naam|नाम/i;
+    const _KW_ADDR  = /road|area|street|ward|locality|location|address|addr|nagar|galli|lane|plot|flat|house|sector/i;
+    const _KW_LAND  = /landmark|building|bldg|society|chawl|complex|tower|apt|apartment|opposite|near/i;
+
+    function _dsDetectCols() {
+        _dsAmtCol   = _dsColumns.find(c => _KW_AMT.test(c))  || null;
+        _dsYearCol  = _dsColumns.find(c => _KW_YEAR.test(c)) || null;
+        _dsNameCol  = _dsColumns.find(c => _KW_NAME.test(c)) || null;
+        _dsAddrCols = _dsColumns.filter(c => _KW_ADDR.test(c) && c !== _dsAmtCol);
+        _dsLandCols = _dsColumns.filter(c => _KW_LAND.test(c) && c !== _dsAmtCol);
+        // If no dedicated landmark col, pull last address col
+        if (_dsLandCols.length === 0 && _dsAddrCols.length > 1) {
+            _dsLandCols = [_dsAddrCols[_dsAddrCols.length - 1]];
+        }
+        // Build the 4-column volunteer display set (no duplicates, ordered)
+        const seen = new Set();
+        _dsVolCols  = [];
+        const addCol = c => { if (c && !seen.has(c)) { seen.add(c); _dsVolCols.push(c); } };
+        addCol(_dsNameCol);
+        _dsAddrCols.forEach(addCol);
+        _dsLandCols.forEach(addCol);
+        addCol(_dsAmtCol);
+        // Trim to 4 columns max (Name, best-addr, landmark, amount)
+        if (_dsVolCols.length > 4) {
+            const keep = [];
+            if (_dsNameCol)             keep.push(_dsNameCol);
+            if (_dsAddrCols.length)     keep.push(_dsAddrCols[0]);
+            if (_dsLandCols.length)     keep.push(_dsLandCols[0]);
+            if (_dsAmtCol)              keep.push(_dsAmtCol);
+            _dsVolCols = [...new Set(keep)];
+        }
+        // Fallback: if still empty, show up to 4 non-financial cols
+        if (_dsVolCols.length === 0) {
+            const fin = /balance|cash|bank|withdrawn|collection|expense|growth|notes/i;
+            _dsVolCols = _dsColumns.filter(c => !fin.test(c)).slice(0, 4);
+        }
+    }
+
+    // Toggle filter panel
+    function dsToggleFilters() {
+        _dsFiltersOpen = !_dsFiltersOpen;
+        const panel = document.getElementById('dsFilterPanel');
+        const lbl   = document.getElementById('dsToggleBtnLabel');
+        const btn   = document.getElementById('dsToggleFiltersBtn');
+        if (panel) panel.style.display  = _dsFiltersOpen ? '' : 'none';
+        if (lbl)   lbl.textContent      = _dsFiltersOpen ? 'Hide Filters' : 'Filters';
+        if (btn)   btn.style.background = _dsFiltersOpen ? '#e8eaf6' : '#f8f9fa';
+    }
+
+    // ── Get year value from a record ─────────────────────────────────────────
+    function _dsGetYear(r) {
+        if (_dsYearCol && r[_dsYearCol] !== undefined && String(r[_dsYearCol]).trim() !== '')
+            return String(r[_dsYearCol]).trim();
+        for (const col of _dsColumns) {
+            const m = String(r[col] ?? '').match(/\b(19|20)\d{2}\b/);
+            if (m) return m[0];
+        }
+        return 'Unknown';
+    }
+
+    // ── Group records by year, newest first ──────────────────────────────────
+    function _dsGroupByYear(records) {
+        const map = new Map();
+        records.forEach(r => {
+            const yr = _dsGetYear(r);
+            if (!map.has(yr)) map.set(yr, []);
+            map.get(yr).push(r);
+        });
+        return new Map([...map.entries()].sort((a, b) => b[0].localeCompare(a[0])));
+    }
+
+    // Load data from server
+    async function loadDonorSearch() {
+        const msgEl = document.getElementById('dsLoadingMsg');
+        const wrap  = document.getElementById('dsTableWrap');
+        if (msgEl) {
+            msgEl.style.display = '';
+            msgEl.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:1.3rem;margin-bottom:10px;display:block;color:#ccc;"></i>Loading donor records\u2026';
+        }
+        if (wrap) wrap.style.display = 'none';
+        try {
+            const res  = await fetch('http://localhost:3000/api/donations');
+            const data = await res.json();
+            _dsColumns  = data.columns || [];
+            _dsRecords  = data.records || [];
+            _dsFiltered = _dsRecords;
+            _dsPage     = 1;
+            _dsDetectCols();
+
+            if (_dsVolCols.length > 0) {
+                dsApplyFilters();
+                if (msgEl) msgEl.style.display = 'none';
+            } else if (_dsColumns.length > 0) {
+                if (msgEl) {
+                    msgEl.style.display = '';
+                    msgEl.innerHTML = '<i class="fas fa-lock" style="font-size:1.4rem;opacity:.4;margin-bottom:8px;display:block;color:#888;"></i>No donor details available in current dataset.';
+                }
+            } else {
+                if (msgEl) {
+                    msgEl.style.display = '';
+                    msgEl.innerHTML = '<i class="fas fa-cloud-upload-alt" style="font-size:1.8rem;opacity:.3;margin-bottom:8px;display:block;"></i>No data uploaded yet \u2014 ask your admin to upload the Excel file.';
+                }
+            }
+        } catch (e) {
+            if (msgEl) {
+                msgEl.style.display = '';
+                msgEl.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size:1.4rem;opacity:.5;margin-bottom:8px;display:block;color:#E67E22;"></i>\u26a0 Cannot connect to server.';
+            }
+        }
+    }
+
+    // ── Apply 3 filters (Location, Landmark, Amount) + global search ─────────
+    function dsApplyFilters() {
+        const gq  = (document.getElementById('dsGlobalSearch')?.value || '').toLowerCase().trim();
+        const locQ = (document.getElementById('dsLocSearch')?.value  || '').toLowerCase().trim();
+        const lanQ = (document.getElementById('dsLandSearch')?.value || '').toLowerCase().trim();
+        const mn  = parseFloat(document.getElementById('dsAmtMin')?.value || '') || null;
+        const mx  = parseFloat(document.getElementById('dsAmtMax')?.value || '') || null;
+
+        _dsFiltered = _dsRecords.filter(r => {
+            // Location filter — search address columns
+            if (locQ) {
+                const hay = (_dsAddrCols.length ? _dsAddrCols : _dsColumns)
+                    .map(c => String(r[c] ?? '')).join(' ').toLowerCase();
+                if (!hay.includes(locQ)) return false;
+            }
+            // Landmark filter — search landmark/building columns
+            if (lanQ) {
+                const hay = (_dsLandCols.length ? _dsLandCols : _dsColumns)
+                    .map(c => String(r[c] ?? '')).join(' ').toLowerCase();
+                if (!hay.includes(lanQ)) return false;
+            }
+            // Amount range
+            if (_dsAmtCol && (mn !== null || mx !== null)) {
+                const a = parseFloat(r[_dsAmtCol]) || 0;
+                if (mn !== null && a < mn) return false;
+                if (mx !== null && a > mx) return false;
+            }
+            // Global search — across volunteer-visible columns only
+            if (gq) {
+                const hay = _dsVolCols.map(c => String(r[c] ?? '')).join(' ').toLowerCase();
+                if (!hay.includes(gq)) return false;
+            }
+            return true;
+        });
+
+        const sum = _dsAmtCol ? _dsFiltered.reduce((s, r) => s + (parseFloat(r[_dsAmtCol]) || 0), 0) : 0;
+        const ct  = document.getElementById('dsChipTotal');
+        const cm  = document.getElementById('dsChipMatch');
+        const cs  = document.getElementById('dsChipSum');
+        if (ct) ct.textContent = `${_dsRecords.length.toLocaleString('en-IN')} total`;
+        if (cm) cm.textContent = `${_dsFiltered.length.toLocaleString('en-IN')} shown`;
+        if (cs) cs.textContent = _dsAmtCol ? '\u20b9' + sum.toLocaleString('en-IN') : '';
+        _dsPage = 1;
+        dsRenderTable();
+    }
+
+    // Clear all 3 filters + global search
+    function dsClearFilters() {
+        ['dsGlobalSearch','dsLocSearch','dsLandSearch','dsAmtMin','dsAmtMax'].forEach(id => {
+            const e = document.getElementById(id); if (e) e.value = '';
+        });
+        dsApplyFilters();
+    }
+
+    // ── Render table — 4 volunteer columns, grouped by year ──────────────────
+    function dsRenderTable() {
+        const thead = document.getElementById('dsThead');
+        const tbody = document.getElementById('dsTbody');
+        const wrap  = document.getElementById('dsTableWrap');
+        const noRes = document.getElementById('dsNoResults');
+        const msgEl = document.getElementById('dsLoadingMsg');
+        if (!thead || !tbody) return;
+
+        if (_dsFiltered.length === 0 || _dsVolCols.length === 0) {
+            if (wrap)  wrap.style.display  = 'none';
+            if (noRes) noRes.style.display = '';
+            if (msgEl) msgEl.style.display = 'none';
+            return;
+        }
+        if (wrap)  wrap.style.display  = '';
+        if (noRes) noRes.style.display = 'none';
+        if (msgEl) msgEl.style.display = 'none';
+
+        // Fixed column headers (friendly labels)
+        const colLabels = _dsVolCols.map(c => c); // use actual col names from Excel
+        thead.innerHTML = '<tr>' + colLabels.map(c => `<th>${c}</th>`).join('') + '</tr>';
+
+        // Group filtered records by year
+        const groups   = _dsGroupByYear(_dsFiltered);
+        const flatRows = [];
+        groups.forEach((recs, yr) => {
+            const yearSum = _dsAmtCol
+                ? recs.reduce((s, r) => s + (parseFloat(r[_dsAmtCol]) || 0), 0)
+                : null;
+            flatRows.push({ type: 'header', yr, count: recs.length, sum: yearSum });
+            recs.forEach(r => flatRows.push({ type: 'row', r }));
+        });
+
+        const start    = (_dsPage - 1) * DS_PAGE;
+        const pageRows = flatRows.slice(start, start + DS_PAGE);
+
+        tbody.innerHTML = pageRows.map(item => {
+            if (item.type === 'header') {
+                const sumTxt = item.sum !== null
+                    ? ` &nbsp;&middot;&nbsp; <span style="color:#27AE60;font-weight:700;">\u20b9${item.sum.toLocaleString('en-IN')}</span>`
+                    : '';
+                return `<tr>
+                    <td colspan="${_dsVolCols.length}"
+                        style="padding:9px 12px;background:linear-gradient(90deg,#1a237e0a,transparent);border-top:2px solid #e8eaf0;border-bottom:1px solid #e8eaf0;">
+                        <span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <span style="background:linear-gradient(135deg,#FF6B35,#FF8C42);color:#fff;border-radius:20px;padding:2px 12px;font-size:.76rem;font-weight:700;letter-spacing:.04em;">
+                                ${item.yr}
+                            </span>
+                            <span style="font-size:.8rem;color:#666;">${item.count.toLocaleString('en-IN')} donors${sumTxt}</span>
+                        </span>
+                    </td>
+                </tr>`;
+            }
+            const { r } = item;
+            const cells = _dsVolCols.map(col => {
+                const v     = r[col] ?? '';
+                const isAmt = col === _dsAmtCol;
+                const disp  = isAmt && v !== ''
+                    ? `<strong style="color:#2E7D32;">\u20b9${Number(v).toLocaleString('en-IN')}</strong>`
+                    : `<span title="${String(v).replace(/"/g,'&quot;')}">${v}</span>`;
+                return `<td>${disp}</td>`;
+            }).join('');
+            return `<tr onmouseover="this.style.background='#eef2ff'" onmouseout="this.style.background=''">${cells}</tr>`;
+        }).join('');
+
+        // Pagination
+        const tp = Math.ceil(flatRows.length / DS_PAGE);
+        const pi = document.getElementById('dsPaginationInfo');
+        const pb = document.getElementById('dsPaginationBtns');
+        if (pi) pi.textContent = `${start+1}\u2013${Math.min(start+DS_PAGE, flatRows.length)} of ${_dsFiltered.length.toLocaleString('en-IN')} records`;
+        if (pb) {
+            pb.innerHTML = '';
+            if (tp > 1) {
+                const mk = (lbl, p, active) => {
+                    const b = document.createElement('button');
+                    b.innerHTML = lbl;
+                    b.style.cssText = `padding:4px 10px;border:1.5px solid ${active?'var(--primary-color)':'#ddd'};border-radius:6px;background:${active?'var(--primary-color)':'#fff'};color:${active?'#fff':'#333'};cursor:pointer;font-size:.78rem;`;
+                    if (!active) { b.onmouseover=()=>b.style.background='#f0f2ff'; b.onmouseout=()=>b.style.background='#fff'; }
+                    b.onclick = () => { _dsPage = p; dsRenderTable(); };
+                    return b;
+                };
+                if (_dsPage > 1) pb.appendChild(mk('\u2039', _dsPage - 1, false));
+                const lo = Math.max(1, _dsPage - 2), hi = Math.min(tp, _dsPage + 2);
+                if (lo > 1) pb.insertAdjacentHTML('beforeend','<span style="padding:0 4px;color:#aaa;font-size:.78rem;">\u2026</span>');
+                for (let p = lo; p <= hi; p++) pb.appendChild(mk(p, p, p === _dsPage));
+                if (hi < tp) pb.insertAdjacentHTML('beforeend','<span style="padding:0 4px;color:#aaa;font-size:.78rem;">\u2026</span>');
+                if (_dsPage < tp) pb.appendChild(mk('\u203a', _dsPage + 1, false));
+            }
+        }
+    }
+
+    // CSV export — volunteer columns only
+    function dsExportCSV() {
+        if (!_dsFiltered.length || !_dsVolCols.length) return;
+        const q   = v => `"${String(v??'').replace(/"/g,'""')}"`;
+        const csv = '\uFEFF' + [
+            _dsVolCols.map(q).join(','),
+            ..._dsFiltered.map(r => _dsVolCols.map(c => q(r[c])).join(','))
+        ].join('\r\n');
+        const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+        const a   = Object.assign(document.createElement('a'), {
+            href: url,
+            download: `donors_${new Date().toISOString().slice(0,10)}.csv`
+        });
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+    
+    // ══════════════════════════════════════════════════════
+    // ── DONATION ENTRY — full JS ──────────────────────────
+    // ══════════════════════════════════════════════════════
+
+    // ── Live clock (only if element exists) ────────────────────
+    (function deStartClock() {
+        const cl = document.getElementById('deLiveClock');
+        const dt = document.getElementById('deLiveDate');
+        if (!cl && !dt) return;
+        function tick() {
+            const now = new Date();
+            if (cl) cl.textContent = now.toLocaleTimeString('en-IN', { hour12: false });
+            if (dt) dt.textContent = now.toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+        }
+        tick();
+        setInterval(tick, 1000);
+    })();
+
+    // ── Book dropdown (Books 1–50) ──────────────────────────
+    function dePopulateBooks() {
+        const sel = document.getElementById('deBookNumber');
+        if (!sel) return;
+        sel.innerHTML = '<option value="">— Select Book —</option>';
+        for (let b = 1; b <= 50; b++) {
+            const from = (b - 1) * 50 + 1, to = b * 50;
+            sel.innerHTML += `<option value="${b}">Book ${b}  (Receipts ${from}–${to})</option>`;
+        }
+    }
+
+    // ── When book changes, populate receipt dropdown ─────────
+    async function deOnBookChange() {
+        const bn  = Number(document.getElementById('deBookNumber').value);
+        const sel = document.getElementById('deReceiptNumber');
+        if (!bn) { sel.innerHTML = '<option value="">— Select Book first —</option>'; sel.disabled = true; return; }
+        sel.disabled = true;
+        sel.innerHTML = '<option value="">Loading…</option>';
+        const from = (bn - 1) * 50 + 1, to = bn * 50;
+        let used = [];
+        try {
+            const r = await fetch(`/api/donation-entries/used-receipts/${bn}`);
+            const d = await r.json();
+            used = d.usedReceipts || [];
+        } catch(e) {}
+        sel.innerHTML = '<option value="">— Select Receipt —</option>';
+        for (let n = from; n <= to; n++) {
+            const taken = used.includes(n);
+            sel.innerHTML += `<option value="${n}" ${taken ? 'disabled style="color:#ccc;"' : ''}>${n}${taken ? ' (used)' : ''}</option>`;
+        }
+        sel.disabled = false;
+    }
+
+    // ── Donor type toggle ────────────────────────────────────
+    function deSetDonorType(type) {
+        document.getElementById('deDonorType').value = type;
+        const indActive = type === 'Individual';
+        const activeStyle = 'display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid var(--primary-color);border-radius:20px;cursor:pointer;font-weight:600;font-size:.82rem;background:var(--primary-color);color:#fff;transition:all .2s;';
+        const inactiveStyle = 'display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid #ddd;border-radius:20px;cursor:pointer;font-weight:600;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;';
+        document.getElementById('deBtnInd').style.cssText = indActive  ? activeStyle : inactiveStyle;
+        document.getElementById('deBtnBiz').style.cssText = !indActive ? activeStyle : inactiveStyle;
+        document.getElementById('deIndFields').style.display = indActive  ? 'grid' : 'none';
+        document.getElementById('deBizFields').style.display = !indActive ? 'block' : 'none';
+    }
+
+    // ── Payment mode toggle ──────────────────────────────────
+    const _deModes = { Cash:'deModeCash', Cheque:'deModeChq', UPI:'deModeUPI', RTGS:'deModeRTGS' };
+    const _deRefLabels = { Cash:'Reference Number', Cheque:'Cheque Number', UPI:'UPI / Transaction ID', RTGS:'RTGS Reference Number' };
+    function deSetMode(mode) {
+        document.getElementById('dePaymentMode').value = mode;
+        Object.entries(_deModes).forEach(([m, id]) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const active = m === mode;
+            el.style.background = active ? 'var(--primary-color)' : '#f9f9f9';
+            el.style.color      = active ? '#fff' : '#555';
+            el.style.border     = active ? '2px solid var(--primary-color)' : '2px solid #ddd';
+        });
+        const lbl = document.getElementById('deRefLabel');
+        if (lbl) lbl.innerHTML = `${_deRefLabels[mode] || 'Reference Number'} <span style="color:#aaa;font-weight:400;font-size:.85rem;">(optional)</span>`;
+    }
+
+    // ── Load buildings & areas dropdowns ────────────────────
+    async function deLoadDropdowns() {
+        await deLoadBuildings();
+        await deLoadAreas();
+        // Show Add buttons only for admin
+        const isAdmin = currentUser && currentUser.role === 'admin';
+        const bBtn = document.getElementById('deAddBldgBtn');
+        const aBtn = document.getElementById('deAddAreaBtn');
+        if (bBtn) bBtn.style.display = isAdmin ? '' : 'none';
+        if (aBtn) aBtn.style.display = isAdmin ? '' : 'none';
+        dePopulateBooks();
+    }
+
+    async function deLoadBuildings() {
+        try {
+            const r = await fetch('/api/buildings');
+            const d = await r.json();
+            const sel = document.getElementById('deBuildingName');
+            if (!sel) return;
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">— Select Building —</option>';
+            (d.buildings || []).forEach(b => {
+                sel.innerHTML += `<option value="${b.name}" ${b.name===cur?'selected':''}>${b.name}</option>`;
+            });
+        } catch(e) {}
+    }
+
+    async function deLoadAreas() {
+        const FIXED_AREAS = ['Patelwadi', 'Shindewadi', 'Gurkhawadi'];
+        const sel = document.getElementById('deArea');
+        if (!sel) return;
+        const cur = sel.value;
+        // Always start with the 3 fixed areas
+        sel.innerHTML = '<option value="">\u2014 Select Area \u2014</option>' +
+            FIXED_AREAS.map(n => `<option value="${n}" ${n===cur?'selected':''}>${n}</option>`).join('');
+        // Then append any extra ones from the API (skip duplicates)
+        try {
+            const r = await fetch('/api/areas');
+            const d = await r.json();
+            (d.areas || []).forEach(a => {
+                if (!FIXED_AREAS.includes(a.name)) {
+                    sel.innerHTML += `<option value="${a.name}" ${a.name===cur?'selected':''}>${a.name}</option>`;
+                }
+            });
+        } catch(e) { /* API unreachable — fixed areas still shown */ }
+    }
+
+    async function deAddBuilding() {
+        const name = prompt('Enter new Building Name:');
+        if (!name || !name.trim()) return;
+        try {
+            const r = await fetch('/api/buildings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:name.trim() }) });
+            const d = await r.json();
+            if (r.ok && d.success) { await deLoadBuildings(); document.getElementById('deBuildingName').value = d.building.name; }
+            else alert(d.message || 'Could not add building.');
+        } catch(e) { alert('Server error.'); }
+    }
+
+    async function deAddArea() {
+        const name = prompt('Enter new Area Name:');
+        if (!name || !name.trim()) return;
+        try {
+            const r = await fetch('/api/areas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:name.trim() }) });
+            const d = await r.json();
+            if (r.ok && d.success) { await deLoadAreas(); document.getElementById('deArea').value = d.area.name; }
+            else alert(d.message || 'Could not add area.');
+        } catch(e) { alert('Server error.'); }
+    }
+
+    // ── Form submit ──────────────────────────────────────────
+    document.getElementById('donationEntryForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('deSubmitBtn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Saving\u2026'; }
+
+        // ── Build payload with null-safe reads ──────────────────
+        let payload;
+        try {
+            const donorType = (document.getElementById('deDonorType')?.value || 'Individual');
+            const getVal  = id => document.getElementById(id)?.value ?? '';
+            const getTrim = id => getVal(id).trim();
+
+            payload = {
+                bookNumber      : Number(getVal('deBookNumber')),
+                receiptNumber   : Number(getVal('deReceiptNumber')),
+                donorType,
+                firstName       : donorType === 'Individual' ? getTrim('deFirstName').toUpperCase()    : null,
+                middleName      : donorType === 'Individual' ? getTrim('deMiddleName').toUpperCase()   : null,
+                lastName        : donorType === 'Individual' ? getTrim('deLastName').toUpperCase()     : null,
+                businessName    : donorType === 'Business'   ? getTrim('deBusinessName').toUpperCase(): null,
+                whatsappNumber  : getTrim('deWhatsapp')  || null,
+                mobileNumber    : getTrim('deMobile')    || null,
+                mailId          : getTrim('deMail')      || null,
+                buildingName    : getVal('deBuildingName') || null,
+                area            : getVal('deArea')         || null,
+                landmark        : getVal('deLandmark')     || null,
+                amount          : getVal('deAmount') !== '' ? Number(getVal('deAmount')) : null,
+                paymentMode     : getVal('dePaymentMode') || 'Cash',
+                referenceNumber : getTrim('deReference') || null,
+                submittedBy     : currentUser ? currentUser.name : null,
+                submittedByUserId: currentUser ? currentUser.id  : null,
+            };
+        } catch (buildErr) {
+            console.error('[DE Form] Payload build error:', buildErr);
+            deShowStatus('\u274c Form error: ' + buildErr.message, 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry'; }
+            return;
+        }
+
+        // ── Submit to server ─────────────────────────────────────
+        try {
+            console.log('[DE Form] Submitting payload:', payload);
+            const res  = await fetch('/api/donation-entries', {
+                method : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body   : JSON.stringify(payload)
+            });
+            const data = await res.json();
+            console.log('[DE Form] Server response:', res.status, data);
+            if (res.ok && data.success) {
+                // Upload passbook photo if one was captured
+                if (_pbDocBlob && data.entry && data.entry.entryId) {
+                    try {
+                        const fd = new FormData();
+                        fd.append('passbook', _pbDocBlob, (document.getElementById('pbDocFileName')?.textContent || 'receipt.jpg'));
+                        fd.append('userId',    currentUser ? String(currentUser.id)   : '');
+                        fd.append('userName',  currentUser ? currentUser.name : '');
+                        fd.append('entryId',   data.entry.entryId);
+                        await fetch('/api/upload-passbook', { method: 'POST', body: fd });
+                        pbClearDoc();
+                    } catch(_) { /* photo upload failure is non-blocking */ }
+                }
+                deShowStatus(`\u2705 Entry saved! Book ${data.entry.bookNumber}, Receipt #${data.entry.receiptNumber}`, 'success');
+                this.reset();
+                deSetDonorType('Individual');
+                deSetMode('Cash');
+                const rSel = document.getElementById('deReceiptNumber');
+                if (rSel) { rSel.innerHTML = '<option value="">\u2014 Select Book first \u2014</option>'; rSel.disabled = true; }
+                await deLoadMyEntries();
+            } else {
+                deShowStatus('\u274c ' + (data.message || 'Submission failed.'), 'error');
+            }
+        } catch(err) {
+            console.error('[DE Form] Fetch/network error:', err);
+            deShowStatus('\u274c Network error: ' + (err.message || 'Cannot reach server. Make sure server.js is running.'), 'error');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry'; }
+        }
+    });
+
+    function deShowStatus(msg, type) {
+        const el = document.getElementById('deStatus');
+        if (!el) return;
+        el.textContent = msg;
+        el.style.display = 'block';
+        el.style.background = type === 'success' ? '#D5F4E6' : '#FFEBEE';
+        el.style.color      = type === 'success' ? '#1a7a45' : '#c0392b';
+        el.style.border     = type === 'success' ? '1px solid #a3e6c1' : '1px solid #f5b7b1';
+        setTimeout(() => el.style.display = 'none', 6000);
+    }
+
+    // ── Load landmarks into volunteer form ───────────────────────────────────
+    async function deLoadLandmarks() {
+        try {
+            const r = await fetch('/api/landmarks'); const data = await r.json();
+            const sel = document.getElementById('deLandmark'); if (!sel) return;
+            const cur = sel.value;
+            // Keep first option
+            while (sel.options.length > 1) sel.remove(1);
+            (data.landmarks||[]).forEach(l => {
+                const o = document.createElement('option');
+                o.value = l.name; o.textContent = l.name;
+                if (l.name === cur) o.selected = true;
+                sel.appendChild(o);
+            });
+        } catch(e) {}
+    }
+
+    // ── Auto-receipt for volunteer form ──────────────────────────────────────
+    async function deAutoReceipt() {
+        try {
+            const resp = await fetch('/api/donation-entries/next-receipt');
+            const slot = await resp.json();
+            if (!slot.bookNumber) { alert('❌ All receipt numbers are used.'); return; }
+            const bookSel = document.getElementById('deBookNumber');
+            if (bookSel) { bookSel.value = slot.bookNumber; bookSel.dispatchEvent(new Event('change')); }
+            let attempts = 0;
+            const waitAndSet = setInterval(function() {
+                attempts++;
+                const rs = document.getElementById('deReceiptNumber');
+                if (!rs) { clearInterval(waitAndSet); return; }
+                if (!rs.disabled && rs.options.length > 1) {
+                    rs.value = slot.receiptNumber;
+                    clearInterval(waitAndSet);
+                    const st = document.getElementById('deStatus') || document.getElementById('deEntryStatus');
+                    if (st) { st.style.display=''; st.textContent='✅ Auto: Book '+slot.bookNumber+', Receipt #'+slot.receiptNumber; st.style.background='#D5F4E6'; st.style.color='#1a7a45'; setTimeout(()=>st.style.display='none',4000); }
+                }
+                if (attempts > 40) clearInterval(waitAndSet);
+            }, 100);
+        } catch(e) { alert('❌ Auto-receipt error: ' + e.message); }
+    }
+
+    // Load landmarks when the Donation Data Entry section first loads
+    document.addEventListener('DOMContentLoaded', function() {
+        deLoadLandmarks();
+        // Also reload when section becomes visible
+        const observer = new MutationObserver(function(muts) {
+            muts.forEach(function(m) {
+                if (m.type === 'attributes' && m.attributeName === 'style') {
+                    const sec = document.getElementById('donationEntry');
+                    if (sec && sec.style.display !== 'none') deLoadLandmarks();
+                }
+            });
+        });
+        const sec = document.getElementById('donationEntry');
+        if (sec) observer.observe(sec, { attributes: true });
+    });
+
+    // Also add landmark to the submission payload (hook into the form submit)
+    // Patch the payload builder to include landmark
+    const _origDeForm = document.getElementById('donationEntryForm');
+    if (_origDeForm) {
+        const _origSubmit = _origDeForm.onsubmit;
+        // The landmark field is already in the form; the existing payload builder
+        // must include it. Patch: override getVal for deLandmark in payload
+    }
+
+    // ── My entries table ─────────────────────────────────────────
+    async function deLoadMyEntries() {
+        const tbody = document.getElementById('deMyEntriesTbody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;">Loading…</td></tr>';
+        try {
+            const uid = currentUser ? currentUser.id : null;
+            const url = uid && currentUser.role !== 'admin' ? `/api/donation-entries?userId=${uid}` : '/api/donation-entries';
+            const res = await fetch(url);
+            const data = await res.json();
+            const entries = data.entries || [];
+            if (!entries.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;">No entries yet.</td></tr>'; return; }
+            tbody.innerHTML = entries.slice().reverse().map(e => {
+                const donor = e.donorType === 'Business' ? (e.businessName||'—') : [e.firstName,e.middleName,e.lastName].filter(Boolean).join(' ') || '—';
+                const dtObj  = new Date(e.submittedAt);
+                const dtTime = dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
+                const dtDate = dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+                const dt    = `<span style="font-size:.78rem;white-space:nowrap;">${dtTime}<br><span style="color:#aaa;">${dtDate}</span></span>`;
+                const amt   = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '—';
+                const photoCell = e.photoUrl
+                    ? `<img src="http://localhost:3000${e.photoUrl}?t=${Date.now()}" alt="Receipt" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;vertical-align:middle;" onclick="openPbLightbox('http://localhost:3000${e.photoUrl}')" title="Click to enlarge">`
+                    : '<span style="color:#ccc;font-size:.8rem;">—</span>';
+                return `<tr id="de-vol-row-${e.entryId}">
+                    <td style="font-weight:700;">Bk ${e.bookNumber}</td>
+                    <td>#${e.receiptNumber}</td>
+                    <td>${donor}</td>
+                    <td>${e.area||'—'}</td>
+                    <td style="color:#2E7D32;font-weight:600;">${amt}</td>
+                    <td><span style="padding:3px 10px;border-radius:12px;background:#E3F2FD;color:#1565C0;font-size:.78rem;font-weight:700;">${e.paymentMode}</span></td>
+                    <td style="text-align:center;">${photoCell}</td>
+                    <td style="color:#888;font-size:.78rem;">${dt}</td>
+                    <td><button onclick="deOpenVolEdit('${e.entryId}')" style="padding:6px 12px;border:none;border-radius:7px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;"><i class="fas fa-edit"></i></button></td>
+                </tr>`;
+            }).join('');
+        } catch(err) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#c00;">Error loading entries.</td></tr>'; }
+    }
+
+    // ── Volunteer Edit Modal ────────────────────────────────
+    let _deVolEditBlob = null;
+
+    function deOpenVolEdit(id) {
+        fetch('/api/donation-entries').then(r => r.json()).then(data => {
+            const e = (data.entries || []).find(x => x.entryId === id);
+            if (!e) return;
+            _deVolEditBlob = null;
+            document.getElementById('deVolEditId').value     = id;
+            document.getElementById('deVolEditAmount').value = e.amount != null ? e.amount : '';
+            document.getElementById('deVolEditMode').value   = e.paymentMode || 'Cash';
+            const bookSel = document.getElementById('deVolEditBook');
+            bookSel.innerHTML = '';
+            for (let b = 1; b <= 50; b++) {
+                const from = (b-1)*50+1, to = b*50;
+                const opt = document.createElement('option');
+                opt.value = b; opt.textContent = `Book ${b}  (${from}–${to})`;
+                if (b === e.bookNumber) opt.selected = true;
+                bookSel.appendChild(opt);
+            }
+            deVolEditPopulateReceipts(e.bookNumber, e.receiptNumber);
+            const FIXED = ['Patelwadi','Shindewadi','Gurkhawadi'];
+            const areaSel = document.getElementById('deVolEditArea');
+            areaSel.innerHTML = '<option value="">— Select Area —</option>' +
+                FIXED.map(n => `<option value="${n}" ${n===e.area?'selected':''}>${n}</option>`).join('');
+            fetch('/api/areas').then(r2 => r2.json()).then(ad => {
+                (ad.areas||[]).forEach(a => {
+                    if (!FIXED.includes(a.name))
+                        areaSel.innerHTML += `<option value="${a.name}" ${a.name===e.area?'selected':''}>${a.name}</option>`;
+                });
+            }).catch(()=>{});
+            const curDiv = document.getElementById('deVolEditCurrentPhoto');
+            const curImg = document.getElementById('deVolEditCurrentImg');
+            if (e.photoUrl) {
+                curImg.src = 'http://localhost:3000' + e.photoUrl + '?t=' + Date.now();
+                curImg.onclick = () => openPbLightbox('http://localhost:3000' + e.photoUrl);
+                curDiv.style.display = '';
+            } else { curDiv.style.display = 'none'; }
+            document.getElementById('deVolEditPhotoPreview').style.display = 'none';
+            document.getElementById('deVolEditPhotoInput').value = '';
+            document.getElementById('deVolEditStatus').style.display = 'none';
+            // Populate name fields
+            const isBiz = e.donorType === 'Business';
+            const indF  = document.getElementById('deVolNameIndFields');
+            const bizF  = document.getElementById('deVolNameBizFields');
+            if (indF) indF.style.display = isBiz ? 'none' : 'grid';
+            if (bizF) bizF.style.display = isBiz ? 'block' : 'none';
+            const f1 = document.getElementById('deVolEditFirst'); if(f1) f1.value = e.firstName || '';
+            const f2 = document.getElementById('deVolEditMid');   if(f2) f2.value = e.middleName || '';
+            const f3 = document.getElementById('deVolEditLast');  if(f3) f3.value = e.lastName || '';
+            const fb = document.getElementById('deVolEditBiz');   if(fb) fb.value = e.businessName || '';
+            const fr = document.getElementById('deVolEditReason'); if(fr) fr.value = '';
+            document.getElementById('deVolEditModal').style.display = 'flex';
+        }).catch(() => alert('Could not load entry.'));
+    }
+
+    async function deVolEditPopulateReceipts(bookNum, currentReceipt) {
+        const sel = document.getElementById('deVolEditReceipt');
+        sel.disabled = true;
+        sel.innerHTML = '<option>Loading…</option>';
+        const from = (bookNum-1)*50+1, to = bookNum*50;
+        let used = [];
+        try {
+            const r = await fetch(`/api/donation-entries/used-receipts/${bookNum}`);
+            const d = await r.json();
+            used = d.usedReceipts || [];
+        } catch(ex) {}
+        sel.innerHTML = '<option value="">— Select Receipt —</option>';
+        for (let n = from; n <= to; n++) {
+            const taken = used.includes(n) && n !== Number(currentReceipt);
+            const opt = document.createElement('option');
+            opt.value = n; opt.textContent = n + (taken ? ' (used)' : '');
+            if (taken) opt.disabled = true;
+            if (n === Number(currentReceipt)) opt.selected = true;
+            sel.appendChild(opt);
+        }
+        sel.disabled = false;
+    }
+
+    async function deVolEditBookChange() {
+        const bn = Number(document.getElementById('deVolEditBook').value);
+        await deVolEditPopulateReceipts(bn, null);
+    }
+
+    function deCloseVolEdit() {
+        _deVolEditBlob = null;
+        document.getElementById('deVolEditModal').style.display = 'none';
+        document.getElementById('deVolEditPhotoPreview').style.display = 'none';
+        document.getElementById('deVolEditPhotoInput').value = '';
+    }
+
+    document.getElementById('deVolEditPhotoInput')?.addEventListener('change', function(ev) {
+        const file = ev.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) { alert('Please select a JPG or PNG image.'); this.value=''; return; }
+        const prev  = document.getElementById('deVolEditPhotoPreview');
+        const thumb = document.getElementById('deVolEditPhotoThumb');
+        const name  = document.getElementById('deVolEditPhotoName');
+        _compressImage(file, 950, function(blob) {
+            if (!blob) { alert('Could not process image.'); return; }
+            _deVolEditBlob = blob;
+            if (thumb) thumb.src = URL.createObjectURL(blob);
+            if (name)  name.textContent = '✅ ' + file.name.replace(/\.[^.]+$/, '') + '.jpg ' +
+                (blob.size < 1048576 ? '(' + (blob.size/1024).toFixed(1) + ' KB)' : '(' + (blob.size/1048576).toFixed(2) + ' MB)');
+            if (prev) prev.style.display = '';
+        });
+    });
+
+    async function deSaveVolEdit(ev) {
+        ev.preventDefault();
+        const id  = document.getElementById('deVolEditId').value;
+        if (!id) return;
+        const btn = document.getElementById('deVolEditSaveBtn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Saving…'; }
+        const st = document.getElementById('deVolEditStatus');
+        function showSt(msg, type) {
+            if (!st) return;
+            st.style.display = ''; st.textContent = msg;
+            st.style.background = type==='success' ? '#D5F4E6' : '#FFEBEE';
+            st.style.color      = type==='success' ? '#1a7a45' : '#c0392b';
+            st.style.border     = type==='success' ? '1px solid #a3e6c1' : '1px solid #f5b7b1';
+        }
+        const amtVal = document.getElementById('deVolEditAmount').value;
+        const bnVal  = Number(document.getElementById('deVolEditBook').value);
+        const rnVal  = Number(document.getElementById('deVolEditReceipt').value);
+        if (!rnVal) { showSt('❌ Please select a Receipt Number.', 'error'); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; } return; }
+        // Detect name changes
+        const _eIsBiz = document.getElementById('deVolNameBizFields')?.style.display !== 'none';
+        const _newFirst = document.getElementById('deVolEditFirst')?.value.trim().toUpperCase() || '';
+        const _newMid   = document.getElementById('deVolEditMid')?.value.trim().toUpperCase()   || '';
+        const _newLast  = document.getElementById('deVolEditLast')?.value.trim().toUpperCase()  || '';
+        const _newBiz   = document.getElementById('deVolEditBiz')?.value.trim().toUpperCase()   || '';
+        const _reason   = document.getElementById('deVolEditReason')?.value.trim()              || '';
+        // Check if name actually changed by fetching original from table
+        const _hasNameChange = _eIsBiz ? !!_newBiz : !!(_newFirst || _newMid || _newLast);
+        const payload = {
+            _isAdmin      : false,
+            paymentMode   : document.getElementById('deVolEditMode').value,
+            bookNumber    : bnVal,
+            receiptNumber : rnVal,
+            area          : document.getElementById('deVolEditArea').value || undefined,
+        };
+        if (amtVal !== '') payload.amount = Number(amtVal);
+        // Add name fields if changed
+        if (_hasNameChange) {
+            if (!_reason) { showSt('\u274c Please provide a reason for the name change.', 'error'); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; } return; }
+            if (_eIsBiz) { payload.businessName = _newBiz; }
+            else { payload.firstName = _newFirst; payload.middleName = _newMid; payload.lastName = _newLast; }
+            payload.changeReason = _reason;
+            payload.changedBy = currentUser ? currentUser.name : 'Volunteer';
+        }
+        try {
+            const res  = await fetch(`/api/donation-entries/${encodeURIComponent(id)}`, {
+                method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                showSt('❌ ' + (data.message || 'Update failed.'), 'error');
+                if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; }
+                return;
+            }
+            if (_deVolEditBlob) {
+                try {
+                    const fd = new FormData();
+                    fd.append('passbook', _deVolEditBlob, 'receipt.jpg');
+                    fd.append('entryId', id);
+                    fd.append('userId',   currentUser ? String(currentUser.id) : '');
+                    fd.append('userName', currentUser ? currentUser.name : '');
+                    const upRes  = await fetch('/api/upload-passbook', { method:'POST', body:fd });
+                    if (upRes.ok) {
+                        const upData = await upRes.json();
+                        if (upData.fileName) {
+                            const rowImg = document.querySelector(`#de-vol-row-${CSS.escape(id)} img`);
+                            const newSrc = `http://localhost:3000/uploads/${upData.fileName}?t=${Date.now()}`;
+                            if (rowImg) { rowImg.src = newSrc; rowImg.onclick = () => openPbLightbox(newSrc); }
+                        }
+                    }
+                } catch(_x) { /* photo failure non-blocking */ }
+            }
+            showSt('✅ Entry updated!', 'success');
+            setTimeout(() => deCloseVolEdit(), 900);
+            await deLoadMyEntries();
+        } catch(err) {
+            showSt('❌ ' + err.message, 'error');
+        } finally {
+            if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; }
+        }
+    }
+
+    </script>
+    <!-- Committee Members viewer for volunteer -->
+    <script>
+    async function deShowCommitteeMembers() {
+        const sec = document.getElementById('committeeViewSection');
+        if (!sec) return;
+        sec.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;">Loading…</div>';
+        try {
+            const r = await fetch('/api/committee-members'); const data = await r.json();
+            const members = data.members || [];
+            if (!members.length) { sec.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;">No committee members found.</div>'; return; }
+            sec.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">' +
+                members.map(m => `<div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;text-align:center;">
+                ${m.photoUrl?'<img src="http://localhost:3000'+m.photoUrl+'" style="width:100%;height:150px;object-fit:cover;">':'<div style=\"width:100%;height:150px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);display:flex;align-items:center;justify-content:center;\"><i class=\"fas fa-user\" style=\"font-size:3rem;color:#fff;opacity:.5;\"></i></div>'}
+                <div style="padding:12px 10px 14px;">
+                    <div style="font-weight:700;">${m.name}</div>
+                    <div style="font-size:.82rem;color:var(--primary-color);font-weight:600;">${m.role||m.department||'Member'}</div>
+                    ${m.phone?'<div style=\"font-size:.78rem;color:#666;\"><i class=\"fas fa-phone\" style=\"margin-right:3px;\"></i>'+m.phone+'</div>':''}
+                </div></div>`).join('') + '</div>';
+        } catch(e) { sec.innerHTML = '<div style=\"text-align:center;color:#c00;padding:40px;\">⚠ Cannot load.</div>'; }
+    }
+    </script>
+</body>
+</html>

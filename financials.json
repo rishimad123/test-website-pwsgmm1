@@ -1,0 +1,30 @@
+[
+  {
+    "financialId": "FIN-1778710987912",
+    "year": "2024",
+    "lastYearBalance": 200000,
+    "currentYearDonations": 50000,
+    "cashInHand": 58000,
+    "cashAtBank": 300000,
+    "cashWithdrawnFromBank": 0,
+    "totalCollection": 900000,
+    "currentYearExpenses": 50000,
+    "notes": "meow",
+    "createdAt": "2026-05-13T22:23:07.912Z",
+    "updatedAt": "2026-05-13T22:37:54.334Z"
+  },
+  {
+    "financialId": "FIN-1778711931223",
+    "year": "2023",
+    "lastYearBalance": 500000,
+    "currentYearDonations": 100000,
+    "cashInHand": 300000,
+    "cashAtBank": 600000,
+    "cashWithdrawnFromBank": 0,
+    "totalCollection": 1500000,
+    "currentYearExpenses": 200000,
+    "notes": "mmm",
+    "createdAt": "2026-05-13T22:38:51.223Z",
+    "updatedAt": null
+  }
+]

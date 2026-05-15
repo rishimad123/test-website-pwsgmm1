@@ -1,0 +1,17 @@
+[
+  {
+    "expenseId": "EXP-1778783125312",
+    "date": "2026-12-01",
+    "serialNumber": "2020",
+    "particulars": "hhhrr",
+    "commonHeader": "",
+    "referenceNumber": "",
+    "category": "Mandap and Decoration Expense",
+    "subcategory": "Other Expense",
+    "soundEvent": null,
+    "reason": "hhhh",
+    "amount": 1000,
+    "createdAt": "2026-05-14T18:25:25.312Z",
+    "updatedAt": "2026-05-14T18:25:43.965Z"
+  }
+]
