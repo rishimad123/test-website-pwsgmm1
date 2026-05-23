@@ -435,5 +435,31 @@
     "updatedAt": "2026-05-15T21:43:26.097Z",
     "photoFile": "1778881406093_Cool_Ninja_Pfp.jpg",
     "photoUrl": "/uploads/1778881406093_Cool_Ninja_Pfp.jpg"
+  },
+  {
+    "entryId": "DE-1779046158050",
+    "bookNumber": 1,
+    "receiptNumber": 12,
+    "donorType": "Individual",
+    "firstName": "LL",
+    "middleName": "H",
+    "lastName": "F",
+    "businessName": null,
+    "whatsappNumber": null,
+    "mobileNumber": null,
+    "mailId": null,
+    "buildingName": null,
+    "area": null,
+    "landmark": null,
+    "amount": 20,
+    "paymentMode": "Cash",
+    "referenceNumber": null,
+    "submittedAt": "2026-05-17T19:29:18.050Z",
+    "submittedBy": "Admin User",
+    "submittedByUserId": 1,
+    "deleted": false,
+    "updatedAt": "2026-05-17T19:29:18.314Z",
+    "photoFile": "1779046158313_Cool_Ninja_Pfp.jpg",
+    "photoUrl": "/uploads/1779046158313_Cool_Ninja_Pfp.jpg"
   }
 ]

@@ -82,6 +82,7 @@ function showAdminSection(sectionId) {
     if (sectionId === 'donationTracking') loadDonationTrackingCards();
     if (sectionId === 'dashboard')        loadLiveRecentDonations();
     if (sectionId === 'volunteers')       loadVolunteers();
+    if (sectionId === 'donationEntries')  loadAdminDonationEntries();
 }
 
 // ── Quick Upload (from Admin Dashboard home) ──────────────────────────────────
@@ -745,8 +746,8 @@ async function loadAdminReceipts() {
             const hasFile = !!r.passbookUrl;
             const viewBtn = hasFile
                 ? (isPdf
-                    ? `<button class="btn-icon btn-edit" title="Open PDF" onclick="window.open('http://localhost:3000${r.passbookUrl}','_blank')"><i class="fas fa-file-pdf"></i></button>`
-                    : `<button class="btn-icon btn-edit" title="View Image" onclick="openAdminPbLightbox('http://localhost:3000${r.passbookUrl}')"><i class="fas fa-image"></i></button>`)
+                    ? `<button class="btn-icon btn-edit" title="Open PDF" onclick="window.open('${r.passbookUrl}','_blank')"><i class="fas fa-file-pdf"></i></button>`
+                    : `<button class="btn-icon btn-edit" title="View Image" onclick="openAdminPbLightbox('${r.passbookUrl}')"><i class="fas fa-image"></i></button>`)
                 : '<span style="color:#ccc;font-size:.8rem;">—</span>';
             const safeAmt  = (r.amount !== null && r.amount !== undefined) ? r.amount : 0;
             const safeName = (r.name || '').replace(/'/g, "\\'");
@@ -1982,7 +1983,7 @@ async function loadBalanceRecovery() {
                 : '<span style="color:#ccc;font-style:italic;">No amount</span>';
             const hasFile  = !!r.passbookUrl;
             const photoBtn = hasFile
-                ? `<button class="btn-icon btn-edit" title="View Photo" onclick="openAdminPbLightbox('http://localhost:3000${r.passbookUrl}')"><i class="fas fa-image"></i></button>`
+                ? `<button class="btn-icon btn-edit" title="View Photo" onclick="openAdminPbLightbox('${r.passbookUrl}')"><i class="fas fa-image"></i></button>`
                 : '<span style="color:#ccc;font-size:.8rem">—</span>';
             const isReceived  = r.status === 'received';
             const statusBadge = isReceived
@@ -2276,4 +2277,94 @@ function volExportCSV() {
     document.body.appendChild(a); a.click();
     document.body.removeChild(a); URL.revokeObjectURL(url);
     showNotification('✅ CSV exported!', 'success');
+}
+
+// ── Admin sidebar hamburger ─────────────────────────────────────────────────
+function toggleAdminSidebar() {
+    const sidebar  = document.querySelector('.admin-sidebar');
+    const overlay  = document.getElementById('adminSidebarOverlay');
+    const isOpen   = sidebar && sidebar.classList.contains('sidebar-open');
+    if (sidebar)  sidebar.classList.toggle('sidebar-open', !isOpen);
+    if (overlay)  overlay.style.display = isOpen ? 'none' : 'block';
+}
+
+// ── Admin view of all donation entries ────────────────────────────────────────
+let _deAdmAllEntries = [];
+
+async function loadAdminDonationEntries() {
+    const tbody = document.getElementById('deAdmTbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:30px;"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>';
+    try {
+        const res  = await fetch('/api/donation-entries');
+        const data = await res.json();
+        _deAdmAllEntries = (data.entries || []).slice().reverse();
+        deAdmApplyFilter();
+    } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#c0392b;padding:24px;">⚠ Cannot reach server.</td></tr>';
+    }
+}
+
+function deAdmApplyFilter() {
+    const q     = (document.getElementById('deAdmSearch')?.value || '').toLowerCase().trim();
+    const list  = q ? _deAdmAllEntries.filter(e => {
+        const donor = e.donorType === 'Business' ? (e.businessName||'') : [e.firstName,e.middleName,e.lastName].filter(Boolean).join(' ');
+        return (donor + ' ' + (e.area||'') + ' ' + (e.paymentMode||'') + ' ' + (e.submittedBy||'')).toLowerCase().includes(q);
+    }) : _deAdmAllEntries;
+
+    const totalAmt   = list.reduce((s,e) => s + (Number(e.amount)||0), 0);
+    const withPhoto  = list.filter(e => e.photoUrl).length;
+    const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    setEl('deAdmCount',     list.length.toLocaleString('en-IN'));
+    setEl('deAdmTotal',     '₹' + totalAmt.toLocaleString('en-IN'));
+    setEl('deAdmWithPhoto', withPhoto.toLocaleString('en-IN'));
+
+    const tbody = document.getElementById('deAdmTbody');
+    if (!tbody) return;
+    if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:24px;">No entries found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = list.map(e => {
+        const donor   = e.donorType === 'Business' ? (e.businessName||'—') : [e.firstName,e.middleName,e.lastName].filter(Boolean).join(' ') || '—';
+        const amt     = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '<span style="color:#ccc;">—</span>';
+        const dtObj   = new Date(e.submittedAt);
+        const dtTime  = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
+        const dtDate  = dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+        const photoCell = e.photoUrl
+            ? `<img src="${e.photoUrl}?t=${Date.now()}" loading="lazy" onclick="openAdminPbLightbox('${e.photoUrl}')" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" title="Click to enlarge">`
+            : '<span style="color:#ccc;font-size:.8rem;">—</span>';
+        const modeBadge = `<span style="padding:3px 9px;border-radius:10px;background:#E3F2FD;color:#1565C0;font-size:.76rem;font-weight:700;">${e.paymentMode||'—'}</span>`;
+        const safeId  = (e.entryId||'').replace(/'/g,"\\'");
+        return `<tr>
+            <td><strong>Bk${e.bookNumber}</strong><br><span style="font-size:.8rem;color:#888;">#${e.receiptNumber}</span></td>
+            <td>${escHtml(donor)}</td>
+            <td>${escHtml(e.area||'—')}</td>
+            <td style="color:#2E7D32;font-weight:600;">${amt}</td>
+            <td>${modeBadge}</td>
+            <td style="text-align:center;">${photoCell}</td>
+            <td style="font-size:.82rem;color:#3949AB;">${escHtml(e.submittedBy||'—')}</td>
+            <td style="font-size:.78rem;color:#888;white-space:nowrap;">${dtTime}<br>${dtDate}</td>
+            <td>
+                <button class="btn-icon btn-delete" title="Delete entry" onclick="deAdmDelete('${safeId}')"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+async function deAdmDelete(entryId) {
+    if (!confirm('Delete this donation entry? This cannot be undone.')) return;
+    try {
+        const res  = await fetch(`/api/donation-entries/${encodeURIComponent(entryId)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showNotification('Entry deleted.', 'success');
+            _deAdmAllEntries = _deAdmAllEntries.filter(e => e.entryId !== entryId);
+            deAdmApplyFilter();
+        } else {
+            showNotification('Error: ' + (data.message || 'Delete failed.'), 'error');
+        }
+    } catch(e) {
+        showNotification('Cannot reach server.', 'error');
+    }
 }
