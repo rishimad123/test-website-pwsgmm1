@@ -1809,7 +1809,7 @@ window._fmtBytesA = function(b) {
             </div>
         
                 <!-- ═══════════ Donation Data Entries (Admin) ═══════════ -->
-                <div id="donationEntries" class="content-section">
+                <div id="donationEntriesStatic" class="content-section">
                     <div class="admin-card">
                         <div class="card-header">
                             <h3><i class="fas fa-file-invoice-dollar" style="color:var(--primary-color);margin-right:8px;"></i>All Donation Entries</h3>
@@ -2323,7 +2323,7 @@ window._fmtBytesA = function(b) {
                 <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
                     <i class="fas fa-address-book" style="margin-right:6px;"></i>Contact Information
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;">
                     <div class="form-group" style="margin:0;">
                         <label for="adeWhatsapp"><i class="fab fa-whatsapp" style="color:#25D366;"></i> WhatsApp Number</label>
                         <input type="tel" id="adeWhatsapp" class="form-control" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}">
@@ -3220,7 +3220,7 @@ window._fmtBytesA = function(b) {
 
     // ── Admin New Entry Form ─────────────────────────────────────────────────
     (function injectAdminNewEntryForm() {
-        const sec = document.getElementById('donationEntries');
+        const sec = document.getElementById('donationEntriesStatic');
         if (!sec) return;
         const formCard = document.createElement('div');
         formCard.style.cssText = 'background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:22px;overflow:hidden;';
