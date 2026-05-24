@@ -2377,6 +2377,7 @@ window._fmtBytesA = function(b) {
                     <div class="form-group"><label>Building Name</label><input name="buildingName" class="form-control" value="${e.buildingName||''}"></div>
                     <div class="form-group"><label>Area</label><input name="area" class="form-control" value="${e.area||''}"></div>
                 </div>
+                <div class="form-group"><label>Common Landmark <span style="color:#aaa;font-size:.8rem;font-weight:400;">(optional)</span></label><input name="landmark" class="form-control" value="${e.landmark||''}" placeholder="e.g. Near School, Opposite Temple"></div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
                     <div class="form-group"><label>Amount (₹)</label><input name="amount" class="form-control" type="number" value="${e.amount||''}" min="0"></div>
                     <div class="form-group"><label>Payment Mode</label>
@@ -2385,22 +2386,28 @@ window._fmtBytesA = function(b) {
                             <option ${e.paymentMode==='Cheque'?'selected':''}>Cheque</option>
                             <option ${e.paymentMode==='UPI'?'selected':''}>UPI</option>
                             <option ${e.paymentMode==='RTGS'?'selected':''}>RTGS</option>
+                            <option ${e.paymentMode==='Balance'?'selected':''}>Balance</option>
                         </select>
                     </div>
                     <div class="form-group"><label>Reference No.</label><input name="referenceNumber" class="form-control" value="${e.referenceNumber||''}"></div>
                 </div>
-                <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:16px;margin-bottom:14px;">
+                <div style="border:1.5px dashed #ffe0d0;border-radius:12px;padding:16px;margin-bottom:14px;">
                     <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:10px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Receipt Photo</div>
                     <div id="adeEditCurPhotoDiv" style="display:none;margin-bottom:10px;">
                         <p style="font-size:.8rem;color:#777;margin:0 0 6px;">Current photo:</p>
                         <img id="adeEditCurPhotoImg" src="" alt="Current" style="max-width:100%;max-height:130px;border-radius:8px;border:1.5px solid #e0e0e0;object-fit:contain;cursor:pointer;">
                     </div>
-                    <button type="button" onclick="document.getElementById('adeEditPhotoInput').click()" style="width:100%;padding:11px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Upload / Replace Photo</button>
+                    <button type="button" onclick="document.getElementById('adeEditPhotoInput').click()" style="width:100%;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                        <i class="fas fa-camera" style="font-size:1.3rem;"></i> Take Photo / Select Image
+                    </button>
                     <input type="file" id="adeEditPhotoInput" style="display:none;" accept="image/*">
                     <div id="adeEditPhotoPreview" style="display:none;margin-top:10px;">
                         <img id="adeEditPhotoThumb" src="" alt="Preview" style="max-width:100%;max-height:130px;border-radius:8px;border:1.5px solid #ffe0d0;object-fit:contain;">
-                        <p id="adeEditPhotoName" style="font-size:.8rem;color:#555;margin:6px 0 0;"></p>
+                        <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
+                            <p id="adeEditPhotoName" style="font-size:.8rem;color:#555;margin:0;flex:1;"></p>
+                        </div>
                     </div>
+                    <p style="font-size:.78rem;color:#aaa;margin:10px 0 0;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Image is automatically compressed to under 1 MB. Works on Android, iOS, and desktop.</p>
                 </div>
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
                     <button type="button" class="btn" style="background:#eee;color:#555;" onclick="document.getElementById('adeEditModal').remove()">Cancel</button>
@@ -2852,15 +2859,44 @@ window._fmtBytesA = function(b) {
                     <div class="form-group" style="margin:0;"><label>Amount (&#8377;)</label><input type="number" id="aneAmount" class="form-control" min="0" placeholder="0"></div>
                     <div class="form-group" style="margin:0;"><label>Reference No. <span style="color:#aaa;font-size:.8rem;">(optional)</span></label><input id="aneRef" class="form-control" placeholder=""></div>
                 </div>
-                <div class="form-group" style="margin-bottom:14px;"><label>Payment Mode</label><select id="aneMode" class="form-control"><option>Cash</option><option>Cheque</option><option>UPI</option><option>RTGS</option></select></div>
-                <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:14px;margin-bottom:16px;">
-                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:10px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Receipt Photo <span style="color:#aaa;font-weight:400;">(optional)</span></div>
-                    <button type="button" onclick="document.getElementById('anePhotoInput').click()" style="width:100%;padding:11px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Choose Photo</button>
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label style="font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:#555;">Payment Mode <span style="color:red;">*</span></label>
+                    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px;">
+                        <label id="aneModeCash" onclick="aneSetMode('Cash')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border:2px solid var(--primary-color);border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:var(--primary-color);color:#fff;transition:all .2s;user-select:none;">
+                            <i class="fas fa-money-bill-wave" style="font-size:1.1rem;"></i>Cash
+                        </label>
+                        <label id="aneModeChq" onclick="aneSetMode('Cheque')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;user-select:none;">
+                            <i class="fas fa-file-alt" style="font-size:1.1rem;"></i>Cheque
+                        </label>
+                        <label id="aneModeUPI" onclick="aneSetMode('UPI')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;user-select:none;">
+                            <i class="fas fa-qrcode" style="font-size:1.1rem;"></i>UPI
+                        </label>
+                        <label id="aneModeRTGS" onclick="aneSetMode('RTGS')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;user-select:none;">
+                            <i class="fas fa-university" style="font-size:1.1rem;"></i>RTGS
+                        </label>
+                        <label id="aneModeBal" onclick="aneSetMode('Balance')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;user-select:none;">
+                            <i class="fas fa-clock" style="font-size:1.1rem;"></i>Balance
+                        </label>
+                    </div>
+                    <input type="hidden" id="anePaymentMode" value="Cash">
+                </div>
+                <div id="aneRefGroup" style="margin-bottom:14px;">
+                    <label id="aneRefLabel" class="form-group" style="display:block;"><span style="font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:#555;">Reference No. <span style="color:#aaa;font-size:.8rem;font-weight:400;">(optional)</span></span><input id="aneRef" class="form-control" placeholder="Ref / Transaction / Cheque number" style="margin-top:6px;"></label>
+                </div>
+                <div style="border:1.5px dashed #ffe0d0;border-radius:12px;padding:16px;margin-bottom:16px;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:12px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Receipt Photo <span style="color:#aaa;font-weight:400;">(optional)</span></div>
+                    <button type="button" onclick="document.getElementById('anePhotoInput').click()" style="flex:1;width:100%;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                        <i class="fas fa-camera" style="font-size:1.3rem;"></i> Take Photo / Select Image
+                    </button>
                     <input type="file" id="anePhotoInput" style="display:none;" accept="image/*">
                     <div id="anePhotoPreview" style="display:none;margin-top:10px;">
-                        <img id="anePhotoThumb" src="" alt="Preview" style="max-width:100%;max-height:130px;border-radius:8px;border:1.5px solid #ffe0d0;object-fit:contain;">
-                        <p id="anePhotoName" style="font-size:.8rem;color:#555;margin:6px 0 0;"></p>
+                        <img id="anePhotoThumb" src="" alt="Preview" style="max-width:100%;max-height:180px;border-radius:10px;border:1.5px solid #e0e0e0;object-fit:contain;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
+                            <span id="anePhotoName" style="font-size:.83rem;color:#555;flex:1;"></span>
+                            <button type="button" onclick="aneClearPhoto()" style="background:none;border:none;color:#E74C3C;cursor:pointer;font-size:.85rem;"><i class="fas fa-times"></i> Remove</button>
+                        </div>
                     </div>
+                    <p style="font-size:.78rem;color:#aaa;margin:10px 0 0;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Image is automatically compressed to under 1 MB. Works on Android, iOS, and desktop.</p>
                 </div>
                 <div style="display:flex;gap:10px;justify-content:flex-end;">
                     <button type="button" class="btn" style="background:#eee;color:#555;" onclick="aneReset()">Reset</button>
@@ -2874,6 +2910,45 @@ window._fmtBytesA = function(b) {
 
     let _aneOpen = false;
     let _anePhotoFile = null;
+
+    /* ── Payment mode tile toggle ─────────────────────────────────────── */
+    const _aneModeTiles = { Cash:'aneModeCash', Cheque:'aneModeChq', UPI:'aneModeUPI', RTGS:'aneModeRTGS', Balance:'aneModeBal' };
+    const _aneModeColors = {
+        Cash    : { bg:'var(--primary-color)', border:'var(--primary-color)', color:'#fff' },
+        Cheque  : { bg:'#1565C0',             border:'#1565C0',              color:'#fff' },
+        UPI     : { bg:'#6A1B9A',             border:'#6A1B9A',              color:'#fff' },
+        RTGS    : { bg:'#00796B',             border:'#00796B',              color:'#fff' },
+        Balance : { bg:'#4527A0',             border:'#4527A0',              color:'#fff' },
+    };
+    function aneSetMode(mode) {
+        document.getElementById('anePaymentMode').value = mode;
+        Object.keys(_aneModeTiles).forEach(function(m) {
+            const el = document.getElementById(_aneModeTiles[m]);
+            if (!el) return;
+            if (m === mode) {
+                const c = _aneModeColors[m];
+                el.style.background = c.bg;
+                el.style.borderColor = c.border;
+                el.style.color = c.color;
+            } else {
+                el.style.background = '#f9f9f9';
+                el.style.borderColor = '#ddd';
+                el.style.color = '#555';
+            }
+        });
+        // Show/hide reference field (Balance needs no ref by default)
+        const rg = document.getElementById('aneRefGroup');
+        if (rg) rg.style.display = mode === 'Balance' ? 'none' : '';
+    }
+
+    function aneClearPhoto() {
+        window._anePhotoFile = null;
+        const inp = document.getElementById('anePhotoInput'); if (inp) inp.value = '';
+        const prev = document.getElementById('anePhotoPreview'); if (prev) prev.style.display = 'none';
+        const thumb = document.getElementById('anePhotoThumb'); if (thumb) thumb.src = '';
+        const name = document.getElementById('anePhotoName'); if (name) name.textContent = '';
+    }
+
     function aneToggle() {
         _aneOpen = !_aneOpen;
         document.getElementById('aneFormBody').style.display = _aneOpen ? '' : 'none';
@@ -2922,12 +2997,15 @@ window._fmtBytesA = function(b) {
     function aneReset() {
         document.getElementById('aneForm')?.reset();
         document.getElementById('aneBook').value='';
-        const rs=document.getElementById('aneReceipt'); if(rs){rs.innerHTML='<option>— Select Book first —</option>';rs.disabled=true;}
+        const rs=document.getElementById('aneReceipt'); if(rs){rs.innerHTML='<option>\u2014 Select Book first \u2014</option>';rs.disabled=true;}
         const pp=document.getElementById('anePhotoPreview'); if(pp) pp.style.display='none';
         _anePhotoFile=null;
         window._anePhotoFile=null;
         document.getElementById('anePhotoInput').value='';
         document.getElementById('aneStatus').style.display='none';
+        // Reset payment mode tiles back to Cash
+        aneSetMode('Cash');
+        const rg=document.getElementById('aneRefGroup'); if(rg) rg.style.display='';
     }
     async function aneSave(ev) {
         ev.preventDefault();
@@ -2946,7 +3024,7 @@ window._fmtBytesA = function(b) {
             firstName:fn, middleName:mn, lastName:ln,
             area:document.getElementById('aneArea').value||null,
             amount:document.getElementById('aneAmount').value!==''?Number(document.getElementById('aneAmount').value):null,
-            paymentMode:document.getElementById('aneMode').value||'Cash',
+            paymentMode:document.getElementById('anePaymentMode')?.value||document.getElementById('aneMode')?.value||'Cash',
             referenceNumber:document.getElementById('aneRef').value.trim()||null,
             submittedBy:currentUser?currentUser.name:'Admin',
             submittedByUserId:currentUser?currentUser.id:null
@@ -3112,7 +3190,7 @@ window._fmtBytesA = function(b) {
             area:document.getElementById('aneArea').value||null,
             landmark:document.getElementById('aneLandmark')?.value||null,
             amount:document.getElementById('aneAmount').value!==''?Number(document.getElementById('aneAmount').value):null,
-            paymentMode:document.getElementById('aneMode').value||'Cash',
+            paymentMode:document.getElementById('anePaymentMode')?.value||document.getElementById('aneMode')?.value||'Cash',
             referenceNumber:document.getElementById('aneRef')?.value.trim()||null,
             submittedBy:currentUser?currentUser.name:'Admin',
             submittedByUserId:currentUser?currentUser.id:null

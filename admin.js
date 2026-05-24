@@ -1971,13 +1971,15 @@ async function loadBalanceRecovery() {
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:24px;">Loading…</td></tr>';
     try {
-        // Merge Pauti slips (mode=balance or no amount) + receipts (type=balance)
-        const [pbRes, rcRes] = await Promise.all([
-            fetch('http://localhost:3000/api/pauti-books'),
-            fetch('http://localhost:3000/api/receipts')
+        // Merge: Pauti slips (mode=balance or no amount) + balance-type receipts + donation entries with Balance mode
+        const [pbRes, rcRes, deRes] = await Promise.all([
+            fetch('/api/pauti-books'),
+            fetch('/api/receipts'),
+            fetch('/api/donation-entries')
         ]);
         const pbData = await pbRes.json();
         const rcData = await rcRes.json();
+        const deData = await deRes.json();
 
         // Pauti slips with payment mode = balance (these are pending collections)
         const pautiPending = [];
@@ -2004,7 +2006,29 @@ async function loadBalanceRecovery() {
         // Regular balance receipts
         const receiptBal = (rcData.receipts || []).filter(r => r.type === 'balance' && !r.deleted);
 
-        const list = [...pautiPending, ...receiptBal].sort((a, b) =>
+        // Donation entries with paymentMode = 'Balance' (from any volunteer or admin)
+        const deBal = (deData.entries || []).filter(e =>
+            e.paymentMode && e.paymentMode.toLowerCase() === 'balance' && !e.deleted
+        ).map(e => {
+            const donor = e.donorType === 'Business'
+                ? (e.businessName || '—')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+            return {
+                receiptId  : e.entryId || ('DE-' + e.receiptNumber),
+                name       : donor,
+                amount     : e.amount || 0,
+                passbookUrl: e.photoUrl || null,
+                userId     : e.submittedBy || '—',
+                submittedAt: e.submittedAt || new Date().toISOString(),
+                status     : 'pending',
+                type       : 'donation-entry',
+                paymentMode: e.paymentMode,
+                _bookNum   : e.bookNumber,
+                _recNum    : e.receiptNumber,
+            };
+        });
+
+        const list = [...pautiPending, ...receiptBal, ...deBal].sort((a, b) =>
             new Date(b.submittedAt) - new Date(a.submittedAt));
 
         if (list.length === 0) {
@@ -2020,24 +2044,29 @@ async function loadBalanceRecovery() {
                 : '<span style="color:#ccc;font-style:italic;">No amount</span>';
             const hasFile  = !!r.passbookUrl;
             const photoBtn = hasFile
-                ? `<button class="btn-icon btn-edit" title="View Photo" onclick="openAdminPbLightbox('${r.passbookUrl}')"><i class="fas fa-image"></i></button>`
+                ? `<button class="btn-icon btn-edit" title="View Photo" onclick="openAdminPbLightbox(fixUrl('${r.passbookUrl}'))"><i class="fas fa-image"></i></button>`
                 : '<span style="color:#ccc;font-size:.8rem">—</span>';
             const isReceived  = r.status === 'received';
             const statusBadge = isReceived
                 ? '<span class="badge badge-success">Received</span>'
                 : '<span class="badge badge-warning">Pending</span>';
             const isPauti = r.type === 'pauti-slip';
+            const isDonEntry = r.type === 'donation-entry';
             const sourceTag = isPauti
                 ? `<span style="font-size:.7rem;background:#EEF2FF;color:#3730A3;padding:1px 7px;border-radius:10px;margin-left:4px;">Pauti #${r._slipNum}</span>`
+                : isDonEntry
+                ? `<span style="font-size:.7rem;background:#E0F2F1;color:#00695C;padding:1px 7px;border-radius:10px;margin-left:4px;">Bk${r._bookNum} #${r._recNum}</span>`
                 : '';
             const safeId   = r.receiptId.replace(/'/g, "\\'");
             const safeName = (r.name || '').replace(/'/g, "\\'");
             const safePhoto = (r.passbookUrl||'').replace(/'/g,"\\'");
-            const editBtn = `<button class="btn-icon btn-edit" title="Edit Entry" onclick="openBrEditModal('${safeId}','${safeName}',${r.amount||0},'${r.paymentMode||'cash'}','${r.status||'pending'}',${r._bookNumber||0},${r._receiptNumber||0},'${safePhoto}',${isPauti})"><i class="fas fa-edit"></i></button>`;
-            const markBtn  = (!isPauti && !isReceived)
+            const editBtn = isPauti || isDonEntry
+                ? ''
+                : `<button class="btn-icon btn-edit" title="Edit Entry" onclick="openBrEditModal('${safeId}','${safeName}',${r.amount||0},'${r.paymentMode||'cash'}','${r.status||'pending'}',${r._bookNumber||0},${r._receiptNumber||0},'${safePhoto}',${isPauti})"><i class="fas fa-edit"></i></button>`;
+            const markBtn  = (!isPauti && !isDonEntry && !isReceived)
                 ? `<button class="btn-icon btn-edit" style="background:#E8F5E9;color:#1B5E20;" title="Mark as Received" onclick="markBalanceReceived('${safeId}')"><i class="fas fa-check"></i></button>`
                 : '';
-            const delBtn = !isPauti
+            const delBtn = (!isPauti && !isDonEntry)
                 ? `<button class="btn-icon btn-delete" title="Soft Delete" onclick="softDeleteReceipt('${safeId}','${safeName}')"><i class="fas fa-trash"></i></button>`
                 : '';
             return `
