@@ -1,4 +1,4 @@
-// ==================== URL HELPER (mobile-safe relative URLs) ====================
+﻿// ==================== URL HELPER (mobile-safe relative URLs) ====================
 window.fixUrl = window.fixUrl || function(url) {
     if (!url) return '';
     if (url.startsWith('http://localhost:3000')) return url.slice('http://localhost:3000'.length);
@@ -145,7 +145,7 @@ async function handleQuickUpload(event) {
         const endpoint = mode === 'replace' ? '/api/donations/replace' : '/api/donations/upload';
 
         if (badgeEl) badgeEl.textContent = `Uploading ${rows.length} rows…`;
-        const res  = await fetch(`http://localhost:3000${endpoint}`, {
+        const res  = await fetch(`${endpoint}`, {
             method : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body   : JSON.stringify({ records: rows })
@@ -184,7 +184,7 @@ async function loadLiveRecentDonations() {
     const lastRef = document.getElementById('liveLastRefreshed');
     if (!tbody) return;
     try {
-        const res  = await fetch('http://localhost:3000/api/pauti-books');
+        const res  = await fetch('/api/pauti-books');
         const data = await res.json();
 
         // Flatten all filled slips from all books
@@ -237,7 +237,7 @@ async function loadLiveRecentDonations() {
 // ==================== DONATION TRACKING LIVE CARDS ====================
 async function loadDonationTrackingCards() {
     try {
-        const res  = await fetch('http://localhost:3000/api/pauti-books');
+        const res  = await fetch('/api/pauti-books');
         const data = await res.json();
         const allSlips = [];
         (data.pautiBooks || []).forEach(book => {
@@ -309,7 +309,7 @@ async function loadBrReceivedBreakdown() {
     if (!tbodyEl) return;
     tbodyEl.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;">Loading&hellip;</td></tr>';
     try {
-        const res  = await fetch('http://localhost:3000/api/pauti-books');
+        const res  = await fetch('/api/pauti-books');
         const data = await res.json();
         const allSlips = [];
         (data.pautiBooks || []).forEach(book => {
@@ -378,14 +378,14 @@ function saveBrOverride() {
 async function deleteDonationData() {
     const count = await (async () => {
         try {
-            const r = await fetch('http://localhost:3000/api/donations');
+            const r = await fetch('/api/donations');
             const d = await r.json();
             return (d.records || []).filter(x => !x._deleted).length;
         } catch { return '?'; }
     })();
     if (!confirm(`⚠ Delete ALL ${count} donation record(s)?\n\nThis will clear the entire Donation Explorer database. This action cannot be undone.\n\nClick OK to confirm.`)) return;
     try {
-        const res  = await fetch('http://localhost:3000/api/donations', { method: 'DELETE' });
+        const res  = await fetch('/api/donations', { method: 'DELETE' });
         const data = await res.json();
         if (res.ok && data.success) {
             showNotification(`🗑 ${data.deleted} donation record(s) deleted.`, 'success');
@@ -698,7 +698,7 @@ async function saveAdminEditAmount() {
     if (btn) { btn.disabled = true; btn.textContent = 'Savingâ€¦'; }
     try {
         const res = await fetch(
-            `http://localhost:3000/api/receipts/${encodeURIComponent(_admEditReceiptId)}`,
+            `/api/receipts/${encodeURIComponent(_admEditReceiptId)}`,
             {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -730,7 +730,7 @@ This will set the amount to empty.\nThe record, name, and passbook file will NOT
     if (!confirmed) return;
     try {
         const res = await fetch(
-            `http://localhost:3000/api/receipts/${encodeURIComponent(receiptId)}/clear-amount`,
+            `/api/receipts/${encodeURIComponent(receiptId)}/clear-amount`,
             { method: 'PATCH' }
         );
         const data = await res.json();
@@ -753,7 +753,7 @@ async function loadAdminReceipts() {
     tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#aaa;padding:24px;">Loading…</td></tr>';
     if (statusEl) statusEl.style.display = 'none';
     try {
-        const res  = await fetch('http://localhost:3000/api/receipts');
+        const res  = await fetch('/api/receipts');
         const data = await res.json();
         // Exclude soft-deleted and balance-type from the normal receipts view
         const list = (data.receipts || []).filter(r => !r.deleted && r.type !== 'balance');
@@ -830,7 +830,7 @@ async function updateReceiptMode(receiptId, newMode) {
         const payload = { paymentMode: newMode };
         // If switching away from check, clear checkNumber
         if (newMode !== 'check') payload.checkNumber = null;
-        const res  = await fetch(`http://localhost:3000/api/receipts/${encodeURIComponent(receiptId)}`, {
+        const res  = await fetch(`/api/receipts/${encodeURIComponent(receiptId)}`, {
             method : 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body   : JSON.stringify(payload)
@@ -917,7 +917,7 @@ async function loadExpenses() {
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:24px;">Loadingâ€¦</td></tr>';
     try {
-        const res  = await fetch('http://localhost:3000/api/expenses');
+        const res  = await fetch('/api/expenses');
         const data = await res.json();
         _expensesList = data.expenses || [];
         renderExpensesTable();
@@ -1137,7 +1137,7 @@ async function deleteExpense(id) {
     const label  = record ? `${record.category} / ${record.subcategory || 'N/A'} â€” \u20b9${record.amount}` : id;
     if (!confirm(`Delete this expense record?\n\n${label}\n\nThis cannot be undone.`)) return;
     try {
-        const res  = await fetch(`http://localhost:3000/api/expenses/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const res  = await fetch(`/api/expenses/${encodeURIComponent(id)}`, { method: 'DELETE' });
         const data = await res.json();
         if (res.ok && data.success) {
             showNotification('Expense deleted.', 'success');
@@ -1200,8 +1200,8 @@ async function saveExpenseRecord(ev) {
 
     try {
         const url    = _editExpenseId
-            ? `http://localhost:3000/api/expenses/${encodeURIComponent(_editExpenseId)}`
-            : 'http://localhost:3000/api/expenses';
+            ? `/api/expenses/${encodeURIComponent(_editExpenseId)}`
+            : '/api/expenses';
         const method = _editExpenseId ? 'PUT' : 'POST';
         const res    = await fetch(url, {
             method,
@@ -1299,7 +1299,7 @@ async function loadFinancials() {
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:#aaa;padding:24px;">Loading\u2026</td></tr>';
     try {
-        const res  = await fetch('http://localhost:3000/api/financials');
+        const res  = await fetch('/api/financials');
         const data = await res.json();
         _financialsList = (data.financials || []).sort((a, b) => String(a.year).localeCompare(String(b.year)));
         renderFinancials();
@@ -1456,7 +1456,7 @@ async function deleteFinancial(id) {
     const label  = record ? `Year ${record.year}` : id;
     if (!confirm(`Delete the financial record for ${label}?\n\nThis cannot be undone.`)) return;
     try {
-        const res  = await fetch(`http://localhost:3000/api/financials/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const res  = await fetch(`/api/financials/${encodeURIComponent(id)}`, { method: 'DELETE' });
         const data = await res.json();
         if (res.ok && data.success) {
             showNotification(`Financial record for ${label} deleted.`, 'success');
@@ -1499,8 +1499,8 @@ async function saveFinancialRecord(ev) {
     if (btn) { btn.disabled = true; btn.textContent = 'Saving\u2026'; }
     try {
         const url    = _editFinancialId
-            ? `http://localhost:3000/api/financials/${encodeURIComponent(_editFinancialId)}`
-            : 'http://localhost:3000/api/financials';
+            ? `/api/financials/${encodeURIComponent(_editFinancialId)}`
+            : '/api/financials';
         const method = _editFinancialId ? 'PUT' : 'POST';
         const res    = await fetch(url, {
             method,
@@ -1675,7 +1675,7 @@ function exportFinancialsExcel() {
 async function softDeleteReceipt(id, name) {
     if (!confirm(`Soft-delete the receipt for "${name}"?\n\nThe data will be kept on the server but hidden from this view.`)) return;
     try {
-        const res  = await fetch(`http://localhost:3000/api/receipts/${encodeURIComponent(id)}/soft-delete`, { method: 'PATCH' });
+        const res  = await fetch(`/api/receipts/${encodeURIComponent(id)}/soft-delete`, { method: 'PATCH' });
         const data = await res.json();
         if (res.ok && data.success) {
             showNotification('Receipt soft-deleted (data retained).', 'success');
@@ -1701,7 +1701,7 @@ async function loadPautiBooks() {
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:24px;">Loading…</td></tr>';
     try {
-        const res  = await fetch('http://localhost:3000/api/pauti-books');
+        const res  = await fetch('/api/pauti-books');
         const data = await res.json();
         _pautiBooksList = (data.pautiBooks || []).sort((a, b) => a.bookNumber - b.bookNumber);
         renderPautiBooks();
@@ -1848,7 +1848,7 @@ async function inlineSaveSlip(bookId, slipNumber, field, value, inputEl) {
     const payload = { [field]: field === 'amount' ? Number(value) : value };
     if (inputEl) { inputEl.style.borderColor = '#3949AB'; }
     try {
-        const url = `http://localhost:3000/api/pauti-books/${encodeURIComponent(bookId)}/slips/${slipNumber}`;
+        const url = `/api/pauti-books/${encodeURIComponent(bookId)}/slips/${slipNumber}`;
         const res = await fetch(url, {
             method : 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -1924,7 +1924,7 @@ async function saveEditSlip(ev) {
     const btn = document.getElementById('esSaveBtn');
     btn.disabled = true; btn.textContent = 'Saving…';
     try {
-        const url = `http://localhost:3000/api/pauti-books/${encodeURIComponent(_editSlipBookId)}/slips/${_editSlipNum}`;
+        const url = `/api/pauti-books/${encodeURIComponent(_editSlipBookId)}/slips/${_editSlipNum}`;
         const res = await fetch(url, {
             method : 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -1947,7 +1947,7 @@ async function saveEditSlip(ev) {
 async function softDeleteSlip(bookId, slipNumber) {
     if (!confirm(`Soft-delete Slip #${slipNumber}?\n\nData is kept on server but hidden from view.`)) return;
     try {
-        const url = `http://localhost:3000/api/pauti-books/${encodeURIComponent(bookId)}/slips/${slipNumber}/soft-delete`;
+        const url = `/api/pauti-books/${encodeURIComponent(bookId)}/slips/${slipNumber}/soft-delete`;
         const res = await fetch(url, { method: 'PATCH' });
         const data = await res.json();
         if (res.ok && data.success) {
@@ -2089,7 +2089,7 @@ async function loadBalanceRecovery() {
 async function markBalanceReceived(id) {
     if (!confirm('Mark this balance recovery slip as Received?')) return;
     try {
-        const res  = await fetch(`http://localhost:3000/api/receipts/${encodeURIComponent(id)}/mark-received`, { method: 'PATCH' });
+        const res  = await fetch(`/api/receipts/${encodeURIComponent(id)}/mark-received`, { method: 'PATCH' });
         const data = await res.json();
         if (res.ok && data.success) {
             showNotification('Balance slip marked as received!', 'success');
@@ -2192,7 +2192,7 @@ async function saveBrEditEntry(ev) {
         receiptNumber: rnVal ? Number(rnVal) : undefined,
     };
     try {
-        const res  = await fetch(`http://localhost:3000/api/receipts/${encodeURIComponent(id)}`, {
+        const res  = await fetch(`/api/receipts/${encodeURIComponent(id)}`, {
             method : 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body   : JSON.stringify(payload)
@@ -2204,7 +2204,7 @@ async function saveBrEditEntry(ev) {
                     const fd = new FormData();
                     fd.append('passbook', window._brEditPhotoFile, window._brEditPhotoFile.name);
                     fd.append('receiptId', id);
-                    await fetch('http://localhost:3000/api/upload-passbook', { method:'POST', body:fd });
+                    await fetch('/api/upload-passbook', { method:'POST', body:fd });
                     window._brEditPhotoFile = null;
                 } catch(_px) {}
             }

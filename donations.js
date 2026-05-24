@@ -1,4 +1,4 @@
-// =====================================================================
+﻿// =====================================================================
 // DONATION EXPLORER MODULE  (donations.js)
 // Loaded after admin.js via <script src="donations.js">
 // =====================================================================
@@ -86,7 +86,7 @@ async function donParseAndUpload(file) {
         const mode     = document.querySelector('input[name="uploadMode"]:checked')?.value || 'append';
         const endpoint = mode === 'replace' ? '/api/donations/replace' : '/api/donations/upload';
 
-        const res  = await fetch(`http://localhost:3000${endpoint}`, {
+        const res  = await fetch(`${endpoint}`, {
             method : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body   : JSON.stringify({ records: rows })
@@ -142,7 +142,7 @@ function _donDetectColumns() {
 // ── Load existing donation data from server ──────────────────────────────────
 async function loadDonationExplorer() {
     try {
-        const res  = await fetch('http://localhost:3000/api/donations');
+        const res  = await fetch('/api/donations');
         const data = await res.json();
         _donColumns    = data.columns || [];
         _donAllRecords = (data.records || []).filter(r => !r._deleted);
@@ -389,7 +389,7 @@ async function deleteDonRecord(id) {
     if (typed !== 'DELETE') { alert('Deletion cancelled. You did not type DELETE correctly.'); return; }
     if (!confirm('FINAL CONFIRMATION\n\nThe record will be permanently hidden. Are you absolutely sure?')) return;
     try {
-        const res  = await fetch(`http://localhost:3000/api/donations/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const res  = await fetch(`/api/donations/${encodeURIComponent(id)}`, { method: 'DELETE' });
         const data = await res.json();
         if (res.ok && data.success) {
             if (typeof showNotification === 'function') showNotification('Record deleted (data retained on server).', 'success');
@@ -439,7 +439,7 @@ async function saveEditDon(ev) {
     const btn = document.getElementById('editDonSaveBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Saving\u2026'; }
     try {
-        const res  = await fetch(`http://localhost:3000/api/donations/${encodeURIComponent(_donEditId)}`, {
+        const res  = await fetch(`/api/donations/${encodeURIComponent(_donEditId)}`, {
             method : 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body   : JSON.stringify(payload)

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <script>
@@ -23,7 +23,7 @@ window.fixUrl = function(url) {
       if (window.location.protocol === 'file:') {
         var page = window.location.pathname.split('/').pop();
         var hash = window.location.hash || '';
-        window.location.replace('http://localhost:3000/' + page + hash);
+        window.location.replace('/' + page + hash);
       }
     </script>
     <meta charset="UTF-8">
@@ -1350,7 +1350,7 @@ window.fixUrl = function(url) {
             const btn = document.getElementById('pbEditSaveBtn');
             btn.disabled = true; btn.textContent = 'Saving…';
             try {
-                const res = await fetch(`http://localhost:3000/api/receipts/${encodeURIComponent(_editReceiptId)}`, {
+                const res = await fetch(`/api/receipts/${encodeURIComponent(_editReceiptId)}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ amount: newAmt })
@@ -1375,7 +1375,7 @@ window.fixUrl = function(url) {
             if (!tbody) return;
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Loading…</td></tr>';
             try {
-                const res = await fetch('http://localhost:3000/api/receipts');
+                const res = await fetch('/api/receipts');
                 const data = await res.json();
                 const myId = currentUser ? (currentUser.id ?? null) : null;
                 // Show all receipts belonging to this user (or all if userId is null)
@@ -1505,7 +1505,7 @@ window.fixUrl = function(url) {
                     || '';
                 if (linkedId) formData.append('receiptId', linkedId);
 
-                const response = await fetch('http://localhost:3000/api/upload-passbook', {
+                const response = await fetch('/api/upload-passbook', {
                     method: 'POST',
                     body: formData   // browser sets multipart boundary automatically
                 });
@@ -1536,7 +1536,7 @@ window.fixUrl = function(url) {
         // Load live record count for hero banner on page load
         async function _loadHeroCount() {
             try {
-                const res  = await fetch('http://localhost:3000/api/donations');
+                const res  = await fetch('/api/donations');
                 if (!res.ok) return;
                 const data = await res.json();
                 const count = (data.records || []).length;
@@ -1604,7 +1604,7 @@ window.fixUrl = function(url) {
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Submitting…'; }
 
             try {
-                const res  = await fetch('http://localhost:3000/api/pauti-books/next-slip', {
+                const res  = await fetch('/api/pauti-books/next-slip', {
                     method : 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body   : JSON.stringify({
@@ -1647,7 +1647,7 @@ window.fixUrl = function(url) {
             if (!tbody) return;
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;">Loading…</td></tr>';
             try {
-                const res  = await fetch('http://localhost:3000/api/pauti-books');
+                const res  = await fetch('/api/pauti-books');
                 const data = await res.json();
                 const myName   = (currentUser?.name  || '').toLowerCase();
                 const myUserId = currentUser?.id || null;
@@ -1811,7 +1811,7 @@ window.fixUrl = function(url) {
         }
         if (wrap) wrap.style.display = 'none';
         try {
-            const res  = await fetch('http://localhost:3000/api/donations');
+            const res  = await fetch('/api/donations');
             const data = await res.json();
             _dsColumns  = data.columns || [];
             _dsRecords  = data.records || [];
