@@ -1795,7 +1795,7 @@ function viewPautiSlips(bookId) {
             : '<span style="color:#ccc">—</span>';
         const hasPhoto  = !!slip.photoUrl;
         const photoBtn  = hasPhoto
-            ? `<button class="btn-icon btn-edit" title="View Photo" onclick="openAdminPbLightbox('http://localhost:3000${slip.photoUrl}')"><i class="fas fa-image"></i></button>`
+            ? `<button class="btn-icon btn-edit" title="View Photo" onclick="openAdminPbLightbox(fixUrl('${slip.photoUrl}'))"><i class="fas fa-image"></i></button>`
             : '<span style="color:#ccc;font-size:.8rem">—</span>';
         const statusCell = slip.uploadedAt
             ? '<span class="badge badge-success">Uploaded</span>'
@@ -2096,8 +2096,8 @@ function openBrEditModal(receiptId, name, amount, mode, status, bookNum, receipt
     const curImg = document.getElementById('brEditCurPhotoImg');
     if (curDiv && curImg) {
         if (photoUrl) {
-            curImg.src = 'http://localhost:3000' + photoUrl + '?t=' + Date.now();
-            curImg.onclick = () => openAdminPbLightbox('http://localhost:3000' + photoUrl);
+            curImg.src = (typeof fixUrl === 'function' ? fixUrl(photoUrl) : photoUrl) + '?t=' + Date.now();
+            curImg.onclick = () => openAdminPbLightbox(typeof fixUrl === 'function' ? fixUrl(photoUrl) : photoUrl);
             curDiv.style.display = '';
         } else { curDiv.style.display = 'none'; }
     }
@@ -2105,7 +2105,24 @@ function openBrEditModal(receiptId, name, amount, mode, status, bookNum, receipt
     const prev = document.getElementById('brEditPhotoPreview');
     if (prev) prev.style.display = 'none';
     const inp = document.getElementById('brEditPhotoInput');
-    if (inp) { inp.value = ''; inp.onchange = function(ev) { const f=ev.target.files[0]; if(!f) return; window._brEditPhotoFile=f; const r2=new FileReader(); r2.onload=function(re){const t=document.getElementById('brEditPhotoThumb');const p=document.getElementById('brEditPhotoPreview');if(t)t.src=re.target.result;if(p)p.style.display='';}; r2.readAsDataURL(f); }; }
+    if (inp) { inp.value = ''; inp.onchange = function(ev) {
+        const f=ev.target.files[0]; if(!f) return;
+        if(!f.type.startsWith('image/')){ alert('Please select an image.'); inp.value=''; return; }
+        window._brEditPhotoFile = null;
+        if (typeof window._compressImage === 'function') {
+            window._compressImage(f, 950, function(blob) {
+                if(!blob){ alert('Could not process image.'); return; }
+                window._brEditPhotoFile = blob;
+                const t=document.getElementById('brEditPhotoThumb');
+                const p=document.getElementById('brEditPhotoPreview');
+                if(t) t.src=URL.createObjectURL(blob);
+                if(p) p.style.display='';
+            });
+        } else {
+            window._brEditPhotoFile=f;
+            const r2=new FileReader(); r2.onload=function(re){const t=document.getElementById('brEditPhotoThumb');const p=document.getElementById('brEditPhotoPreview');if(t)t.src=re.target.result;if(p)p.style.display='';}; r2.readAsDataURL(f);
+        }
+    }; }
     const st = document.getElementById('brEditStatus');
     if (st) st.style.display = 'none';
     const modal = document.getElementById('brEditModal');

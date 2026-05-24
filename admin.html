@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <script>
@@ -16,6 +16,39 @@ window.fixUrl = function(url) {
   if (!url) return '';
   if (url.startsWith('http://localhost:3000')) return url.slice('http://localhost:3000'.length);
   return url;
+};
+</script>
+<script>
+/* Canvas image compressor — used by all admin photo upload handlers */
+window._compressImage = function(file, targetKB, callback) {
+  var MAX_BYTES = (targetKB || 950) * 1024;
+  var img = new Image();
+  var blobUrl = URL.createObjectURL(file);
+  img.onload = function() {
+    URL.revokeObjectURL(blobUrl);
+    var w = img.naturalWidth, h = img.naturalHeight;
+    if (w > 1920) { h = Math.round(h * 1920 / w); w = 1920; }
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    if (file.size <= MAX_BYTES) {
+      canvas.toBlob(function(b) { callback(b); }, 'image/jpeg', 0.9);
+      return;
+    }
+    var lo = 0.1, hi = 0.92, q = 0.82;
+    function tryQ(quality) {
+      canvas.toBlob(function(b) {
+        if (b.size <= MAX_BYTES || (hi - lo) < 0.03) { callback(b); }
+        else { hi = quality; q = (lo + hi) / 2; tryQ(q); }
+      }, 'image/jpeg', quality);
+    }
+    tryQ(q);
+  };
+  img.onerror = function() { callback(null); };
+  img.src = blobUrl;
+};
+window._fmtBytesA = function(b) {
+  return b < 1024 ? b + ' B' : b < 1048576 ? (b/1024).toFixed(1) + ' KB' : (b/1048576).toFixed(2) + ' MB';
 };
 </script>
     <!-- FILE:// REDIRECT — if opened as a local file, switch to the server -->
@@ -2273,7 +2306,202 @@ window.fixUrl = function(url) {
                 <td><span style="padding:3px 10px;border-radius:12px;background:#FFF3E0;color:#E65100;font-size:.75rem;font-weight:700;">${e.paymentMode}</span></td>
                 <td style="font-size:.82rem;color:#777;">${e.referenceNumber||'—'}</td>
                 <td style="font-size:.82rem;color:#555;">${e.landmark||'—'}</td>
-                <td style="text-align:center;">${e.photoUrl ? `<img src="http://localhost:3000${e.photoUrl}?t=${Date.now()}" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openAdminLightbox('http://localhost:3000${e.photoUrl}')" title="View photo">` : '<span style="color:#ccc;">—</span>'}</td>
+                <td style="text-align:center;">${e.photoUrl ? `<img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openAdminLightbox(fixUrl('${e.photoUrl}'))" title="View photo">` : '<span style="color:#ccc;">—</span>'}</td>
+                <td style="font-size:.82rem;color:#888;">${e.submittedBy||'—'}</td>
+                <td style="color:#888;font-size:.82rem;">${dt}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="btn-icon btn-edit" title="Edit" onclick="adeOpenEdit('${e.entryId}')"><i class="fas fa-edit"></i></button>
+                        <button class="btn-icon btn-delete" title="Delete" onclick="adeDelete('${e.entryId}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function adeDelete(id) {
+        if (!confirm('Delete this donation entry? This cannot be undone.')) return;
+        try {
+            const res = await fetch(`/api/donation-entries/${encodeURIComponent(id)}`, { method:'DELETE' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                adeShowStatus('✅ Entry deleted.', 'success');
+                _adeAll = _adeAll.filter(e => e.entryId !== id);
+                adeFilter();
+            } else { adeShowStatus('❌ ' + (data.message||'Delete failed.'), 'error'); }
+        } catch(e) { adeShowStatus('❌ Server error.', 'error'); }
+    }
+
+    // ── Edit modal ─────────────────────────────────────────────────
+    let _adeEditId = null;
+    function adeOpenEdit(id) {
+        const e = _adeAll.find(x => x.entryId === id);
+        if (!e) return;
+        _adeEditId = id;
+        const isDonorBiz = e.donorType === 'Business';
+        const modal = document.createElement('div');
+        modal.id = 'adeEditModal';
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
+        modal.innerHTML = `
+        <div style="background:#fff;border-radius:16px;padding:30px 28px;max-width:680px;width:94%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h3 style="margin:0;color:var(--dark-color);"><i class="fas fa-edit" style="color:var(--primary-color);margin-right:8px;"></i>Edit Entry</h3>
+                <span onclick="document.getElementById('adeEditModal').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <div id="adeEditStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
+            <form onsubmit="adeSaveEdit(event)" autocomplete="off">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div class="form-group"><label>Book Number</label><input name="bookNumber" class="form-control" type="number" value="${e.bookNumber}" min="1" max="50" required></div>
+                    <div class="form-group"><label>Receipt Number</label><input name="receiptNumber" class="form-control" type="number" value="${e.receiptNumber}" min="1" max="2500" required></div>
+                </div>
+                <div class="form-group"><label>Donor Type</label>
+                    <select name="donorType" class="form-control" onchange="this.closest('form').querySelector('.ade-ind-grp').style.display=this.value==='Individual'?'grid':'none';this.closest('form').querySelector('.ade-biz-grp').style.display=this.value==='Business'?'block':'none';">
+                        <option ${!isDonorBiz?'selected':''}>Individual</option>
+                        <option ${isDonorBiz?'selected':''}>Business</option>
+                    </select>
+                </div>
+                <div class="ade-ind-grp" style="display:${!isDonorBiz?'grid':'none'};grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>First Name</label><input name="firstName" class="form-control" value="${e.firstName||''}" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label>Middle Name</label><input name="middleName" class="form-control" value="${e.middleName||''}" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label>Last Name</label><input name="lastName" class="form-control" value="${e.lastName||''}" oninput="this.value=this.value.toUpperCase()"></div>
+                </div>
+                <div class="ade-biz-grp" style="display:${isDonorBiz?'block':'none'};">
+                    <div class="form-group"><label>Business Name</label><input name="businessName" class="form-control" value="${e.businessName||''}" oninput="this.value=this.value.toUpperCase()"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>WhatsApp</label><input name="whatsappNumber" class="form-control" value="${e.whatsappNumber||''}" maxlength="10"></div>
+                    <div class="form-group"><label>Mobile</label><input name="mobileNumber" class="form-control" value="${e.mobileNumber||''}" maxlength="10"></div>
+                    <div class="form-group"><label>Mail ID</label><input name="mailId" class="form-control" value="${e.mailId||''}"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>Building Name</label><input name="buildingName" class="form-control" value="${e.buildingName||''}"></div>
+                    <div class="form-group"><label>Area</label><input name="area" class="form-control" value="${e.area||''}"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>Amount (₹)</label><input name="amount" class="form-control" type="number" value="${e.amount||''}" min="0"></div>
+                    <div class="form-group"><label>Payment Mode</label>
+                        <select name="paymentMode" class="form-control">
+                            <option ${e.paymentMode==='Cash'?'selected':''}>Cash</option>
+                            <option ${e.paymentMode==='Cheque'?'selected':''}>Cheque</option>
+                            <option ${e.paymentMode==='UPI'?'selected':''}>UPI</option>
+                            <option ${e.paymentMode==='RTGS'?'selected':''}>RTGS</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Reference No.</label><input name="referenceNumber" class="form-control" value="${e.referenceNumber||''}"></div>
+                </div>
+                <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:16px;margin-bottom:14px;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:10px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Receipt Photo</div>
+                    <div id="adeEditCurPhotoDiv" style="display:none;margin-bottom:10px;">
+                        <p style="font-size:.8rem;color:#777;margin:0 0 6px;">Current photo:</p>
+                        <img id="adeEditCurPhotoImg" src="" alt="Current" style="max-width:100%;max-height:130px;border-radius:8px;border:1.5px solid #e0e0e0;object-fit:contain;cursor:pointer;">
+                    </div>
+                    <button type="button" onclick="document.getElementById('adeEditPhotoInput').click()" style="width:100%;padding:11px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Upload / Replace Photo</button>
+                    <input type="file" id="adeEditPhotoInput" style="display:none;" accept="image/*">
+                    <div id="adeEditPhotoPreview" style="display:none;margin-top:10px;">
+                        <img id="adeEditPhotoThumb" src="" alt="Preview" style="max-width:100%;max-height:130px;border-radius:8px;border:1.5px solid #ffe0d0;object-fit:contain;">
+                        <p id="adeEditPhotoName" style="font-size:.8rem;color:#555;margin:6px 0 0;"></p>
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                    <button type="button" class="btn" style="background:#eee;color:#555;" onclick="document.getElementById('adeEditModal').remove()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="adeSaveBtnModal">Save Changes</button>
+                </div>
+            </form>
+        </div>`;
+        document.body.appendChild(modal);
+                        <tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+        document.querySelector('.admin-content')?.appendChild(section);
+    })();
+
+    // ── Admin Donation Entries JS ─────────────────────────────────
+    let _adeAll = [], _adeFiltered = [];
+
+    async function adeLoad() {
+        const tbody = document.getElementById('adeTbody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">Loading…</td></tr>';
+        try {
+            const [entRes, areaRes] = await Promise.all([
+                fetch('/api/donation-entries'),
+                fetch('/api/areas')
+            ]);
+            const entData  = await entRes.json();
+            const areaData = await areaRes.json();
+            _adeAll = entData.entries || [];
+            // Populate area filter dropdown
+            const areaSel = document.getElementById('adeFilterArea');
+            if (areaSel) {
+                areaSel.innerHTML = '<option value="">All Areas</option>';
+                (areaData.areas || []).forEach(a => areaSel.innerHTML += `<option>${a.name}</option>`);
+            }
+            adeFilter();
+        } catch(e) {
+            tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#c00;padding:30px;">Error loading data.</td></tr>';
+        }
+    }
+
+    function adeFilter() {
+        const name = (document.getElementById('adeSearchName')?.value || '').toLowerCase();
+        const book = document.getElementById('adeFilterBook')?.value;
+        const area = document.getElementById('adeFilterArea')?.value;
+        const mode = document.getElementById('adeFilterMode')?.value;
+        const type = document.getElementById('adeFilterType')?.value;
+        _adeFiltered = _adeAll.filter(e => {
+            const donor = e.donorType === 'Business'
+                ? (e.businessName || '')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
+            if (name && !donor.toLowerCase().includes(name)) return false;
+            if (book && String(e.bookNumber) !== String(book)) return false;
+            if (area && e.area !== area) return false;
+            if (mode && e.paymentMode !== mode) return false;
+            if (type && e.donorType !== type) return false;
+            return true;
+        });
+        adeRender();
+    }
+
+    function adeClearFilters() {
+        ['adeSearchName','adeFilterBook'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+        ['adeFilterArea','adeFilterMode','adeFilterType'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+        adeFilter();
+    }
+
+    function adeRender() {
+        const tbody = document.getElementById('adeTbody');
+        if (!tbody) return;
+        const totalAmt = _adeFiltered.reduce((s,e) => s + (e.amount||0), 0);
+        document.getElementById('adeSummaryTotal')    && (document.getElementById('adeSummaryTotal').textContent    = _adeAll.length);
+        document.getElementById('adeSummaryFiltered') && (document.getElementById('adeSummaryFiltered').textContent = _adeFiltered.length);
+        document.getElementById('adeSummaryAmt')      && (document.getElementById('adeSummaryAmt').textContent      = '₹' + totalAmt.toLocaleString('en-IN'));
+        if (!_adeFiltered.length) { tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">No entries found.</td></tr>'; return; }
+        tbody.innerHTML = _adeFiltered.slice().reverse().map((e, i) => {
+            const donor = e.donorType === 'Business'
+                ? (e.businessName || '—')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+            const dtObj = new Date(e.submittedAt);
+            const dtTime = dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
+            const dtDate = dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+            const dt = `<span style="font-size:.8rem;white-space:nowrap;">${dtTime}<br><span style="color:#aaa;">${dtDate}</span></span>`;
+            const amt = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '—';
+            return `<tr id="ade-row-${e.entryId}">
+                <td style="color:#aaa;font-size:.8rem;">${i+1}</td>
+                <td style="font-weight:700;">Bk ${e.bookNumber}</td>
+                <td>#${e.receiptNumber}</td>
+                <td style="font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${donor}">${donor}</td>
+                <td><span style="padding:2px 9px;border-radius:10px;font-size:.75rem;font-weight:700;background:${e.donorType==='Business'?'#E3F2FD':'#E8F5E9'};color:${e.donorType==='Business'?'#1565C0':'#1B5E20'};">${e.donorType}</span></td>
+                <td style="color:#555;font-size:.85rem;">${e.whatsappNumber||'—'}</td>
+                <td style="color:#555;font-size:.85rem;">${e.mobileNumber||'—'}</td>
+                <td style="font-size:.85rem;">${e.buildingName||'—'}</td>
+                <td style="font-size:.85rem;">${e.area||'—'}</td>
+                <td style="color:#2E7D32;font-weight:700;">${amt}</td>
+                <td><span style="padding:3px 10px;border-radius:12px;background:#FFF3E0;color:#E65100;font-size:.75rem;font-weight:700;">${e.paymentMode}</span></td>
+                <td style="font-size:.82rem;color:#777;">${e.referenceNumber||'—'}</td>
+                <td style="font-size:.82rem;color:#555;">${e.landmark||'—'}</td>
+                <td style="text-align:center;">${e.photoUrl ? `<img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openAdminLightbox(fixUrl('${e.photoUrl}'))" title="View photo">` : '<span style="color:#ccc;">—</span>'}</td>
                 <td style="font-size:.82rem;color:#888;">${e.submittedBy||'—'}</td>
                 <td style="color:#888;font-size:.82rem;">${dt}</td>
                 <td>
@@ -2396,8 +2624,8 @@ window.fixUrl = function(url) {
         const curPDiv = document.getElementById('adeEditCurPhotoDiv');
         const curPImg = document.getElementById('adeEditCurPhotoImg');
         if (e.photoUrl && curPDiv && curPImg) {
-            curPImg.src = 'http://localhost:3000' + e.photoUrl + '?t=' + Date.now();
-            curPImg.onclick = () => openAdminLightbox('http://localhost:3000' + e.photoUrl);
+            curPImg.src = fixUrl(e.photoUrl) + '?t=' + Date.now();
+            curPImg.onclick = () => openAdminLightbox(fixUrl(e.photoUrl));
             curPDiv.style.display = '';
         } else if (curPDiv) { curPDiv.style.display = 'none'; }
         const aePreview = document.getElementById('adeEditPhotoPreview');
@@ -2408,17 +2636,18 @@ window.fixUrl = function(url) {
             aeInput.value = '';
             aeInput.onchange = function(ev2) {
                 const f = ev2.target.files[0]; if (!f) return;
-                const reader = new FileReader();
-                reader.onload = function(re) {
+                if (!f.type.startsWith('image/')) { alert('Please select a JPG or PNG image.'); aeInput.value=''; return; }
+                window._adeEditPhotoBlob = null;
+                window._compressImage(f, 950, function(blob) {
+                    if (!blob) { alert('Could not process image.'); return; }
+                    window._adeEditPhotoBlob = blob;
                     const thumb = document.getElementById('adeEditPhotoThumb');
                     const name  = document.getElementById('adeEditPhotoName');
                     const prev  = document.getElementById('adeEditPhotoPreview');
-                    if (thumb) thumb.src = re.target.result;
-                    if (name)  name.textContent = '\u2705 ' + f.name + ' (' + (f.size < 1048576 ? (f.size/1024).toFixed(1)+' KB' : (f.size/1048576).toFixed(2)+' MB') + ')';
+                    if (thumb) thumb.src = URL.createObjectURL(blob);
+                    if (name)  name.textContent = '✅ ' + f.name.replace(/\.[^.]+$/, '') + '.jpg (' + window._fmtBytesA(blob.size) + (f.size > blob.size ? ', compressed' : '') + ')';
                     if (prev)  prev.style.display = '';
-                    window._adeEditPhotoBlob = f;
-                };
-                reader.readAsDataURL(f);
+                });
             };
         }
     }
@@ -2441,7 +2670,7 @@ window.fixUrl = function(url) {
                 if (window._adeEditPhotoBlob) {
                     try {
                         const fd2 = new FormData();
-                        fd2.append('passbook', window._adeEditPhotoBlob, window._adeEditPhotoBlob.name || 'receipt.jpg');
+                        fd2.append('passbook', window._adeEditPhotoBlob, 'receipt.jpg');
                         fd2.append('entryId', _adeEditId);
                         await fetch('/api/upload-passbook', { method:'POST', body:fd2 });
                         window._adeEditPhotoBlob = null;
@@ -2656,6 +2885,18 @@ window.fixUrl = function(url) {
         const sel = document.getElementById('aneBook'); if (!sel || sel.options.length > 1) return;
         for (let b=1;b<=50;b++) { const o=document.createElement('option'); o.value=b; o.textContent=`Book ${b}  (${(b-1)*50+1}–${b*50})`; sel.appendChild(o); }
     }
+    document.getElementById('anePhotoInput')?.addEventListener('change', function(ev) {
+        const f=ev.target.files[0]; if(!f) return;
+        if(!f.type.startsWith('image/')){ alert('Please select an image.'); ev.target.value=''; return; }
+        window._anePhotoFile=null;
+        window._compressImage(f, 950, function(blob) {
+            if(!blob){ alert('Could not process image.'); return; }
+            window._anePhotoFile=blob;
+            const t=document.getElementById('anePhotoThumb'); if(t) t.src=URL.createObjectURL(blob);
+            const n=document.getElementById('anePhotoName'); if(n) n.textContent='✅ '+f.name.replace(/\.[^.]+$/,'')+'.jpg ('+window._fmtBytesA(blob.size)+')';
+            const p=document.getElementById('anePhotoPreview'); if(p) p.style.display='';
+        });
+    });
     async function aneLoadAreas() {
         try { const r=await fetch('/api/areas'); const d=await r.json(); const sel=document.getElementById('aneArea'); if(!sel) return; (d.areas||[]).forEach(a=>{ if(!['Patelwadi','Shindewadi','Gurkhawadi'].includes(a.name)){ const o=document.createElement('option'); o.value=a.name; o.textContent=a.name; sel.appendChild(o); } }); } catch(e){}
     }
@@ -2671,11 +2912,6 @@ window.fixUrl = function(url) {
         for(let n=from;n<=to;n++){const taken=used.includes(n);const o=document.createElement('option');o.value=n;o.textContent=n+(taken?' (used)':'');if(taken)o.disabled=true;sel.appendChild(o);}
         sel.disabled=false;
     }
-    document.getElementById('anePhotoInput')?.addEventListener('change', function(ev) {
-        const f=ev.target.files[0]; if(!f) return;
-        window._anePhotoFile=f;
-        const r=new FileReader(); r.onload=function(re){ const t=document.getElementById('anePhotoThumb'); if(t) t.src=re.target.result; const n=document.getElementById('anePhotoName'); if(n) n.textContent='\u2705 '+f.name; const p=document.getElementById('anePhotoPreview'); if(p) p.style.display=''; }; r.readAsDataURL(f);
-    });
     function aneShowStatus(msg, type) {
         const el=document.getElementById('aneStatus'); if(!el) return;
         el.style.display=''; el.textContent=msg;
@@ -2719,10 +2955,10 @@ window.fixUrl = function(url) {
             const res=await fetch('/api/donation-entries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
             const data=await res.json();
             if(res.ok&&data.success){
-                if(_anePhotoFile&&data.entry&&data.entry.entryId){
+                if(window._anePhotoFile&&data.entry&&data.entry.entryId){
                     try{
                         const fd=new FormData();
-                        fd.append('passbook',_anePhotoFile,_anePhotoFile.name);
+                        fd.append('passbook',window._anePhotoFile,'receipt.jpg');
                         fd.append('entryId',data.entry.entryId);
                         fd.append('userId',currentUser?String(currentUser.id):'');
                         await fetch('/api/upload-passbook',{method:'POST',body:fd});
@@ -2887,7 +3123,7 @@ window.fixUrl = function(url) {
             if(res.ok&&data.success){
                 if(window._anePhotoFile&&data.entry&&data.entry.entryId){
                     try{
-                        const fd=new FormData();fd.append('passbook',window._anePhotoFile,window._anePhotoFile.name);
+                        const fd=new FormData();fd.append('passbook',window._anePhotoFile,'receipt.jpg');
                         fd.append('entryId',data.entry.entryId);fd.append('userId',currentUser?String(currentUser.id):'');
                         await fetch('/api/upload-passbook',{method:'POST',body:fd});
                     }catch(_px){}

@@ -1340,7 +1340,14 @@ const server = http.createServer(async (req, res) => {
 
         const ext      = path.extname(filePath).toLowerCase();
         const mimeType = MIME[ext] || 'application/octet-stream';
-        res.writeHead(200, { 'Content-Type': mimeType });
+        const isUpload = filePath.startsWith(UPLOADS_DIR);
+        const headers  = {
+            'Content-Type'               : mimeType,
+            'Access-Control-Allow-Origin': '*',
+        };
+        // Cache uploaded images for 1 hour; client busts with ?t=timestamp
+        if (isUpload) headers['Cache-Control'] = 'public, max-age=3600';
+        res.writeHead(200, headers);
         res.end(data);
     });
 });

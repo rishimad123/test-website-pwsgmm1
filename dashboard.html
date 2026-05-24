@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <script>
@@ -1023,7 +1023,7 @@ window.fixUrl = function(url) {
                                     </button>
                                 </div>
                                 <!-- Hidden file inputs: one for camera, one for gallery -->
-                                <input type="file" id="pbDocCamera" style="display:none;" accept="image/*" capture="environment">
+                                <input type="file" id="pbDocCamera" style="display:none;" accept="image/*">
                                 <!-- Compress status -->
                                 <div id="pbCompressStatus" style="display:none;font-size:.82rem;color:#888;margin-bottom:10px;">
                                     <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Compressing image…
@@ -1136,7 +1136,7 @@ window.fixUrl = function(url) {
                         style="width:100%;padding:12px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.88rem;font-weight:600;">
                         <i class="fas fa-upload" style="margin-right:6px;color:var(--primary-color);"></i>Upload / Replace Photo
                     </button>
-                    <input type="file" id="deVolEditPhotoInput" style="display:none;" accept="image/*" capture="environment">
+                    <input type="file" id="deVolEditPhotoInput" style="display:none;" accept="image/*">
                     <div id="deVolEditPhotoPreview" style="display:none;margin-top:10px;">
                         <img id="deVolEditPhotoThumb" src="" alt="Preview" style="max-width:100%;max-height:160px;border-radius:8px;border:1.5px solid #ffe0d0;object-fit:contain;">
                         <p id="deVolEditPhotoName" style="font-size:.8rem;color:#555;margin:6px 0 0;"></p>
@@ -1690,19 +1690,11 @@ window.fixUrl = function(url) {
             }
         }
 
-        // ── Receipt photo file handler ────────────────────────────
+        // ── Receipt photo file handler — auto-compresses to <1 MB ─────────
         let _deReceiptPhotoFile = null;
         document.getElementById('deReceiptPhotoInput')?.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-            if (file.size > 1 * 1024 * 1024) {
-                alert('File too large. Maximum allowed size is 1 MB. Please compress the image first.');
-                this.value = ''; return;
-            }
-            _deReceiptPhotoFile = file;
-            document.getElementById('deReceiptPhotoName').textContent = file.name;
-            document.getElementById('deReceiptPhotoSize').textContent =
-                file.size < 1024 ? file.size + ' B' :
                 file.size < 1048576 ? (file.size/1024).toFixed(1) + ' KB' :
                 (file.size/1048576).toFixed(2) + ' MB';
             const prev = document.getElementById('deReceiptPhotoPreview');
