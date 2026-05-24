@@ -46,11 +46,19 @@ function showAdminSection(sectionId) {
         targetSection.classList.add('active');
     }
     
-    // Update active menu item
+    // Update active menu item — use event safely (fails on iOS if not guarded)
     document.querySelectorAll('.admin-menu a').forEach(link => {
         link.classList.remove('active');
     });
-    event.target.closest('a').classList.add('active');
+    try {
+        const activeLink = (typeof event !== 'undefined' && event && event.target)
+            ? event.target.closest('a')
+            : document.querySelector(`.admin-menu a[onclick*="'${sectionId}'"]`);
+        if (activeLink) activeLink.classList.add('active');
+    } catch(_) {}
+    
+    // Close mobile sidebar after navigating
+    closeAdminSidebar();
     
     // Update page title
     const titles = {
@@ -497,6 +505,28 @@ function adminLogout() {
         localStorage.removeItem('currentUser');  // clear any stale old entry
         window.location.href = 'index.html';
     }
+}
+
+// ==================== MOBILE SIDEBAR TOGGLE ====================
+function toggleAdminSidebar() {
+    const sidebar = document.querySelector('.admin-sidebar');
+    const overlay = document.getElementById('adminSidebarOverlay');
+    if (!sidebar) return;
+    const isOpen = sidebar.classList.contains('sidebar-open');
+    if (isOpen) {
+        sidebar.classList.remove('sidebar-open');
+        if (overlay) overlay.style.display = 'none';
+    } else {
+        sidebar.classList.add('sidebar-open');
+        if (overlay) overlay.style.display = 'block';
+    }
+}
+
+function closeAdminSidebar() {
+    const sidebar = document.querySelector('.admin-sidebar');
+    const overlay = document.getElementById('adminSidebarOverlay');
+    if (sidebar) sidebar.classList.remove('sidebar-open');
+    if (overlay) overlay.style.display = 'none';
 }
 
 // ==================== SEARCH FUNCTIONALITY ====================

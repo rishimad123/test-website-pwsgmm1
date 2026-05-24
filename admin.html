@@ -649,35 +649,24 @@
         @media (max-width: 600px) {
             .fin-modal-grid { grid-template-columns: 1fr; }
         }
-        /* Responsive */
+        /* ── Admin hamburger: hidden on desktop, shown on mobile ── */
+        #adminHamburger { display: none; }
+
+        /* ── Admin Mobile Responsive (single, consolidated block) ── */
         @media (max-width: 968px) {
-            .admin-sidebar {
-                width: 70px;
-            }
-            
-            .admin-main {
-                margin-left: 70px;
-            }
-            
-            .admin-sidebar-header,
-            .admin-menu span {
-                display: none;
-            }
-            
-            .admin-menu a {
+            #adminHamburger {
+                display: flex !important;
+                align-items: center;
                 justify-content: center;
             }
-        }
-    
-        /* ─── Admin mobile sidebar ─────────────────────────── */
-        @media (max-width: 968px) {
-            .admin-hamburger { display: block !important; }
             .admin-sidebar {
+                width: 280px !important;
                 position: fixed !important;
                 left: -280px !important;
                 top: 0 !important;
                 height: 100vh !important;
                 z-index: 1000 !important;
+                overflow-y: auto !important;
                 transition: left .28s cubic-bezier(.4,0,.2,1) !important;
                 box-shadow: none !important;
             }
@@ -685,14 +674,19 @@
                 left: 0 !important;
                 box-shadow: 4px 0 24px rgba(0,0,0,.18) !important;
             }
-            .admin-content { margin-left: 0 !important; }
-            .admin-topbar  { padding: 12px 16px !important; }
+            /* Restore full sidebar content on mobile (undo icon-only mode) */
+            .admin-sidebar-header { display: block !important; }
+            .admin-menu span      { display: inline !important; }
+            .admin-menu a         { justify-content: flex-start !important; }
+            /* Main content fills full width */
+            .admin-main  { margin-left: 0 !important; }
+            .admin-topbar { padding: 12px 16px !important; }
         }
         @media (max-width: 600px) {
-            .admin-content { padding: 14px !important; }
-            .admin-stats   { grid-template-columns: 1fr 1fr !important; }
+            .admin-content   { padding: 14px !important; }
+            .admin-stats     { grid-template-columns: 1fr 1fr !important; }
             .admin-stat-card { padding: 14px !important; }
-            .card-header   { flex-wrap: wrap; gap: 8px; }
+            .card-header     { flex-wrap: wrap; gap: 8px; }
         }
         </style>
 </head>
@@ -799,7 +793,7 @@
         <main class="admin-main">
             <!-- Top Bar -->
             <div class="admin-topbar">
-                <button id="adminHamburger" onclick="toggleAdminSidebar()" style="display:none;background:none;border:none;cursor:pointer;padding:6px 10px;margin-right:4px;border-radius:8px;color:#555;font-size:1.3rem;vertical-align:middle;"><i class="fas fa-bars"></i></button><h1 id="pageTitle">Dashboard Overview</h1>
+                <button id="adminHamburger" onclick="toggleAdminSidebar()" aria-label="Open menu" style="background:none;border:none;cursor:pointer;padding:6px 10px;margin-right:4px;border-radius:8px;color:#555;font-size:1.3rem;vertical-align:middle;"><i class="fas fa-bars"></i></button><h1 id="pageTitle">Dashboard Overview</h1>
                 <div class="admin-user-section">
                     <div class="admin-notifications">
                         <i class="fas fa-bell"></i>

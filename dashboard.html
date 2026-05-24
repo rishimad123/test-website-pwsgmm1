@@ -2536,5 +2536,29 @@
         } catch(e) { sec.innerHTML = '<div style=\"text-align:center;color:#c00;padding:40px;\">⚠ Cannot load.</div>'; }
     }
     </script>
+
+    <!-- ── Mobile sidebar open/close (required for hamburger & overlay) ── -->
+    <script>
+    function openSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar) sidebar.classList.add('open');
+        if (overlay) overlay.classList.add('active');
+    }
+
+    function closeSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar) sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('active');
+    }
+
+    // Ensure showSection also closes the sidebar on mobile
+    const _origShowSection = window.showSection;
+    window.showSection = function(id) {
+        if (typeof _origShowSection === 'function') _origShowSection(id);
+        closeSidebar();
+    };
+    </script>
 </body>
 </html>
