@@ -480,6 +480,24 @@ const server = http.createServer(async (req, res) => {
                 }
             }
 
+            // ── Link photo to a Pauti Slip if bookId and slipNum are supplied ────
+            const bookIdPart = parts.find(p => p.name === 'bookId' && !p.filename);
+            const slipNumPart = parts.find(p => p.name === 'slipNum' && !p.filename);
+            const bookId = bookIdPart ? bookIdPart.data.toString('utf8').trim() : null;
+            const slipNum = slipNumPart ? Number(slipNumPart.data.toString('utf8').trim()) : null;
+            if (bookId && slipNum) {
+                const bidx = pautiBooks.findIndex(b => b.pautiBookId === bookId);
+                if (bidx !== -1) {
+                    const sidx = pautiBooks[bidx].slips.findIndex(s => s.slipNumber === slipNum);
+                    if (sidx !== -1) {
+                        pautiBooks[bidx].slips[sidx].photoFile = uniqueName;
+                        pautiBooks[bidx].slips[sidx].photoUrl  = `/uploads/${uniqueName}`;
+                        savePautiBooks();
+                        console.log(`🖼  Photo linked to pauti book slip: Book ${bookId}, Slip #${slipNum}`);
+                    }
+                }
+            }
+
             return sendJSON(res, 200, {
                 success         : true,
                 fileName        : uniqueName,
@@ -974,8 +992,8 @@ const server = http.createServer(async (req, res) => {
                 if (!businessName || !businessName.trim()) return sendJSON(res, 400, { message: 'Business Name is required.' });
             }
 
-            if (!paymentMode || !['Cash', 'Cheque', 'UPI', 'RTGS'].includes(paymentMode))
-                return sendJSON(res, 400, { message: 'Payment mode must be Cash, Cheque, UPI, or RTGS.' });
+            if (!paymentMode || !['Cash', 'Cheque', 'UPI', 'RTGS', 'Balance'].includes(paymentMode))
+                return sendJSON(res, 400, { message: 'Payment mode must be Cash, Cheque, UPI, RTGS, or Balance.' });
 
             const entry = {
                 entryId          : `DE-${Date.now()}`,

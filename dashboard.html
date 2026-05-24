@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <script>
@@ -560,6 +560,9 @@ window.fixUrl = function(url) {
                 <li><a href="#donationEntry" onclick="showSection('donationEntry');closeSidebar()" id="sidebarDonationEntryLink">
                     <i class="fas fa-file-invoice-dollar"></i> Donation Data Entry
                 </a></li>
+                <li><a href="#balanceRecovery" onclick="showSection('balanceRecovery');closeSidebar()">
+                    <i class="fas fa-hand-holding-usd"></i> Balance Recovery
+                </a></li>
                 <li><a href="#documents" onclick="showSection('documents');closeSidebar()">
                     <i class="fas fa-folder"></i> Documents
                 </a></li>
@@ -987,18 +990,21 @@ window.fixUrl = function(url) {
                             </div>
                             <div class="form-group">
                                 <label>Payment Mode <span style="color:red;">*</span></label>
-                                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-                                    <label class="de-mode-btn active" id="deModeCash" onclick="deSetMode('Cash')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border:2px solid var(--primary-color);border-radius:10px;cursor:pointer;font-weight:700;font-size:.82rem;background:var(--primary-color);color:#fff;transition:all .2s;">
+                                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+                                    <label class="de-mode-btn active" id="deModeCash" onclick="deSetMode('Cash')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid var(--primary-color);border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:var(--primary-color);color:#fff;transition:all .2s;">
                                         <i class="fas fa-money-bill-wave" style="font-size:1.2rem;"></i>Cash
                                     </label>
-                                    <label class="de-mode-btn" id="deModeChq" onclick="deSetMode('Cheque')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                                    <label class="de-mode-btn" id="deModeChq" onclick="deSetMode('Cheque')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
                                         <i class="fas fa-file-alt" style="font-size:1.2rem;"></i>Cheque
                                     </label>
-                                    <label class="de-mode-btn" id="deModeUPI" onclick="deSetMode('UPI')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                                    <label class="de-mode-btn" id="deModeUPI" onclick="deSetMode('UPI')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
                                         <i class="fas fa-qrcode" style="font-size:1.2rem;"></i>UPI
                                     </label>
-                                    <label class="de-mode-btn" id="deModeRTGS" onclick="deSetMode('RTGS')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                                    <label class="de-mode-btn" id="deModeRTGS" onclick="deSetMode('RTGS')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
                                         <i class="fas fa-university" style="font-size:1.2rem;"></i>RTGS
+                                    </label>
+                                    <label class="de-mode-btn" id="deModeBal" onclick="deSetMode('Balance')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                                        <i class="fas fa-hand-holding-usd" style="font-size:1.2rem;"></i>Balance
                                     </label>
                                 </div>
                             </div>
@@ -1015,7 +1021,7 @@ window.fixUrl = function(url) {
                             <div class="card" style="margin-bottom:0;box-shadow:none;border:1.5px solid #ffe0d0;padding:18px;">
                                 <div id="pbDocStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:500;"></div>
                                 <!-- Camera / Gallery button — uses capture=environment for rear camera on mobile -->
-                                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+                                <div id="pbUploadContainer" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
                                     <button type="button" id="pbCameraBtn"
                                         onclick="document.getElementById('pbDocCamera').click()"
                                         style="flex:1;min-width:140px;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -1024,6 +1030,7 @@ window.fixUrl = function(url) {
                                 </div>
                                 <!-- Hidden file inputs: one for camera, one for gallery -->
                                 <input type="file" id="pbDocCamera" style="display:none;" accept="image/*">
+                                <input type="file" id="pbDocCameraCapture" style="display:none;" accept="image/*" capture="environment">
                                 <!-- Compress status -->
                                 <div id="pbCompressStatus" style="display:none;font-size:.82rem;color:#888;margin-bottom:10px;">
                                     <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Compressing image…
@@ -1072,6 +1079,40 @@ window.fixUrl = function(url) {
                 </div>
                 <!-- ══════════ END DONATION DATA ENTRY SECTION ══════════ -->
 
+                <!-- ══════════ BALANCE RECOVERY SECTION (VOLUNTEER) ══════════ -->
+                <div id="balanceRecovery" class="content-section" style="display:none;">
+                    <div class="page-title">
+                        <h1><i class="fas fa-hand-holding-usd" style="color:var(--primary-color);margin-right:10px;"></i>Balance Recovery</h1>
+                        <p>Track your submitted entries with pending balance</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>My Pending Balances</h3>
+                            <button onclick="loadVolBalanceRecovery()" class="btn btn-small" style="background:#f4f4f4;color:#555;font-size:.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Bk/Rcpt</th>
+                                        <th>Donor Name</th>
+                                        <th>Area</th>
+                                        <th>Amount (₹)</th>
+                                        <th>Submitted Date</th>
+                                        <th>Status</th>
+                                        <th>Photo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="volBalTbody">
+                                    <tr><td colspan="7" style="text-align:center;color:#999;padding:24px;">Loading…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- ══════════ END BALANCE RECOVERY SECTION ══════════ -->
+
             </div>
         </main>
     </div>
@@ -1117,7 +1158,7 @@ window.fixUrl = function(url) {
                     <div class="form-group" style="margin:0;">
                         <label>Payment Mode <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
                         <select id="deVolEditMode" class="form-control">
-                            <option>Cash</option><option>Cheque</option><option>UPI</option><option>RTGS</option>
+                            <option>Cash</option><option>Cheque</option><option>UPI</option><option>RTGS</option><option>Balance</option>
                         </select>
                     </div>
                 </div>
@@ -1200,6 +1241,8 @@ window.fixUrl = function(url) {
 
             // Load donation entries when that section is opened
             if (sectionId === 'donationEntry') { deLoadDropdowns(); deLoadMyEntries(); }
+            // Load balance recovery when that section is opened
+            if (sectionId === 'balanceRecovery') { loadVolBalanceRecovery(); }
             // Load donor search when that section is opened
             if (sectionId === 'donorSearch') {
                 if (typeof loadDonorSearch === 'function') loadDonorSearch();
@@ -1271,7 +1314,7 @@ window.fixUrl = function(url) {
             return b < 1024 ? b + ' B' : b < 1048576 ? (b/1024).toFixed(1) + ' KB' : (b/1048576).toFixed(2) + ' MB';
         }
 
-        document.getElementById('pbDocCamera')?.addEventListener('change', function(e) {
+        const handleImageUpload = function(e) {
             const file = e.target.files[0];
             if (!file) return;
             // Non-image? reject.
@@ -1303,17 +1346,40 @@ window.fixUrl = function(url) {
                 if (sizeEl)  sizeEl.textContent  = '✅ ' + _fmtBytes(blob.size) + (file.size > blob.size ? '  (compressed from ' + _fmtBytes(file.size) + ')' : '');
                 if (preEl)  preEl.style.display  = '';
             });
-        });
+        };
+
+        document.getElementById('pbDocCamera')?.addEventListener('change', handleImageUpload);
+        document.getElementById('pbDocCameraCapture')?.addEventListener('change', handleImageUpload);
 
         function pbClearDoc() {
             _pbDocBlob = null;
             const inp = document.getElementById('pbDocCamera');
             if (inp) inp.value = '';
+            const inpCap = document.getElementById('pbDocCameraCapture');
+            if (inpCap) inpCap.value = '';
             const preEl = document.getElementById('pbDocPreview');
             if (preEl) preEl.style.display = 'none';
             const thumb = document.getElementById('pbDocThumb');
             if (thumb) thumb.src = '';
         }
+
+        // Android-specific layout modification
+        (function checkAndroidUpload() {
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const pbUploadContainer = document.getElementById('pbUploadContainer');
+            if (isAndroid && pbUploadContainer) {
+                pbUploadContainer.innerHTML = `
+                    <button type="button" onclick="document.getElementById('pbDocCameraCapture').click()"
+                        style="flex:1;min-width:120px;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                        <i class="fas fa-camera" style="font-size:1.3rem;"></i> Take Photo
+                    </button>
+                    <button type="button" onclick="document.getElementById('pbDocCamera').click()"
+                        style="flex:1;min-width:120px;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                        <i class="fas fa-images" style="font-size:1.3rem;"></i> Select Gallery
+                    </button>
+                `;
+            }
+        })();
 
         // ==================== LIGHTBOX ====================
         function openPbLightbox(url) {
@@ -1329,6 +1395,99 @@ window.fixUrl = function(url) {
         document.getElementById('pbLightbox').addEventListener('click', function(e) {
             if (e.target === this) closePbLightbox();
         });
+
+        // ==================== BALANCE RECOVERY MODULE ====================
+        async function loadVolBalanceRecovery() {
+            const tbody = document.getElementById('volBalTbody');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:24px;">Loading…</td></tr>';
+            try {
+                const uid = currentUser ? currentUser.id : null;
+                if (!uid) return;
+
+                // Fetch donation entries and Pauti books
+                const [deRes, pbRes] = await Promise.all([
+                    fetch(`/api/donation-entries?userId=${uid}`),
+                    fetch(`/api/pauti-books?userId=${uid}`)
+                ]);
+                const deData = await deRes.json();
+                const pbData = await pbRes.json();
+
+                // Pauti slips submitted by this volunteer where payment mode = balance (or no amount)
+                const pautiPending = [];
+                (pbData.pautiBooks || []).forEach(book => {
+                    (book.slips || []).forEach(slip => {
+                        if (!slip.deleted && slip.uploadedAt &&
+                            (slip.paymentMode === 'balance' || !slip.amount || Number(slip.amount) <= 0)) {
+                            pautiPending.push({
+                                receiptId: `SLIP-${slip.slipNumber}`,
+                                name: slip.donorName || '—',
+                                amount: slip.amount || 0,
+                                photoUrl: slip.photoUrl || null,
+                                submittedAt: slip.uploadedAt,
+                                status: 'pending',
+                                type: 'pauti-slip',
+                                bookNumber: book.bookNumber,
+                                receiptNumber: slip.slipNumber,
+                                area: '—'
+                            });
+                        }
+                    });
+                });
+
+                // Donation entries submitted by this volunteer where payment mode = 'Balance'
+                const dePending = (deData.entries || []).filter(e =>
+                    e.paymentMode && e.paymentMode.toLowerCase() === 'balance' && !e.deleted
+                ).map(e => {
+                    const donor = e.donorType === 'Business'
+                        ? (e.businessName || '—')
+                        : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+                    return {
+                        receiptId: e.entryId,
+                        name: donor,
+                        amount: e.amount || 0,
+                        photoUrl: e.photoUrl || null,
+                        submittedAt: e.submittedAt,
+                        status: 'pending',
+                        type: 'donation-entry',
+                        bookNumber: e.bookNumber,
+                        receiptNumber: e.receiptNumber,
+                        area: e.area || '—'
+                    };
+                });
+
+                const list = [...pautiPending, ...dePending].sort((a, b) =>
+                    new Date(b.submittedAt) - new Date(a.submittedAt));
+
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:24px;">No pending balance slips found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = list.map(r => {
+                    const dt = new Date(r.submittedAt);
+                    const dateStr = dt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase()
+                                  + ', ' + dt.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+                    const amtCell = r.amount && Number(r.amount) > 0
+                        ? '₹' + Number(r.amount).toLocaleString('en-IN')
+                        : '<span style="color:#ccc;font-style:italic;">No amount</span>';
+                    const photoCell = r.photoUrl
+                        ? `<img src="${r.photoUrl}?t=${Date.now()}" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${r.photoUrl}')" title="Click to enlarge">`
+                        : '<span style="color:#ccc;">—</span>';
+                    return `<tr>
+                        <td style="font-weight:700;">Bk ${r.bookNumber} #${r.receiptNumber}</td>
+                        <td style="font-weight:600;">${r.name}</td>
+                        <td>${r.area}</td>
+                        <td style="color:#2E7D32;font-weight:700;">${amtCell}</td>
+                        <td style="color:#777;font-size:.82rem;">${dateStr}</td>
+                        <td><span class="badge badge-warning">Pending</span></td>
+                        <td style="text-align:center;">${photoCell}</td>
+                    </tr>`;
+                }).join('');
+            } catch(e) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#c00;padding:24px;">Error loading balance data.</td></tr>';
+            }
+        }
 
         // ==================== EDIT AMOUNT MODAL ====================
         let _editReceiptId = null;
@@ -2067,8 +2226,8 @@ window.fixUrl = function(url) {
     }
 
     // ── Payment mode toggle ──────────────────────────────────
-    const _deModes = { Cash:'deModeCash', Cheque:'deModeChq', UPI:'deModeUPI', RTGS:'deModeRTGS' };
-    const _deRefLabels = { Cash:'Reference Number', Cheque:'Cheque Number', UPI:'UPI / Transaction ID', RTGS:'RTGS Reference Number' };
+    const _deModes = { Cash:'deModeCash', Cheque:'deModeChq', UPI:'deModeUPI', RTGS:'deModeRTGS', Balance:'deModeBal' };
+    const _deRefLabels = { Cash:'Reference Number', Cheque:'Cheque Number', UPI:'UPI / Transaction ID', RTGS:'RTGS Reference Number', Balance:'Recovery Notes / Reference' };
     function deSetMode(mode) {
         document.getElementById('dePaymentMode').value = mode;
         Object.entries(_deModes).forEach(([m, id]) => {

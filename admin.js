@@ -1,4 +1,4 @@
-﻿// ==================== URL HELPER (mobile-safe relative URLs) ====================
+// ==================== URL HELPER (mobile-safe relative URLs) ====================
 window.fixUrl = window.fixUrl || function(url) {
     if (!url) return '';
     if (url.startsWith('http://localhost:3000')) return url.slice('http://localhost:3000'.length);
@@ -1996,6 +1996,7 @@ async function loadBalanceRecovery() {
                         submittedAt: slip.uploadedAt,
                         status     : 'pending',
                         type       : 'pauti-slip',
+                        paymentMode: slip.paymentMode || 'balance',
                         _slipNum   : slip.slipNumber,
                         _bookId    : book.pautiBookId,
                     });
@@ -2060,9 +2061,7 @@ async function loadBalanceRecovery() {
             const safeId   = r.receiptId.replace(/'/g, "\\'");
             const safeName = (r.name || '').replace(/'/g, "\\'");
             const safePhoto = (r.passbookUrl||'').replace(/'/g,"\\'");
-            const editBtn = isPauti || isDonEntry
-                ? ''
-                : `<button class="btn-icon btn-edit" title="Edit Entry" onclick="openBrEditModal('${safeId}','${safeName}',${r.amount||0},'${r.paymentMode||'cash'}','${r.status||'pending'}',${r._bookNumber||0},${r._receiptNumber||0},'${safePhoto}',${isPauti})"><i class="fas fa-edit"></i></button>`;
+            const editBtn = `<button class="btn-icon btn-edit" title="Edit Entry" onclick="openBrEditModal('${safeId}','${safeName}',${r.amount||0},'${r.paymentMode||'cash'}','${r.status||'pending'}',${r._bookNumber||r._bookNum||0},${r._receiptNumber||r._recNum||r._slipNum||0},'${safePhoto}','${r.type}','${r._bookId||''}')"><i class="fas fa-edit"></i></button>`;
             const markBtn  = (!isPauti && !isDonEntry && !isReceived)
                 ? `<button class="btn-icon btn-edit" style="background:#E8F5E9;color:#1B5E20;" title="Mark as Received" onclick="markBalanceReceived('${safeId}')"><i class="fas fa-check"></i></button>`
                 : '';
@@ -2107,14 +2106,28 @@ async function markBalanceReceived(id) {
 // =====================================================================
 let _brEditReceiptIdStore = null;
 
-function openBrEditModal(receiptId, name, amount, mode, status, bookNum, receiptNum, photoUrl, isPauti) {
+function openBrEditModal(receiptId, name, amount, mode, status, bookNum, receiptNum, photoUrl, type, extraBookId) {
     _brEditReceiptIdStore = receiptId;
     document.getElementById('brEditReceiptId').value = receiptId;
-    const isPautiEl = document.getElementById('brEditIsPauti');
-    if (isPautiEl) isPautiEl.value = isPauti ? 'true' : 'false';
+    const typeEl = document.getElementById('brEditType');
+    if (typeEl) typeEl.value = type || 'balance';
+    const extraBkEl = document.getElementById('brEditExtraBookId');
+    if (extraBkEl) extraBkEl.value = extraBookId || '';
     document.getElementById('brEditName').value   = name   || '';
     document.getElementById('brEditAmount').value = amount || '';
-    document.getElementById('brEditMode').value   = mode   || 'cash';
+    
+    // Normalize mode for selector dropdown
+    let normMode = 'cash';
+    if (mode) {
+        const m = mode.toLowerCase();
+        if (m === 'upi') normMode = 'upi';
+        else if (m === 'check' || m === 'cheque') normMode = 'check';
+        else if (m === 'rtgs') normMode = 'rtgs';
+        else if (m === 'balance') normMode = 'balance';
+        else if (m === 'online') normMode = 'online';
+    }
+    document.getElementById('brEditMode').value   = normMode;
+    
     const statSel = document.getElementById('brEditStatusSel');
     if (statSel) statSel.value = status || 'pending';
     const bk = document.getElementById('brEditBook');
@@ -2178,35 +2191,112 @@ async function saveBrEditEntry(ev) {
     ev.preventDefault();
     const id  = document.getElementById('brEditReceiptId').value;
     if (!id) return;
+    const type = document.getElementById('brEditType')?.value || 'balance';
+    const extraBookId = document.getElementById('brEditExtraBookId')?.value || '';
     const btn = document.getElementById('brEditSaveBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
     const st = document.getElementById('brEditStatus');
     const bkVal = document.getElementById('brEditBook')?.value;
     const rnVal = document.getElementById('brEditReceiptNum')?.value;
-    const payload = {
-        name         : document.getElementById('brEditName').value.trim(),
-        amount       : Number(document.getElementById('brEditAmount').value || 0),
-        paymentMode  : document.getElementById('brEditMode').value,
-        status       : document.getElementById('brEditStatusSel')?.value || 'pending',
-        bookNumber   : bkVal ? Number(bkVal) : undefined,
-        receiptNumber: rnVal ? Number(rnVal) : undefined,
-    };
+    
+    const donorName = document.getElementById('brEditName').value.trim();
+    const amount = Number(document.getElementById('brEditAmount').value || 0);
+    const mode = document.getElementById('brEditMode').value;
+    const status = document.getElementById('brEditStatusSel')?.value || 'pending';
+    const bookNumber = bkVal ? Number(bkVal) : undefined;
+    const receiptNumber = rnVal ? Number(rnVal) : undefined;
+
+    let url = '';
+    let method = 'PUT';
+    let payload = {};
+
+    if (type === 'pauti-slip') {
+        const slipNum = receiptNumber;
+        if (!extraBookId || !slipNum) {
+            if (st) { st.style.display='block'; st.style.background='#FFEBEE'; st.style.color='#c0392b'; st.textContent = 'Missing Book ID or Slip Number.'; }
+            if (btn) { btn.disabled = false; btn.textContent = 'Save Changes'; }
+            return;
+        }
+        url = `/api/pauti-books/${encodeURIComponent(extraBookId)}/slips/${encodeURIComponent(slipNum)}`;
+        
+        let capMode = 'cash';
+        if (mode.toLowerCase() === 'upi') capMode = 'upi';
+        else if (mode.toLowerCase() === 'check' || mode.toLowerCase() === 'cheque') capMode = 'cheque';
+        else if (mode.toLowerCase() === 'rtgs') capMode = 'rtgs';
+        else if (mode.toLowerCase() === 'balance') capMode = 'balance';
+        else if (mode.toLowerCase() === 'cash') capMode = 'cash';
+
+        payload = {
+            donorName: donorName,
+            amount: amount,
+            paymentMode: capMode
+        };
+    } else if (type === 'donation-entry') {
+        url = `/api/donation-entries/${encodeURIComponent(id)}`;
+        let capMode = 'Cash';
+        if (mode.toLowerCase() === 'upi') capMode = 'UPI';
+        else if (mode.toLowerCase() === 'check' || mode.toLowerCase() === 'cheque') capMode = 'Cheque';
+        else if (mode.toLowerCase() === 'rtgs') capMode = 'RTGS';
+        else if (mode.toLowerCase() === 'balance') capMode = 'Balance';
+        else if (mode.toLowerCase() === 'cash') capMode = 'Cash';
+        
+        payload = {
+            _isAdmin: true,
+            donorType: 'Individual',
+            amount: amount,
+            paymentMode: capMode,
+            bookNumber: bookNumber,
+            receiptNumber: receiptNumber
+        };
+        const nameParts = donorName.split(/\s+/);
+        if (nameParts.length === 1) {
+            payload.firstName = nameParts[0];
+            payload.middleName = '';
+            payload.lastName = '';
+        } else if (nameParts.length === 2) {
+            payload.firstName = nameParts[0];
+            payload.middleName = '';
+            payload.lastName = nameParts[1];
+        } else {
+            payload.firstName = nameParts[0];
+            payload.middleName = nameParts.slice(1, nameParts.length - 1).join(' ');
+            payload.lastName = nameParts[nameParts.length - 1];
+        }
+    } else {
+        url = `/api/receipts/${encodeURIComponent(id)}`;
+        payload = {
+            name: donorName,
+            amount: amount,
+            paymentMode: mode,
+            status: status,
+            bookNumber: bookNumber,
+            receiptNumber: receiptNumber
+        };
+    }
+
     try {
-        const res  = await fetch(`/api/receipts/${encodeURIComponent(id)}`, {
-            method : 'PUT',
+        const res = await fetch(url, {
+            method: method,
             headers: { 'Content-Type': 'application/json' },
-            body   : JSON.stringify(payload)
+            body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (res.ok && data.success) {
             if (window._brEditPhotoFile) {
                 try {
                     const fd = new FormData();
-                    fd.append('passbook', window._brEditPhotoFile, window._brEditPhotoFile.name);
-                    fd.append('receiptId', id);
-                    await fetch('/api/upload-passbook', { method:'POST', body:fd });
+                    fd.append('passbook', window._brEditPhotoFile, 'receipt.jpg');
+                    if (type === 'donation-entry') {
+                        fd.append('entryId', id);
+                    } else if (type === 'pauti-slip') {
+                        fd.append('bookId', extraBookId);
+                        fd.append('slipNum', receiptNumber);
+                    } else {
+                        fd.append('receiptId', id);
+                    }
+                    await fetch('/api/upload-passbook', { method: 'POST', body: fd });
                     window._brEditPhotoFile = null;
-                } catch(_px) {}
+                } catch (_px) {}
             }
             closeBrEditModal();
             showNotification('✅ Recovery entry updated!', 'success');
