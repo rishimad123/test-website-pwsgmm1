@@ -587,8 +587,128 @@ a {
 }
 
 /* ==================== UTILITY CLASSES ==================== */
-.text-center {
-    text-align: center;
+.text-center { text-align: center; }
+
+/* ==================== TOUCH & IOS FIXES ==================== */
+a, button, .btn {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+/* Prevent iOS auto-zoom on input focus */
+input[type="text"], input[type="email"], input[type="password"],
+input[type="number"], input[type="tel"], input[type="search"],
+select, textarea {
+    font-size: max(16px, 1rem);
+}
+
+/* ==================== ANIMATIONS ==================== */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ==================== RESPONSIVE — Tablet landscape ≤968px ==================== */
+@media (max-width: 968px) {
+    .nav-menu {
+        position: fixed;
+        left: -100%;
+        top: 68px;
+        flex-direction: column;
+        background: var(--white);
+        width: 100%;
+        text-align: center;
+        transition: 0.3s;
+        box-shadow: var(--shadow);
+        padding: 20px 0;
+        gap: 10px;
+        z-index: 999;
+    }
+    .nav-menu.active  { left: 0; }
+    .mobile-toggle    { display: flex; }
+    .hero-title       { font-size: 2.5rem; }
+    .hero-subtitle    { font-size: 1.2rem; }
+    .countdown        { gap: 15px; flex-wrap: wrap; }
+    .countdown-item   { padding: 15px 20px; }
+    .countdown-value  { font-size: 2rem; }
+    .hero-buttons     { flex-direction: column; align-items: center; }
+    .about-content    { grid-template-columns: 1fr; }
+}
+
+/* ==================== RESPONSIVE — Tablet portrait ≤768px ==================== */
+@media (max-width: 768px) {
+    .hero             { height: 75vh; min-height: 520px; }
+    .logo span        { font-size: 0.95rem; }
+    .section-header h2{ font-size: 2rem; }
+    .section-header   { margin-bottom: 40px; }
+    .stats, .about-preview, .events, .gallery-preview { padding: 50px 0; }
+    .stats-grid       { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .stat-card        { padding: 25px; }
+    .stat-number      { font-size: 2.2rem; }
+    .events-grid      { grid-template-columns: 1fr; }
+    .gallery-grid     { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+    .gallery-item svg { height: 200px; }
+    .footer-grid      { grid-template-columns: 1fr 1fr; gap: 24px; }
+}
+
+/* ==================== RESPONSIVE — Mobile ≤576px ==================== */
+@media (max-width: 576px) {
+    .container        { padding: 0 15px; }
+    .nav-wrapper      { padding: 12px 0; }
+    .logo i           { font-size: 1.5rem; margin-right: 7px; }
+    .logo span        { font-size: 0.82rem; max-width: 175px;
+                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .hero             { height: auto; min-height: 85vh; padding: 30px 0 44px; }
+    .hero-title       { font-size: 1.9rem; margin-bottom: 10px; }
+    .hero-subtitle    { font-size: 0.95rem; margin-bottom: 20px; }
+    .countdown        { gap: 8px; margin: 18px 0; }
+    .countdown-item   { padding: 10px 12px; border-radius: 10px; }
+    .countdown-value  { font-size: 1.5rem; }
+    .countdown-label  { font-size: 0.72rem; }
+    .hero-buttons     { margin-top: 20px; gap: 12px; }
+    .btn              { padding: 13px 26px; font-size: 0.9rem;
+                        width: 100%; max-width: 260px; justify-content: center; }
+
+    .stats, .about-preview, .events, .gallery-preview { padding: 36px 0; }
+    .stats-grid       { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat-card        { padding: 18px 12px; }
+    .stat-number      { font-size: 1.7rem; }
+    .stat-card i      { font-size: 1.7rem; margin-bottom: 10px; }
+    .stat-label       { font-size: 0.85rem; }
+
+    .section-header h2{ font-size: 1.6rem; }
+    .section-header   { margin-bottom: 28px; }
+    .about-text p     { font-size: 0.95rem; }
+
+    .event-card       { flex-direction: column; gap: 12px; padding: 18px; }
+    .event-date       { display: flex; align-items: center; gap: 10px;
+                        width: fit-content; padding: 8px 14px; border-radius: 8px; }
+    .event-date .day  { font-size: 1.3rem; }
+    .event-date .month{ font-size: 0.82rem; }
+    .event-content h3 { font-size: 1rem; }
+
+    .gallery-grid     { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .gallery-item     { border-radius: 10px; }
+    .gallery-item svg { height: 150px; }
+    .gallery-overlay  { transform: translateY(0); background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); }
+
+    .footer           { padding: 36px 0 16px; }
+    .footer-grid      { grid-template-columns: 1fr; gap: 22px; margin-bottom: 20px; }
+    .footer-col h3    { margin-bottom: 12px; }
+    .footer-bottom p  { font-size: 0.82rem; }
+}
+
+/* ==================== RESPONSIVE — Very small ≤380px ==================== */
+@media (max-width: 380px) {
+    .hero-title       { font-size: 1.6rem; }
+    .countdown        { gap: 6px; }
+    .countdown-item   { padding: 9px 10px; }
+    .countdown-value  { font-size: 1.3rem; }
+    .stats-grid       { gap: 8px; }
+    .stat-card        { padding: 14px 10px; }
+    .btn              { padding: 12px 20px; font-size: 0.88rem; }
+    .logo span        { max-width: 140px; font-size: 0.78rem; }
+    .gallery-grid     { grid-template-columns: 1fr; }
 }
 
 /* ==================== ANIMATIONS ==================== */

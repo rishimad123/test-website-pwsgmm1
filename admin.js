@@ -1,3 +1,10 @@
+// ==================== URL HELPER (mobile-safe relative URLs) ====================
+window.fixUrl = window.fixUrl || function(url) {
+    if (!url) return '';
+    if (url.startsWith('http://localhost:3000')) return url.slice('http://localhost:3000'.length);
+    return url;
+};
+
 // ==================== CHECK ADMIN ACCESS ====================
 document.addEventListener('DOMContentLoaded', function() {
     // Check if user is logged in and is admin
