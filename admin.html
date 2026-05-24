@@ -786,6 +786,97 @@ window._fmtBytesA = function(b) {
             /* Badge wrapping */
             .action-btns { flex-wrap: wrap; }
         }
+
+        /* ── Admin Donation Entries Responsiveness Additions ── */
+        
+        /* Prevent iOS auto-zoom on dynamically created modals appended to document.body */
+        #adeEditModal input, #adeEditModal select,
+        #adeBldgModal input, #adeAreaModalEl input, #adeLmModal input {
+            font-size: max(16px, 1rem) !important;
+        }
+
+        /* Collapse 3-column name fields to 1-column on tablet and mobile */
+        @media (max-width: 900px) {
+            #adeIndFields, #aneIndFields, .ade-ind-grp {
+                grid-template-columns: 1fr !important;
+            }
+            #adeBizFields, #aneBizFields {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            /* Collapse all 2-column and 3-column grids inside donation entries and edit modal to 1 column */
+            #donationEntries div[style*="grid-template-columns:1fr 1fr"],
+            #donationEntries div[style*="grid-template-columns:1fr 1fr 1fr"],
+            #adeEditModal div[style*="grid-template-columns:1fr 1fr"],
+            #adeEditModal div[style*="grid-template-columns:1fr 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            /* Collapse payment mode grid to 3-column */
+            #donationEntries div[style*="grid-template-columns:repeat(5,1fr)"] {
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
+            
+            /* Photo upload button and submit button adjustments */
+            #apbCameraBtn, #anePhotoInput + button, #adeSubmitBtn, #aneSaveBtn {
+                width: 100% !important;
+                max-width: 100% !important;
+                flex: none !important;
+            }
+        }
+        
+        @media (max-width: 380px) {
+            /* Collapse payment mode grid to 2-column */
+            #donationEntries div[style*="grid-template-columns:repeat(5,1fr)"],
+            #donationEntries div[style*="grid-template-columns:repeat(3,1fr)"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            
+            /* Collapse admin stats list on extremely small devices */
+            .admin-stats {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        
+        /* Edit Modal Bottom-sheet on mobile */
+        @media (max-width: 576px) {
+            #adeEditModal {
+                align-items: flex-end !important;
+            }
+            #adeEditModal > div {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                border-radius: 16px 16px 0 0 !important;
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                max-height: 92vh !important;
+                padding: 20px 16px !important;
+                box-sizing: border-box !important;
+            }
+            
+            /* Management Modals Bottom-sheet on mobile */
+            #adeBldgModal, #adeAreaModalEl, #adeLmModal {
+                align-items: flex-end !important;
+            }
+            #adeBldgModal > div, #adeAreaModalEl > div, #adeLmModal > div {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                border-radius: 16px 16px 0 0 !important;
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                max-height: 92vh !important;
+                padding: 20px 16px !important;
+                box-sizing: border-box !important;
+            }
+        }
         </style>
 </head>
 <body>
