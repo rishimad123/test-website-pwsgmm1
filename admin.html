@@ -877,6 +877,34 @@ window._fmtBytesA = function(b) {
                 box-sizing: border-box !important;
             }
         }
+
+
+     @media (max-width: 768px) {
+  .admin-sidebar {
+    width: 100% !important;
+    height: auto !important;
+    position: relative !important;
+    display: none;
+  }
+  .admin-sidebar.mobile-open {
+    display: block !important;
+  }
+  .admin-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  .admin-content {
+    padding: 12px !important;
+  }
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .admin-card {
+    padding: 12px !important;
+  }
+}
         </style>
 </head>
 <body>
