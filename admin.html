@@ -2479,6 +2479,23 @@ window._fmtBytesA = function(b) {
             </form>
         </div>
 
+        <!-- All Submitted Entries cards -->
+        <div class="admin-card" style="padding:24px;margin-bottom:18px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #F0F0F0;">
+                <h3 style="margin:0;color:var(--dark-color);font-size:1.2rem;"><i class="fas fa-list-ul" style="color:var(--primary-color);margin-right:8px;"></i>All Submitted Entries</h3>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <span id="adeCardCount" style="font-size:.83rem;color:#888;"></span>
+                    <input type="text" id="adeCardSearch" placeholder="🔍 Search donor, area…"
+                        style="padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.85rem;width:180px;"
+                        oninput="adeRenderCards()">
+                    <button onclick="adeLoad()" class="btn btn-small" style="background:#f4f4f4;color:#555;"><i class="fas fa-sync-alt"></i></button>
+                </div>
+            </div>
+            <div id="adeCardGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;">
+                <div style="text-align:center;color:#aaa;padding:30px;grid-column:1/-1;">Loading…</div>
+            </div>
+        </div>
+
         <!-- Filters -->
         <div class="admin-card" style="padding:20px;margin-bottom:18px;">
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
@@ -2543,6 +2560,54 @@ window._fmtBytesA = function(b) {
     // ── Admin Donation Entries JS ─────────────────────────────────
     let _adeAll = [], _adeFiltered = [];
     let _adeFormOpen = false;
+
+    // ── All Submitted Entries card renderer ──────────────────────
+    function adeRenderCards() {
+        const grid = document.getElementById('adeCardGrid');
+        if (!grid) return;
+        const q = (document.getElementById('adeCardSearch')?.value || '').toLowerCase();
+        const list = _adeAll.filter(e => {
+            if (!q) return true;
+            const donor = e.donorType === 'Business'
+                ? (e.businessName || '')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
+            return donor.toLowerCase().includes(q) || (e.area || '').toLowerCase().includes(q);
+        });
+        const countEl = document.getElementById('adeCardCount');
+        if (countEl) countEl.textContent = list.length + ' entr' + (list.length === 1 ? 'y' : 'ies');
+        if (!list.length) {
+            grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:30px;grid-column:1/-1;">No entries found.</div>';
+            return;
+        }
+        const modeColor = { Cash:'#27AE60', Cheque:'#1565C0', UPI:'#6A1B9A', RTGS:'#00796B', Balance:'#E65100' };
+        grid.innerHTML = list.slice().reverse().map(e => {
+            const donor = e.donorType === 'Business'
+                ? (e.businessName || '—')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+            const amt = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '—';
+            const mode = e.paymentMode || '—';
+            const modeClr = modeColor[mode] || '#555';
+            const dtObj = new Date(e.submittedAt);
+            const dateStr = isNaN(dtObj) ? '—' : dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+            const timeStr = isNaN(dtObj) ? '' : dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
+            return `<div style="background:#fff;border:1.5px solid #F0F0F0;border-radius:14px;padding:18px 16px;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 4px 18px rgba(0,0,0,.11)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;">
+                    <div style="font-weight:700;font-size:.97rem;color:var(--dark-color);line-height:1.3;">${donor}</div>
+                    <button onclick="adeOpenEdit('${e.entryId}')" title="Edit" style="border:none;background:#E3F2FD;color:#1565C0;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.8rem;flex-shrink:0;"><i class="fas fa-edit"></i></button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;">
+                    <span style="background:#F3E5F5;color:#6A1B9A;font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:20px;"><i class="fas fa-book" style="margin-right:4px;"></i>Bk ${e.bookNumber} / #${e.receiptNumber}</span>
+                    ${e.area ? `<span style="background:#E8F5E9;color:#1B5E20;font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:20px;"><i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>${e.area}</span>` : ''}
+                    <span style="background:#FFF8E1;color:${modeClr};font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:20px;">${mode}</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="font-size:1.1rem;font-weight:800;color:#2E7D32;">${amt}</div>
+                    <div style="font-size:.76rem;color:#aaa;text-align:right;line-height:1.4;">${timeStr}<br>${dateStr}</div>
+                </div>
+                ${e.submittedBy ? `<div style="font-size:.75rem;color:#bbb;margin-top:7px;"><i class="fas fa-user" style="margin-right:4px;"></i>${e.submittedBy}</div>` : ''}
+            </div>`;
+        }).join('');
+    }
     let _apbDocBlob = null;
 
     function adeToggleForm() {
@@ -2901,6 +2966,7 @@ window._fmtBytesA = function(b) {
                 (areaData.areas || []).forEach(a => areaSel.innerHTML += `<option>${a.name}</option>`);
             }
             adeFilter();
+            adeRenderCards();
         } catch(e) {
             tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#c00;padding:30px;">Error loading data.</td></tr>';
         }
