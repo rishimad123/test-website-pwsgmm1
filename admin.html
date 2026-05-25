@@ -880,6 +880,7 @@ window._fmtBytesA = function(b) {
 
 
      @media (max-width: 768px) {
+       #mobileMenuBtn { display: block !important; }
   .admin-sidebar {
     width: 100% !important;
     height: auto !important;
@@ -908,7 +909,8 @@ window._fmtBytesA = function(b) {
         </style>
 </head>
 <body>
-    <div class="admin-dashboard">
+  <div class="admin-dashboard">
+<button onclick="document.querySelector('.admin-sidebar').classList.toggle('mobile-open')" style="display:none;position:fixed;top:12px;left:12px;z-index:9999;background:var(--primary-color);color:white;border:none;border-radius:8px;padding:8px 12px;font-size:1.2rem;cursor:pointer;" id="mobileMenuBtn">☰</button>
         <!-- Sidebar -->
         <aside class="admin-sidebar">
             <div class="admin-sidebar-header">
