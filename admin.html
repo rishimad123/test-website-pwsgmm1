@@ -2543,7 +2543,7 @@ window._fmtBytesA = function(b) {
                         <tr>
                             <th>#</th><th>Book</th><th>Receipt</th><th>Donor</th><th>Type</th>
                             <th>WhatsApp</th><th>Mobile</th><th>Building</th><th>Area</th>
-                            <th>Amount</th><th>Mode</th><th>Ref No.</th><th>Landmark</th><th>Photo</th><th>Submitted By</th><th>Date</th><th>Actions</th>
+                            <th>Amount</th><th>Mode</th><th>Ref No.</th><th>Landmark</th><th>Image</th><th>Submitted By</th><th>Date</th><th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="adeTbody">
@@ -3029,7 +3029,7 @@ window._fmtBytesA = function(b) {
                 <td><span style="padding:3px 10px;border-radius:12px;background:#FFF3E0;color:#E65100;font-size:.75rem;font-weight:700;">${e.paymentMode}</span></td>
                 <td style="font-size:.82rem;color:#777;">${e.referenceNumber||'—'}</td>
                 <td style="font-size:.82rem;color:#555;">${e.landmark||'—'}</td>
-                <td style="text-align:center;">${e.photoUrl ? `<img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openAdminLightbox(fixUrl('${e.photoUrl}'))" title="View photo">` : '<span style="color:#ccc;">—</span>'}</td>
+                <td style="text-align:center;">${e.photoUrl ? `<img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" style="width:50px;height:50px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openAdminLightbox(fixUrl('${e.photoUrl}'))" title="View photo">` : '<span style="font-size:.72rem;color:#aaa;font-style:italic;">No Image</span>'}</td>
                 <td style="font-size:.82rem;color:#888;">${e.submittedBy||'—'}</td>
                 <td style="color:#888;font-size:.82rem;">${dt}</td>
                 <td>

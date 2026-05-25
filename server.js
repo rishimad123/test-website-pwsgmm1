@@ -354,6 +354,20 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 200, { receipts });
     }
 
+    // ── GET /api/check-block?username=X ──────────────────────────────────
+    if (req.method === 'GET' && pathname === '/api/check-block') {
+        const username = parsed.query.username || '';
+        if (!username) return sendJSON(res, 400, { message: 'username is required.' });
+        try {
+            const colUsers = db.collection('users');
+            const user = await colUsers.findOne({ username });
+            return sendJSON(res, 200, { blocked: !!(user && user.blocked === true) });
+        } catch (err) {
+            console.error('check-block error:', err.message);
+            return sendJSON(res, 500, { message: 'Server error.' });
+        }
+    }
+
     // ── PUT /api/receipts/:id  (edit a record) ────────────────────────────
     if (req.method === 'PUT' && pathname.startsWith('/api/receipts/') && !pathname.includes('/mark-received') && !pathname.includes('/soft-delete') && !pathname.includes('/clear-amount')) {
         const id  = decodeURIComponent(pathname.replace('/api/receipts/', ''));
