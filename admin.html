@@ -2234,6 +2234,7 @@ window._fmtBytesA = function(b) {
     <!-- ══════════ DONATION ENTRIES ADMIN SECTION HTML ══════════ -->
     <!-- Section injected via JS into admin-content -->
     <script>
+      document.addEventListener('DOMContentLoaded', injectDESection);
     // Inject the section HTML on DOM ready
     (function injectDESection() {
         const section = document.createElement('div');
