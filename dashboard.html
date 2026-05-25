@@ -1339,7 +1339,8 @@ window.fixUrl = function(url) {
                     return;
                 }
                 _pbDocBlob = blob;
-                // Show thumbnail
+                // Show thumbnail — revoke any previous object URL to prevent memory leak
+                if (thumbEl && thumbEl.src && thumbEl.src.startsWith('blob:')) URL.revokeObjectURL(thumbEl.src);
                 const objURL = URL.createObjectURL(blob);
                 if (thumbEl) { thumbEl.src = objURL; }
                 if (nameEl)  nameEl.textContent  = file.name.replace(/\.[^.]+$/, '') + '.jpg';
@@ -1854,10 +1855,22 @@ window.fixUrl = function(url) {
         document.getElementById('deReceiptPhotoInput')?.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-                file.size < 1048576 ? (file.size/1024).toFixed(1) + ' KB' :
-                (file.size/1048576).toFixed(2) + ' MB';
-            const prev = document.getElementById('deReceiptPhotoPreview');
-            if (prev) prev.style.display = 'flex';
+            if (!file.type.startsWith('image/')) { alert('Please select a JPG or PNG image.'); this.value = ''; return; }
+            _deReceiptPhotoFile = null;
+            _compressImage(file, 950, function(blob) {
+                if (!blob) { alert('Could not process image.'); return; }
+                _deReceiptPhotoFile = blob;
+                const thumb = document.getElementById('deReceiptPhotoThumb');
+                const name  = document.getElementById('deReceiptPhotoName');
+                const prev  = document.getElementById('deReceiptPhotoPreview');
+                // Revoke previous object URL to prevent memory leak
+                if (thumb && thumb.src && thumb.src.startsWith('blob:')) URL.revokeObjectURL(thumb.src);
+                if (thumb) thumb.src = URL.createObjectURL(blob);
+                if (name)  name.textContent = '\u2705 ' + file.name.replace(/\.[^.]+$/, '') + '.jpg (' +
+                    (blob.size < 1048576 ? (blob.size/1024).toFixed(1) + ' KB' : (blob.size/1048576).toFixed(2) + ' MB') +
+                    (file.size > blob.size ? ', compressed' : '') + ')';
+                if (prev)  prev.style.display = 'flex';
+            });
         });
         function deClearReceiptPhoto() {
             _deReceiptPhotoFile = null;
@@ -1865,6 +1878,9 @@ window.fixUrl = function(url) {
             if (inp) inp.value = '';
             const prev = document.getElementById('deReceiptPhotoPreview');
             if (prev) prev.style.display = 'none';
+            const thumb = document.getElementById('deReceiptPhotoThumb');
+            if (thumb && thumb.src && thumb.src.startsWith('blob:')) URL.revokeObjectURL(thumb.src);
+            if (thumb) thumb.src = '';
         }
 
     </script>
@@ -2489,7 +2505,7 @@ window.fixUrl = function(url) {
                 const dt    = `<span style="font-size:.78rem;white-space:nowrap;">${dtTime}<br><span style="color:#aaa;">${dtDate}</span></span>`;
                 const amt   = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '—';
                 const photoCell = e.photoUrl
-                    ? `<img src="${e.photoUrl}?t=${Date.now()}" alt="Receipt" loading="lazy" decoding="async" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;vertical-align:middle;" onclick="openPbLightbox('${e.photoUrl}') title="Click to enlarge">`
+                    ? `<img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" alt="Receipt" loading="lazy" decoding="async" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;vertical-align:middle;" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')" title="Click to enlarge">`
                     : '<span style="color:#ccc;font-size:.8rem;">—</span>';
                 return `<tr id="de-vol-row-${e.entryId}">
                     <td style="font-weight:700;">Bk ${e.bookNumber}</td>
@@ -2515,7 +2531,7 @@ window.fixUrl = function(url) {
                     const dtObj = new Date(e.submittedAt);
                     const dtStr = dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
                     const photo = e.photoUrl
-                        ? `<img src="${e.photoUrl}?t=${Date.now()}" loading="lazy" onclick="openPbLightbox('${e.photoUrl}')" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1.5px solid #ffe0d0;cursor:pointer;flex-shrink:0;">`
+                        ? `<img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" loading="lazy" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1.5px solid #ffe0d0;cursor:pointer;flex-shrink:0;">`
                         : '';
                     return `<div style="border:1px solid #f0e8e0;border-radius:12px;padding:14px 14px 12px;margin:0 0 10px;background:#fffaf8;">
                         <div style="display:flex;align-items:flex-start;gap:12px;">
@@ -2639,8 +2655,10 @@ window.fixUrl = function(url) {
         _compressImage(file, 950, function(blob) {
             if (!blob) { alert('Could not process image.'); return; }
             _deVolEditBlob = blob;
+            // Revoke previous object URL before setting a new one
+            if (thumb && thumb.src && thumb.src.startsWith('blob:')) URL.revokeObjectURL(thumb.src);
             if (thumb) thumb.src = URL.createObjectURL(blob);
-            if (name)  name.textContent = '✅ ' + file.name.replace(/\.[^.]+$/, '') + '.jpg ' +
+            if (name)  name.textContent = '\u2705 ' + file.name.replace(/\.[^.]+$/, '') + '.jpg ' +
                 (blob.size < 1048576 ? '(' + (blob.size/1024).toFixed(1) + ' KB)' : '(' + (blob.size/1048576).toFixed(2) + ' MB)');
             if (prev) prev.style.display = '';
         });

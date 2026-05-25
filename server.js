@@ -7,6 +7,8 @@
  *
  * Run:  node server.js
  * URL:  http://localhost:3000
+ *
+ * Storage: MongoDB (process.env.MONGODB_URI)
  */
 
 const http    = require('http');
@@ -14,6 +16,7 @@ const fs      = require('fs');
 const path    = require('path');
 const url     = require('url');
 const os      = require('os');
+const { MongoClient } = require('mongodb');
 
 /** Return the first non-loopback IPv4 address (LAN IP). */
 function getLocalIP() {
@@ -26,160 +29,159 @@ function getLocalIP() {
     return '127.0.0.1';
 }
 
-const PORT          = process.env.PORT || 3000;
-const RECEIPTS_FILE = path.join(__dirname, 'receipts.json');
-const UPLOADS_DIR   = path.join(__dirname, 'uploads');
-const EXPENSES_FILE    = path.join(__dirname, 'expenses.json');
-const FINANCIALS_FILE  = path.join(__dirname, 'financials.json');
-const PAUTI_BOOKS_FILE = path.join(__dirname, 'pauti-books.json');
-const DONATIONS_FILE        = path.join(__dirname, 'donations.json');
-const DONATION_ENTRIES_FILE = path.join(__dirname, 'donation-entries.json');
-const BUILDINGS_FILE        = path.join(__dirname, 'buildings.json');
-const AREAS_FILE            = path.join(__dirname, 'areas.json');
+const PORT        = process.env.PORT || 3000;
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const DB_NAME     = 'patelwadi';
 
-// ─── In-memory Donations store ──────────────────────────────────────────────
-// Structure: { columns: string[], records: object[] }
-let donationsStore = { columns: [], records: [] };
-if (fs.existsSync(DONATIONS_FILE)) {
-    try {
-        donationsStore = JSON.parse(fs.readFileSync(DONATIONS_FILE, 'utf8'));
-        console.log(`📂 Loaded ${donationsStore.records.length} donation record(s) from donations.json`);
-    } catch (e) {
-        console.warn('⚠️  Could not parse donations.json — starting fresh.');
-    }
-}
-function saveDonations() {
-    fs.writeFileSync(DONATIONS_FILE, JSON.stringify(donationsStore, null, 2), 'utf8');
-}
+// ─── MongoDB client & collections ────────────────────────────────────────────
+const mongoClient = new MongoClient(MONGODB_URI);
+let db;
+let colReceipts, colExpenses, colFinancials, colPautiBooks;
+let colDonations, colDonationEntries, colBuildings, colAreas;
+let colLandmarks, colCommitteeMembers;
 
-// ─── In-memory Donation Entries store ───────────────────────────────────────
+// ─── In-memory stores (populated from MongoDB at startup) ───────────────────
 const SLIPS_PER_BOOK_DE = 50;
-const TOTAL_BOOKS_DE    = 50; // 50 books × 50 receipts = 2500
-let donationEntries = [];
-if (fs.existsSync(DONATION_ENTRIES_FILE)) {
-    try {
-        donationEntries = JSON.parse(fs.readFileSync(DONATION_ENTRIES_FILE, 'utf8'));
-        console.log(`📂 Loaded ${donationEntries.length} donation entry/entries from donation-entries.json`);
-    } catch (e) {
-        console.warn('⚠️  Could not parse donation-entries.json — starting fresh.');
+const TOTAL_BOOKS_DE    = 50;
+const SLIPS_PER_BOOK    = 50;
+const TOTAL_SLIPS       = 2500;
+const MAX_BOOKS         = TOTAL_SLIPS / SLIPS_PER_BOOK; // 50
+
+let donationsStore    = { columns: [], records: [] };
+let donationEntries   = [];
+let buildings         = [];
+let areas             = [];
+let landmarks         = [];
+let committeeMembers  = [];
+let financials        = [];
+let pautiBooks        = [];
+let receipts          = [];
+let expenses          = [];
+
+// ─── Save helpers (write in-memory array back to MongoDB) ────────────────────
+
+async function saveDonations() {
+    await colDonations.deleteMany({});
+    await colDonations.insertOne({ _storeKey: 'donationsStore', ...donationsStore });
+}
+
+async function saveDonationEntries() {
+    await colDonationEntries.deleteMany({});
+    if (donationEntries.length > 0) await colDonationEntries.insertMany(donationEntries.map(e => ({ ...e })));
+}
+
+async function saveBuildings() {
+    await colBuildings.deleteMany({});
+    if (buildings.length > 0) await colBuildings.insertMany(buildings.map(b => ({ ...b })));
+}
+
+async function saveAreas() {
+    await colAreas.deleteMany({});
+    if (areas.length > 0) await colAreas.insertMany(areas.map(a => ({ ...a })));
+}
+
+async function saveLandmarks() {
+    await colLandmarks.deleteMany({});
+    if (landmarks.length > 0) await colLandmarks.insertMany(landmarks.map(l => ({ ...l })));
+}
+
+async function saveCommitteeMembers() {
+    await colCommitteeMembers.deleteMany({});
+    if (committeeMembers.length > 0) await colCommitteeMembers.insertMany(committeeMembers.map(m => ({ ...m })));
+}
+
+async function saveFinancials() {
+    await colFinancials.deleteMany({});
+    if (financials.length > 0) await colFinancials.insertMany(financials.map(f => ({ ...f })));
+}
+
+async function savePautiBooks() {
+    await colPautiBooks.deleteMany({});
+    if (pautiBooks.length > 0) await colPautiBooks.insertMany(pautiBooks.map(b => ({ ...b })));
+}
+
+async function saveReceipts() {
+    await colReceipts.deleteMany({});
+    if (receipts.length > 0) await colReceipts.insertMany(receipts.map(r => ({ ...r })));
+}
+
+async function saveExpenses() {
+    await colExpenses.deleteMany({});
+    if (expenses.length > 0) await colExpenses.insertMany(expenses.map(e => ({ ...e })));
+}
+
+// ─── Strip MongoDB _id fields from returned objects ──────────────────────────
+function stripId(obj) {
+    if (!obj) return obj;
+    const { _id, ...rest } = obj;
+    return rest;
+}
+
+// ─── Connect to MongoDB and seed in-memory stores ────────────────────────────
+async function connectDB() {
+    await mongoClient.connect();
+    db = mongoClient.db(DB_NAME);
+
+    colReceipts         = db.collection('receipts');
+    colExpenses         = db.collection('expenses');
+    colFinancials       = db.collection('financials');
+    colPautiBooks       = db.collection('pautiBooks');
+    colDonations        = db.collection('donations');
+    colDonationEntries  = db.collection('donationEntries');
+    colBuildings        = db.collection('buildings');
+    colAreas            = db.collection('areas');
+    colLandmarks        = db.collection('landmarks');
+    colCommitteeMembers = db.collection('committeeMembers');
+
+    // ── Load donations store ──────────────────────────────────────────────────
+    const donDoc = await colDonations.findOne({ _storeKey: 'donationsStore' });
+    if (donDoc) {
+        donationsStore = { columns: donDoc.columns || [], records: donDoc.records || [] };
+        console.log(`📂 Loaded ${donationsStore.records.length} donation record(s) from MongoDB`);
     }
-}
-function saveDonationEntries() {
-    fs.writeFileSync(DONATION_ENTRIES_FILE, JSON.stringify(donationEntries, null, 2), 'utf8');
-}
 
-// ─── In-memory Buildings store ───────────────────────────────────────────────
-let buildings = [];
-if (fs.existsSync(BUILDINGS_FILE)) {
-    try {
-        buildings = JSON.parse(fs.readFileSync(BUILDINGS_FILE, 'utf8'));
-        console.log(`📂 Loaded ${buildings.length} building(s) from buildings.json`);
-    } catch (e) {
-        console.warn('⚠️  Could not parse buildings.json — starting fresh.');
-    }
-}
-function saveBuildings() {
-    fs.writeFileSync(BUILDINGS_FILE, JSON.stringify(buildings, null, 2), 'utf8');
-}
+    // ── Load donation entries ─────────────────────────────────────────────────
+    donationEntries = (await colDonationEntries.find({}).toArray()).map(stripId);
+    console.log(`📂 Loaded ${donationEntries.length} donation entry/entries from MongoDB`);
 
-// ─── In-memory Areas store ───────────────────────────────────────────────────
-let areas = [];
-if (fs.existsSync(AREAS_FILE)) {
-    try {
-        areas = JSON.parse(fs.readFileSync(AREAS_FILE, 'utf8'));
-        console.log(`📂 Loaded ${areas.length} area(s) from areas.json`);
-    } catch (e) {
-        console.warn('⚠️  Could not parse areas.json — starting fresh.');
-    }
-}
-function saveAreas() {
-    fs.writeFileSync(AREAS_FILE, JSON.stringify(areas, null, 2), 'utf8');
-}
+    // ── Load buildings ────────────────────────────────────────────────────────
+    buildings = (await colBuildings.find({}).toArray()).map(stripId);
+    console.log(`📂 Loaded ${buildings.length} building(s) from MongoDB`);
 
-// ─── In-memory landmarks store ──────────────────────────────────────────────
-const LANDMARKS_FILE = path.join(__dirname, 'landmarks.json');
-let landmarks = [];
-if (fs.existsSync(LANDMARKS_FILE)) {
-    try { landmarks = JSON.parse(fs.readFileSync(LANDMARKS_FILE, 'utf8')); }
-    catch(e) { console.warn('Could not parse landmarks.json'); }
-}
-function saveLandmarks() { fs.writeFileSync(LANDMARKS_FILE, JSON.stringify(landmarks, null, 2), 'utf8'); }
+    // ── Load areas ────────────────────────────────────────────────────────────
+    areas = (await colAreas.find({}).toArray()).map(stripId);
+    console.log(`📂 Loaded ${areas.length} area(s) from MongoDB`);
 
-// ─── In-memory committee members store ──────────────────────────────────────
-const COMMITTEE_FILE = path.join(__dirname, 'committee-members.json');
-let committeeMembers = [];
-if (fs.existsSync(COMMITTEE_FILE)) {
-    try { committeeMembers = JSON.parse(fs.readFileSync(COMMITTEE_FILE, 'utf8')); }
-    catch(e) { console.warn('Could not parse committee-members.json'); }
-}
-function saveCommitteeMembers() { fs.writeFileSync(COMMITTEE_FILE, JSON.stringify(committeeMembers, null, 2), 'utf8'); }
+    // ── Load landmarks ────────────────────────────────────────────────────────
+    landmarks = (await colLandmarks.find({}).toArray()).map(stripId);
 
-// ─── In-memory financials store ──────────────────────────────────────────────
-let financials = [];
-if (fs.existsSync(FINANCIALS_FILE)) {
-    try {
-        financials = JSON.parse(fs.readFileSync(FINANCIALS_FILE, 'utf8'));
-        console.log(`📂 Loaded ${financials.length} financial record(s) from financials.json`);
-    } catch (e) {
-        console.warn('⚠️  Could not parse financials.json — starting fresh.');
-    }
-}
-function saveFinancials() {
-    fs.writeFileSync(FINANCIALS_FILE, JSON.stringify(financials, null, 2), 'utf8');
-}
+    // ── Load committee members ────────────────────────────────────────────────
+    committeeMembers = (await colCommitteeMembers.find({}).toArray()).map(stripId);
 
-// ─── In-memory Pauti Book store ──────────────────────────────────────────────
-const SLIPS_PER_BOOK  = 50;
-const TOTAL_SLIPS     = 2500;
-const MAX_BOOKS       = TOTAL_SLIPS / SLIPS_PER_BOOK; // 50
-let pautiBooks = [];
-if (fs.existsSync(PAUTI_BOOKS_FILE)) {
-    try {
-        pautiBooks = JSON.parse(fs.readFileSync(PAUTI_BOOKS_FILE, 'utf8'));
-        console.log(`📂 Loaded ${pautiBooks.length} Pauti Book(s) from pauti-books.json`);
-    } catch (e) {
-        console.warn('⚠️  Could not parse pauti-books.json — starting fresh.');
-    }
-}
-function savePautiBooks() {
-    fs.writeFileSync(PAUTI_BOOKS_FILE, JSON.stringify(pautiBooks, null, 2), 'utf8');
+    // ── Load financials ───────────────────────────────────────────────────────
+    financials = (await colFinancials.find({}).toArray()).map(stripId);
+    console.log(`📂 Loaded ${financials.length} financial record(s) from MongoDB`);
+
+    // ── Load pauti books ──────────────────────────────────────────────────────
+    pautiBooks = (await colPautiBooks.find({}).toArray()).map(stripId);
+    console.log(`📂 Loaded ${pautiBooks.length} Pauti Book(s) from MongoDB`);
+
+    // ── Load receipts ─────────────────────────────────────────────────────────
+    receipts = (await colReceipts.find({}).toArray()).map(stripId);
+    console.log(`📂 Loaded ${receipts.length} existing receipt(s) from MongoDB`);
+
+    // ── Load expenses ─────────────────────────────────────────────────────────
+    expenses = (await colExpenses.find({}).toArray()).map(stripId);
+    console.log(`📂 Loaded ${expenses.length} existing expense(s) from MongoDB`);
+
+    console.log('✅ MongoDB connected:', MONGODB_URI);
 }
 
 // Create uploads directory if it doesn't exist
 if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
     console.log('📁 Created uploads/ directory');
-}
-
-// ─── In-memory receipt store ────────────────────────────────────────────────
-let receipts = [];
-
-// Load existing receipts from disk (if any)
-if (fs.existsSync(RECEIPTS_FILE)) {
-    try {
-        receipts = JSON.parse(fs.readFileSync(RECEIPTS_FILE, 'utf8'));
-        console.log(`📂 Loaded ${receipts.length} existing receipt(s) from receipts.json`);
-    } catch (e) {
-        console.warn('⚠️  Could not parse receipts.json — starting fresh.');
-    }
-}
-
-function saveReceipts() {
-    fs.writeFileSync(RECEIPTS_FILE, JSON.stringify(receipts, null, 2), 'utf8');
-}
-
-// ─── In-memory expenses store ────────────────────────────────────────────
-let expenses = [];
-if (fs.existsSync(EXPENSES_FILE)) {
-    try {
-        expenses = JSON.parse(fs.readFileSync(EXPENSES_FILE, 'utf8'));
-        console.log(`📂 Loaded ${expenses.length} existing expense(s) from expenses.json`);
-    } catch (e) {
-        console.warn('⚠️  Could not parse expenses.json — starting fresh.');
-    }
-}
-function saveExpenses() {
-    fs.writeFileSync(EXPENSES_FILE, JSON.stringify(expenses, null, 2), 'utf8');
 }
 
 // ─── MIME type map ───────────────────────────────────────────────────────────
@@ -332,7 +334,7 @@ const server = http.createServer(async (req, res) => {
             };
 
             receipts.push(receipt);
-            saveReceipts();
+            await saveReceipts();
 
             console.log(`✅ Receipt saved: ${receipt.receiptId} | ${receipt.name} | ₹${receipt.amount} | ${receipt.paymentMode}`);
             return sendJSON(res, 200, {
@@ -372,7 +374,7 @@ const server = http.createServer(async (req, res) => {
             }
             receipts[idx].updatedAt = new Date().toISOString();
 
-            saveReceipts();
+            await saveReceipts();
             console.log(`✏️  Receipt updated: ${receipts[idx].receiptId}`);
             return sendJSON(res, 200, { success: true, receipt: receipts[idx] });
         } catch (err) {
@@ -387,7 +389,7 @@ const server = http.createServer(async (req, res) => {
         if (idx === -1) return sendJSON(res, 404, { message: 'Receipt not found.' });
         receipts[idx].deleted   = true;
         receipts[idx].updatedAt = new Date().toISOString();
-        saveReceipts();
+        await saveReceipts();
         console.log(`🗑️  Receipt soft-deleted: ${receipts[idx].receiptId} (data retained)`);
         return sendJSON(res, 200, { success: true });
     }
@@ -399,7 +401,7 @@ const server = http.createServer(async (req, res) => {
         if (idx === -1) return sendJSON(res, 404, { message: 'Receipt not found.' });
         receipts[idx].status    = 'received';
         receipts[idx].updatedAt = new Date().toISOString();
-        saveReceipts();
+        await saveReceipts();
         console.log(`✅  Balance marked received: ${receipts[idx].receiptId}`);
         return sendJSON(res, 200, { success: true, receipt: receipts[idx] });
     }
@@ -411,7 +413,7 @@ const server = http.createServer(async (req, res) => {
         if (idx === -1) return sendJSON(res, 404, { message: 'Receipt not found.' });
         receipts[idx].amount    = null;
         receipts[idx].updatedAt = new Date().toISOString();
-        saveReceipts();
+        await saveReceipts();
         console.log(`🧹  Amount cleared for: ${receipts[idx].receiptId} (record kept)`);
         return sendJSON(res, 200, { success: true, receipt: receipts[idx] });
     }
@@ -458,7 +460,7 @@ const server = http.createServer(async (req, res) => {
                     receipts[idx].passbookFile = uniqueName;
                     receipts[idx].passbookUrl  = `/uploads/${uniqueName}`;
                     receipts[idx].updatedAt    = new Date().toISOString();
-                    saveReceipts();
+                    await saveReceipts();
                     linkedReceiptId = receiptId;
                     console.log(`🔗 Passbook linked to receipt: ${receiptId}`);
                 }
@@ -474,7 +476,7 @@ const server = http.createServer(async (req, res) => {
                     donationEntries[eidx].photoFile = uniqueName;
                     donationEntries[eidx].photoUrl  = `/uploads/${uniqueName}`;
                     donationEntries[eidx].updatedAt = new Date().toISOString();
-                    saveDonationEntries();
+                    await saveDonationEntries();
                     linkedEntryId = entryId;
                     console.log(`🖼  Photo linked to donation entry: ${entryId}`);
                 }
@@ -492,7 +494,7 @@ const server = http.createServer(async (req, res) => {
                     if (sidx !== -1) {
                         pautiBooks[bidx].slips[sidx].photoFile = uniqueName;
                         pautiBooks[bidx].slips[sidx].photoUrl  = `/uploads/${uniqueName}`;
-                        savePautiBooks();
+                        await savePautiBooks();
                         console.log(`🖼  Photo linked to pauti book slip: Book ${bookId}, Slip #${slipNum}`);
                     }
                 }
@@ -555,7 +557,7 @@ const server = http.createServer(async (req, res) => {
                 updatedAt    : null,
             };
             expenses.push(record);
-            saveExpenses();
+            await saveExpenses();
             console.log(`✅ Expense saved: ${record.expenseId} | ${record.category} | ₹${record.amount}`);
             return sendJSON(res, 200, { success: true, expense: record });
         } catch (err) {
@@ -578,7 +580,7 @@ const server = http.createServer(async (req, res) => {
                     expenses[idx][f] = f === 'amount' ? Number(body[f]) : body[f];
             });
             expenses[idx].updatedAt = new Date().toISOString();
-            saveExpenses();
+            await saveExpenses();
             console.log(`✏️  Expense updated: ${expenses[idx].expenseId}`);
             return sendJSON(res, 200, { success: true, expense: expenses[idx] });
         } catch (err) {
@@ -592,7 +594,7 @@ const server = http.createServer(async (req, res) => {
         const idx = expenses.findIndex(e => e.expenseId === id);
         if (idx === -1) return sendJSON(res, 404, { message: 'Expense not found.' });
         const [removed] = expenses.splice(idx, 1);
-        saveExpenses();
+        await saveExpenses();
         console.log(`🗑️  Expense deleted: ${removed.expenseId}`);
         return sendJSON(res, 200, { success: true });
     }
@@ -627,7 +629,7 @@ const server = http.createServer(async (req, res) => {
                 updatedAt            : null,
             };
             financials.push(record);
-            saveFinancials();
+            await saveFinancials();
             console.log(`✅ Financial record saved: ${record.financialId} | Year ${record.year}`);
             return sendJSON(res, 200, { success: true, financial: record });
         } catch (err) {
@@ -648,7 +650,7 @@ const server = http.createServer(async (req, res) => {
             if (body.year  !== undefined) financials[idx].year  = String(body.year);
             if (body.notes !== undefined) financials[idx].notes = String(body.notes).trim();
             financials[idx].updatedAt = new Date().toISOString();
-            saveFinancials();
+            await saveFinancials();
             console.log(`✏️  Financial record updated: ${financials[idx].financialId}`);
             return sendJSON(res, 200, { success: true, financial: financials[idx] });
         } catch (err) {
@@ -662,7 +664,7 @@ const server = http.createServer(async (req, res) => {
         const idx = financials.findIndex(f => f.financialId === id);
         if (idx === -1) return sendJSON(res, 404, { message: 'Financial record not found.' });
         const [removed] = financials.splice(idx, 1);
-        saveFinancials();
+        await saveFinancials();
         console.log(`🗑️  Financial record deleted: ${removed.financialId} | Year ${removed.year}`);
         return sendJSON(res, 200, { success: true });
     }
@@ -701,7 +703,7 @@ const server = http.createServer(async (req, res) => {
                 slips,
             };
             pautiBooks.push(book);
-            savePautiBooks();
+            await savePautiBooks();
             console.log(`📗 Pauti Book ${bn} assigned to: ${book.assignedTo}`);
             return sendJSON(res, 200, { success: true, book });
         } catch (err) {
@@ -769,7 +771,7 @@ const server = http.createServer(async (req, res) => {
             slip.uploadedByUserId = uploadedByUserId || null;
             slip.uploadedAt       = new Date().toISOString();
 
-            savePautiBooks();
+            await savePautiBooks();
             console.log(`📑 Slip #${nextSlipNum} (Book #${bookNumber}) claimed by ${uploadedBy || 'Unknown'}`);
             return sendJSON(res, 200, {
                 success: true, slipNumber: nextSlipNum,
@@ -813,7 +815,7 @@ const server = http.createServer(async (req, res) => {
             slip.checkNumber = checkNumber;
             if (photoFile) { slip.photoFile = photoFile; slip.photoUrl = photoUrl; }
             slip.uploadedAt  = new Date().toISOString();
-            savePautiBooks();
+            await savePautiBooks();
             console.log(`📑 Slip ${slipNum} (Book ${bookNum}) uploaded by ${donorName}`);
             return sendJSON(res, 200, { success: true, slip });
         } catch (err) {
@@ -839,7 +841,7 @@ const server = http.createServer(async (req, res) => {
             if (body.checkNumber      !== undefined) slip.checkNumber      = body.checkNumber || null;
             if (body.uploadedBy       !== undefined) slip.uploadedBy       = body.uploadedBy || null;
             if (body.uploadedByUserId !== undefined) slip.uploadedByUserId = body.uploadedByUserId || null;
-            savePautiBooks();
+            await savePautiBooks();
             return sendJSON(res, 200, { success: true, slip });
         } catch (err) {
             return sendJSON(res, 400, { message: err.message || 'Bad request.' });
@@ -856,7 +858,7 @@ const server = http.createServer(async (req, res) => {
         const slipIdx  = pautiBooks[bookIdx].slips.findIndex(s => s.slipNumber === slipNum);
         if (slipIdx === -1) return sendJSON(res, 404, { message: 'Slip not found.' });
         pautiBooks[bookIdx].slips[slipIdx].deleted = true;
-        savePautiBooks();
+        await savePautiBooks();
         return sendJSON(res, 200, { success: true });
     }
 
@@ -878,7 +880,7 @@ const server = http.createServer(async (req, res) => {
             const mergedCols = [...new Set([...donationsStore.columns, ...detectedCols])];
             donationsStore.columns = mergedCols;
             donationsStore.records.push(...stamped);
-            saveDonations();
+            await saveDonations();
             console.log(`📅 Appended ${stamped.length} donation records. Total: ${donationsStore.records.filter(r=>!r._deleted).length}`);
             return sendJSON(res, 200, { success: true, uploaded: stamped.length, total: donationsStore.records.filter(r=>!r._deleted).length, columns: mergedCols });
         } catch (err) { return sendJSON(res, 400, { message: err.message || 'Upload failed.' }); }
@@ -894,7 +896,7 @@ const server = http.createServer(async (req, res) => {
             const detectedCols = Object.keys(records[0]).filter(k => !k.startsWith('_'));
             const stamped = records.map((r, i) => ({ _id: `DON-${Date.now()}-${i}`, _deleted: false, ...r }));
             donationsStore = { columns: detectedCols, records: stamped };
-            saveDonations();
+            await saveDonations();
             console.log(`📅 Replaced donation data: ${stamped.length} records.`);
             return sendJSON(res, 200, { success: true, uploaded: stamped.length, columns: detectedCols });
         } catch (err) { return sendJSON(res, 400, { message: err.message || 'Replace failed.' }); }
@@ -909,7 +911,7 @@ const server = http.createServer(async (req, res) => {
             const body = await readBody(req);
             Object.keys(body).forEach(k => { if (!k.startsWith('_')) donationsStore.records[idx][k] = body[k]; });
             donationsStore.records[idx]._updatedAt = new Date().toISOString();
-            saveDonations();
+            await saveDonations();
             return sendJSON(res, 200, { success: true, record: donationsStore.records[idx] });
         } catch (err) { return sendJSON(res, 400, { message: err.message || 'Update failed.' }); }
     }
@@ -918,7 +920,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'DELETE' && pathname === '/api/donations') {
         const prev = donationsStore.records.length;
         donationsStore = { columns: [], records: [] };
-        saveDonations();
+        await saveDonations();
         console.log(`🗑️  All ${prev} donation record(s) cleared by admin.`);
         return sendJSON(res, 200, { success: true, deleted: prev });
     }
@@ -930,7 +932,7 @@ const server = http.createServer(async (req, res) => {
         if (idx === -1) return sendJSON(res, 404, { message: 'Donation record not found.' });
         donationsStore.records[idx]._deleted   = true;
         donationsStore.records[idx]._deletedAt = new Date().toISOString();
-        saveDonations();
+        await saveDonations();
         console.log(`🗑️  Donation soft-deleted: ${id} (data retained)`);
         return sendJSON(res, 200, { success: true });
     }
@@ -1021,7 +1023,7 @@ const server = http.createServer(async (req, res) => {
             };
 
             donationEntries.push(entry);
-            saveDonationEntries();
+            await saveDonationEntries();
             console.log(`✅ Donation entry saved: ${entry.entryId} | Book ${bn} | Receipt ${rn} | ${paymentMode}`);
             return sendJSON(res, 200, { success: true, entry });
         } catch (err) {
@@ -1097,7 +1099,7 @@ const server = http.createServer(async (req, res) => {
             }
 
             e.updatedAt = new Date().toISOString();
-            saveDonationEntries();
+            await saveDonationEntries();
             console.log(`✏️  Donation entry updated: ${e.entryId}`);
             return sendJSON(res, 200, { success: true, entry: e });
         } catch (err) {
@@ -1112,7 +1114,7 @@ const server = http.createServer(async (req, res) => {
         if (idx === -1) return sendJSON(res, 404, { message: 'Entry not found.' });
         donationEntries[idx].deleted   = true;
         donationEntries[idx].updatedAt = new Date().toISOString();
-        saveDonationEntries();
+        await saveDonationEntries();
         console.log(`🗑️  Donation entry deleted: ${id}`);
         return sendJSON(res, 200, { success: true });
     }
@@ -1158,7 +1160,7 @@ const server = http.createServer(async (req, res) => {
                 return sendJSON(res, 400, { message: `Building "${name}" already exists.` });
             const building = { id: `BLD-${Date.now()}`, name };
             buildings.push(building);
-            saveBuildings();
+            await saveBuildings();
             console.log(`🏢 Building added: ${name}`);
             return sendJSON(res, 200, { success: true, building });
         } catch (err) {
@@ -1172,7 +1174,7 @@ const server = http.createServer(async (req, res) => {
         const idx = buildings.findIndex(b => b.id === id);
         if (idx === -1) return sendJSON(res, 404, { message: 'Building not found.' });
         const [removed] = buildings.splice(idx, 1);
-        saveBuildings();
+        await saveBuildings();
         console.log(`🗑️  Building removed: ${removed.name}`);
         return sendJSON(res, 200, { success: true });
     }
@@ -1196,7 +1198,7 @@ const server = http.createServer(async (req, res) => {
                 return sendJSON(res, 400, { message: `Area "${name}" already exists.` });
             const area = { id: `AREA-${Date.now()}`, name };
             areas.push(area);
-            saveAreas();
+            await saveAreas();
             console.log(`📍 Area added: ${name}`);
             return sendJSON(res, 200, { success: true, area });
         } catch (err) {
@@ -1210,7 +1212,7 @@ const server = http.createServer(async (req, res) => {
         const idx = areas.findIndex(a => a.id === id);
         if (idx === -1) return sendJSON(res, 404, { message: 'Area not found.' });
         const [removed] = areas.splice(idx, 1);
-        saveAreas();
+        await saveAreas();
         console.log(`🗑️  Area removed: ${removed.name}`);
         return sendJSON(res, 200, { success: true });
     }
@@ -1231,7 +1233,7 @@ const server = http.createServer(async (req, res) => {
                 return sendJSON(res, 400, { message: `Landmark "${name}" already exists.` });
             const lm = { id: `LM-${Date.now()}`, name };
             landmarks.push(lm);
-            saveLandmarks();
+            await saveLandmarks();
             return sendJSON(res, 200, { success: true, landmark: lm });
         } catch(err) { return sendJSON(res, 400, { message: err.message }); }
     }
@@ -1240,7 +1242,7 @@ const server = http.createServer(async (req, res) => {
         const idx = landmarks.findIndex(l => l.id === id);
         if (idx === -1) return sendJSON(res, 404, { message: 'Landmark not found.' });
         landmarks.splice(idx, 1);
-        saveLandmarks();
+        await saveLandmarks();
         return sendJSON(res, 200, { success: true });
     }
 
@@ -1264,7 +1266,7 @@ const server = http.createServer(async (req, res) => {
                 createdAt: new Date().toISOString()
             };
             committeeMembers.push(member);
-            saveCommitteeMembers();
+            await saveCommitteeMembers();
             return sendJSON(res, 200, { success: true, member });
         } catch(err) { return sendJSON(res, 400, { message: err.message }); }
     }
@@ -1282,7 +1284,7 @@ const server = http.createServer(async (req, res) => {
             if (body.role       !== undefined) m.role       = String(body.role).trim();
             if (body.photoFile  !== undefined) { m.photoFile = body.photoFile||null; m.photoUrl = body.photoFile ? `/uploads/${body.photoFile}` : null; }
             m.updatedAt = new Date().toISOString();
-            saveCommitteeMembers();
+            await saveCommitteeMembers();
             return sendJSON(res, 200, { success: true, member: m });
         } catch(err) { return sendJSON(res, 400, { message: err.message }); }
     }
@@ -1291,7 +1293,7 @@ const server = http.createServer(async (req, res) => {
         const idx = committeeMembers.findIndex(m => m.id === id);
         if (idx === -1) return sendJSON(res, 404, { message: 'Member not found.' });
         committeeMembers.splice(idx, 1);
-        saveCommitteeMembers();
+        await saveCommitteeMembers();
         return sendJSON(res, 200, { success: true });
     }
 
@@ -1317,7 +1319,7 @@ const server = http.createServer(async (req, res) => {
                     committeeMembers[midx].photoFile = uniqueName;
                     committeeMembers[midx].photoUrl  = `/uploads/${uniqueName}`;
                     committeeMembers[midx].updatedAt = new Date().toISOString();
-                    saveCommitteeMembers();
+                    await saveCommitteeMembers();
                 }
             }
             return sendJSON(res, 200, { success: true, fileName: uniqueName });
@@ -1370,17 +1372,23 @@ const server = http.createServer(async (req, res) => {
     });
 });
 
-// Bind to 0.0.0.0 so the site is reachable on the local network (mobile, tablet, etc.)
-server.listen(PORT, '0.0.0.0', () => {
-    const LAN = getLocalIP();
-    console.log('');
-    console.log('\uD83D\uDD49\uFE0F  Patelwadi Ganesh Mitramandal \u2014 Local Server');
-    console.log('\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501');
-    console.log(`\uD83C\uDF10  PC / Browser:  http://localhost:${PORT}`);
-    console.log(`\uD83D\uDCF1  Phone / LAN:   http://${LAN}:${PORT}`);
-    console.log('\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501');
-    console.log(`\uD83D\uDCCB  Receipts:      http://localhost:${PORT}/api/receipts`);
-    console.log(`\uD83D\uDCBE  Files dir:     ${UPLOADS_DIR}`);
-    console.log('\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501');
-    console.log('');
+// ─── Connect to MongoDB, then start HTTP server ───────────────────────────────
+connectDB().then(() => {
+    // Bind to 0.0.0.0 so the site is reachable on the local network (mobile, tablet, etc.)
+    server.listen(PORT, '0.0.0.0', () => {
+        const LAN = getLocalIP();
+        console.log('');
+        console.log('🕩️  Patelwadi Ganesh Mitramandal — Local Server');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(`🌐  PC / Browser:  http://localhost:${PORT}`);
+        console.log(`📱  Phone / LAN:   http://${LAN}:${PORT}`);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(`📋  Receipts:      http://localhost:${PORT}/api/receipts`);
+        console.log(`💾  Files dir:     ${UPLOADS_DIR}`);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('');
+    });
+}).catch(err => {
+    console.error('❌ Failed to connect to MongoDB:', err.message);
+    process.exit(1);
 });
