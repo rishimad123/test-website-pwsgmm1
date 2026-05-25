@@ -887,8 +887,16 @@ window._fmtBytesA = function(b) {
     position: relative !important;
     display: none;
   }
-  .admin-sidebar.mobile-open {
+ .admin-sidebar.mobile-open {
     display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 280px !important;
+    height: 100vh !important;
+    z-index: 9998 !important;
+    overflow-y: auto !important;
+}
   }
   .admin-main {
     margin-left: 0 !important;
@@ -910,7 +918,7 @@ window._fmtBytesA = function(b) {
 </head>
 <body>
   <div class="admin-dashboard">
-<button onclick="document.querySelector('.admin-sidebar').classList.toggle('mobile-open')" style="display:none;position:fixed;top:12px;left:12px;z-index:9999;background:var(--primary-color);color:white;border:none;border-radius:8px;padding:8px 12px;font-size:1.2rem;cursor:pointer;" id="mobileMenuBtn">☰</button>
+<button onclick="document.querySelector('aside.admin-sidebar').classList.toggle('mobile-open')" style="display:none;position:fixed;top:12px;left:12px;z-index:9999;background:var(--primary-color);color:white;border:none;border-radius:8px;padding:8px 12px;font-size:1.2rem;cursor:pointer;" id="mobileMenuBtn">☰</button>
         <!-- Sidebar -->
         <aside class="admin-sidebar">
             <div class="admin-sidebar-header">
