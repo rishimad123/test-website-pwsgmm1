@@ -943,14 +943,12 @@ const server = http.createServer(async (req, res) => {
     // ══════════════════════════════════════════════════════════════
 
     // ── GET /api/donation-entries  ─────────────────────────────────────────
-    // Query params: ?userId=N  (volunteer filter), ?bookNumber=N, ?area=X
+    // Query params: ?bookNumber=N, ?area=X
     if (req.method === 'GET' && pathname === '/api/donation-entries') {
         const qp = new URL(`http://x${req.url}`).searchParams;
-        const userId     = qp.get('userId');
         const bookFilter = qp.get('bookNumber');
         const areaFilter = qp.get('area');
         let result = donationEntries.filter(e => !e.deleted);
-        if (userId)     result = result.filter(e => String(e.submittedByUserId) === String(userId));
         if (bookFilter) result = result.filter(e => String(e.bookNumber) === String(bookFilter));
         if (areaFilter) result = result.filter(e => e.area === areaFilter);
         return sendJSON(res, 200, { entries: result, total: result.length, slipsPerBook: SLIPS_PER_BOOK_DE, totalBooks: TOTAL_BOOKS_DE });
