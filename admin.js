@@ -474,9 +474,10 @@ if (editUserForm) {
     editUserForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = new FormData(e.target);
+        const originalUsername = formData.get('originalUsername');
         const userData = {
             name      : formData.get('name'),
-            username  : formData.get('username'), // readonly field
+            username  : formData.get('username'),
             email     : formData.get('email'),
             role      : formData.get('role'),
             password  : formData.get('password'),
@@ -487,7 +488,7 @@ if (editUserForm) {
         if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
         if (st)  { st.style.display = 'none'; }
         try {
-            const res  = await fetch(`/api/users/${encodeURIComponent(userData.username)}`, {
+            const res  = await fetch(`/api/users/${encodeURIComponent(originalUsername)}`, {
                 method : 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body   : JSON.stringify(userData)
@@ -573,6 +574,7 @@ function editUser(username, name, email, role, department) {
     if (!form) return;
     form.reset();
     
+    document.getElementById('euOriginalUsername').value = username;
     document.getElementById('euUsername').value = username;
     document.getElementById('euName').value = name;
     document.getElementById('euEmail').value = email;

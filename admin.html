@@ -1923,10 +1923,10 @@ window._fmtBytesA = function(b) {
                 <span class="modal-close" onclick="closeModal('editUser')">&times;</span>
             </div>
             <form id="editUserForm" autocomplete="off">
-                <!-- Username is read-only since it's the primary identifier -->
+                <input type="hidden" name="originalUsername" id="euOriginalUsername">
                 <div class="form-group">
-                    <label>Username <span style="color:#E65100;font-size:.8rem;">(cannot be changed)</span></label>
-                    <input type="text" name="username" id="euUsername" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                    <label>Username</label>
+                    <input type="text" name="username" id="euUsername" required>
                 </div>
                 <div class="form-group">
                     <label>Full Name</label>

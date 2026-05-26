@@ -477,14 +477,22 @@ const server = http.createServer(async (req, res) => {
         const urlUsername = decodeURIComponent(pathname.replace('/api/users/', ''));
         try {
             const body = await readBody(req);
-            const { name, email, role, department, password } = body;
+            const { name, username, email, role, department, password } = body;
             const colUsers = db.collection('users');
             
             const existing = await colUsers.findOne({ username: urlUsername });
             if (!existing) return sendJSON(res, 404, { message: 'User not found.' });
             
+            let newUsername = urlUsername;
+            if (username && username.trim() !== urlUsername) {
+                newUsername = username.trim();
+                const clash = await colUsers.findOne({ username: newUsername });
+                if (clash) return sendJSON(res, 400, { message: `Username "${newUsername}" is already taken.` });
+            }
+            
             const updateFields = {
-                name: (name || urlUsername).trim(),
+                username: newUsername,
+                name: (name || newUsername).trim(),
                 email: (email || '').trim(),
                 role: (role || existing.role).trim(),
                 department: (department || '').trim()
