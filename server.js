@@ -1369,7 +1369,31 @@ const server = http.createServer(async (req, res) => {
         res.end(data);
     });
 });
+// GET /api/check-block
+if (req.method === 'GET' && pathname === '/api/check-block') {
+    const username = parsed.query.username || '';
+    if (!username) return sendJSON(res, 400, { message: 'username is required.' });
+    try {
+        const colUsers = db.collection('users');
+        const user = await colUsers.findOne({ username });
+        return sendJSON(res, 200, { blocked: !!(user && user.blocked === true) });
+    } catch (err) {
+        return sendJSON(res, 500, { message: 'Server error.' });
+    }
+}
 
+// POST /api/users/block
+if (req.method === 'POST' && pathname === '/api/users/block') {
+    try {
+        const body = await readBody(req);
+        const { username, blocked } = body;
+        const colUsers = db.collection('users');
+        await colUsers.updateOne({ username }, { $set: { username, blocked } }, { upsert: true });
+        return sendJSON(res, 200, { success: true, username, blocked });
+    } catch (err) {
+        return sendJSON(res, 500, { message: 'Server error.' });
+    }
+}
 // Bind to 0.0.0.0 so the site is reachable on the local network (mobile, tablet, etc.)
 server.listen(PORT, '0.0.0.0', () => {
     const LAN = getLocalIP();
