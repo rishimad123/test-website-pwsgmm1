@@ -636,12 +636,13 @@ function toggleAdminSidebar() {
     const sidebar = document.querySelector('.admin-sidebar');
     const overlay = document.getElementById('adminSidebarOverlay');
     if (!sidebar) return;
-    const isOpen = sidebar.classList.contains('sidebar-open');
+    const isOpen = sidebar.classList.contains('sidebar-open') || sidebar.classList.contains('mobile-open');
     if (isOpen) {
         sidebar.classList.remove('sidebar-open');
+        sidebar.classList.remove('mobile-open');
         if (overlay) overlay.style.display = 'none';
     } else {
-        sidebar.classList.add('sidebar-open');
+        sidebar.classList.add('mobile-open');
         if (overlay) overlay.style.display = 'block';
     }
 }
@@ -649,7 +650,10 @@ function toggleAdminSidebar() {
 function closeAdminSidebar() {
     const sidebar = document.querySelector('.admin-sidebar');
     const overlay = document.getElementById('adminSidebarOverlay');
-    if (sidebar) sidebar.classList.remove('sidebar-open');
+    if (sidebar) {
+        sidebar.classList.remove('sidebar-open');
+        sidebar.classList.remove('mobile-open');
+    }
     if (overlay) overlay.style.display = 'none';
 }
 
