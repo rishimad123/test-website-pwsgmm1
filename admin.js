@@ -642,6 +642,7 @@ function toggleAdminSidebar() {
         sidebar.classList.remove('mobile-open');
         if (overlay) overlay.style.display = 'none';
     } else {
+        sidebar.classList.add('sidebar-open');
         sidebar.classList.add('mobile-open');
         if (overlay) overlay.style.display = 'block';
     }
