@@ -1174,7 +1174,7 @@ window.fixUrl = function(url) {
             <div id="deVolEditStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
             <form id="deVolEditForm" onsubmit="deSaveVolEdit(event)" autocomplete="off">
                 <input type="hidden" id="deVolEditId">
-                <!-- Book & Receipt -->
+                <!-- Details: Book, Receipt, Area, Mode -->
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
                     <div class="form-group" style="margin:0;">
                         <label>Book Number <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
@@ -1184,17 +1184,9 @@ window.fixUrl = function(url) {
                         <label>Receipt Number <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
                         <select id="deVolEditReceipt" class="form-control" disabled></select>
                     </div>
-                </div>
-                <!-- Area -->
-                <div class="form-group">
-                    <label>Area <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
-                    <select id="deVolEditArea" class="form-control"></select>
-                </div>
-                <!-- Amount & Mode -->
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
                     <div class="form-group" style="margin:0;">
-                        <label>Amount (&#8377;) <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
-                        <input type="number" id="deVolEditAmount" class="form-control" min="0" placeholder="0">
+                        <label>Area <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                        <select id="deVolEditArea" class="form-control"></select>
                     </div>
                     <div class="form-group" style="margin:0;">
                         <label>Payment Mode <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
@@ -1224,16 +1216,23 @@ window.fixUrl = function(url) {
                         <p id="deVolEditPhotoName" style="font-size:.8rem;color:#555;margin:6px 0 0;"></p>
                     </div>
                 </div>
-                <!-- Donor name (editable with reason) -->
+                <!-- Donor name & Amount (editable with reason) -->
                 <div style="border:1.5px solid #E3F2FD;border-radius:10px;padding:14px;margin-bottom:14px;background:#F8FBFF;">
-                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#1565C0;margin-bottom:10px;"><i class="fas fa-user" style="margin-right:6px;"></i>Donor Name <span style="font-weight:400;color:#777;">(edit with reason)</span></div>
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#1565C0;margin-bottom:10px;"><i class="fas fa-user-edit" style="margin-right:6px;"></i>Name & Amount <span style="font-weight:400;color:#777;">(edit with reason)</span></div>
+                    
                     <div id="deVolNameIndFields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
                         <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">First Name</label><input id="deVolEditFirst" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
                         <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Middle Name</label><input id="deVolEditMid" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
                         <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Last Name</label><input id="deVolEditLast" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
                     </div>
+                    
                     <div id="deVolNameBizFields" style="display:none;margin-bottom:10px;">
                         <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Business Name</label><input id="deVolEditBiz" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label style="font-size:.78rem;">Amount (&#8377;)</label>
+                        <input type="number" id="deVolEditAmount" class="form-control" min="0" placeholder="0">
                     </div>
                     <div id="deVolNameReasonWrap" style="margin-top:8px;">
                         <label style="font-size:.78rem;color:#c0392b;font-weight:700;"><i class="fas fa-exclamation-circle" style="margin-right:4px;"></i>Reason for Change <span style="color:#c0392b;">*</span> <span style="color:#aaa;font-weight:400;">(required if name or amount changed)</span></label>
