@@ -1368,8 +1368,8 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(200, headers);
         res.end(data);
     });
-});
-// GET /api/check-block
+  
+     // GET /api/check-block
 if (req.method === 'GET' && pathname === '/api/check-block') {
     const username = parsed.query.username || '';
     if (!username) return sendJSON(res, 400, { message: 'username is required.' });
@@ -1407,4 +1407,5 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`\uD83D\uDCBE  Files dir:     ${UPLOADS_DIR}`);
     console.log('\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501');
     console.log('');
+});
 });
