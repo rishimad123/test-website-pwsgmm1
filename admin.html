@@ -750,17 +750,22 @@ window._fmtBytesA = function(b) {
                 width: 100%;
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
-                white-space: nowrap;
                 border: 0;
+            }
+            .admin-table th, .admin-table td, .fin-table th, .fin-table td {
+                white-space: nowrap;
             }
         }
         
         @media (max-width: 576px) {
-            .admin-topbar h1 { font-size: 1.1rem !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; margin: 0; }
+            .admin-topbar h1 { font-size: 1.1rem !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%; margin: 0; }
             .admin-topbar    { flex-wrap: nowrap; gap: 6px; align-items: center; justify-content: space-between; }
             .admin-user-section { gap: 8px; }
             .admin-user-profile { padding: 4px 8px; }
             .admin-avatar   { width: 32px; height: 32px; font-size: 0.9rem; }
+            
+            /* Hide profile name on mobile, keep avatar */
+            .admin-user-profile > div:not(.admin-avatar) { display: none; }
 
             /* Stat cards â€“ 2 col on phones */
             .admin-stats { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
