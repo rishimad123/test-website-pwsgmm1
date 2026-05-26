@@ -490,10 +490,21 @@ window.fixUrl = function(url) {
         .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .table { min-width: 500px; }
 
+        @media (max-width: 768px) {
+            .table {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                white-space: nowrap;
+                border: 0;
+            }
+        }
+
         @media (max-width: 576px) {
             /* Topbar */
-            .top-bar { flex-wrap: wrap; gap: 8px; padding: 12px 14px !important; }
-            .top-bar h2 { font-size: 1rem !important; }
+            .top-bar { flex-wrap: nowrap; gap: 6px; padding: 12px 14px !important; align-items: center; justify-content: space-between; }
+            .top-bar h2 { font-size: 1rem !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; margin: 0; }
 
             /* Dashboard stat cards â€” 2 col */
             .dashboard-cards { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
