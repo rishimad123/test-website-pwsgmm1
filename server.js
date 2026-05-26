@@ -178,10 +178,14 @@ async function connectDB() {
     console.log('✅ MongoDB connected:', MONGODB_URI);
 }
 
-// Create uploads directory if it doesn't exist
-if (!fs.existsSync(UPLOADS_DIR)) {
-    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-    console.log('📁 Created uploads/ directory');
+// Create uploads directory if it doesn't exist (skipped silently on read-only filesystems like Render)
+try {
+    if (!fs.existsSync(UPLOADS_DIR)) {
+        fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+        console.log('📁 Created uploads/ directory');
+    }
+} catch (e) {
+    console.warn('⚠️  Could not create uploads/ directory (read-only FS — expected on Render):', e.message);
 }
 
 // ─── MIME type map ───────────────────────────────────────────────────────────
@@ -481,8 +485,12 @@ const server = http.createServer(async (req, res) => {
             const uniqueName = `${Date.now()}_${safeName}`;
             const savePath   = path.join(UPLOADS_DIR, uniqueName);
 
-            fs.writeFileSync(savePath, filePart.data);
-            console.log(`📎 File saved: uploads/${uniqueName} (${(filePart.data.length / 1024).toFixed(1)} KB)`);
+            try {
+                fs.writeFileSync(savePath, filePart.data);
+                console.log(`📎 File saved: uploads/${uniqueName} (${(filePart.data.length / 1024).toFixed(1)} KB)`);
+            } catch (fsErr) {
+                console.warn('⚠️  Could not write file to disk (read-only FS — expected on Render):', fsErr.message);
+            }
 
             // Link to receipt if receiptId was supplied as a form field
             const receiptIdPart = parts.find(p => p.name === 'receiptId' && !p.filename);
@@ -837,7 +845,11 @@ const server = http.createServer(async (req, res) => {
             if (filePart) {
                 const ext        = path.extname(filePart.filename).toLowerCase();
                 const uniqueName = `pauti-${bookNum}-${slipNum}-${Date.now()}${ext}`;
-                fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
+                try {
+                    fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
+                } catch (fsErr) {
+                    console.warn('⚠️  Could not write pauti slip photo to disk:', fsErr.message);
+                }
                 photoFile = uniqueName;
                 photoUrl  = `/uploads/${uniqueName}`;
             }
@@ -1342,7 +1354,11 @@ const server = http.createServer(async (req, res) => {
             if (filePart.data.length > 5 * 1024 * 1024) return sendJSON(res, 400, { message: 'File exceeds 5 MB.' });
             const safeName   = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
             const uniqueName = `cm_${Date.now()}_${safeName}`;
-            fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
+            try {
+                fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
+            } catch (fsErr) {
+                console.warn('⚠️  Could not write committee photo to disk:', fsErr.message);
+            }
             const memberIdPart = parts.find(p => p.name === 'memberId' && !p.filename);
             const memberId = memberIdPart ? memberIdPart.data.toString('utf8').trim() : null;
             if (memberId) {
