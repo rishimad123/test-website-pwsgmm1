@@ -2529,24 +2529,42 @@ window.fixUrl = function(url) {
                     const donor = e.donorType === 'Business' ? (e.businessName||'—') : [e.firstName,e.middleName,e.lastName].filter(Boolean).join(' ') || '—';
                     const amt   = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '—';
                     const dtObj = new Date(e.submittedAt);
-                    const dtStr = dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
-                    const photo = e.photoUrl
-                        ? `<img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" loading="lazy" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1.5px solid #ffe0d0;cursor:pointer;flex-shrink:0;">`
-                        : '';
-                    return `<div style="border:1px solid #f0e8e0;border-radius:12px;padding:14px 14px 12px;margin:0 0 10px;background:#fffaf8;">
-                        <div style="display:flex;align-items:flex-start;gap:12px;">
-                            ${photo}
+                    const dtStr = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()
+                                + '\n' + dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+                    const dtParts = dtStr.split('\n');
+                    const photoSection = e.photoUrl
+                        ? `<div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')">
+                               <img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" loading="lazy" alt="Receipt photo"
+                                   style="width:100%;max-height:200px;object-fit:cover;display:block;">
+                               <div style="background:#fff8f5;padding:5px 10px;font-size:.72rem;color:#E65100;font-weight:600;display:flex;align-items:center;gap:5px;">
+                                   <i class="fas fa-expand-alt"></i> Tap to view full receipt
+                               </div>
+                           </div>`
+                        : `<div style="margin-top:10px;border:1.5px dashed #f0e0d0;border-radius:10px;padding:14px;text-align:center;background:#fffaf8;">
+                               <i class="fas fa-camera" style="font-size:1.4rem;color:#ddd;display:block;margin-bottom:6px;"></i>
+                               <span style="font-size:.75rem;color:#ccc;font-weight:600;">No Receipt Photo</span>
+                           </div>`;
+                    return `<div style="border:1px solid #f0e8e0;border-radius:14px;padding:14px;margin:0 0 12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+                        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
                             <div style="flex:1;min-width:0;">
-                                <div style="font-weight:700;font-size:.95rem;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${donor}</div>
-                                <div style="font-size:.82rem;color:#888;margin-top:2px;">${e.area||'—'} &nbsp;·&nbsp; Bk ${e.bookNumber} #${e.receiptNumber}</div>
-                                <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
-                                    <span style="color:#2E7D32;font-weight:700;font-size:.95rem;">${amt}</span>
-                                    <span style="padding:2px 9px;border-radius:10px;background:#E3F2FD;color:#1565C0;font-size:.75rem;font-weight:700;">${e.paymentMode}</span>
-                                    <span style="font-size:.75rem;color:#aaa;">${dtStr}</span>
+                                <div style="font-weight:700;font-size:.97rem;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${donor}</div>
+                                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;">
+                                    <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
+                                        <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${e.bookNumber} / #${e.receiptNumber}
+                                    </span>
+                                    <span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
+                                        <i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${e.area||'—'}
+                                    </span>
+                                    <span style="background:#FFF3E0;color:#E65100;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">${e.paymentMode}</span>
+                                </div>
+                                <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+                                    <span style="color:#2E7D32;font-weight:700;font-size:1.05rem;">${amt}</span>
+                                    <span style="font-size:.72rem;color:#aaa;text-align:right;">${dtParts[0]}<br><span style="color:#bbb;">${dtParts[1]}</span></span>
                                 </div>
                             </div>
-                            <button onclick="deOpenVolEdit('${e.entryId}')" style="padding:8px 12px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;flex-shrink:0;"><i class="fas fa-edit"></i></button>
+                            <button onclick="deOpenVolEdit('${e.entryId}')" style="padding:8px 12px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;flex-shrink:0;margin-left:4px;"><i class="fas fa-edit"></i></button>
                         </div>
+                        ${photoSection}
                     </div>`;
                 }).join('');
             }
