@@ -391,8 +391,29 @@ const server = http.createServer(async (req, res) => {
             return sendJSON(res, 500, { message: 'Server error.' });
         }
     }
+    // ── GET /api/users  (admin: list all users with blocked status) ──────────
+    if (req.method === 'GET' && pathname === '/api/users') {
+        try {
+            const colUsers = db.collection('users');
+            const users = await colUsers.find({}).toArray();
+            return sendJSON(res, 200, {
+                users: users.map(u => ({
+                    id       : u.id || u._id?.toString(),
+                    username : u.username,
+                    name     : u.name || u.username,
+                    role     : u.role || 'volunteer',
+                    email    : u.email || '',
+                    department: u.department || '',
+                    blocked  : u.blocked === true,
+                }))
+            });
+        } catch (err) {
+            console.error('GET /api/users error:', err.message);
+            return sendJSON(res, 500, { message: 'Server error.' });
+        }
+    }
 
-    // ── PUT /api/receipts/:id  (edit a record) ────────────────────────────
+
     if (req.method === 'PUT' && pathname.startsWith('/api/receipts/') && !pathname.includes('/mark-received') && !pathname.includes('/soft-delete') && !pathname.includes('/clear-amount')) {
         const id  = decodeURIComponent(pathname.replace('/api/receipts/', ''));
         const idx = receipts.findIndex(r => r.receiptId === id);

@@ -2314,64 +2314,42 @@ async function saveBrEditEntry(ev) {
 }
 
 // =====================================================================
-// VOLUNTEER MANAGEMENT MODULE
+// VOLUNTEER MANAGEMENT MODULE  (server-backed)
 // =====================================================================
 
-// Volunteer user store — loaded from the same user array used by auth.js
-// Since users are defined in auth.js (client-side), we read from the global or
-// define them here; blocklist is persisted in sessionStorage.
-const _VOL_USERS = [
-    { id: 1, username: 'admin',       password: 'admin123', name: 'Admin User',    role: 'admin',     email: 'admin@patelwadiganesh.org',  department: '' },
-    { id: 2, username: 'volunteer1',  password: 'vol123',   name: 'Rajesh Kumar',  role: 'volunteer', email: 'rajesh@email.com',           department: 'Decoration' },
-    { id: 3, username: 'volunteer2',  password: 'vol123',   name: 'Priya Sharma',  role: 'volunteer', email: 'priya@email.com',            department: 'Cultural' },
-    { id: 4, username: 'committee1',  password: 'com123',   name: 'Amit Patel',    role: 'committee', email: 'amit@email.com',             department: 'Secretary' },
-];
+let _volAll = [];      // full list from server
+let _volFiltered = []; // filtered for display
 
-// Session-persistent blocklist and deleted set
-function _volGetBlocklist() {
-    try { return JSON.parse(sessionStorage.getItem('_vol_blocklist') || '[]'); } catch { return []; }
-}
-function _volSetBlocklist(list) {
-    sessionStorage.setItem('_vol_blocklist', JSON.stringify(list));
-}
-function _volGetDeleted() {
-    try { return JSON.parse(sessionStorage.getItem('_vol_deleted') || '[]'); } catch { return []; }
-}
-function _volSetDeleted(list) {
-    sessionStorage.setItem('_vol_deleted', JSON.stringify(list));
-}
+async function loadVolunteers() {
+    const tbody = document.getElementById('volTbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:24px;">Loading…</td></tr>';
+    try {
+        const res  = await fetch('/api/users');
+        const data = await res.json();
+        _volAll = (data.users || []).filter(u => u.role !== 'admin');
 
-let _volFiltered = [];
+        // Update stats
+        const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        setEl('volStatTotal',   _volAll.length);
+        setEl('volStatActive',  _volAll.filter(v => !v.blocked).length);
+        setEl('volStatBlocked', _volAll.filter(v => v.blocked).length);
 
-function loadVolunteers() {
-    const blocklist = _volGetBlocklist();
-    const deleted   = _volGetDeleted();
-    const allVols   = _VOL_USERS.filter(u => !deleted.includes(u.id)).map(u => ({
-        ...u,
-        blocked: blocklist.includes(u.id)
-    }));
-
-    // Update stats
-    const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    setEl('volStatTotal',   allVols.length);
-    setEl('volStatActive',  allVols.filter(v => !v.blocked).length);
-    setEl('volStatBlocked', allVols.filter(v => v.blocked).length);
-
-    _volFiltered = allVols;
-    volFilter();
+        _volFiltered = _volAll;
+        volFilter();
+    } catch (e) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#c00;padding:24px;">⚠ Cannot reach server.</td></tr>';
+    }
 }
 
 function volFilter() {
-    const q  = (document.getElementById('volSearchInput')?.value || '').toLowerCase();
-    const bl = _volGetBlocklist();
-    const dl = _volGetDeleted();
-    const src = _VOL_USERS.filter(u => !dl.includes(u.id)).map(u => ({ ...u, blocked: bl.includes(u.id) }));
-    _volFiltered = q ? src.filter(u =>
-        u.name.toLowerCase().includes(q) ||
-        u.username.toLowerCase().includes(q) ||
-        (u.email || '').toLowerCase().includes(q) ||
-        (u.role  || '').toLowerCase().includes(q)
-    ) : src;
+    const q = (document.getElementById('volSearchInput')?.value || '').toLowerCase();
+    _volFiltered = q
+        ? _volAll.filter(u =>
+            (u.name     || '').toLowerCase().includes(q) ||
+            (u.username || '').toLowerCase().includes(q) ||
+            (u.email    || '').toLowerCase().includes(q) ||
+            (u.role     || '').toLowerCase().includes(q))
+        : [..._volAll];
     volRender();
 }
 
@@ -2379,76 +2357,67 @@ function volRender() {
     const tbody = document.getElementById('volTbody');
     if (!tbody) return;
     if (_volFiltered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:30px;">No volunteers found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:30px;">No users found.</td></tr>';
         return;
     }
-    const roleBg = { admin:'#EDE7F6', volunteer:'#E3F2FD', committee:'#E8F5E9' };
-    const roleClr= { admin:'#4527A0', volunteer:'#1565C0', committee:'#1B5E20' };
+    const roleBg  = { admin:'#EDE7F6', volunteer:'#E3F2FD', committee:'#E8F5E9' };
+    const roleClr = { admin:'#4527A0', volunteer:'#1565C0', committee:'#1B5E20' };
     tbody.innerHTML = _volFiltered.map((u, i) => {
         const statusBadge = u.blocked
             ? '<span style="padding:3px 11px;border-radius:12px;background:#FFEBEE;color:#c0392b;font-size:.75rem;font-weight:700;">🔒 Blocked</span>'
             : '<span style="padding:3px 11px;border-radius:12px;background:#E8F5E9;color:#1B5E20;font-size:.75rem;font-weight:700;">✅ Active</span>';
-        const roleBadge = `<span style="padding:3px 10px;border-radius:12px;background:${roleBg[u.role]||'#f5f5f5'};color:${roleClr[u.role]||'#555'};font-size:.75rem;font-weight:700;">${u.role.toUpperCase()}</span>`;
+        const roleBadge = `<span style="padding:3px 10px;border-radius:12px;background:${roleBg[u.role]||'#f5f5f5'};color:${roleClr[u.role]||'#555'};font-size:.75rem;font-weight:700;">${(u.role||'').toUpperCase()}</span>`;
+        const safeUser = escHtml(u.username);
         const blockBtn = u.blocked
-            ? `<button class="btn-icon btn-edit" style="background:#E8F5E9;color:#1B5E20;" title="Unblock" onclick="volToggleBlock(${u.id})"><i class="fas fa-unlock"></i></button>`
-            : `<button class="btn-icon" style="background:#FFF3E0;color:#E65100;" title="Block" onclick="volToggleBlock(${u.id})"><i class="fas fa-ban"></i></button>`;
-        const delBtn = `<button class="btn-icon btn-delete" title="Delete" onclick="volDelete(${u.id},'${escHtml(u.name)}')"><i class="fas fa-trash"></i></button>`;
+            ? `<button class="btn-icon btn-edit" style="background:#E8F5E9;color:#1B5E20;" title="Unblock" onclick="volToggleBlock('${safeUser}',false)"><i class="fas fa-unlock"></i></button>`
+            : `<button class="btn-icon" style="background:#FFF3E0;color:#E65100;" title="Block"   onclick="volToggleBlock('${safeUser}',true)"><i class="fas fa-ban"></i></button>`;
         return `<tr style="background:${u.blocked ? '#fff5f5' : (i%2===0?'#fff':'#f9fafe')};">
             <td style="color:#aaa;font-size:.8rem;">${i+1}</td>
-            <td style="font-weight:600;">${escHtml(u.name)}</td>
-            <td><code style="background:#f4f4f4;padding:2px 8px;border-radius:4px;font-size:.88rem;">${escHtml(u.username)}</code></td>
-            <td><code style="background:#FFF8E1;padding:2px 8px;border-radius:4px;font-size:.88rem;color:#E65100;">${escHtml(u.password)}</code></td>
+            <td style="font-weight:600;">${escHtml(u.name||u.username)}</td>
+            <td><code style="background:#f4f4f4;padding:2px 8px;border-radius:4px;font-size:.88rem;">${safeUser}</code></td>
+            <td style="color:#aaa;font-size:.8rem;">••••••</td>
             <td>${roleBadge}</td>
             <td style="font-size:.85rem;color:#555;">${escHtml(u.email||'—')}</td>
             <td style="font-size:.85rem;color:#555;">${escHtml(u.department||'—')}</td>
             <td>${statusBadge}</td>
-            <td><div class="action-btns">${blockBtn}${delBtn}</div></td>
+            <td><div class="action-btns">${blockBtn}</div></td>
         </tr>`;
     }).join('');
 }
 
-function volToggleBlock(id) {
-    const bl  = _volGetBlocklist();
-    const idx = bl.indexOf(id);
-    if (idx === -1) {
-        bl.push(id);
-        showNotification('Volunteer blocked.', 'error');
-    } else {
-        bl.splice(idx, 1);
-        showNotification('Volunteer unblocked.', 'success');
+async function volToggleBlock(username, shouldBlock) {
+    const action = shouldBlock ? 'block' : 'unblock';
+    if (!confirm(`Are you sure you want to ${action} "${username}"?`)) return;
+    try {
+        const res  = await fetch('/api/users/block', {
+            method : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body   : JSON.stringify({ username, blocked: shouldBlock })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showNotification(shouldBlock ? `🔒 "${username}" blocked.` : `✅ "${username}" unblocked.`, shouldBlock ? 'error' : 'success');
+            await loadVolunteers();
+        } else {
+            showNotification('Error: ' + (data.message || 'Could not update.'), 'error');
+        }
+    } catch (e) {
+        showNotification('Cannot reach server.', 'error');
     }
-    _volSetBlocklist(bl);
-    loadVolunteers();
-}
-
-function volDelete(id, name) {
-    if (!confirm(`Delete volunteer "${name}"?\n\nThis removes them from this admin view. This action cannot be undone for this session.`)) return;
-    const dl = _volGetDeleted();
-    dl.push(id);
-    _volSetDeleted(dl);
-    showNotification(`${name} removed from volunteer list.`, 'success');
-    loadVolunteers();
 }
 
 function volExportCSV() {
-    const bl = _volGetBlocklist();
-    const dl = _volGetDeleted();
-    const rows = _VOL_USERS
-        .filter(u => !dl.includes(u.id))
-        .map(u => ({
-            ...u,
-            status: bl.includes(u.id) ? 'Blocked' : 'Active'
-        }));
-    if (!rows.length) { showNotification('No volunteers to export.', 'error'); return; }
-    const header = ['ID','Name','Username','Password','Role','Email','Department','Status'];
+    const rows = _volAll.map(u => ({ ...u, status: u.blocked ? 'Blocked' : 'Active' }));
+    if (!rows.length) { showNotification('No users to export.', 'error'); return; }
+    const header = ['Name','Username','Role','Email','Department','Status'];
     const csv = [header.join(','), ...rows.map(r => [
-        r.id, `"${r.name}"`, `"${r.username}"`, `"${r.password}"`,
-        r.role, `"${r.email}"`, `"${r.department}"`, r.status
+        `"${r.name||r.username}"`, `"${r.username}"`,
+        r.role, `"${r.email||''}"`, `"${r.department||''}"`, r.status
     ].join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href = url; a.download = 'volunteers_' + new Date().toISOString().split('T')[0] + '.csv';
+    a.href = url; a.download = 'users_' + new Date().toISOString().split('T')[0] + '.csv';
     document.body.appendChild(a); a.click();
     document.body.removeChild(a); URL.revokeObjectURL(url);
     showNotification('✅ CSV exported!', 'success');
