@@ -2485,19 +2485,18 @@ function volRender() {
             : '<span style="padding:3px 11px;border-radius:12px;background:#E8F5E9;color:#1B5E20;font-size:.75rem;font-weight:700;">✅ Active</span>';
         const roleBadge = `<span style="padding:3px 10px;border-radius:12px;background:${roleBg[u.role]||'#f5f5f5'};color:${roleClr[u.role]||'#555'};font-size:.75rem;font-weight:700;">${(u.role||'').toUpperCase()}</span>`;
         const safeUser = escHtml(u.username);
+        const editBtn = `<button class="btn-icon btn-edit" title="Edit Volunteer" onclick="editUser('${safeUser}', '${escHtml(u.name||u.username)}', '${escHtml(u.email||'')}', '${escHtml(u.role||'')}', '${escHtml(u.department||'')}')"><i class="fas fa-edit"></i></button>`;
         const blockBtn = u.blocked
             ? `<button class="btn-icon btn-edit" style="background:#E8F5E9;color:#1B5E20;" title="Unblock" onclick="volToggleBlock('${safeUser}',false)"><i class="fas fa-unlock"></i></button>`
             : `<button class="btn-icon" style="background:#FFF3E0;color:#E65100;" title="Block"   onclick="volToggleBlock('${safeUser}',true)"><i class="fas fa-ban"></i></button>`;
         return `<tr style="background:${u.blocked ? '#fff5f5' : (i%2===0?'#fff':'#f9fafe')};">
             <td style="color:#aaa;font-size:.8rem;">${i+1}</td>
-            <td style="font-weight:600;">${escHtml(u.name||u.username)}</td>
-            <td><code style="background:#f4f4f4;padding:2px 8px;border-radius:4px;font-size:.88rem;">${safeUser}</code></td>
-            <td style="color:#aaa;font-size:.8rem;">••••••</td>
+            <td><strong>${escHtml(u.name||u.username)}</strong><br><code style="font-size:.8rem;color:#555;">${safeUser}</code></td>
             <td>${roleBadge}</td>
             <td style="font-size:.85rem;color:#555;">${escHtml(u.email||'—')}</td>
             <td style="font-size:.85rem;color:#555;">${escHtml(u.department||'—')}</td>
             <td>${statusBadge}</td>
-            <td><div class="action-btns">${blockBtn}</div></td>
+            <td><div class="action-btns">${editBtn}${blockBtn}</div></td>
         </tr>`;
     }).join('');
 }
