@@ -797,7 +797,143 @@ select, textarea {
 }
 
 
-
+/* ===== DONATION CARDS - MOBILE VIEW ===== */
+.don-cards-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0 12px 0;
+}
+.don-year-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: linear-gradient(90deg, #1a237e08, transparent);
+  border-top: 2px solid #e8eaf0;
+  border-bottom: 1px solid #e8eaf0;
+  margin: 6px 0 2px 0;
+}
+.don-year-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #FF6B35, #FF8C42);
+  color: #fff;
+  border-radius: 20px;
+  padding: 3px 14px;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+.don-year-count {
+  font-size: .82rem;
+  color: #555;
+}
+.don-year-sum {
+  font-size: .82rem;
+  color: #27AE60;
+  font-weight: 700;
+  margin-left: auto;
+}
+.don-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.07);
+  padding: 16px 16px 12px 16px;
+  position: relative;
+  border: 1px solid #f0f0f0;
+  transition: box-shadow .2s;
+}
+.don-card:active { box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+.don-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.don-card-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  letter-spacing: .01em;
+  flex: 1;
+  padding-right: 8px;
+  word-break: break-word;
+}
+.don-card-edit-btn {
+  background: #eef2ff;
+  border: none;
+  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3d5afe;
+  font-size: .9rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .2s;
+}
+.don-card-edit-btn:hover { background: #dde3ff; }
+.don-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+.don-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: .75rem;
+  font-weight: 600;
+}
+.don-tag-book {
+  background: #ede7f6;
+  color: #6a1b9a;
+}
+.don-tag-area {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.don-tag-mode {
+  background: #fff8e1;
+  color: #f57f17;
+}
+.don-card-amount {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #27AE60;
+  margin-bottom: 8px;
+  letter-spacing: -.01em;
+}
+.don-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #f5f5f5;
+  padding-top: 8px;
+  margin-top: 4px;
+}
+.don-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #999;
+  font-size: .75rem;
+}
+.don-card-meta i { font-size: .7rem; }
+.don-card-time {
+  font-size: .73rem;
+  color: #aaa;
+  text-align: right;
+  line-height: 1.5;
+}
+/* ===== END DONATION CARDS ===== */
 
 
 
