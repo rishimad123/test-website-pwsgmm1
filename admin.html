@@ -740,20 +740,48 @@ window._fmtBytesA = function(b) {
         .btn-icon          { width: 40px; height: 40px; }
 
         /* Table wrappers â€“ horizontal scroll on mobile */
-        .admin-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .admin-table { min-width: 600px; }
+        /* Table wrappers â€“ horizontal scroll on mobile */
+        .admin-card { overflow-x: hidden; }
+        .admin-table { min-width: unset; }
 
         /* Topbar title shrinks on small screens */
         @media (max-width: 768px) {
-            .admin-table, .fin-table {
+            .admin-table, .fin-table, 
+            .admin-table tbody, .fin-table tbody,
+            .admin-table tr, .fin-table tr, 
+            .admin-table td, .fin-table td {
                 display: block;
                 width: 100%;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                border: 0;
+                white-space: normal !important;
             }
-            .admin-table th, .admin-table td, .fin-table th, .fin-table td {
-                white-space: nowrap;
+            .admin-table thead, .fin-table thead {
+                display: none;
+            }
+            .admin-table tr, .fin-table tr {
+                margin-bottom: 12px;
+                border: 1px solid #eee;
+                border-radius: 8px;
+                padding: 4px;
+                background: #fff;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            }
+            .admin-table td, .fin-table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                padding: 10px 12px !important;
+                border-bottom: 1px solid #f5f5f5;
+            }
+            .admin-table td:last-child, .fin-table td:last-child {
+                border-bottom: none;
+            }
+            .admin-table td::before, .fin-table td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #666;
+                margin-right: 15px;
+                text-align: left;
             }
         }
         

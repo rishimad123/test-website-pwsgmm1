@@ -599,6 +599,29 @@ function generateReport(reportType) {
     // In real application, generate PDF report
 }
 
+// ==================== RESPONSIVE TABLE HELPER ====================
+// Automatically injects data-label for mobile card view tables
+const observeTables = new MutationObserver((mutations) => {
+    let shouldUpdate = false;
+    for (let m of mutations) {
+        if (m.addedNodes.length > 0) shouldUpdate = true;
+    }
+    if (shouldUpdate) {
+        document.querySelectorAll('table.admin-table, table.fin-table, table.table').forEach(table => {
+            const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+            table.querySelectorAll('tbody tr').forEach(row => {
+                row.querySelectorAll('td').forEach((cell, i) => {
+                    if (headers[i] && !cell.hasAttribute('data-label')) {
+                        cell.setAttribute('data-label', headers[i]);
+                    }
+                });
+            });
+        });
+    }
+});
+document.addEventListener('DOMContentLoaded', () => {
+    observeTables.observe(document.body, { childList: true, subtree: true });
+});
 // ==================== ADMIN LOGOUT ====================
 function adminLogout() {
     if (confirm('Are you sure you want to logout?')) {
