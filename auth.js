@@ -40,45 +40,58 @@ const users = [
 // Login Form Handler
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
-    loginForm.addEventListener('submit', function(e) {
+    loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
 
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Checking…'; }
 
-        // Find user — always require fresh credentials, never auto-login
+        // Step 1: Validate credentials against local user list
         const user = users.find(u =>
             (u.username === username || u.email === username) &&
             u.password === password
         );
 
-        if (user) {
-            // Store in sessionStorage only — clears when browser/tab closes
-            const userData = {
-                id: user.id,
-                name: user.name,
-                role: user.role,
-                email: user.email
-            };
-
-            sessionStorage.setItem('currentUser', JSON.stringify(userData));
-            // Remove any stale localStorage entry so old auto-logins don't persist
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('rememberUser');
-
-            showAlert('Login successful! Redirecting...', 'success');
-
-            // Redirect based on role
-            setTimeout(() => {
-                if (user.role === 'admin') {
-                    window.location.href = 'admin.html';
-                } else {
-                    window.location.href = 'dashboard.html';
-                }
-            }, 1000);
-        } else {
+        if (!user) {
             showAlert('Invalid username or password!', 'error');
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login'; }
+            return;
         }
+
+        // Step 2: Check if the user is blocked on the server (skip for admin)
+        if (user.role !== 'admin') {
+            try {
+                const res  = await fetch(`/api/check-block?username=${encodeURIComponent(user.username)}`);
+                const data = await res.json();
+                if (data.blocked) {
+                    showAlert('🔒 Your account has been blocked. Please contact the administrator.', 'error');
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login'; }
+                    return;
+                }
+            } catch (err) {
+                // Server unreachable — fail safe: allow login (offline mode)
+                console.warn('Block check failed, proceeding:', err.message);
+            }
+        }
+
+        // Step 3: Login success — store session and redirect
+        const userData = {
+            id      : user.id,
+            name    : user.name,
+            username: user.username,
+            role    : user.role,
+            email   : user.email
+        };
+        sessionStorage.setItem('currentUser', JSON.stringify(userData));
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('rememberUser');
+
+        showAlert('Login successful! Redirecting...', 'success');
+        setTimeout(() => {
+            window.location.href = user.role === 'admin' ? 'admin.html' : 'dashboard.html';
+        }, 1000);
     });
 }
 
