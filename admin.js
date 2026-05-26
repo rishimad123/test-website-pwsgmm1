@@ -2544,14 +2544,6 @@ function volExportCSV() {
     showNotification('✅ CSV exported!', 'success');
 }
 
-// ── Admin sidebar hamburger ─────────────────────────────────────────────────
-function toggleAdminSidebar() {
-    const sidebar  = document.querySelector('.admin-sidebar');
-    const overlay  = document.getElementById('adminSidebarOverlay');
-    const isOpen   = sidebar && sidebar.classList.contains('sidebar-open');
-    if (sidebar)  sidebar.classList.toggle('sidebar-open', !isOpen);
-    if (overlay)  overlay.style.display = isOpen ? 'none' : 'block';
-}
 
 // ── Admin view of all donation entries ────────────────────────────────────────
 let _deAdmAllEntries = [];
