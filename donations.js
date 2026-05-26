@@ -280,106 +280,129 @@ function _donGroupByYear(records) {
 
 // ── Paginated table render — grouped by year ─────────────────────────────────
 function donRenderTable() {
-    const thead = document.getElementById('donThead');
-    const tbody = document.getElementById('donTbody');
-    if (!thead || !tbody) return;
+  const container = document.getElementById('donTableCard');
+  if (!container) return;
 
-    // Define columns to display: only Name, Address, Landmark, Amount + all others
-    // Admin sees ALL columns (no restriction)
-    const colsToShow = _donColumns;
+  // Find or create cards wrapper inside donTableCard
+  let wrap = container.querySelector('.don-cards-wrap');
+  if (!wrap) {
+    // Hide the old table if it exists
+    const oldTable = container.querySelector('table');
+    if (oldTable) oldTable.style.display = 'none';
+    wrap = document.createElement('div');
+    wrap.className = 'don-cards-wrap';
+    container.appendChild(wrap);
+  }
 
-    thead.innerHTML = '<tr>' +
-        colsToShow.map(c => `<th style="white-space:nowrap;font-size:.82rem;">${_escHtmlDon(c)}</th>`).join('') +
-        '<th style="font-size:.82rem;">Actions</th></tr>';
+  if (_donFiltered.length === 0) {
+    wrap.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px 0;font-size:.9rem;">No records found</p>';
+    _updatePagination(0);
+    return;
+  }
 
-    if (_donFiltered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${colsToShow.length + 1}" style="text-align:center;color:#aaa;padding:40px;font-size:.9rem;">No matching records found.</td></tr>`;
-        _updatePagination(0);
-        return;
+  // Group by year for headers
+  const groups = _donGroupByYear(_donFiltered);
+  const flatRows = [];
+  groups.forEach((recs, yr) => {
+    const yearSum = _donAmountCol
+      ? recs.reduce((s, r) => s + (parseFloat(r[_donAmountCol]) || 0), 0)
+      : null;
+    flatRows.push({ type: 'header', yr, count: recs.length, sum: yearSum });
+    recs.forEach(r => flatRows.push({ type: 'row', r }));
+  });
+
+  const start    = (_donPage - 1) * DON_PAGE_SIZE;
+  const pageRows = flatRows.slice(start, start + DON_PAGE_SIZE);
+
+  wrap.innerHTML = pageRows.map(item => {
+    if (item.type === 'header') {
+      const sumTxt = item.sum !== null
+        ? `<span class="don-year-sum">₹${item.sum.toLocaleString('en-IN')}</span>`
+        : '';
+      return `
+        <div class="don-year-header">
+          <span class="don-year-badge">${_escHtmlDon(item.yr)}</span>
+          <span class="don-year-count">${item.count.toLocaleString('en-IN')} records</span>
+          ${sumTxt}
+        </div>`;
     }
 
-    // Group by year then paginate across the flat list
-    const groups    = _donGroupByYear(_donFiltered);
-    const flatRows  = [];         // { type:'header'|'row', data }
-    groups.forEach((recs, yr) => {
-        const yearSum = _donAmountCol
-            ? recs.reduce((s, r) => s + (parseFloat(r[_donAmountCol]) || 0), 0)
-            : null;
-        flatRows.push({ type: 'header', yr, count: recs.length, sum: yearSum });
-        recs.forEach(r => flatRows.push({ type: 'row', r }));
+    const r = item.r;
+
+    // --- Donor name: first text-like column ---
+    const nameCol = _donColumns.find(c => !_donAmountCol || c !== _donAmountCol);
+    const donorName = nameCol ? _escHtmlDon(String(r[nameCol] ?? '')) : '—';
+
+    // --- Amount ---
+    const amtRaw = _donAmountCol ? r[_donAmountCol] : null;
+    const amtDisplay = amtRaw !== null && amtRaw !== undefined && amtRaw !== ''
+      ? `₹${Number(amtRaw).toLocaleString('en-IN')}`
+      : '—';
+
+    // --- Area/Location tag ---
+    const locCol  = _donLocCols && _donLocCols.length ? _donLocCols[0] : null;
+    const areaVal = locCol ? String(r[locCol] ?? '').trim() : '';
+
+    // --- Landmark/Book tag ---
+    const landCol  = _donLandCols && _donLandCols.length ? _donLandCols[0] : null;
+    const landVal  = landCol ? String(r[landCol] ?? '').trim() : '';
+
+    // --- Payment mode: look for a column with cash/online/cheque-like values ---
+    const modeCol = _donColumns.find(c => {
+      const v = String(r[c] ?? '').toLowerCase();
+      return v === 'cash' || v === 'online' || v === 'cheque' || v === 'upi' || v === 'neft';
     });
+    const modeVal = modeCol ? String(r[modeCol] ?? '').trim() : '';
 
-    const start    = (_donPage - 1) * DON_PAGE_SIZE;
-    const pageRows = flatRows.slice(start, start + DON_PAGE_SIZE);
+    // --- Receipt / Book number ---
+    const receiptCol = _donColumns.find(c => /receipt|rcpt|slip|book|bk/i.test(c));
+    const receiptVal = receiptCol ? String(r[receiptCol] ?? '').trim() : '';
 
-    tbody.innerHTML = pageRows.map(item => {
-        if (item.type === 'header') {
-            const sumTxt = item.sum !== null
-                ? ` &nbsp;·&nbsp; <span style="color:#27AE60;font-weight:700;">\u20b9${item.sum.toLocaleString('en-IN')}</span>`
-                : '';
-            return `<tr>
-                <td colspan="${colsToShow.length + 1}"
-                    style="padding:10px 14px;background:linear-gradient(90deg,#1a237e08,transparent);border-top:2px solid #e8eaf0;border-bottom:1px solid #e8eaf0;">
-                    <span style="display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                        <span style="background:linear-gradient(135deg,#FF6B35,#FF8C42);color:#fff;border-radius:20px;padding:3px 14px;font-size:.78rem;font-weight:700;letter-spacing:.04em;">
-                            ${_escHtmlDon(item.yr)}
-                        </span>
-                        <span style="font-size:.82rem;color:#555;">${item.count.toLocaleString('en-IN')} records${sumTxt}</span>
-                    </span>
-                </td>
-            </tr>`;
-        }
-        const { r } = item;
-        const cells = colsToShow.map(col => {
-            const val     = r[col] ?? '';
-            const isAmt   = col === _donAmountCol;
-            const display = isAmt && val !== ''
-                ? `<strong style="color:#27AE60;">\u20b9${Number(val).toLocaleString('en-IN')}</strong>`
-                : _escHtmlDon(String(val));
-            return `<td style="white-space:nowrap;font-size:.85rem;">${display}</td>`;
-        }).join('');
-        const safeId = r._id.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-        return `<tr onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background=''">
-            ${cells}
-            <td>
-                <div class="action-btns">
-                    <button class="btn-icon btn-edit" title="Edit" onclick="openEditDonModal('${safeId}')"><i class="fas fa-edit"></i></button>
-                    <button class="btn-icon btn-delete" title="Delete" onclick="deleteDonRecord('${safeId}')"><i class="fas fa-trash"></i></button>
-                </div>
-            </td>
-        </tr>`;
-    }).join('');
+    // --- Timestamp ---
+    const tsCol = _donColumns.find(c => /date|time|ts|created|stamp/i.test(c));
+    const tsRaw = tsCol ? String(r[tsCol] ?? '') : '';
+    let tsDisplay = '';
+    if (tsRaw) {
+      try {
+        const d = new Date(tsRaw);
+        if (!isNaN(d)) {
+          tsDisplay = d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })
+            + '<br>' + d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+        } else { tsDisplay = _escHtmlDon(tsRaw); }
+      } catch(_) { tsDisplay = _escHtmlDon(tsRaw); }
+    }
 
-    _updatePagination(flatRows.length);
-}
+    // --- Entry by ---
+    const byCol = _donColumns.find(c => /by|user|volunteer|entry|entered|name/i.test(c) && c !== nameCol);
+    const byVal = byCol ? String(r[byCol] ?? '').trim() : '';
 
-function _updatePagination(total) {
-    const totalPages = Math.ceil(total / DON_PAGE_SIZE);
-    const start      = (_donPage - 1) * DON_PAGE_SIZE;
-    const infoEl     = document.getElementById('donPaginationInfo');
-    const btnsEl     = document.getElementById('donPaginationBtns');
-    if (infoEl) infoEl.textContent = total > 0
-        ? `Showing ${start + 1}\u2013${Math.min(start + DON_PAGE_SIZE, total)} of ${_donFiltered.length.toLocaleString('en-IN')} records`
-        : '';
-    if (!btnsEl) return;
-    btnsEl.innerHTML = '';
-    if (totalPages <= 1) return;
-    const mkBtn = (label, pg, active, disabled) => {
-        const b = document.createElement('button');
-        b.innerHTML = label;
-        b.disabled  = disabled;
-        b.style.cssText = `padding:5px 12px;border:1.5px solid ${active?'var(--primary-color)':'#ddd'};border-radius:6px;background:${active?'var(--primary-color)':'#fff'};color:${active?'#fff':'#333'};cursor:${disabled?'default':'pointer'};font-size:.83rem;transition:all .15s;`;
-        if (!disabled && !active) b.onmouseover = () => b.style.background = '#f5f5f5';
-        if (!disabled && !active) b.onmouseout  = () => b.style.background = '#fff';
-        if (!disabled) b.onclick = () => { _donPage = pg; donRenderTable(); };
-        return b;
-    };
-    if (_donPage > 1) btnsEl.appendChild(mkBtn('\u2039 Prev', _donPage - 1, false, false));
-    const lo = Math.max(1, _donPage - 3), hi = Math.min(totalPages, _donPage + 3);
-    if (lo > 1) { btnsEl.appendChild(mkBtn('1', 1, false, false)); if (lo > 2) btnsEl.insertAdjacentHTML('beforeend','<span style="color:#aaa;padding:0 4px;">\u2026</span>'); }
-    for (let p = lo; p <= hi; p++) btnsEl.appendChild(mkBtn(p, p, p === _donPage, false));
-    if (hi < totalPages) { if (hi < totalPages-1) btnsEl.insertAdjacentHTML('beforeend','<span style="color:#aaa;padding:0 4px;">\u2026</span>'); btnsEl.appendChild(mkBtn(totalPages, totalPages, false, false)); }
-    if (_donPage < totalPages) btnsEl.appendChild(mkBtn('Next \u203a', _donPage + 1, false, false));
+    const safeId = r._id.replace(/[\\/&"'\\]/g,'\\\\').replace(/'/g,"\\'");
+
+    return `
+      <div class="don-card">
+        <div class="don-card-top">
+          <div class="don-card-name">${donorName}</div>
+          <button class="don-card-edit-btn" onclick="openEditDonModal('${safeId}')" title="Edit">
+            <i class="fas fa-edit"></i>
+          </button>
+        </div>
+        <div class="don-card-tags">
+          ${receiptVal ? `<span class="don-tag don-tag-book">📋 ${_escHtmlDon(receiptVal)}</span>` : ''}
+          ${areaVal    ? `<span class="don-tag don-tag-area">📍 ${_escHtmlDon(areaVal)}</span>`    : ''}
+          ${landVal && landVal !== areaVal ? `<span class="don-tag don-tag-book">🏠 ${_escHtmlDon(landVal)}</span>` : ''}
+          ${modeVal    ? `<span class="don-tag don-tag-mode">${_escHtmlDon(modeVal)}</span>`        : ''}
+        </div>
+        <div class="don-card-amount">${amtDisplay}</div>
+        <div class="don-card-footer">
+          <div class="don-card-meta">
+            ${byVal ? `<i class="fas fa-user"></i> <span>${_escHtmlDon(byVal)}</span>` : ''}
+          </div>
+          <div class="don-card-time">${tsDisplay}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  _updatePagination(flatRows.length);
 }
 
 // ── Triple-Confirmation Delete ───────────────────────────────────────────────
