@@ -472,6 +472,37 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
+    // ── PUT /api/users/:username  (admin: update user) ────────────────────────
+    if (req.method === 'PUT' && pathname.startsWith('/api/users/') && !pathname.includes('/block')) {
+        const urlUsername = decodeURIComponent(pathname.replace('/api/users/', ''));
+        try {
+            const body = await readBody(req);
+            const { name, email, role, department, password } = body;
+            const colUsers = db.collection('users');
+            
+            const existing = await colUsers.findOne({ username: urlUsername });
+            if (!existing) return sendJSON(res, 404, { message: 'User not found.' });
+            
+            const updateFields = {
+                name: (name || urlUsername).trim(),
+                email: (email || '').trim(),
+                role: (role || existing.role).trim(),
+                department: (department || '').trim()
+            };
+            
+            if (password && password.trim().length > 0) {
+                updateFields.password = password.trim();
+            }
+            
+            await colUsers.updateOne({ username: urlUsername }, { $set: updateFields });
+            console.log(`✏️  User updated: ${urlUsername}`);
+            return sendJSON(res, 200, { success: true });
+        } catch (err) {
+            console.error('PUT /api/users error:', err.message);
+            return sendJSON(res, 500, { message: 'Server error.' });
+        }
+    }
+
     // ── DELETE /api/users/:username  (admin: remove user) ────────────────────
     if (req.method === 'DELETE' && pathname.startsWith('/api/users/') && !pathname.includes('/block')) {
         const username = decodeURIComponent(pathname.replace('/api/users/', ''));

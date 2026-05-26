@@ -22,9 +22,16 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Update admin name
+    // Update admin profile UI
     if (document.getElementById('adminName')) {
         document.getElementById('adminName').textContent = currentUser.name;
+    }
+    if (document.getElementById('topNavName')) {
+        document.getElementById('topNavName').textContent = currentUser.name;
+        document.getElementById('topNavRole').textContent = (currentUser.role === 'admin' ? 'Administrator' : currentUser.role);
+        if (currentUser.name && currentUser.name.length > 0) {
+            document.getElementById('topNavAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+        }
     }
     
     // Initialize admin panel
@@ -462,6 +469,45 @@ if (addUserForm) {
     });
 }
 
+const editUserForm = document.getElementById('editUserForm');
+if (editUserForm) {
+    editUserForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const userData = {
+            name      : formData.get('name'),
+            username  : formData.get('username'), // readonly field
+            email     : formData.get('email'),
+            role      : formData.get('role'),
+            password  : formData.get('password'),
+            department: formData.get('department'),
+        };
+        const btn = document.getElementById('euSubmitBtn');
+        const st  = document.getElementById('euStatus');
+        if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+        if (st)  { st.style.display = 'none'; }
+        try {
+            const res  = await fetch(`/api/users/${encodeURIComponent(userData.username)}`, {
+                method : 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body   : JSON.stringify(userData)
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showNotification(`✅ User "${userData.username}" updated successfully!`, 'success');
+                closeModal('editUser');
+                loadUsers();
+            } else {
+                if (st) { st.style.display='block'; st.style.background='#FFEBEE'; st.style.color='#c0392b'; st.textContent = data.message || 'Could not update user.'; }
+            }
+        } catch (err) {
+            if (st) { st.style.display='block'; st.style.background='#FFEBEE'; st.style.color='#c0392b'; st.textContent = 'Cannot reach server.'; }
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = 'Save Changes'; }
+        }
+    });
+}
+
 // ==================== LOAD USERS ====================
 async function loadUsers() {
     const userTableBody = document.getElementById('userTableBody');
@@ -490,6 +536,9 @@ async function loadUsers() {
                 <td>${roleBadge}</td>
                 <td>${statusBadge}</td>
                 <td><div class="action-btns">
+                    <button class="btn-icon btn-edit" title="Edit User" onclick="editUser('${safeUser}', '${escHtml(user.name||user.username)}', '${escHtml(user.email||'')}', '${escHtml(user.role||'')}', '${escHtml(user.department||'')}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
                     <button class="btn-icon btn-delete" title="Delete User" onclick="deleteUser('${safeUser}','${escHtml(user.name||user.username)}')">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -516,6 +565,24 @@ async function deleteUser(username, name) {
     } catch (err) {
         showNotification('Cannot reach server.', 'error');
     }
+}
+
+// ==================== EDIT USER ====================
+function editUser(username, name, email, role, department) {
+    const form = document.getElementById('editUserForm');
+    if (!form) return;
+    form.reset();
+    
+    document.getElementById('euUsername').value = username;
+    document.getElementById('euName').value = name;
+    document.getElementById('euEmail').value = email;
+    document.getElementById('euRole').value = role.toLowerCase();
+    document.getElementById('euDept').value = department;
+    
+    const st = document.getElementById('euStatus');
+    if (st) st.style.display = 'none';
+    
+    openModal('editUser');
 }
 
 // ==================== EXPORT DATA ====================
