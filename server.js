@@ -391,7 +391,35 @@ const server = http.createServer(async (req, res) => {
             return sendJSON(res, 500, { message: 'Server error.' });
         }
     }
+    // ── POST /api/login  (validate credentials against MongoDB users) ─────────
+    if (req.method === 'POST' && pathname === '/api/login') {
+        try {
+            const body = await readBody(req);
+            const { username, password } = body;
+            if (!username || !password) return sendJSON(res, 400, { message: 'username and password required.' });
+            const colUsers = db.collection('users');
+            const user = await colUsers.findOne({
+                $or: [{ username }, { email: username }],
+                password,
+                blocked: { $ne: true }
+            });
+            if (!user) return sendJSON(res, 401, { success: false, message: 'Invalid credentials or account blocked.' });
+            return sendJSON(res, 200, { success: true, user: {
+                id        : user.id || user._id?.toString(),
+                username  : user.username,
+                name      : user.name || user.username,
+                role      : user.role || 'volunteer',
+                email     : user.email || '',
+                department: user.department || '',
+            }});
+        } catch (err) {
+            console.error('POST /api/login error:', err.message);
+            return sendJSON(res, 500, { message: 'Server error.' });
+        }
+    }
+
     // ── GET /api/users  (admin: list all users with blocked status) ──────────
+
     if (req.method === 'GET' && pathname === '/api/users') {
         try {
             const colUsers = db.collection('users');
@@ -413,8 +441,53 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
+    // ── POST /api/users  (admin: create new user) ─────────────────────────────
+    if (req.method === 'POST' && pathname === '/api/users') {
+        try {
+            const body = await readBody(req);
+            const { username, name, email, role, password, department } = body;
+            if (!username || !username.trim()) return sendJSON(res, 400, { message: 'Username is required.' });
+            if (!password || !password.trim()) return sendJSON(res, 400, { message: 'Password is required.' });
+            if (!role    || !role.trim())     return sendJSON(res, 400, { message: 'Role is required.' });
+            const colUsers = db.collection('users');
+            const existing = await colUsers.findOne({ username: username.trim() });
+            if (existing) return sendJSON(res, 400, { message: `Username "${username.trim()}" already exists.` });
+            const newUser = {
+                username  : username.trim(),
+                name      : (name || username).trim(),
+                email     : (email || '').trim(),
+                role      : role.trim(),
+                password  : password.trim(),
+                department: (department || '').trim(),
+                blocked   : false,
+                createdAt : new Date().toISOString(),
+            };
+            await colUsers.insertOne(newUser);
+            console.log(`👤 New user created: ${newUser.username} (${newUser.role})`);
+            return sendJSON(res, 200, { success: true, username: newUser.username });
+        } catch (err) {
+            console.error('POST /api/users error:', err.message);
+            return sendJSON(res, 500, { message: 'Server error.' });
+        }
+    }
+
+    // ── DELETE /api/users/:username  (admin: remove user) ────────────────────
+    if (req.method === 'DELETE' && pathname.startsWith('/api/users/') && !pathname.includes('/block')) {
+        const username = decodeURIComponent(pathname.replace('/api/users/', ''));
+        try {
+            const colUsers = db.collection('users');
+            const result = await colUsers.deleteOne({ username });
+            if (result.deletedCount === 0) return sendJSON(res, 404, { message: 'User not found.' });
+            console.log(`🗑️  User deleted: ${username}`);
+            return sendJSON(res, 200, { success: true });
+        } catch (err) {
+            console.error('DELETE /api/users error:', err.message);
+            return sendJSON(res, 500, { message: 'Server error.' });
+        }
+    }
 
     if (req.method === 'PUT' && pathname.startsWith('/api/receipts/') && !pathname.includes('/mark-received') && !pathname.includes('/soft-delete') && !pathname.includes('/clear-amount')) {
+
         const id  = decodeURIComponent(pathname.replace('/api/receipts/', ''));
         const idx = receipts.findIndex(r => r.receiptId === id);
         if (idx === -1) return sendJSON(res, 404, { message: 'Receipt not found.' });

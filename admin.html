@@ -1901,18 +1901,22 @@ window._fmtBytesA = function(b) {
                 <h3>Add New User</h3>
                 <span class="modal-close" onclick="closeModal('addUser')">&times;</span>
             </div>
-            <form id="addUserForm">
+            <form id="addUserForm" autocomplete="off">
                 <div class="form-group">
                     <label>Full Name</label>
-                    <input type="text" required>
+                    <input type="text" name="name" id="auName" required placeholder="e.g. Ramesh Patel">
+                </div>
+                <div class="form-group">
+                    <label>Username <span style="color:#E65100;font-size:.8rem;">(used to log in)</span></label>
+                    <input type="text" name="username" id="auUsername" required placeholder="e.g. ramesh123">
                 </div>
                 <div class="form-group">
                     <label>Email</label>
-                    <input type="email" required>
+                    <input type="email" name="email" id="auEmail" placeholder="e.g. ramesh@email.com">
                 </div>
                 <div class="form-group">
                     <label>Role</label>
-                    <select required>
+                    <select name="role" id="auRole" required>
                         <option value="">Select Role</option>
                         <option value="volunteer">Volunteer</option>
                         <option value="committee">Committee</option>
@@ -1920,10 +1924,15 @@ window._fmtBytesA = function(b) {
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" required>
+                    <label>Department / Position</label>
+                    <input type="text" name="department" id="auDept" placeholder="e.g. Decoration">
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Add User</button>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" id="auPassword" required placeholder="Set login password">
+                </div>
+                <div id="auStatus" style="display:none;padding:10px;border-radius:8px;margin-bottom:10px;font-weight:600;"></div>
+                <button type="submit" class="btn btn-primary" id="auSubmitBtn" style="width: 100%;">Add User</button>
             </form>
         </div>
     </div>

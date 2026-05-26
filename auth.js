@@ -48,11 +48,39 @@ if (loginForm) {
         const submitBtn = loginForm.querySelector('button[type="submit"]');
         if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Checking…'; }
 
-        // Step 1: Validate credentials against local user list
-        const user = users.find(u =>
-            (u.username === username || u.email === username) &&
-            u.password === password
-        );
+        // Step 1: Try to find user — check server first, then fallback to built-in list
+        let user = null;
+        try {
+            const chkRes = await fetch(`/api/users`);
+            const chkData = await chkRes.json();
+            const serverUsers = chkData.users || [];
+            // Server users have password stored, match it
+            const matched = serverUsers.find(u =>
+                (u.username === username || u.email === username)
+            );
+            if (matched) {
+                // Fetch password from a separate secure check
+                // Since GET /api/users doesn't return password, we'll do a login check
+                const loginRes = await fetch('/api/login', {
+                    method : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body   : JSON.stringify({ username, password })
+                });
+                if (loginRes.ok) {
+                    const loginData = await loginRes.json();
+                    if (loginData.success) user = loginData.user;
+                }
+            }
+        } catch (e) { /* server unreachable, fall through to hardcoded */ }
+
+        // Fallback: hardcoded built-in users
+        if (!user) {
+            const found = users.find(u =>
+                (u.username === username || u.email === username) &&
+                u.password === password
+            );
+            if (found) user = found;
+        }
 
         if (!user) {
             showAlert('Invalid username or password!', 'error');

@@ -423,73 +423,97 @@ window.addEventListener('click', function(event) {
 // ==================== USER MANAGEMENT ====================
 const addUserForm = document.getElementById('addUserForm');
 if (addUserForm) {
-    addUserForm.addEventListener('submit', function(e) {
+    addUserForm.addEventListener('submit', async function(e) {
         e.preventDefault();
-        
         const formData = new FormData(e.target);
         const userData = {
-            name: formData.get('name'),
-            email: formData.get('email'),
-            role: formData.get('role'),
-            password: formData.get('password')
+            name      : formData.get('name'),
+            username  : formData.get('username'),
+            email     : formData.get('email'),
+            role      : formData.get('role'),
+            password  : formData.get('password'),
+            department: formData.get('department'),
         };
-        
-        // In real application, send to server
-        console.log('New user data:', userData);
-        
-        alert('User added successfully!');
-        closeModal('addUser');
-        e.target.reset();
-        
-        // Reload user table
-        loadUsers();
+        const btn = document.getElementById('auSubmitBtn');
+        const st  = document.getElementById('auStatus');
+        if (btn) { btn.disabled = true; btn.textContent = 'Adding…'; }
+        if (st)  { st.style.display = 'none'; }
+        try {
+            const res  = await fetch('/api/users', {
+                method : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body   : JSON.stringify(userData)
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showNotification(`✅ User "${userData.username}" added successfully!`, 'success');
+                closeModal('addUser');
+                e.target.reset();
+                loadUsers();
+            } else {
+                if (st) { st.style.display='block'; st.style.background='#FFEBEE'; st.style.color='#c0392b'; st.textContent = data.message || 'Could not add user.'; }
+            }
+        } catch (err) {
+            if (st) { st.style.display='block'; st.style.background='#FFEBEE'; st.style.color='#c0392b'; st.textContent = 'Cannot reach server.'; }
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = 'Add User'; }
+        }
     });
 }
 
 // ==================== LOAD USERS ====================
-function loadUsers() {
+async function loadUsers() {
     const userTableBody = document.getElementById('userTableBody');
     if (!userTableBody) return;
-    
-    // Sample user data
-    const users = [
-        { name: 'Rajesh Kumar', email: 'rajesh@email.com', role: 'Volunteer', status: 'Active' },
-        { name: 'Amit Patel', email: 'amit@email.com', role: 'Committee', status: 'Active' },
-        { name: 'Priya Sharma', email: 'priya@email.com', role: 'Volunteer', status: 'Active' }
-    ];
-    
-    userTableBody.innerHTML = users.map(user => `
-        <tr>
-            <td>${user.name}</td>
-            <td>${user.email}</td>
-            <td><span class="badge badge-info">${user.role}</span></td>
-            <td><span class="badge badge-success">${user.status}</span></td>
-            <td>
-                <div class="action-btns">
-                    <button class="btn-icon btn-edit" onclick="editUser('${user.email}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-icon btn-delete" onclick="deleteUser('${user.email}')">
+    userTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">Loading…</td></tr>';
+    try {
+        const res  = await fetch('/api/users');
+        const data = await res.json();
+        const allUsers = data.users || [];
+        if (allUsers.length === 0) {
+            userTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px;">No users found.</td></tr>';
+            return;
+        }
+        userTableBody.innerHTML = allUsers.map(user => {
+            const roleBg  = { admin:'#EDE7F6', volunteer:'#E3F2FD', committee:'#E8F5E9' };
+            const roleClr = { admin:'#4527A0', volunteer:'#1565C0', committee:'#1B5E20' };
+            const roleBadge = `<span style="padding:2px 9px;border-radius:10px;background:${roleBg[user.role]||'#f5f5f5'};color:${roleClr[user.role]||'#555'};font-size:.78rem;font-weight:700;">${(user.role||'').toUpperCase()}</span>`;
+            const statusBadge = user.blocked
+                ? '<span class="badge" style="background:#FFEBEE;color:#c0392b;">🔒 Blocked</span>'
+                : '<span class="badge badge-success">✅ Active</span>';
+            const safeUser = escHtml(user.username);
+            return `<tr>
+                <td>${escHtml(user.name || user.username)}</td>
+                <td><code style="font-size:.85rem;">${safeUser}</code></td>
+                <td>${escHtml(user.email || '—')}</td>
+                <td>${roleBadge}</td>
+                <td>${statusBadge}</td>
+                <td><div class="action-btns">
+                    <button class="btn-icon btn-delete" title="Delete User" onclick="deleteUser('${safeUser}','${escHtml(user.name||user.username)}')">
                         <i class="fas fa-trash"></i>
                     </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
-}
-
-// ==================== EDIT USER ====================
-function editUser(email) {
-    alert('Edit user: ' + email);
-    // In real application, open edit modal with user data
+                </div></td>
+            </tr>`;
+        }).join('');
+    } catch (err) {
+        userTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#c00;padding:20px;">⚠ Cannot reach server.</td></tr>';
+    }
 }
 
 // ==================== DELETE USER ====================
-function deleteUser(email) {
-    if (confirm('Are you sure you want to delete this user?')) {
-        alert('User deleted: ' + email);
-        // In real application, send delete request to server
-        loadUsers();
+async function deleteUser(username, name) {
+    if (!confirm(`Delete user "${name}" (${username})?\n\nThey will no longer be able to log in.`)) return;
+    try {
+        const res  = await fetch(`/api/users/${encodeURIComponent(username)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showNotification(`🗑️ User "${username}" deleted.`, 'success');
+            loadUsers();
+        } else {
+            showNotification('Error: ' + (data.message || 'Could not delete.'), 'error');
+        }
+    } catch (err) {
+        showNotification('Cannot reach server.', 'error');
     }
 }
 
