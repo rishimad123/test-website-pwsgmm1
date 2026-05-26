@@ -1994,7 +1994,7 @@ async function loadBalanceRecovery() {
                         passbookUrl: slip.photoUrl || null,
                         userId     : slip.uploadedBy || '—',
                         submittedAt: slip.uploadedAt,
-                        status     : 'pending',
+                        status     : slip.status || 'pending',
                         type       : 'pauti-slip',
                         paymentMode: slip.paymentMode || 'balance',
                         _slipNum   : slip.slipNumber,
@@ -2021,7 +2021,7 @@ async function loadBalanceRecovery() {
                 passbookUrl: e.photoUrl || null,
                 userId     : e.submittedBy || '—',
                 submittedAt: e.submittedAt || new Date().toISOString(),
-                status     : 'pending',
+                status     : e.status || 'pending',
                 type       : 'donation-entry',
                 paymentMode: e.paymentMode,
                 _bookNum   : e.bookNumber,
@@ -2229,7 +2229,8 @@ async function saveBrEditEntry(ev) {
         payload = {
             donorName: donorName,
             amount: amount,
-            paymentMode: capMode
+            paymentMode: capMode,
+            status: status
         };
     } else if (type === 'donation-entry') {
         url = `/api/donation-entries/${encodeURIComponent(id)}`;
@@ -2245,6 +2246,7 @@ async function saveBrEditEntry(ev) {
             donorType: 'Individual',
             amount: amount,
             paymentMode: capMode,
+            status: status,
             bookNumber: bookNumber,
             receiptNumber: receiptNumber
         };

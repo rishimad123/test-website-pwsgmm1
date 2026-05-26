@@ -887,6 +887,7 @@ const server = http.createServer(async (req, res) => {
             if (body.checkNumber      !== undefined) slip.checkNumber      = body.checkNumber || null;
             if (body.uploadedBy       !== undefined) slip.uploadedBy       = body.uploadedBy || null;
             if (body.uploadedByUserId !== undefined) slip.uploadedByUserId = body.uploadedByUserId || null;
+            if (body.status           !== undefined) slip.status           = String(body.status);
             await savePautiBooks();
             return sendJSON(res, 200, { success: true, slip });
         } catch (err) {
@@ -1090,7 +1091,7 @@ const server = http.createServer(async (req, res) => {
                 // Admin: all editable fields
                 const fields = ['bookNumber','receiptNumber','donorType','firstName','middleName','lastName',
                                 'businessName','whatsappNumber','mobileNumber','mailId','buildingName',
-                                'area','amount','paymentMode','referenceNumber'];
+                                'area','amount','paymentMode','referenceNumber','status'];
                 fields.forEach(f => {
                     if (body[f] !== undefined) {
                         if (['firstName','middleName','lastName','businessName'].includes(f) && body[f])
