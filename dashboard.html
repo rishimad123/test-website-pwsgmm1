@@ -1142,6 +1142,7 @@ window.fixUrl = function(url) {
                                         <th>Submitted Date</th>
                                         <th>Status</th>
                                         <th>Photo</th>
+                                        <th>Edit</th>
                                     </tr>
                                 </thead>
                                 <tbody id="volBalTbody">
@@ -1235,8 +1236,8 @@ window.fixUrl = function(url) {
                         <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Business Name</label><input id="deVolEditBiz" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
                     </div>
                     <div id="deVolNameReasonWrap" style="margin-top:8px;">
-                        <label style="font-size:.78rem;color:#c0392b;font-weight:700;"><i class="fas fa-exclamation-circle" style="margin-right:4px;"></i>Reason for Name Change <span style="color:#c0392b;">*</span> <span style="color:#aaa;font-weight:400;">(required if name changed)</span></label>
-                        <input id="deVolEditReason" class="form-control" placeholder="e.g. Spelling correction, wrong entry..." style="margin-top:4px;">
+                        <label style="font-size:.78rem;color:#c0392b;font-weight:700;"><i class="fas fa-exclamation-circle" style="margin-right:4px;"></i>Reason for Change <span style="color:#c0392b;">*</span> <span style="color:#aaa;font-weight:400;">(required if name or amount changed)</span></label>
+                        <input id="deVolEditReason" class="form-control" placeholder="e.g. Spelling correction, wrong amount entered..." style="margin-top:4px;">
                     </div>
                     <p style="font-size:.76rem;color:#aaa;margin:8px 0 0;"><i class="fas fa-info-circle" style="margin-right:3px;"></i>Submission date cannot be changed. Name changes are logged for admin review.</p>
                 </div>
@@ -1523,6 +1524,9 @@ window.fixUrl = function(url) {
                         <td style="color:#777;font-size:.82rem;">${dateStr}</td>
                         <td><span class="badge badge-warning">Pending</span></td>
                         <td style="text-align:center;">${photoCell}</td>
+                        <td style="text-align:center;">
+                            ${r.type === 'donation-entry' ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#1565C0;padding:6px 10px;" onclick="deOpenVolEdit('${r.receiptId}')"><i class="fas fa-edit"></i> Edit</button>` : '<span style="font-size:0.8rem;color:#999;">-</span>'}
+                        </td>
                     </tr>`;
                 }).join('');
             } catch(e) {
@@ -2622,6 +2626,8 @@ window.fixUrl = function(url) {
             _deVolEditBlob = null;
             document.getElementById('deVolEditId').value     = id;
             document.getElementById('deVolEditAmount').value = e.amount != null ? e.amount : '';
+            // Store original amount to detect changes later
+            document.getElementById('deVolEditAmount').dataset.original = e.amount != null ? e.amount : '';
             document.getElementById('deVolEditMode').value   = e.paymentMode || 'Cash';
             const bookSel = document.getElementById('deVolEditBook');
             bookSel.innerHTML = '';
@@ -2747,8 +2753,10 @@ window.fixUrl = function(url) {
         const _newLast  = document.getElementById('deVolEditLast')?.value.trim().toUpperCase()  || '';
         const _newBiz   = document.getElementById('deVolEditBiz')?.value.trim().toUpperCase()   || '';
         const _reason   = document.getElementById('deVolEditReason')?.value.trim()              || '';
-        // Check if name actually changed by fetching original from table
         const _hasNameChange = _eIsBiz ? !!_newBiz : !!(_newFirst || _newMid || _newLast);
+        const origAmt   = document.getElementById('deVolEditAmount').dataset.original || '';
+        const _hasAmountChange = origAmt !== amtVal;
+
         const payload = {
             _isAdmin      : false,
             paymentMode   : document.getElementById('deVolEditMode').value,
@@ -2757,11 +2765,13 @@ window.fixUrl = function(url) {
             area          : document.getElementById('deVolEditArea').value || undefined,
         };
         if (amtVal !== '') payload.amount = Number(amtVal);
-        // Add name fields if changed
-        if (_hasNameChange) {
-            if (!_reason) { showSt('\u274c Please provide a reason for the name change.', 'error'); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; } return; }
-            if (_eIsBiz) { payload.businessName = _newBiz; }
-            else { payload.firstName = _newFirst; payload.middleName = _newMid; payload.lastName = _newLast; }
+        
+        if (_hasNameChange || _hasAmountChange) {
+            if (!_reason) { showSt('❌ Please provide a reason for the name or amount change.', 'error'); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; } return; }
+            if (_hasNameChange) {
+                if (_eIsBiz) { payload.businessName = _newBiz; }
+                else { payload.firstName = _newFirst; payload.middleName = _newMid; payload.lastName = _newLast; }
+            }
             payload.changeReason = _reason;
             payload.changedBy = currentUser ? currentUser.name : 'Volunteer';
         }

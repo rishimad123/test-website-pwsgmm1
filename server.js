@@ -1251,35 +1251,144 @@ const server = http.createServer(async (req, res) => {
                 if (body.buildingName  !== undefined) e.buildingName  = String(body.buildingName);
                 if (body.referenceNumber !== undefined) e.referenceNumber = String(body.referenceNumber);
                 if (body.landmark       !== undefined) e.landmark       = String(body.landmark);
-                // Volunteer name change — requires changeReason
+                // Volunteer name or amount change — requires changeReason
                 const nameFields = ['firstName','middleName','lastName','businessName'];
                 const hasNameChange = nameFields.some(f => body[f] !== undefined);
-                if (hasNameChange) {
+                const hasAmountChange = body.amount !== undefined && Number(body.amount) !== Number(e.amount);
+
+                if (hasNameChange || hasAmountChange) {
                     if (!body.changeReason || !String(body.changeReason).trim()) {
-                        return sendJSON(res, 400, { message: 'A reason is required when changing the donor name.' });
+                        return sendJSON(res, 400, { message: 'A reason is required when changing the donor name or amount.' });
                     }
                     const oldName = e.donorType === 'Business'
                         ? (e.businessName || '')
                         : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
-                    nameFields.forEach(f => {
-                        if (body[f] !== undefined) e[f] = String(body[f]).trim().toUpperCase();
-                    });
+                    const oldAmount = e.amount;
+
+                    if (hasNameChange) {
+                        nameFields.forEach(f => {
+                            if (body[f] !== undefined) e[f] = String(body[f]).trim().toUpperCase();
+                        });
+                    }
+                    if (hasAmountChange) {
+                        e.amount = Number(body.amount);
+                    }
+
                     const newName = e.donorType === 'Business'
                         ? (e.businessName || '')
                         : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
-                    if (!e.nameHistory) e.nameHistory = [];
-                    e.nameHistory.push({
+                    
+                    if (!e.editHistory) e.editHistory = [];
+                    // Fallback to preserve legacy nameHistory data shape but add amount info
+                    e.editHistory.push({
                         from: oldName, to: newName,
+                        fromAmount: oldAmount, toAmount: e.amount,
                         reason: String(body.changeReason).trim(),
                         changedAt: new Date().toISOString(),
                         changedBy: body.changedBy || 'Volunteer'
                     });
+                } else {
+                    if (body.amount !== undefined) e.amount = Number(body.amount);
                 }
             }
 
             e.updatedAt = new Date().toISOString();
             await saveDonationEntries();
             console.log(`✏️  Donation entry updated: ${e.entryId}`);
+            return sendJSON(res, 200, { success: true, entry: e });
+        } catch (err) {
+            return sendJSON(res, 400, { message: err.message || 'Bad request.' });
+        }
+    }
+
+    // ── POST /api/donation-entries/edit-multipart  (volunteer/admin edit with photo) ──
+    if (req.method === 'POST' && pathname === '/api/donation-entries/edit-multipart') {
+        try {
+            const ct = req.headers['content-type'] || '';
+            const match = ct.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+            if (!match) return sendJSON(res, 400, { message: 'Missing boundary.' });
+            const boundary = match[1] || match[2];
+            const rawBody = await readRawBody(req);
+            const parts = parseMultipart(rawBody, boundary);
+
+            const getValue = name => {
+                const p = parts.find(p => p.name === name);
+                return p ? p.data.toString('utf8').trim() : undefined;
+            };
+
+            const id = getValue('entryId');
+            const idx = donationEntries.findIndex(e => e.entryId === id);
+            if (idx === -1) return sendJSON(res, 404, { message: 'Entry not found.' });
+            
+            const e = donationEntries[idx];
+            const isAdmin = getValue('_isAdmin') === 'true';
+
+            // Volunteer checks
+            const newDonorName = getValue('donorName');
+            const newAmount = getValue('amount');
+            const changeReason = getValue('changeReason');
+            const changedBy = getValue('changedBy') || 'Volunteer';
+
+            let hasNameChange = false;
+            let hasAmountChange = false;
+            const oldName = e.donorType === 'Business' ? (e.businessName || '') : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
+            
+            if (newDonorName !== undefined && newDonorName !== oldName) hasNameChange = true;
+            if (newAmount !== undefined && Number(newAmount) !== Number(e.amount)) hasAmountChange = true;
+
+            if (!isAdmin && (hasNameChange || hasAmountChange)) {
+                if (!changeReason) return sendJSON(res, 400, { message: 'A reason is required when changing the donor name or amount.' });
+                
+                if (!e.editHistory) e.editHistory = [];
+                e.editHistory.push({
+                    fromName: oldName, toName: newDonorName !== undefined ? newDonorName : oldName,
+                    fromAmount: e.amount, toAmount: newAmount !== undefined ? Number(newAmount) : e.amount,
+                    reason: changeReason,
+                    changedAt: new Date().toISOString(),
+                    changedBy
+                });
+            }
+
+            // Update fields
+            if (newDonorName !== undefined) {
+                if (e.donorType === 'Business') {
+                    e.businessName = newDonorName.toUpperCase();
+                } else {
+                    const nameParts = newDonorName.toUpperCase().split(' ');
+                    e.firstName = nameParts[0] || '';
+                    e.middleName = nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : '';
+                    e.lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+                }
+            }
+            if (newAmount !== undefined) e.amount = Number(newAmount);
+            
+            const bookNumber = getValue('bookNumber');
+            const receiptNumber = getValue('receiptNumber');
+            const area = getValue('area');
+            const paymentMode = getValue('paymentMode');
+
+            if (bookNumber !== undefined) e.bookNumber = Number(bookNumber);
+            if (receiptNumber !== undefined) e.receiptNumber = Number(receiptNumber);
+            if (area !== undefined) e.area = area;
+            if (paymentMode !== undefined) e.paymentMode = paymentMode;
+
+            // Handle Photo Upload
+            const filePart = parts.find(p => p.name === 'photo' && p.filename);
+            if (filePart) {
+                const ext = path.extname(filePart.filename).toLowerCase();
+                const uniqueName = `pauti-${e.bookNumber}-${e.receiptNumber}-${Date.now()}${ext}`;
+                try {
+                    fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
+                    e.photoFile = uniqueName;
+                    e.photoUrl = `/uploads/${uniqueName}`;
+                } catch (fsErr) {
+                    console.warn('⚠️ Could not write updated photo to disk:', fsErr.message);
+                }
+            }
+
+            e.updatedAt = new Date().toISOString();
+            await saveDonationEntries();
+            console.log(`✏️ Donation entry updated (multipart): ${e.entryId}`);
             return sendJSON(res, 200, { success: true, entry: e });
         } catch (err) {
             return sendJSON(res, 400, { message: err.message || 'Bad request.' });

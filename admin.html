@@ -3232,15 +3232,24 @@ window._fmtBytesA = function(b) {
         </div>`;
         document.body.appendChild(modal);
         modal.addEventListener('click', ev => { if (ev.target === modal) modal.remove(); });
-        // Show nameHistory if present
-        if (e.nameHistory && e.nameHistory.length) {
+        // Show editHistory if present (fallback to nameHistory for legacy)
+        const hist = e.editHistory || e.nameHistory;
+        if (hist && hist.length) {
             const histDiv = document.createElement('div');
             histDiv.style.cssText = 'margin-bottom:16px;border:1.5px solid #E3F2FD;border-radius:10px;padding:14px;background:#F8FBFF;';
-            histDiv.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#1565C0;margin-bottom:10px;"><i class="fas fa-history" style="margin-right:6px;"></i>Name Change History</div>' +
-                e.nameHistory.map(function(h) {
+            histDiv.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#1565C0;margin-bottom:10px;"><i class="fas fa-history" style="margin-right:6px;"></i>Edit History</div>' +
+                hist.map(function(h) {
                     const dt = new Date(h.changedAt).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+                    let nameChange = '';
+                    if (h.from !== h.to) {
+                        nameChange = '<span style="color:#888;">Name:</span> <strong>' + (h.from||'—') + '</strong> &rarr; <strong>' + (h.to||'—') + '</strong><br>';
+                    }
+                    let amtChange = '';
+                    if (h.fromAmount !== h.toAmount && h.fromAmount !== undefined && h.toAmount !== undefined) {
+                        amtChange = '<span style="color:#888;">Amount:</span> <strong>₹' + (h.fromAmount||'0') + '</strong> &rarr; <strong>₹' + (h.toAmount||'0') + '</strong><br>';
+                    }
                     return '<div style="padding:8px 12px;background:#fff;border-radius:8px;border:1px solid #E3F2FD;margin-bottom:6px;font-size:.82rem;">' +
-                        '<span style="color:#888;">From:</span> <strong>' + (h.from||'—') + '</strong> &rarr; <span style="color:#888;">To:</span> <strong>' + (h.to||'—') + '</strong><br>' +
+                        nameChange + amtChange +
                         '<span style="color:#888;">Reason:</span> ' + (h.reason||'—') + ' &nbsp;<span style="color:#aaa;font-size:.75rem;">' + dt + ' by ' + (h.changedBy||'—') + '</span>' +
                     '</div>';
                 }).join('');
