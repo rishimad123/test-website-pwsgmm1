@@ -40,35 +40,40 @@ const users = [
 // Login Form Handler
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
-    loginForm.addEventListener('submit', function(e) {
+    loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
 
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
 
-        // Find user — always require fresh credentials, never auto-login
-        const user = users.find(u =>
+        // Find user - always require fresh credentials, never auto-login
+        let user = users.find(u =>
             (u.username === username || u.email === username) &&
             u.password === password
         );
 
         if (user) {
-            // Store in sessionStorage only — clears when browser/tab closes
+            try {
+                const res2 = await fetch('/api/check-block?username=' + encodeURIComponent(username));
+                const data = await res2.json();
+                if (data.blocked) {
+                    showAlert('Your account has been blocked. Contact admin.', 'error');
+                    user = null;
+                }
+            } catch(e) {}
+        }
+
+        if (user) {
             const userData = {
                 id: user.id,
                 name: user.name,
                 role: user.role,
                 email: user.email
             };
-
             sessionStorage.setItem('currentUser', JSON.stringify(userData));
-            // Remove any stale localStorage entry so old auto-logins don't persist
             localStorage.removeItem('currentUser');
             localStorage.removeItem('rememberUser');
-
             showAlert('Login successful! Redirecting...', 'success');
-
-            // Redirect based on role
             setTimeout(() => {
                 if (user.role === 'admin') {
                     window.location.href = 'admin.html';
