@@ -398,19 +398,20 @@ const server = http.createServer(async (req, res) => {
             const { username, password } = body;
             if (!username || !password) return sendJSON(res, 400, { message: 'username and password required.' });
             const colUsers = db.collection('users');
-            const user = await colUsers.findOne({
-                $or: [{ username }, { email: username }],
-                password,
-                blocked: { $ne: true }
-            });
-            if (!user) return sendJSON(res, 401, { success: false, message: 'Invalid credentials or account blocked.' });
+            // First check if user exists at all
+            const existing = await colUsers.findOne({ $or: [{ username }, { email: username }] });
+            if (!existing) return sendJSON(res, 404, { success: false, message: 'User not found.' });
+            // Check if blocked
+            if (existing.blocked === true) return sendJSON(res, 401, { success: false, message: 'Account is blocked.' });
+            // Check password
+            if (existing.password !== password) return sendJSON(res, 401, { success: false, message: 'Invalid password.' });
             return sendJSON(res, 200, { success: true, user: {
-                id        : user.id || user._id?.toString(),
-                username  : user.username,
-                name      : user.name || user.username,
-                role      : user.role || 'volunteer',
-                email     : user.email || '',
-                department: user.department || '',
+                id        : existing.id || existing._id?.toString(),
+                username  : existing.username,
+                name      : existing.name || existing.username,
+                role      : existing.role || 'volunteer',
+                email     : existing.email || '',
+                department: existing.department || '',
             }});
         } catch (err) {
             console.error('POST /api/login error:', err.message);

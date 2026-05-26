@@ -97,6 +97,7 @@ function showAdminSection(sectionId) {
     if (sectionId === 'donationTracking') loadDonationTrackingCards();
     if (sectionId === 'dashboard')        loadLiveRecentDonations();
     if (sectionId === 'volunteers')       loadVolunteers();
+    if (sectionId === 'users')            loadUsers();
     if (sectionId === 'donationEntries')  loadAdminDonationEntries();
 }
 

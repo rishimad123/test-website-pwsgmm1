@@ -43,43 +43,60 @@ if (loginForm) {
     loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value;
+        const username  = document.getElementById('username').value.trim();
+        const password  = document.getElementById('password').value;
         const submitBtn = loginForm.querySelector('button[type="submit"]');
         if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Checking…'; }
 
-        // Step 1: Try to find user — check server first, then fallback to built-in list
         let user = null;
-        try {
-            const chkRes = await fetch(`/api/users`);
-            const chkData = await chkRes.json();
-            const serverUsers = chkData.users || [];
-            // Server users have password stored, match it
-            const matched = serverUsers.find(u =>
-                (u.username === username || u.email === username)
-            );
-            if (matched) {
-                // Fetch password from a separate secure check
-                // Since GET /api/users doesn't return password, we'll do a login check
-                const loginRes = await fetch('/api/login', {
-                    method : 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body   : JSON.stringify({ username, password })
-                });
-                if (loginRes.ok) {
-                    const loginData = await loginRes.json();
-                    if (loginData.success) user = loginData.user;
-                }
-            }
-        } catch (e) { /* server unreachable, fall through to hardcoded */ }
+        let stopFallback = false; // if server found the user but credentials were wrong, don't fallback
 
-        // Fallback: hardcoded built-in users
-        if (!user) {
+        // Step 1: Try server login (handles DB-created users)
+        try {
+            const loginRes  = await fetch('/api/login', {
+                method : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body   : JSON.stringify({ username, password })
+            });
+            const loginData = await loginRes.json();
+
+            if (loginRes.status === 200 && loginData.success) {
+                user = loginData.user;           // ✅ Server login success
+            } else if (loginRes.status === 401) {
+                stopFallback = true;             // ❌ Found on server but wrong password / blocked
+                const msg = loginData.message === 'Account is blocked.'
+                    ? '🔒 Your account has been blocked. Please contact the administrator.'
+                    : 'Invalid username or password!';
+                showAlert(msg, 'error');
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login'; }
+                return;
+            }
+            // If 404 → user not in DB → fall through to hardcoded list below
+        } catch (e) {
+            // Server unreachable — fall through to hardcoded
+        }
+
+        // Step 2: Fallback to hardcoded built-in users (admin, volunteer1, etc.)
+        if (!user && !stopFallback) {
             const found = users.find(u =>
                 (u.username === username || u.email === username) &&
                 u.password === password
             );
-            if (found) user = found;
+            if (found) {
+                // For hardcoded users, still check block status on server
+                if (found.role !== 'admin') {
+                    try {
+                        const blkRes  = await fetch(`/api/check-block?username=${encodeURIComponent(found.username)}`);
+                        const blkData = await blkRes.json();
+                        if (blkData.blocked) {
+                            showAlert('🔒 Your account has been blocked. Please contact the administrator.', 'error');
+                            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login'; }
+                            return;
+                        }
+                    } catch (_) { /* offline — allow */ }
+                }
+                user = found;
+            }
         }
 
         if (!user) {
@@ -88,31 +105,14 @@ if (loginForm) {
             return;
         }
 
-        // Step 2: Check if the user is blocked on the server (skip for admin)
-        if (user.role !== 'admin') {
-            try {
-                const res  = await fetch(`/api/check-block?username=${encodeURIComponent(user.username)}`);
-                const data = await res.json();
-                if (data.blocked) {
-                    showAlert('🔒 Your account has been blocked. Please contact the administrator.', 'error');
-                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login'; }
-                    return;
-                }
-            } catch (err) {
-                // Server unreachable — fail safe: allow login (offline mode)
-                console.warn('Block check failed, proceeding:', err.message);
-            }
-        }
-
-        // Step 3: Login success — store session and redirect
-        const userData = {
+        // Step 3: Login success
+        sessionStorage.setItem('currentUser', JSON.stringify({
             id      : user.id,
             name    : user.name,
             username: user.username,
             role    : user.role,
             email   : user.email
-        };
-        sessionStorage.setItem('currentUser', JSON.stringify(userData));
+        }));
         localStorage.removeItem('currentUser');
         localStorage.removeItem('rememberUser');
 

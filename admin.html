@@ -1178,6 +1178,7 @@ window._fmtBytesA = function(b) {
                             <thead>
                                 <tr>
                                     <th>Name</th>
+                                    <th>Username</th>
                                     <th>Email</th>
                                     <th>Role</th>
                                     <th>Status</th>
@@ -1185,30 +1186,7 @@ window._fmtBytesA = function(b) {
                                 </tr>
                             </thead>
                             <tbody id="userTableBody">
-                                <tr>
-                                    <td>Rajesh Kumar</td>
-                                    <td>rajesh@email.com</td>
-                                    <td><span class="badge badge-info">Volunteer</span></td>
-                                    <td><span class="badge badge-success">Active</span></td>
-                                    <td>
-                                        <div class="action-btns">
-                                            <button class="btn-icon btn-edit"><i class="fas fa-edit"></i></button>
-                                            <button class="btn-icon btn-delete"><i class="fas fa-trash"></i></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Amit Patel</td>
-                                    <td>amit@email.com</td>
-                                    <td><span class="badge badge-warning">Committee</span></td>
-                                    <td><span class="badge badge-success">Active</span></td>
-                                    <td>
-                                        <div class="action-btns">
-                                            <button class="btn-icon btn-edit"><i class="fas fa-edit"></i></button>
-                                            <button class="btn-icon btn-delete"><i class="fas fa-trash"></i></button>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <!-- Populated dynamically by loadUsers() -->
                             </tbody>
                         </table>
                     </div>
