@@ -321,59 +321,107 @@ async function loadBrReceivedBreakdown() {
     if (!tbodyEl) return;
     tbodyEl.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;">Loading&hellip;</td></tr>';
     try {
-        const res  = await fetch('/api/pauti-books');
-        const data = await res.json();
+        // Fetch all receipts and donation entries to find "Received" slips
+        const [pbRes, rcRes, deRes] = await Promise.all([
+            fetch('/api/pauti-books').catch(()=>({json:()=>({pautiBooks:[]})})),
+            fetch('/api/receipts').catch(()=>({json:()=>({receipts:[]})})),
+            fetch('/api/donation-entries').catch(()=>({json:()=>({entries:[]})}))
+        ]);
+        const pbData = await pbRes.json();
+        const rcData = await rcRes.json();
+        const deData = await deRes.json();
+
         const allSlips = [];
-        (data.pautiBooks || []).forEach(book => {
+        
+        // Pauti Slips
+        (pbData.pautiBooks || []).forEach(book => {
             (book.slips || []).forEach(slip => {
-                if (slip.uploadedAt && !slip.deleted && slip.amount && Number(slip.amount) > 0)
-                    allSlips.push({ ...slip, bookNumber: book.bookNumber });
+                if (slip.uploadedAt && !slip.deleted && (slip.status||'').toLowerCase() === 'received' && slip.paymentMode !== 'balance' && slip.amount && Number(slip.amount) > 0) {
+                    allSlips.push({
+                        receiptId  : `SLIP-${slip.slipNumber}`,
+                        name       : slip.donorName || '—',
+                        amount     : slip.amount || 0,
+                        passbookUrl: slip.photoUrl || null,
+                        status     : slip.status || 'received',
+                        type       : 'pauti-slip',
+                        paymentMode: slip.paymentMode || 'cash',
+                        _slipNum   : slip.slipNumber,
+                        _bookId    : book.pautiBookId,
+                        bookNumber : book.bookNumber,
+                        receiptNumber: slip.slipNumber
+                    });
+                }
             });
         });
-        allSlips.sort((a, b) => a.slipNumber - b.slipNumber);
+
+        // Regular Receipts
+        (rcData.receipts || []).forEach(r => {
+            if (!r.deleted && (r.status||'').toLowerCase() === 'received' && r.type !== 'balance') {
+                allSlips.push({
+                    ...r,
+                    receiptNumber: r.receiptNumber,
+                    bookNumber: r.bookNumber
+                });
+            }
+        });
+
+        // Donation Entries
+        (deData.entries || []).forEach(e => {
+            if (!e.deleted && (e.status||'').toLowerCase() === 'received' && (e.paymentMode||'').toLowerCase() !== 'balance') {
+                const donor = e.donorType === 'Business' ? (e.businessName || '—') : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+                allSlips.push({
+                    receiptId  : e.entryId || ('DE-' + e.receiptNumber),
+                    name       : donor,
+                    amount     : e.amount || 0,
+                    passbookUrl: e.photoUrl || null,
+                    status     : e.status || 'received',
+                    type       : 'donation-entry',
+                    paymentMode: e.paymentMode,
+                    _bookNum   : e.bookNumber,
+                    _recNum    : e.receiptNumber,
+                    bookNumber : e.bookNumber,
+                    receiptNumber: e.receiptNumber
+                });
+            }
+        });
+
+        // Sort by Book Number then Receipt Number
+        allSlips.sort((a, b) => {
+            if (a.bookNumber !== b.bookNumber) return (a.bookNumber || 0) - (b.bookNumber || 0);
+            return (a.receiptNumber || 0) - (b.receiptNumber || 0);
+        });
 
         const total = allSlips.reduce((s, x) => s + Number(x.amount), 0);
         const fmt   = n => '₹' + Number(n).toLocaleString('en-IN');
         if (totalEl) totalEl.textContent = fmt(total);
         if (countEl) countEl.textContent = allSlips.length;
 
-        // Group into books (50-slip ranges)
-        const bookGroups = {};
-        allSlips.forEach(s => {
-            const bn = s.bookNumber;
-            if (!bookGroups[bn]) bookGroups[bn] = { slips:[], total:0 };
-            bookGroups[bn].slips.push(s);
-            bookGroups[bn].total += Number(s.amount);
-        });
-
-        const books = Object.keys(bookGroups).sort((a,b)=>Number(a)-Number(b));
-        if (books.length === 0) {
-            tbodyEl.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:24px;">No Pauti slips with amounts found.</td></tr>';
+        if (allSlips.length === 0) {
+            tbodyEl.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:24px;">No received slips found.</td></tr>';
             return;
         }
-        tbodyEl.innerHTML = books.map(bn => {
-            const g    = bookGroups[bn];
-            const from = (Number(bn)-1)*50 + 1;
-            const to   = Number(bn)*50;
-            const avg  = g.slips.length > 0 ? g.total / g.slips.length : 0;
+
+        window._brHistoryStore = window._brHistoryStore || {};
+
+        tbodyEl.innerHTML = allSlips.map(r => {
+            const safeId   = (r.receiptId||'').replace(/'/g, "\\'");
+            const safeName = (r.name || '').replace(/'/g, "\\'");
+            const safePhoto = (r.passbookUrl||'').replace(/'/g,"\\'");
+            const editBtn = `<button class="btn-icon btn-edit" title="Edit Entry" onclick="openBrEditModal('${safeId}','${safeName}',${r.amount||0},'${r.paymentMode||'cash'}','${r.status||'received'}',${r.bookNumber||r._bookNum||0},${r.receiptNumber||r._recNum||r._slipNum||0},'${safePhoto}','${r.type}','${r._bookId||''}')"><i class="fas fa-edit"></i></button>`;
+            const delBtn = `<button class="btn-icon btn-delete" title="Delete" onclick="softDeleteReceipt('${safeId}','${safeName}')"><i class="fas fa-trash"></i></button>`;
+            
             return `<tr>
-                <td>Slips ${from}&ndash;${to} (Book #${bn})</td>
-                <td>${g.slips.length}</td>
-                <td><strong style="color:#1B5E20;">${fmt(g.total)}</strong></td>
-                <td style="color:#555;">${fmt(Math.round(avg))}</td>
+                <td>${r.bookNumber || '—'}</td>
+                <td>${r.receiptNumber || '—'}</td>
+                <td><strong style="color:#1B5E20;">${fmt(r.amount)}</strong></td>
+                <td><div class="action-btns">${editBtn}${delBtn}</div></td>
             </tr>`;
-        }).join('')
-        + `<tr style="background:#FFF8F0;">
-            <td><strong>Grand Total</strong></td>
-            <td><strong>${allSlips.length}</strong></td>
-            <td><strong style="color:var(--primary-color);font-size:1.05rem;">${fmt(total)}</strong></td>
-            <td></td>
-        </tr>`;
+        }).join('');
     } catch (e) {
+        console.error(e);
         if (tbodyEl) tbodyEl.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#c0392b;padding:20px;">⚠ Cannot reach server.</td></tr>';
     }
 }
-
 function saveBrOverride() {
     const input = document.getElementById('brOverrideInput');
     const val   = parseFloat(input?.value || '');

@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+/* Portable API base: strip hardcoded localhost:3000 → relative URL on any host */
+(function() {
+  var _f = window.fetch.bind(window);
+  window.fetch = function(url, opts) {
+    if (typeof url === 'string' && url.startsWith('http://localhost:3000'))
+      url = url.slice('http://localhost:3000'.length);
+    return _f(url, opts);
+  };
+})();
+/* Fix any absolute photo URL so it works on mobile (LAN IP, not localhost) */
+window.fixUrl = function(url) {
+  if (!url) return '';
+  if (url.startsWith('http://localhost:3000')) return url.slice('http://localhost:3000'.length);
+  return url;
+};
+</script>
+<script>
+/* Canvas image compressor — used by all admin photo upload handlers */
+window._compressImage = function(file, targetKB, callback) {
+  var MAX_BYTES = (targetKB || 950) * 1024;
+  var img = new Image();
+  var blobUrl = URL.createObjectURL(file);
+  img.onload = function() {
+    URL.revokeObjectURL(blobUrl);
+    var w = img.naturalWidth, h = img.naturalHeight;
+    if (w > 1920) { h = Math.round(h * 1920 / w); w = 1920; }
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    if (file.size <= MAX_BYTES) {
+      canvas.toBlob(function(b) { callback(b); }, 'image/jpeg', 0.9);
+      return;
+    }
+    var lo = 0.1, hi = 0.92, q = 0.82;
+    function tryQ(quality) {
+      canvas.toBlob(function(b) {
+        if (b.size <= MAX_BYTES || (hi - lo) < 0.03) { callback(b); }
+        else { hi = quality; q = (lo + hi) / 2; tryQ(q); }
+      }, 'image/jpeg', quality);
+    }
+    tryQ(q);
+  };
+  img.onerror = function() { callback(null); };
+  img.src = blobUrl;
+};
+window._fmtBytesA = function(b) {
+  return b < 1024 ? b + ' B' : b < 1048576 ? (b/1024).toFixed(1) + ' KB' : (b/1048576).toFixed(2) + ' MB';
+};
+</script>
+    <!-- FILE:// REDIRECT — if opened as a local file, switch to the server -->
+    <script>
+      if (window.location.protocol === 'file:') {
+        var page = window.location.pathname.split('/').pop();
+        var hash = window.location.hash || '';
+        window.location.replace('/' + page + hash);
+      }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Patelwadi Ganesh Mitramandal</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS for client-side Excel parsing -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            background: #F5F6FA;
+        }
+        
+        .admin-dashboard {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .admin-sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #2C3E50 0%, #34495E 100%);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .admin-sidebar-header {
+            padding: 30px 20px;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .admin-sidebar-header h2 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-size: 1.5rem;
+        }
+        
+        .admin-sidebar-header p {
+            color: #BDC3C7;
+            font-size: 0.9rem;
+        }
+        
+        .admin-menu {
+            list-style: none;
+            padding: 20px 0;
+        }
+        
+        .admin-menu li {
+            margin: 5px 0;
+        }
+        
+        .admin-menu a {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 25px;
+            color: #BDC3C7;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .admin-menu a:hover,
+        .admin-menu a.active {
+            background: rgba(255,107,53,0.15);
+            color: var(--primary-color);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .admin-menu a i {
+            width: 24px;
+            font-size: 1.2rem;
+        }
+        
+        /* Main Content */
+        .admin-main {
+            flex: 1;
+            margin-left: 280px;
+        }
+        
+        /* Top Bar */
+        .admin-topbar {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .admin-topbar h1 {
+            color: var(--dark-color);
+            font-size: 1.8rem;
+        }
+        
+        .admin-user-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .admin-notifications {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .admin-notifications i {
+            font-size: 1.5rem;
+            color: var(--dark-color);
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        
+        .admin-user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 15px;
+            background: #F8F9FA;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-user-profile:hover {
+            background: var(--light-color);
+        }
+        
+        .admin-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        /* Content Area */
+        .admin-content {
+            padding: 30px;
+        }
+        
+        /* Dashboard Cards */
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .admin-stat-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        
+        .stat-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        
+        .stat-icon.blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .stat-icon.green { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .stat-icon.orange { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+        .stat-icon.purple { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; }
+        
+        .stat-details h3 {
+            font-size: 2.2rem;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+        
+        .stat-details p {
+            color: #7F8C8D;
+            font-size: 0.95rem;
+        }
+        
+        .stat-trend {
+            color: var(--success);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        /* Card */
+        .admin-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #F0F0F0;
+        }
+        
+        .card-header h3 {
+            color: var(--dark-color);
+            font-size: 1.4rem;
+        }
+        
+        .btn-small {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+        }
+        
+        /* Table */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .admin-table thead {
+            background: #F8F9FA;
+        }
+        
+        .admin-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark-color);
+            border-bottom: 2px solid #E0E0E0;
+        }
+        
+        .admin-table td {
+            padding: 15px;
+            border-bottom: 1px solid #F0F0F0;
+            color: #555;
+        }
+        
+        .admin-table tr:hover {
+            background: #F8F9FA;
+        }
+        
+        /* Badges */
+        .badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: #D5F4E6;
+            color: var(--success);
+        }
+        
+        .badge-warning {
+            background: #FFF3E0;
+            color: var(--warning);
+        }
+        
+        .badge-danger {
+            background: #FFEBEE;
+            color: var(--danger);
+        }
+        
+        .badge-info {
+            background: #E3F2FD;
+            color: #2196F3;
+        }
+        
+        /* Action Buttons */
+        .action-btns {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-edit {
+            background: #E3F2FD;
+            color: #2196F3;
+        }
+        
+        .btn-edit:hover {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-delete {
+            background: #FFEBEE;
+            color: var(--danger);
+        }
+        
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .modal-close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .modal-close:hover {
+            color: var(--danger);
+        }
+        
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--dark-color);
+            font-weight: 600;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #E0E0E0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        /* Content Sections */
+        .content-section {
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        /* Charts Placeholder */
+        .chart-container {
+            height: 300px;
+            background: #F8F9FA;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+        }
+        
+        /* ── Admin Passbook Receipts styles ───────────────────────────── */
+        #adminPbLightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.88);
+            z-index: 9000;
+            align-items: center;
+            justify-content: center;
+        }
+        #adminPbLightbox.active { display: flex; }
+        #adminPbLightbox img {
+            max-width: 90vw;
+            max-height: 88vh;
+            border-radius: 12px;
+            box-shadow: 0 8px 40px rgba(0,0,0,.6);
+        }
+        #adminPbLightboxClose {
+            position: absolute;
+            top: 18px; right: 24px;
+            font-size: 2.4rem;
+            color: #fff;
+            cursor: pointer;
+            line-height: 1;
+            user-select: none;
+        }
+        #adminEditModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.55);
+            z-index: 9100;
+            align-items: center;
+            justify-content: center;
+        }
+        #adminEditModal.active { display: flex; }
+        #adminEditModal .adm-edit-box {
+            background: #fff;
+            padding: 32px 28px;
+            border-radius: 14px;
+            width: 360px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.2);
+        }
+        #adminEditModal h4 { margin-bottom: 6px; color: var(--dark-color); }
+        #adminEditModal .adm-edit-sub {
+            font-size: .85rem; color: #777; margin-bottom: 16px;
+        }
+        #adminEditModal input {
+            width: 100%; padding: 10px 12px;
+            border: 2px solid #E0E0E0; border-radius: 8px;
+            font-size: 1rem; margin-bottom: 16px;
+            box-sizing: border-box;
+        }
+        #adminEditModal input:focus { outline: none; border-color: var(--primary-color); }
+        .adm-edit-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        /* Passbook table receipt-id column */
+        .pb-receipt-id {
+            font-size: .78rem;
+            color: #999;
+            font-family: monospace;
+        }
+
+        /* ── Expenses Management styles ─────────────────────────────────── */
+        .exp-summary-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+        .exp-filter-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .exp-filter-bar input,
+        .exp-filter-bar select {
+            padding: 9px 13px;
+            border: 2px solid #E0E0E0;
+            border-radius: 8px;
+            font-size: .92rem;
+            font-family: inherit;
+            transition: border-color .3s;
+        }
+        .exp-filter-bar input:focus,
+        .exp-filter-bar select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        .exp-filter-bar .exp-search  { flex: 1; min-width: 200px; }
+        .exp-tfoot-total td {
+            padding: 14px 15px;
+            font-weight: 700;
+            font-size: 1rem;
+            background: #f8f9fa;
+        }
+        .exp-cat-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: .78rem;
+            font-weight: 600;
+            background: #E3F2FD;
+            color: #1565C0;
+            white-space: nowrap;
+        }
+        .exp-modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 600px) {
+            .exp-modal-grid { grid-template-columns: 1fr; }
+        }
+        .exp-section-label {
+            font-size: .78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--primary-color);
+            margin: 14px 0 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px dashed #F0C0A0;
+        }
+
+        /* ── Financial Statement styles ───────────────────────────────── */
+        .fin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .95rem;
+        }
+        .fin-table thead tr {
+            background: linear-gradient(135deg, #2C3E50, #34495E);
+            color: #fff;
+        }
+        .fin-table th {
+            padding: 13px 15px;
+            text-align: right;
+            font-weight: 600;
+            font-size: .88rem;
+            white-space: nowrap;
+        }
+        .fin-table th:first-child { text-align: left; }
+        .fin-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #F0F0F0;
+            color: #444;
+            text-align: right;
+        }
+        .fin-table td:first-child { text-align: left; font-weight: 600; }
+        .fin-table tr:hover { background: #FAFAFA; }
+        .fin-table .fin-total-row td {
+            background: #FFF8F0;
+            font-weight: 700;
+            color: var(--primary-color);
+            border-top: 2px solid var(--primary-color);
+            font-size: 1rem;
+        }
+        .fin-table .fin-balance-row td {
+            background: #F0FFF4;
+            font-weight: 700;
+            color: #1E7E34;
+            border-top: 2px solid #27AE60;
+            font-size: 1rem;
+        }
+        .fin-year-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #FF6B35, #FF8C42);
+            color: #fff;
+            font-size: .82rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+        }
+        .fin-summary-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+        .fin-modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 600px) {
+            .fin-modal-grid { grid-template-columns: 1fr; }
+        }
+        /* ── Admin hamburger: hidden on desktop, shown on mobile ── */
+        #adminHamburger { display: none; }
+
+        /* ── Admin Mobile Responsive (single, consolidated block) ── */
+        @media (max-width: 968px) {
+            #adminHamburger {
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+            }
+            .admin-sidebar {
+                width: 280px !important;
+                position: fixed !important;
+                left: -280px !important;
+                top: 0 !important;
+                height: 100vh !important;
+                z-index: 1000 !important;
+                overflow-y: auto !important;
+                transition: left .28s cubic-bezier(.4,0,.2,1) !important;
+                box-shadow: none !important;
+            }
+            .admin-sidebar.sidebar-open {
+                left: 0 !important;
+                box-shadow: 4px 0 24px rgba(0,0,0,.18) !important;
+            }
+            /* Restore full sidebar content on mobile (undo icon-only mode) */
+            .admin-sidebar-header { display: block !important; }
+            .admin-menu span      { display: inline !important; }
+            .admin-menu a         { justify-content: flex-start !important; }
+            /* Main content fills full width */
+            .admin-main  { margin-left: 0 !important; }
+            .admin-topbar { padding: 12px 16px !important; }
+        }
+        @media (max-width: 600px) {
+            .admin-content   { padding: 14px !important; }
+            .admin-stats     { grid-template-columns: 1fr 1fr !important; }
+            .admin-stat-card { padding: 14px !important; }
+            .card-header     { flex-wrap: wrap; gap: 8px; }
+        }
+
+        /* ===== ADMIN MOBILE UX â€” injected ===== */
+        /* iOS input zoom prevention */
+        .admin-content input, .admin-content select, .admin-content textarea,
+        .modal-content input, .modal-content select, .modal-content textarea,
+        .adm-edit-box input { font-size: max(16px, 1rem) !important; }
+
+        /* Touch-friendly: all buttons min 44px tap target */
+        .admin-menu a      { min-height: 48px; }
+        .btn, .btn-small   { min-height: 44px; }
+        .btn-icon          { width: 40px; height: 40px; }
+
+        /* Table wrappers â€“ horizontal scroll on mobile */
+        /* Table wrappers â€“ horizontal scroll on mobile */
+        .admin-card { overflow-x: hidden; }
+        .admin-table { min-width: unset; }
+
+        /* Topbar title shrinks on small screens */
+        @media (max-width: 768px) {
+            .admin-table, .fin-table, 
+            .admin-table tbody, .fin-table tbody,
+            .admin-table tr, .fin-table tr, 
+            .admin-table td, .fin-table td {
+                display: block;
+                width: 100%;
+                white-space: normal !important;
+            }
+            .admin-table thead, .fin-table thead {
+                display: none;
+            }
+            .admin-table tr, .fin-table tr {
+                margin-bottom: 12px;
+                border: 1px solid #eee;
+                border-radius: 8px;
+                padding: 4px;
+                background: #fff;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            }
+            .admin-table td, .fin-table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                padding: 10px 12px !important;
+                border-bottom: 1px solid #f5f5f5;
+            }
+            .admin-table td:last-child, .fin-table td:last-child {
+                border-bottom: none;
+            }
+            .admin-table td::before, .fin-table td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #666;
+                margin-right: 15px;
+                text-align: left;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .admin-topbar h1 { font-size: 1.1rem !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%; margin: 0; }
+            .admin-topbar    { flex-wrap: nowrap; gap: 6px; align-items: center; justify-content: space-between; }
+            .admin-user-section { gap: 8px; }
+            .admin-user-profile { padding: 4px 8px; }
+            .admin-avatar   { width: 32px; height: 32px; font-size: 0.9rem; }
+            
+            /* Hide profile name on mobile, keep avatar */
+            .admin-user-profile > div:not(.admin-avatar) { display: none; }
+
+            /* Stat cards â€“ 2 col on phones */
+            .admin-stats { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+            .admin-stat-card { padding: 14px 10px !important; flex-direction: column; text-align: center; gap: 8px; }
+            .stat-icon { width: 48px; height: 48px; font-size: 1.4rem; margin: 0 auto; }
+            .stat-details h3 { font-size: 1.5rem; }
+
+            /* Modals â€“ full-width sheet on mobile */
+            .modal-content {
+                padding: 20px 16px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                border-radius: 16px 16px 0 0 !important;
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                max-height: 92vh !important;
+            }
+            .modal { align-items: flex-end !important; }
+
+            /* Admin card padding */
+            .admin-card { padding: 16px !important; }
+            .card-header h3 { font-size: 1.1rem; }
+
+            /* Expenses / financial filter bars */
+            .exp-filter-bar { flex-direction: column; }
+            .exp-filter-bar input,
+            .exp-filter-bar select { width: 100%; }
+            .exp-summary-strip,
+            .fin-summary-strip { grid-template-columns: 1fr 1fr; gap: 12px; }
+
+            /* Badge wrapping */
+            .action-btns { flex-wrap: wrap; }
+        }
+
+        /* ── Admin Donation Entries Responsiveness Additions ── */
+        
+        /* Prevent iOS auto-zoom on dynamically created modals appended to document.body */
+        #adeEditModal input, #adeEditModal select,
+        #adeBldgModal input, #adeAreaModalEl input, #adeLmModal input {
+            font-size: max(16px, 1rem) !important;
+        }
+
+        /* Collapse 3-column name fields to 1-column on tablet and mobile */
+        @media (max-width: 900px) {
+            #adeIndFields, #aneIndFields, .ade-ind-grp {
+                grid-template-columns: 1fr !important;
+            }
+            #adeBizFields, #aneBizFields {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            /* Collapse all 2-column and 3-column grids inside donation entries and edit modal to 1 column */
+            #donationEntries div[style*="grid-template-columns:1fr 1fr"],
+            #donationEntries div[style*="grid-template-columns:1fr 1fr 1fr"],
+            #adeEditModal div[style*="grid-template-columns:1fr 1fr"],
+            #adeEditModal div[style*="grid-template-columns:1fr 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            /* Collapse payment mode grid to 3-column */
+            #donationEntries div[style*="grid-template-columns:repeat(5,1fr)"] {
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
+            
+            /* Photo upload button and submit button adjustments */
+            #apbCameraBtn, #anePhotoInput + button, #adeSubmitBtn, #aneSaveBtn {
+                width: 100% !important;
+                max-width: 100% !important;
+                flex: none !important;
+            }
+        }
+        
+        @media (max-width: 380px) {
+            /* Collapse payment mode grid to 2-column */
+            #donationEntries div[style*="grid-template-columns:repeat(5,1fr)"],
+            #donationEntries div[style*="grid-template-columns:repeat(3,1fr)"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            
+            /* Collapse admin stats list on extremely small devices */
+            .admin-stats {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        
+        /* Edit Modal + Balance/Pending Modal Bottom-sheet on mobile */
+        @media (max-width: 576px) {
+            #adeEditModal,
+            #brEditModal {
+                align-items: flex-end !important;
+            }
+            #adeEditModal > div,
+            #brEditModal > div {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                border-radius: 16px 16px 0 0 !important;
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                max-height: 92vh !important;
+                overflow-y: auto !important;
+                padding: 20px 16px !important;
+                box-sizing: border-box !important;
+            }
+            
+            /* Management Modals Bottom-sheet on mobile */
+            #adeBldgModal, #adeAreaModalEl, #adeLmModal {
+                align-items: flex-end !important;
+            }
+            #adeBldgModal > div, #adeAreaModalEl > div, #adeLmModal > div {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                border-radius: 16px 16px 0 0 !important;
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                max-height: 92vh !important;
+                overflow-y: auto !important;
+                padding: 20px 16px !important;
+                box-sizing: border-box !important;
+            }
+        }
+
+
+        @media (max-width: 768px) {
+            #mobileMenuBtn { display: block !important; }
+            .admin-sidebar {
+                display: none;
+            }
+            .admin-sidebar.mobile-open {
+                display: block !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 280px !important;
+                height: 100vh !important;
+                z-index: 9998 !important;
+                overflow-y: auto !important;
+            }
+            .admin-main {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+            .admin-content {
+                padding: 12px !important;
+            }
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            .admin-card {
+                padding: 12px !important;
+            }
+        }
+        </style>
+</head>
+<body>
+  <div class="admin-dashboard">
+<button onclick="toggleAdminSidebar()" style="display:none;position:fixed;top:12px;left:12px;z-index:9999;background:var(--primary-color);color:white;border:none;border-radius:8px;padding:8px 12px;font-size:1.2rem;cursor:pointer;" id="mobileMenuBtn">☰</button>
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-header">
+                <h2>Admin Panel</h2>
+                <p id="adminName">Administrator</p>
+            </div>
+            
+            <ul class="admin-menu">
+                <li>
+                    <a href="#" class="active" onclick="showAdminSection('dashboard')">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('users')">
+                        <i class="fas fa-users"></i>
+                        <span>Manage Users</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('volunteers')">
+                        <i class="fas fa-user-friends"></i>
+                        <span>Volunteers</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('committeeMembers')">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Committee Members</span>
+                    </a>
+                </li>
+                
+                <li>
+                    <a href="#" onclick="showAdminSection('donationTracking')">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <span>Donations</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#" onclick="showAdminSection('expenses')">
+                        <i class="fas fa-wallet"></i>
+                        <span>Expenses</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('gallery')">
+                        <i class="fas fa-images"></i>
+                        <span>Gallery</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('events')">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Events</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('reports')">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('donationEntries')">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>Donation Data Entry</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('balanceRecovery')">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <span>Balance/Pending Recovery</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('donations')">
+                        <i class="fas fa-file-excel"></i>
+                        <span>Upload Excel</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('settings')">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="adminLogout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Top Bar -->
+            <div class="admin-topbar">
+                <button id="adminHamburger" onclick="toggleAdminSidebar()" aria-label="Open menu" style="background:none;border:none;cursor:pointer;padding:6px 10px;margin-right:4px;border-radius:8px;color:#555;font-size:1.3rem;vertical-align:middle;"><i class="fas fa-bars"></i></button><h1 id="pageTitle">Dashboard Overview</h1>
+                <div class="admin-user-section">
+                    <div class="admin-notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">5</span>
+                    </div>
+                    <div class="admin-user-profile">
+                        <div class="admin-avatar" id="topNavAvatar">A</div>
+                        <div>
+                            <strong id="topNavName">Admin User</strong>
+                            <p id="topNavRole" style="font-size: 0.8rem; color: #777; margin: 0;">Administrator</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Content Area -->
+            <div class="admin-content">
+                <!-- Dashboard Section -->
+                <div id="dashboard" class="content-section active">
+                    <!-- Stats Cards -->
+                    <div class="admin-stats">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon blue">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>150</h3>
+                                <p>Total Volunteers</p>
+                                <span class="stat-trend">↑ 12% this month</span>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-stat-card">
+                            <div class="stat-icon green">
+                                <i class="fas fa-rupee-sign"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>₹5,50,000</h3>
+                                <p>Total Donations</p>
+                                <span class="stat-trend">↑ 28% this month</span>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-stat-card">
+                            <div class="stat-icon orange">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>12</h3>
+                                <p>Upcoming Events</p>
+                                <span class="stat-trend">Next: 5 days</span>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-stat-card">
+                            <div class="stat-icon purple">
+                                <i class="fas fa-images"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>245</h3>
+                                <p>Gallery Photos</p>
+                                <span class="stat-trend">↑ 45 new</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Row -->
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:28px;">
+                        <!-- One-Click Excel Upload Card -->
+                        <div id="quickUploadCard" style="background:linear-gradient(135deg,#1D6F42 0%,#2E7D32 50%,#1B5E20 100%);border-radius:16px;padding:22px 24px;color:#fff;display:flex;align-items:center;gap:18px;box-shadow:0 6px 24px rgba(29,111,66,.35);cursor:pointer;transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden;" onclick="triggerQuickUpload()" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 32px rgba(29,111,66,.45)'" onmouseout="this.style.transform='';this.style.boxShadow='0 6px 24px rgba(29,111,66,.35)'">
+                            <div style="background:rgba(255,255,255,.15);border-radius:14px;width:56px;height:56px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fas fa-file-excel" style="font-size:1.8rem;"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-weight:700;font-size:1.05rem;letter-spacing:.02em;">Upload Donation Excel</div>
+                                <div style="font-size:.82rem;opacity:.85;margin-top:3px;">Click to select &amp; upload instantly</div>
+                                <div id="quickUploadBadge" style="display:inline-block;margin-top:6px;background:rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:.75rem;font-weight:600;">One-Click Upload</div>
+                            </div>
+                            <i class="fas fa-cloud-upload-alt" style="font-size:2.2rem;opacity:.2;position:absolute;right:16px;bottom:10px;"></i>
+                            <input type="file" id="quickUploadInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleQuickUpload(event)">
+                        </div>
+                        <!-- Upload mode toggle -->
+                        <div style="background:#fff;border-radius:16px;padding:20px 22px;box-shadow:0 2px 12px rgba(0,0,0,.07);border:1.5px solid #e8f5e9;">
+                            <div style="font-weight:700;color:#2E7D32;margin-bottom:10px;"><i class="fas fa-sliders-h" style="margin-right:6px;"></i>Upload Mode</div>
+                            <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer;font-size:.9rem;color:#333;">
+                                <input type="radio" name="quickUploadMode" value="append" checked id="quickModeAppend"> <span>Append to existing records</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;color:#333;">
+                                <input type="radio" name="quickUploadMode" value="replace" id="quickModeReplace"> <span>Replace all data (fresh upload)</span>
+                            </label>
+                            <div id="quickUploadStatus" style="display:none;margin-top:10px;padding:8px 12px;border-radius:8px;font-size:.85rem;font-weight:600;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Live Recent Donations -->
+                    <div class="admin-card" style="position:relative;">
+                        <div class="card-header">
+                            <h3 style="display:flex;align-items:center;gap:10px;">Recent Pauti Submissions
+                                <span id="liveBadge" style="display:inline-flex;align-items:center;gap:5px;background:#FFEBEE;color:#C62828;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.04em;">
+                                    <span style="width:7px;height:7px;border-radius:50%;background:#E53935;animation:livePulse 1.2s infinite;"></span>LIVE
+                                </span>
+                            </h3>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <span id="liveLastRefreshed" style="font-size:.75rem;color:#aaa;"></span>
+                                <button class="btn btn-primary btn-small" onclick="loadLiveRecentDonations()">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <button class="btn btn-small" style="background:#E8F5E9;color:#1B5E20;" onclick="showAdminSection('pautiBooks')">
+                                    <i class="fas fa-book-open"></i> All Slips
+                                </button>
+                            </div>
+                        </div>
+                        <style>@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.3)}}</style>
+                        <div style="overflow-x:auto;">
+                        <table class="admin-table" id="liveRecentDonationsTable">
+                            <thead>
+                                <tr>
+                                    <th>Slip #</th>
+                                    <th>Donor Name</th>
+                                    <th>Amount (&#8377;)</th>
+                                    <th>Mode</th>
+                                    <th style="color:#3949AB;">Volunteer</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="liveRecentDonationsTbody">
+                                <tr><td colspan="6" style="text-align:center;color:#aaa;padding:24px;">Loading live data&hellip;</td></tr>
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+
+                    <!-- Analytics placeholder -->
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3>Donation Analytics</h3>
+                        </div>
+                        <div class="chart-container">
+                            <i class="fas fa-chart-bar" style="font-size: 3rem;"></i>
+                            <p style="margin-left: 20px;">Chart visualization here</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Users Management Section -->
+                <div id="users" class="content-section">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3>User Management</h3>
+                            <button class="btn btn-primary btn-small" onclick="openModal('addUser')">
+                                <i class="fas fa-plus"></i> Add User
+                            </button>
+                        </div>
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                                <!-- Populated dynamically by loadUsers() -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Volunteers Section -->
+                <div id="volunteers" class="content-section">
+                    <!-- Stats strip -->
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;margin-bottom:22px;" id="volStatsStrip">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                            <div class="stat-details">
+                                <h3 id="volStatTotal" style="font-size:1.6rem;">0</h3>
+                                <p>Total Volunteers</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="stat-icon green"><i class="fas fa-user-check"></i></div>
+                            <div class="stat-details">
+                                <h3 id="volStatActive" style="font-size:1.6rem;">0</h3>
+                                <p>Active</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="stat-icon orange"><i class="fas fa-user-slash"></i></div>
+                            <div class="stat-details">
+                                <h3 id="volStatBlocked" style="font-size:1.6rem;">0</h3>
+                                <p>Blocked</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-user-friends" style="color:var(--primary-color);margin-right:8px;"></i>Volunteer Management</h3>
+                            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                                <button class="btn btn-primary btn-small" onclick="loadVolunteers()">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <button class="btn btn-small" style="background:linear-gradient(135deg,#1D6F42,#2E7D32);color:#fff;" onclick="volExportCSV()">
+                                    <i class="fas fa-download"></i> Export CSV
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Status message -->
+                        <div id="volStatus" style="display:none;padding:10px 16px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
+
+                        <!-- Search bar -->
+                        <div style="margin-bottom:14px;">
+                            <input type="text" id="volSearchInput" placeholder="🔍 Search by name or username…"
+                                style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.92rem;box-sizing:border-box;"
+                                oninput="volFilter()">
+                        </div>
+
+                        <div style="overflow-x:auto;">
+                            <table class="admin-table" id="volTable">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>User Details</th>
+                                        <th>Role</th>
+                                        <th>Email</th>
+                                        <th>Department</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="volTbody">
+                                    <tr><td colspan="9" style="text-align:center;color:#aaa;padding:30px;">Loading volunteers…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Donation Tracking Section -->
+                <div id="donationTracking" class="content-section">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3>Donation Tracking</h3>
+                            <button class="btn btn-primary btn-small" onclick="loadDonationTrackingCards()">
+                                <i class="fas fa-sync-alt"></i> Refresh Live Data
+                            </button>
+                        </div>
+                        <!-- Live stat cards -->
+                        <div class="admin-stats" style="margin-top:20px;">
+                            <!-- Received card -->
+                            <div class="admin-stat-card" id="dtReceivedCard"
+                                 style="cursor:pointer;border:2px solid transparent;transition:all .2s;"
+                                 onclick="navToBalanceRecovery('received')"
+                                 onmouseover="this.style.borderColor='#27AE60'" onmouseout="this.style.borderColor='transparent'">
+                                <div class="stat-icon green"><i class="fas fa-money-bill-wave"></i></div>
+                                <div class="stat-details">
+                                    <h3 id="dtTotalReceived" style="color:#1B5E20;">&#8377;&mdash;</h3>
+                                    <p>Total Received <i class="fas fa-arrow-right" style="font-size:.7rem;color:#27AE60;"></i></p>
+                                    <small id="dtReceivedCount" style="color:#888;"></small>
+                                </div>
+                            </div>
+                            <!-- Pending card -->
+                            <div class="admin-stat-card" id="dtPendingCard"
+                                 style="cursor:pointer;border:2px solid transparent;transition:all .2s;"
+                                 onclick="navToBalanceRecovery('pending')"
+                                 onmouseover="this.style.borderColor='#E67E22'" onmouseout="this.style.borderColor='transparent'">
+                                <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
+                                <div class="stat-details">
+                                    <h3 id="dtTotalPending" style="color:#E65100;">&#8377;&mdash;</h3>
+                                    <p>Pending <i class="fas fa-arrow-right" style="font-size:.7rem;color:#E67E22;"></i></p>
+                                    <small id="dtPendingCount" style="color:#888;"></small>
+                                </div>
+                            </div>
+                            <!-- Slips card -->
+                            <div class="admin-stat-card">
+                                <div class="stat-icon blue"><i class="fas fa-receipt"></i></div>
+                                <div class="stat-details">
+                                    <h3 id="dtTotalSlips">0</h3>
+                                    <p>Total Slips Submitted</p>
+                                    <small id="dtSlipRange" style="color:#888;"></small>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Hint -->
+                        <p style="font-size:.82rem;color:#aaa;margin-top:4px;">&#x1F4A1; Click <strong>Received</strong> or <strong>Pending</strong> to view details in Balance Recovery.</p>
+                    </div>
+                </div>
+
+
+                <!-- Expenses Management Section -->
+                <div id="expenses" class="content-section">
+
+                    <!-- Summary strip -->
+                    <div class="exp-summary-strip" id="expSummaryStrip">
+                        <div class="admin-stat-card">
+                            <div class="stat-icon blue"><i class="fas fa-rupee-sign"></i></div>
+                            <div class="stat-details">
+                                <h3 id="expGrandTotal" style="font-size:1.6rem;">&#8377;0</h3>
+                                <p>Grand Total</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="stat-icon green"><i class="fas fa-list-ol"></i></div>
+                            <div class="stat-details">
+                                <h3 id="expEntryCount" style="font-size:1.6rem;">0</h3>
+                                <p>Total Entries</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="stat-icon orange"><i class="fas fa-filter"></i></div>
+                            <div class="stat-details">
+                                <h3 id="expFilteredCount" style="font-size:1.6rem;">0</h3>
+                                <p>Filtered Entries</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="stat-icon purple"><i class="fas fa-search-dollar"></i></div>
+                            <div class="stat-details">
+                                <h3 id="expFilteredTotal" style="font-size:1.6rem;">&#8377;0</h3>
+                                <p>Filtered Total</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-wallet" style="color:var(--primary-color);margin-right:8px;"></i>Expenses Management</h3>
+                            <div style="display:flex;gap:10px;">
+                                <button class="btn btn-primary btn-small" onclick="loadExpenses()">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <button class="btn btn-primary btn-small" onclick="openExpenseModal()" id="expAddBtn">
+                                    <i class="fas fa-plus"></i> Add Expense
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Filter bar -->
+                        <div class="exp-filter-bar">
+                            <input type="text" class="exp-search" id="expFilterSearch"
+                                   placeholder="Search particulars, reference, common header..."
+                                   oninput="renderExpensesTable()">
+                            <select id="expFilterCategory" onchange="renderExpensesTable()">
+                                <option value="">All Categories</option>
+                                <option>Advertising and Printing</option>
+                                <option>Ganpati Expenses</option>
+                                <option>Mandap and Decoration Expense</option>
+                                <option>Electricity Expense</option>
+                                <option>Transportation Expense</option>
+                                <option>Sound and Banjo Expense</option>
+                                <option>Satyanarayan Pooja and Pooja Expense</option>
+                                <option>Ganpati Aagman</option>
+                                <option>Ganpati Visarjan</option>
+                                <option>Other Expenses</option>
+                            </select>
+                            <input type="date" id="expFilterFrom" title="From date" onchange="renderExpensesTable()">
+                            <input type="date" id="expFilterTo"   title="To date"   onchange="renderExpensesTable()">
+                            <button class="btn btn-small" style="background:#eee;color:#555;" onclick="clearExpenseFilters()">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                        </div>
+
+                        <!-- Table -->
+                        <div style="overflow-x:auto;">
+                            <table class="admin-table" id="expensesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Sr. No.</th>
+                                        <th>Date</th>
+                                        <th>Common Header</th>
+                                        <th>Category</th>
+                                        <th>Subcategory / Details</th>
+                                        <th>Particulars</th>
+                                        <th>Ref. No.</th>
+                                        <th>Amount (&#8377;)</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expensesTbody">
+                                    <tr><td colspan="9" style="text-align:center;color:#aaa;padding:30px;">Loading expenses&hellip;</td></tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="exp-tfoot-total">
+                                        <td colspan="7" style="text-align:right;">Filtered Total:</td>
+                                        <td id="expFooterTotal">&#8377;0</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ Pauti Books Section ═══════════ -->
+                <div id="pautiBooks" class="content-section">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-book-open" style="color:var(--primary-color);margin-right:8px;"></i>Pauti Book Management</h3>
+                            <button class="btn btn-primary btn-small" onclick="loadPautiBooks()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                        <!-- Auto-assignment info banner -->
+                        <div style="display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,#EEF2FF,#E8F5E9);border:1.5px solid #C5CAE9;border-radius:10px;padding:12px 18px;margin-bottom:16px;">
+                            <i class="fas fa-magic" style="color:#3949AB;font-size:1.3rem;"></i>
+                            <div>
+                                <strong style="color:#1A237E;font-size:.92rem;">Automatic Sequential Assignment</strong>
+                                <p style="margin:2px 0 0;font-size:.83rem;color:#555;">Books are created automatically as volunteers submit slips. Every submission claims the next available slip number — no manual assignment needed.</p>
+                                <span id="pautiGlobalStats" style="font-size:.8rem;color:#3949AB;font-weight:600;"></span>
+                            </div>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="admin-table" id="pautiBooksTable">
+                                <thead>
+                                    <tr>
+                                        <th>Book #</th>
+                                        <th>Slip Range</th>
+                                        <th>Uploaded Slips</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pautiBooksTbody">
+                                    <tr><td colspan="5" style="text-align:center;color:#aaa;padding:30px;">Loading Pauti Books&hellip;</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Slip detail panel (shown when admin clicks View Slips) -->
+                    <div class="admin-card" id="pautiSlipPanel" style="display:none;">
+                        <div class="card-header">
+                            <h3 id="pautiSlipPanelTitle"><i class="fas fa-receipt" style="color:var(--primary-color);margin-right:8px;"></i>Book Slips</h3>
+                            <button class="btn btn-small" style="background:#eee;color:#555;" onclick="closePautiSlipPanel()">&#10005; Close</button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="admin-table" id="pautiSlipsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Slip #</th>
+                                        <th>Donor Name</th>
+                                        <th>Amount (&#8377;)</th>
+                                        <th>Mode</th>
+                                        <th>Check #</th>
+                                        <th style="color:#3949AB;">Submitted By</th>
+                                        <th>Photo</th>
+                                        <th>Uploaded</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pautiSlipsTbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ Balance/Pending Recovery Section ═══════════ -->
+                
