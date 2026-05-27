@@ -1193,6 +1193,7 @@ const server = http.createServer(async (req, res) => {
                 landmark         : (landmark         || '').trim() || null,
                 amount           : amount != null && !isNaN(Number(amount)) ? Number(amount) : null,
                 paymentMode      : paymentMode,
+                status           : paymentMode === 'Balance' ? 'Balance' : 'Received',
                 referenceNumber  : (referenceNumber || '').trim() || null,
                 submittedAt      : new Date().toISOString(),
                 submittedBy      : (submittedBy || '').trim() || null,
@@ -1245,6 +1246,7 @@ const server = http.createServer(async (req, res) => {
                 // Volunteer: standard editable fields
                 if (body.amount        !== undefined) e.amount        = Number(body.amount);
                 if (body.paymentMode   !== undefined) e.paymentMode   = String(body.paymentMode);
+                if (body.status        !== undefined) e.status        = String(body.status);
                 if (body.bookNumber    !== undefined) e.bookNumber    = Number(body.bookNumber);
                 if (body.receiptNumber !== undefined) e.receiptNumber = Number(body.receiptNumber);
                 if (body.area          !== undefined) e.area          = String(body.area);
@@ -1366,11 +1368,13 @@ const server = http.createServer(async (req, res) => {
             const receiptNumber = getValue('receiptNumber');
             const area = getValue('area');
             const paymentMode = getValue('paymentMode');
+            const statusVal = getValue('status');
 
             if (bookNumber !== undefined) e.bookNumber = Number(bookNumber);
             if (receiptNumber !== undefined) e.receiptNumber = Number(receiptNumber);
             if (area !== undefined) e.area = area;
             if (paymentMode !== undefined) e.paymentMode = paymentMode;
+            if (statusVal !== undefined) e.status = statusVal;
 
             // Handle Photo Upload
             const filePart = parts.find(p => p.name === 'photo' && p.filename);

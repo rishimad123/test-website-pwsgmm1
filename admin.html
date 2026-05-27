@@ -2697,6 +2697,11 @@ window._fmtBytesA = function(b) {
                     ${e.area ? `<span style="background:#E8F5E9;color:#1B5E20;font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:20px;"><i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>${e.area}</span>` : ''}
                     <span style="background:#FFF8E1;color:${modeClr};font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:20px;">${mode}</span>
                 </div>
+                
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    ${(e.editHistory && e.editHistory.length) || (e.nameHistory && e.nameHistory.length) ? `<span style="font-size:.7rem;font-weight:700;color:#c0392b;background:#FFEBEE;padding:3px 8px;border-radius:12px;border:1px solid #f5b7b1;"><i class="fas fa-pencil-alt" style="margin-right:4px;"></i>Edited (Click edit to view)</span>` : '<span></span>'}
+                    ${(e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received')) === 'Received' ? `<span style="background:#E8F5E9;color:#1B5E20;font-size:.73rem;font-weight:800;padding:3px 9px;border-radius:20px;border:1px solid #c8e6c9;">STATUS: RECEIVED</span>` : `<span style="background:#FFF8E1;color:#F57F17;font-size:.73rem;font-weight:800;padding:3px 9px;border-radius:20px;border:1px solid #ffe0b2;">STATUS: BALANCE</span>`}
+                </div>
                 <div style="display:flex;align-items:center;justify-content:space-between;">
                     <div style="font-size:1.1rem;font-weight:800;color:#2E7D32;">${amt}</div>
                     <div style="font-size:.76rem;color:#aaa;text-align:right;line-height:1.4;">${timeStr}<br>${dateStr}</div>
@@ -3207,6 +3212,12 @@ window._fmtBytesA = function(b) {
                             <option ${e.paymentMode==='UPI'?'selected':''}>UPI</option>
                             <option ${e.paymentMode==='RTGS'?'selected':''}>RTGS</option>
                             <option ${e.paymentMode==='Balance'?'selected':''}>Balance</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Status</label>
+                        <select name="status" class="form-control">
+                            <option ${(e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received')) === 'Received' ? 'selected' : ''} value="Received">Received</option>
+                            <option ${(e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received')) === 'Balance' ? 'selected' : ''} value="Balance">Balance</option>
                         </select>
                     </div>
                     <div class="form-group"><label>Reference No.</label><input name="referenceNumber" class="form-control" value="${e.referenceNumber||''}"></div>

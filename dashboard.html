@@ -1174,7 +1174,7 @@ window.fixUrl = function(url) {
             <div id="deVolEditStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
             <form id="deVolEditForm" onsubmit="deSaveVolEdit(event)" autocomplete="off">
                 <input type="hidden" id="deVolEditId">
-                <!-- Details: Book, Receipt, Area, Mode -->
+                <!-- Details: Book, Receipt, Area, Mode, Status -->
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
                     <div class="form-group" style="margin:0;">
                         <label>Book Number <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
@@ -1192,6 +1192,13 @@ window.fixUrl = function(url) {
                         <label>Payment Mode <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
                         <select id="deVolEditMode" class="form-control">
                             <option>Cash</option><option>Cheque</option><option>UPI</option><option>RTGS</option><option>Balance</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0;grid-column:1/-1;">
+                        <label>Status <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                        <select id="deVolEditStatusField" class="form-control" style="background:#FFF3E0;color:#E65100;font-weight:700;">
+                            <option value="Balance">Balance</option>
+                            <option value="Received">Received</option>
                         </select>
                     </div>
                 </div>
@@ -1489,7 +1496,7 @@ window.fixUrl = function(url) {
                         amount: e.amount || 0,
                         photoUrl: e.photoUrl || null,
                         submittedAt: e.submittedAt,
-                        status: 'pending',
+                        status: e.status || 'Balance',
                         type: 'donation-entry',
                         bookNumber: e.bookNumber,
                         receiptNumber: e.receiptNumber,
@@ -1515,13 +1522,17 @@ window.fixUrl = function(url) {
                     const photoCell = r.photoUrl
                         ? `<img src="${r.photoUrl}?t=${Date.now()}" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${r.photoUrl}')" title="Click to enlarge">`
                         : '<span style="color:#ccc;">—</span>';
+                    const statusBadge = (r.status || '').toLowerCase() === 'received' 
+                        ? '<span class="badge badge-success" style="background:#E8F5E9;color:#1B5E20;">Received</span>'
+                        : '<span class="badge badge-warning" style="background:#FFF8E1;color:#F57F17;">Balance</span>';
+
                     return `<tr>
                         <td style="font-weight:700;">Bk ${r.bookNumber} #${r.receiptNumber}</td>
                         <td style="font-weight:600;">${r.name}</td>
                         <td>${r.area}</td>
                         <td style="color:#2E7D32;font-weight:700;">${amtCell}</td>
                         <td style="color:#777;font-size:.82rem;">${dateStr}</td>
-                        <td><span class="badge badge-warning">Pending</span></td>
+                        <td>${statusBadge}</td>
                         <td style="text-align:center;">${photoCell}</td>
                         <td style="text-align:center;">
                             ${r.type === 'donation-entry' ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#1565C0;padding:6px 10px;" onclick="deOpenVolEdit('${r.receiptId}')"><i class="fas fa-edit"></i> Edit</button>` : '<span style="font-size:0.8rem;color:#999;">-</span>'}
@@ -2628,6 +2639,20 @@ window.fixUrl = function(url) {
             // Store original amount to detect changes later
             document.getElementById('deVolEditAmount').dataset.original = e.amount != null ? e.amount : '';
             document.getElementById('deVolEditMode').value   = e.paymentMode || 'Cash';
+            
+            const statusField = document.getElementById('deVolEditStatusField');
+            if (statusField) {
+                statusField.value = e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received');
+                // Change style based on status
+                statusField.style.background = statusField.value === 'Received' ? '#E8F5E9' : '#FFF3E0';
+                statusField.style.color = statusField.value === 'Received' ? '#1B5E20' : '#E65100';
+                
+                statusField.onchange = function() {
+                    this.style.background = this.value === 'Received' ? '#E8F5E9' : '#FFF3E0';
+                    this.style.color = this.value === 'Received' ? '#1B5E20' : '#E65100';
+                };
+            }
+
             const bookSel = document.getElementById('deVolEditBook');
             bookSel.innerHTML = '';
             for (let b = 1; b <= 50; b++) {
@@ -2759,6 +2784,7 @@ window.fixUrl = function(url) {
         const payload = {
             _isAdmin      : false,
             paymentMode   : document.getElementById('deVolEditMode').value,
+            status        : document.getElementById('deVolEditStatusField')?.value || undefined,
             bookNumber    : bnVal,
             receiptNumber : rnVal,
             area          : document.getElementById('deVolEditArea').value || undefined,
