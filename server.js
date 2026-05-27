@@ -1253,28 +1253,32 @@ const server = http.createServer(async (req, res) => {
                 if (body.buildingName  !== undefined) e.buildingName  = String(body.buildingName);
                 if (body.referenceNumber !== undefined) e.referenceNumber = String(body.referenceNumber);
                 if (body.landmark       !== undefined) e.landmark       = String(body.landmark);
-                // Volunteer name or amount change — requires changeReason
+                // Volunteer name, amount, book, or receipt change — requires changeReason
                 const nameFields = ['firstName','middleName','lastName','businessName'];
                 const hasNameChange = nameFields.some(f => body[f] !== undefined);
                 const hasAmountChange = body.amount !== undefined && Number(body.amount) !== Number(e.amount);
+                const hasBookChange = body.bookNumber !== undefined && Number(body.bookNumber) !== Number(e.bookNumber);
+                const hasReceiptChange = body.receiptNumber !== undefined && Number(body.receiptNumber) !== Number(e.receiptNumber);
 
-                if (hasNameChange || hasAmountChange) {
+                if (hasNameChange || hasAmountChange || hasBookChange || hasReceiptChange) {
                     if (!body.changeReason || !String(body.changeReason).trim()) {
-                        return sendJSON(res, 400, { message: 'A reason is required when changing the donor name or amount.' });
+                        return sendJSON(res, 400, { message: 'A reason is required when changing donor details (Name, Amount, Book, or Receipt).' });
                     }
                     const oldName = e.donorType === 'Business'
                         ? (e.businessName || '')
                         : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
                     const oldAmount = e.amount;
+                    const oldBook = e.bookNumber;
+                    const oldReceipt = e.receiptNumber;
 
                     if (hasNameChange) {
                         nameFields.forEach(f => {
                             if (body[f] !== undefined) e[f] = String(body[f]).trim().toUpperCase();
                         });
                     }
-                    if (hasAmountChange) {
-                        e.amount = Number(body.amount);
-                    }
+                    if (hasAmountChange) e.amount = Number(body.amount);
+                    if (hasBookChange) e.bookNumber = Number(body.bookNumber);
+                    if (hasReceiptChange) e.receiptNumber = Number(body.receiptNumber);
 
                     const newName = e.donorType === 'Business'
                         ? (e.businessName || '')
@@ -1285,12 +1289,16 @@ const server = http.createServer(async (req, res) => {
                     e.editHistory.push({
                         from: oldName, to: newName,
                         fromAmount: oldAmount, toAmount: e.amount,
+                        fromBook: oldBook, toBook: e.bookNumber,
+                        fromReceipt: oldReceipt, toReceipt: e.receiptNumber,
                         reason: String(body.changeReason).trim(),
                         changedAt: new Date().toISOString(),
                         changedBy: body.changedBy || 'Volunteer'
                     });
                 } else {
                     if (body.amount !== undefined) e.amount = Number(body.amount);
+                    if (body.bookNumber !== undefined) e.bookNumber = Number(body.bookNumber);
+                    if (body.receiptNumber !== undefined) e.receiptNumber = Number(body.receiptNumber);
                 }
             }
 

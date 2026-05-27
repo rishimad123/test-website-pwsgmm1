@@ -2148,8 +2148,12 @@ async function loadBalanceRecovery() {
                 paymentMode: e.paymentMode,
                 _bookNum   : e.bookNumber,
                 _recNum    : e.receiptNumber,
+                editHistory: e.editHistory || [],
+                nameHistory: e.nameHistory || []
             };
         });
+        
+        window._brHistoryStore = {};
 
         const list = [...pautiPending, ...receiptBal, ...deBal].sort((a, b) =>
             new Date(b.submittedAt) - new Date(a.submittedAt));
@@ -2169,10 +2173,10 @@ async function loadBalanceRecovery() {
             const photoBtn = hasFile
                 ? `<button class="btn-icon btn-edit" title="View Photo" onclick="openAdminPbLightbox(fixUrl('${r.passbookUrl}'))"><i class="fas fa-image"></i></button>`
                 : '<span style="color:#ccc;font-size:.8rem">—</span>';
-            const isReceived  = r.status === 'received';
+            const isReceived  = (r.status || '').toLowerCase() === 'received';
             const statusBadge = isReceived
                 ? '<span class="badge badge-success">Received</span>'
-                : '<span class="badge badge-warning">Pending</span>';
+                : '<span class="badge badge-warning">Balance</span>';
             const isPauti = r.type === 'pauti-slip';
             const isDonEntry = r.type === 'donation-entry';
             const sourceTag = isPauti
@@ -2183,6 +2187,8 @@ async function loadBalanceRecovery() {
             const safeId   = r.receiptId.replace(/'/g, "\\'");
             const safeName = (r.name || '').replace(/'/g, "\\'");
             const safePhoto = (r.passbookUrl||'').replace(/'/g,"\\'");
+            if (r.editHistory && r.editHistory.length > 0) window._brHistoryStore[r.receiptId] = r.editHistory;
+            else if (r.nameHistory && r.nameHistory.length > 0) window._brHistoryStore[r.receiptId] = r.nameHistory;
             const editBtn = `<button class="btn-icon btn-edit" title="Edit Entry" onclick="openBrEditModal('${safeId}','${safeName}',${r.amount||0},'${r.paymentMode||'cash'}','${r.status||'pending'}',${r._bookNumber||r._bookNum||0},${r._receiptNumber||r._recNum||r._slipNum||0},'${safePhoto}','${r.type}','${r._bookId||''}')"><i class="fas fa-edit"></i></button>`;
             const markBtn  = (!isPauti && !isDonEntry && !isReceived)
                 ? `<button class="btn-icon btn-edit" style="background:#E8F5E9;color:#1B5E20;" title="Mark as Received" onclick="markBalanceReceived('${safeId}')"><i class="fas fa-check"></i></button>`
@@ -2237,6 +2243,34 @@ function openBrEditModal(receiptId, name, amount, mode, status, bookNum, receipt
     if (extraBkEl) extraBkEl.value = extraBookId || '';
     document.getElementById('brEditName').value   = name   || '';
     document.getElementById('brEditAmount').value = amount || '';
+    
+    // Inject History
+    const form = document.getElementById('brEditForm');
+    let existingHist = document.getElementById('brEditHistDiv');
+    if (existingHist) existingHist.remove();
+    const hist = window._brHistoryStore ? window._brHistoryStore[receiptId] : null;
+    if (hist && hist.length && form) {
+        const histDiv = document.createElement('div');
+        histDiv.id = 'brEditHistDiv';
+        histDiv.style.cssText = 'margin-bottom:16px;border:1.5px solid #E3F2FD;border-radius:10px;padding:14px;background:#F8FBFF;';
+        histDiv.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#1565C0;margin-bottom:10px;"><i class="fas fa-history" style="margin-right:6px;"></i>Edit History</div>' +
+            hist.map(function(h) {
+                const dt = new Date(h.changedAt).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+                let nameChange = '';
+                if (h.from !== h.to) nameChange = '<span style="color:#888;">Name:</span> <strong>' + (h.from||'—') + '</strong> &rarr; <strong>' + (h.to||'—') + '</strong><br>';
+                let amtChange = '';
+                if (h.fromAmount !== h.toAmount && h.fromAmount !== undefined && h.toAmount !== undefined) amtChange = '<span style="color:#888;">Amount:</span> <strong>₹' + (h.fromAmount||'0') + '</strong> &rarr; <strong>₹' + (h.toAmount||'0') + '</strong><br>';
+                let bookChange = '';
+                if (h.fromBook !== h.toBook && h.fromBook !== undefined && h.toBook !== undefined) bookChange = '<span style="color:#888;">Book:</span> <strong>' + (h.fromBook||'—') + '</strong> &rarr; <strong>' + (h.toBook||'—') + '</strong><br>';
+                let recChange = '';
+                if (h.fromReceipt !== h.toReceipt && h.fromReceipt !== undefined && h.toReceipt !== undefined) recChange = '<span style="color:#888;">Receipt:</span> <strong>' + (h.fromReceipt||'—') + '</strong> &rarr; <strong>' + (h.toReceipt||'—') + '</strong><br>';
+                return '<div style="padding:8px 12px;background:#fff;border-radius:8px;border:1px solid #E3F2FD;margin-bottom:6px;font-size:.82rem;">' +
+                    nameChange + amtChange + bookChange + recChange +
+                    '<span style="color:#888;">Reason:</span> ' + (h.reason||'—') + ' &nbsp;<span style="color:#aaa;font-size:.75rem;">' + dt + ' by ' + (h.changedBy||'—') + '</span>' +
+                '</div>';
+            }).join('');
+        form.insertBefore(histDiv, form.firstChild);
+    }
     
     // Normalize mode for selector dropdown
     let normMode = 'cash';

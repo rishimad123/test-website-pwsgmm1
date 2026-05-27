@@ -1174,16 +1174,8 @@ window.fixUrl = function(url) {
             <div id="deVolEditStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
             <form id="deVolEditForm" onsubmit="deSaveVolEdit(event)" autocomplete="off">
                 <input type="hidden" id="deVolEditId">
-                <!-- Details: Book, Receipt, Area, Mode, Status -->
+                <!-- Details: Area, Mode, Status -->
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
-                    <div class="form-group" style="margin:0;">
-                        <label>Book Number <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
-                        <select id="deVolEditBook" class="form-control" onchange="deVolEditBookChange()"></select>
-                    </div>
-                    <div class="form-group" style="margin:0;">
-                        <label>Receipt Number <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
-                        <select id="deVolEditReceipt" class="form-control" disabled></select>
-                    </div>
                     <div class="form-group" style="margin:0;">
                         <label>Area <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
                         <select id="deVolEditArea" class="form-control"></select>
@@ -1223,10 +1215,20 @@ window.fixUrl = function(url) {
                         <p id="deVolEditPhotoName" style="font-size:.8rem;color:#555;margin:6px 0 0;"></p>
                     </div>
                 </div>
-                <!-- Donor name & Amount (editable with reason) -->
+                <!-- Donor name, Amount, Book, Receipt (editable with reason) -->
                 <div style="border:1.5px solid #E3F2FD;border-radius:10px;padding:14px;margin-bottom:14px;background:#F8FBFF;">
-                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#1565C0;margin-bottom:10px;"><i class="fas fa-user-edit" style="margin-right:6px;"></i>Name & Amount <span style="font-weight:400;color:#777;">(edit with reason)</span></div>
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#1565C0;margin-bottom:10px;"><i class="fas fa-edit" style="margin-right:6px;"></i>DETAILS <span style="font-weight:400;color:#777;">(edit with reason)</span></div>
                     
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px;">
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:.78rem;">Book Number</label>
+                            <select id="deVolEditBook" class="form-control" onchange="deVolEditBookChange()"></select>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:.78rem;">Receipt Number</label>
+                            <select id="deVolEditReceipt" class="form-control"></select>
+                        </div>
+                    </div>
                     <div id="deVolNameIndFields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
                         <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">First Name</label><input id="deVolEditFirst" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
                         <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Middle Name</label><input id="deVolEditMid" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
@@ -1242,10 +1244,10 @@ window.fixUrl = function(url) {
                         <input type="number" id="deVolEditAmount" class="form-control" min="0" placeholder="0">
                     </div>
                     <div id="deVolNameReasonWrap" style="margin-top:8px;">
-                        <label style="font-size:.78rem;color:#c0392b;font-weight:700;"><i class="fas fa-exclamation-circle" style="margin-right:4px;"></i>Reason for Change <span style="color:#c0392b;">*</span> <span style="color:#aaa;font-weight:400;">(required if name or amount changed)</span></label>
+                        <label style="font-size:.78rem;color:#c0392b;font-weight:700;"><i class="fas fa-exclamation-circle" style="margin-right:4px;"></i>Reason for Change <span style="color:#c0392b;">*</span> <span style="color:#aaa;font-weight:400;">(required if any detail above changed)</span></label>
                         <input id="deVolEditReason" class="form-control" placeholder="e.g. Spelling correction, wrong amount entered..." style="margin-top:4px;">
                     </div>
-                    <p style="font-size:.76rem;color:#aaa;margin:8px 0 0;"><i class="fas fa-info-circle" style="margin-right:3px;"></i>Submission date cannot be changed. Name changes are logged for admin review.</p>
+                    <p style="font-size:.76rem;color:#aaa;margin:8px 0 0;"><i class="fas fa-info-circle" style="margin-right:3px;"></i>Submission date cannot be changed. Edits are logged for admin review.</p>
                 </div>
 
                 <div style="display:flex;gap:10px;justify-content:flex-end;">
@@ -2662,6 +2664,11 @@ window.fixUrl = function(url) {
                 if (b === e.bookNumber) opt.selected = true;
                 bookSel.appendChild(opt);
             }
+            bookSel.dataset.original = e.bookNumber || '';
+
+            const recSel = document.getElementById('deVolEditReceipt');
+            recSel.dataset.original = e.receiptNumber || '';
+            
             deVolEditPopulateReceipts(e.bookNumber, e.receiptNumber);
             const FIXED = ['Patelwadi','Shindewadi','Gurkhawadi'];
             const areaSel = document.getElementById('deVolEditArea');
@@ -2778,8 +2785,15 @@ window.fixUrl = function(url) {
         const _newBiz   = document.getElementById('deVolEditBiz')?.value.trim().toUpperCase()   || '';
         const _reason   = document.getElementById('deVolEditReason')?.value.trim()              || '';
         const _hasNameChange = _eIsBiz ? !!_newBiz : !!(_newFirst || _newMid || _newLast);
+        
         const origAmt   = document.getElementById('deVolEditAmount').dataset.original || '';
         const _hasAmountChange = origAmt !== amtVal;
+
+        const origBook  = document.getElementById('deVolEditBook').dataset.original || '';
+        const _hasBookChange = origBook !== '' && Number(origBook) !== bnVal;
+
+        const origRcpt  = document.getElementById('deVolEditReceipt').dataset.original || '';
+        const _hasReceiptChange = origRcpt !== '' && Number(origRcpt) !== rnVal;
 
         const payload = {
             _isAdmin      : false,
@@ -2791,8 +2805,8 @@ window.fixUrl = function(url) {
         };
         if (amtVal !== '') payload.amount = Number(amtVal);
         
-        if (_hasNameChange || _hasAmountChange) {
-            if (!_reason) { showSt('❌ Please provide a reason for the name or amount change.', 'error'); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; } return; }
+        if (_hasNameChange || _hasAmountChange || _hasBookChange || _hasReceiptChange) {
+            if (!_reason) { showSt('❌ Please provide a reason for the change.', 'error'); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; } return; }
             if (_hasNameChange) {
                 if (_eIsBiz) { payload.businessName = _newBiz; }
                 else { payload.firstName = _newFirst; payload.middleName = _newMid; payload.lastName = _newLast; }
