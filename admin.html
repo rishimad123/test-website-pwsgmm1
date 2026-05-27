@@ -3259,8 +3259,13 @@ window._fmtBytesA = function(b) {
                     if (h.fromBook !== h.toBook && h.fromBook !== undefined && h.toBook !== undefined) bookChange = '<span style="color:#888;">Book:</span> <strong>' + (h.fromBook||'—') + '</strong> &rarr; <strong>' + (h.toBook||'—') + '</strong><br>';
                     let recChange = '';
                     if (h.fromReceipt !== h.toReceipt && h.fromReceipt !== undefined && h.toReceipt !== undefined) recChange = '<span style="color:#888;">Receipt:</span> <strong>' + (h.fromReceipt||'—') + '</strong> &rarr; <strong>' + (h.toReceipt||'—') + '</strong><br>';
+                    let modeChange = '';
+                    if (h.fromMode !== h.toMode && h.fromMode !== undefined && h.toMode !== undefined) modeChange = '<span style="color:#888;">Mode:</span> <strong>' + (h.fromMode||'—') + '</strong> &rarr; <strong>' + (h.toMode||'—') + '</strong><br>';
+                    let statusChange = '';
+                    if (h.fromStatus !== h.toStatus && h.fromStatus !== undefined && h.toStatus !== undefined) statusChange = '<span style="color:#888;">Status:</span> <strong>' + (h.fromStatus||'—') + '</strong> &rarr; <strong>' + (h.toStatus||'—') + '</strong><br>';
+                    
                     return '<div style="padding:8px 12px;background:#fff;border-radius:8px;border:1px solid #E3F2FD;margin-bottom:6px;font-size:.82rem;">' +
-                        nameChange + amtChange + bookChange + recChange +
+                        nameChange + amtChange + bookChange + recChange + modeChange + statusChange +
                         '<span style="color:#888;">Reason:</span> ' + (h.reason||'—') + ' &nbsp;<span style="color:#aaa;font-size:.75rem;">' + dt + ' by ' + (h.changedBy||'—') + '</span>' +
                     '</div>';
                 }).join('');

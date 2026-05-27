@@ -1253,15 +1253,17 @@ const server = http.createServer(async (req, res) => {
                 if (body.buildingName  !== undefined) e.buildingName  = String(body.buildingName);
                 if (body.referenceNumber !== undefined) e.referenceNumber = String(body.referenceNumber);
                 if (body.landmark       !== undefined) e.landmark       = String(body.landmark);
-                // Volunteer name, amount, book, or receipt change — requires changeReason
+                // Volunteer name, amount, book, receipt, mode, or status change — requires changeReason for donor details, but we track all
                 const nameFields = ['firstName','middleName','lastName','businessName'];
                 const hasNameChange = nameFields.some(f => body[f] !== undefined);
                 const hasAmountChange = body.amount !== undefined && Number(body.amount) !== Number(e.amount);
                 const hasBookChange = body.bookNumber !== undefined && Number(body.bookNumber) !== Number(e.bookNumber);
                 const hasReceiptChange = body.receiptNumber !== undefined && Number(body.receiptNumber) !== Number(e.receiptNumber);
+                const hasModeChange = body.paymentMode !== undefined && String(body.paymentMode) !== String(e.paymentMode);
+                const hasStatusChange = body.status !== undefined && String(body.status) !== String(e.status);
 
-                if (hasNameChange || hasAmountChange || hasBookChange || hasReceiptChange) {
-                    if (!body.changeReason || !String(body.changeReason).trim()) {
+                if (hasNameChange || hasAmountChange || hasBookChange || hasReceiptChange || hasModeChange || hasStatusChange) {
+                    if ((hasNameChange || hasAmountChange || hasBookChange || hasReceiptChange) && (!body.changeReason || !String(body.changeReason).trim())) {
                         return sendJSON(res, 400, { message: 'A reason is required when changing donor details (Name, Amount, Book, or Receipt).' });
                     }
                     const oldName = e.donorType === 'Business'
@@ -1270,6 +1272,8 @@ const server = http.createServer(async (req, res) => {
                     const oldAmount = e.amount;
                     const oldBook = e.bookNumber;
                     const oldReceipt = e.receiptNumber;
+                    const oldMode = e.paymentMode;
+                    const oldStatus = e.status;
 
                     if (hasNameChange) {
                         nameFields.forEach(f => {
@@ -1279,26 +1283,28 @@ const server = http.createServer(async (req, res) => {
                     if (hasAmountChange) e.amount = Number(body.amount);
                     if (hasBookChange) e.bookNumber = Number(body.bookNumber);
                     if (hasReceiptChange) e.receiptNumber = Number(body.receiptNumber);
+                    if (hasModeChange) e.paymentMode = String(body.paymentMode);
+                    if (hasStatusChange) e.status = String(body.status);
 
                     const newName = e.donorType === 'Business'
                         ? (e.businessName || '')
                         : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
                     
                     if (!e.editHistory) e.editHistory = [];
-                    // Fallback to preserve legacy nameHistory data shape but add amount info
+                    // Track everything
                     e.editHistory.push({
                         from: oldName, to: newName,
                         fromAmount: oldAmount, toAmount: e.amount,
                         fromBook: oldBook, toBook: e.bookNumber,
                         fromReceipt: oldReceipt, toReceipt: e.receiptNumber,
-                        reason: String(body.changeReason).trim(),
+                        fromMode: oldMode, toMode: e.paymentMode,
+                        fromStatus: oldStatus, toStatus: e.status,
+                        reason: String(body.changeReason || 'Status/Mode Updated').trim(),
                         changedAt: new Date().toISOString(),
                         changedBy: body.changedBy || 'Volunteer'
                     });
                 } else {
-                    if (body.amount !== undefined) e.amount = Number(body.amount);
-                    if (body.bookNumber !== undefined) e.bookNumber = Number(body.bookNumber);
-                    if (body.receiptNumber !== undefined) e.receiptNumber = Number(body.receiptNumber);
+                    // No tracked fields changed, but maybe we fallback update them? (Already handled above since we track them all now)
                 }
             }
 
@@ -1339,21 +1345,42 @@ const server = http.createServer(async (req, res) => {
             const changeReason = getValue('changeReason');
             const changedBy = getValue('changedBy') || 'Volunteer';
 
+            const bookNumber = getValue('bookNumber');
+            const receiptNumber = getValue('receiptNumber');
+            const area = getValue('area');
+            const paymentMode = getValue('paymentMode');
+            const statusVal = getValue('status');
+
             let hasNameChange = false;
             let hasAmountChange = false;
+            let hasBookChange = false;
+            let hasReceiptChange = false;
+            let hasModeChange = false;
+            let hasStatusChange = false;
+
             const oldName = e.donorType === 'Business' ? (e.businessName || '') : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
             
             if (newDonorName !== undefined && newDonorName !== oldName) hasNameChange = true;
             if (newAmount !== undefined && Number(newAmount) !== Number(e.amount)) hasAmountChange = true;
+            if (bookNumber !== undefined && Number(bookNumber) !== Number(e.bookNumber)) hasBookChange = true;
+            if (receiptNumber !== undefined && Number(receiptNumber) !== Number(e.receiptNumber)) hasReceiptChange = true;
+            if (paymentMode !== undefined && String(paymentMode) !== String(e.paymentMode)) hasModeChange = true;
+            if (statusVal !== undefined && String(statusVal) !== String(e.status)) hasStatusChange = true;
 
-            if (!isAdmin && (hasNameChange || hasAmountChange)) {
-                if (!changeReason) return sendJSON(res, 400, { message: 'A reason is required when changing the donor name or amount.' });
+            if (hasNameChange || hasAmountChange || hasBookChange || hasReceiptChange || hasModeChange || hasStatusChange) {
+                if (!isAdmin && (hasNameChange || hasAmountChange || hasBookChange || hasReceiptChange) && !changeReason) {
+                    return sendJSON(res, 400, { message: 'A reason is required when changing donor details (Name, Amount, Book, or Receipt).' });
+                }
                 
                 if (!e.editHistory) e.editHistory = [];
                 e.editHistory.push({
-                    fromName: oldName, toName: newDonorName !== undefined ? newDonorName : oldName,
+                    from: oldName, to: newDonorName !== undefined ? newDonorName : oldName,
                     fromAmount: e.amount, toAmount: newAmount !== undefined ? Number(newAmount) : e.amount,
-                    reason: changeReason,
+                    fromBook: e.bookNumber, toBook: bookNumber !== undefined ? Number(bookNumber) : e.bookNumber,
+                    fromReceipt: e.receiptNumber, toReceipt: receiptNumber !== undefined ? Number(receiptNumber) : e.receiptNumber,
+                    fromMode: e.paymentMode, toMode: paymentMode !== undefined ? String(paymentMode) : e.paymentMode,
+                    fromStatus: e.status, toStatus: statusVal !== undefined ? String(statusVal) : e.status,
+                    reason: changeReason || 'Status/Mode/Photo Updated',
                     changedAt: new Date().toISOString(),
                     changedBy
                 });
@@ -1371,13 +1398,6 @@ const server = http.createServer(async (req, res) => {
                 }
             }
             if (newAmount !== undefined) e.amount = Number(newAmount);
-            
-            const bookNumber = getValue('bookNumber');
-            const receiptNumber = getValue('receiptNumber');
-            const area = getValue('area');
-            const paymentMode = getValue('paymentMode');
-            const statusVal = getValue('status');
-
             if (bookNumber !== undefined) e.bookNumber = Number(bookNumber);
             if (receiptNumber !== undefined) e.receiptNumber = Number(receiptNumber);
             if (area !== undefined) e.area = area;
