@@ -245,32 +245,34 @@ async function loadLiveRecentDonations() {
 // ==================== DONATION TRACKING LIVE CARDS ====================
 async function loadDonationTrackingCards() {
     try {
-        const res  = await fetch('/api/pauti-books');
-        const data = await res.json();
-        const allSlips = [];
-        (data.pautiBooks || []).forEach(book => {
-            (book.slips || []).forEach(slip => {
-                if (slip.uploadedAt && !slip.deleted) allSlips.push(slip);
-            });
-        });
+        const allSlips = window._adeAll || [];
 
-        const withAmt  = allSlips.filter(s => s.amount && Number(s.amount) > 0);
-        const withoutAmt = allSlips.filter(s => !s.amount || Number(s.amount) <= 0);
-        const totalRec = withAmt.reduce((sum, s) => sum + Number(s.amount), 0);
-        const totalPend = withoutAmt.length;
+        const withAmt = allSlips.filter(s => s.status === 'Received' && s.paymentMode !== 'Balance');
+        const withoutAmt = allSlips.filter(s => s.status === 'Balance' || s.paymentMode === 'Balance');
+
+        const totalRec = withAmt.reduce((sum, s) => sum + Number(s.amount || 0), 0);
+        const totalPend = withoutAmt.reduce((sum, s) => sum + Number(s.amount || 0), 0);
 
         const fmt = n => '₹' + Number(n).toLocaleString('en-IN');
         const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
 
         setEl('dtTotalReceived', fmt(totalRec));
-        setEl('dtReceivedCount', `${withAmt.length} slip${withAmt.length !== 1 ? 's' : ''} with amounts`);
-        setEl('dtTotalPending',  fmt(withoutAmt.reduce((s,x) => s + Number(x.amount||0), 0)));
-        setEl('dtPendingCount',  `${totalPend} slip${totalPend !== 1 ? 's' : ''} pending`);
-        setEl('dtTotalSlips',    allSlips.length);
+        setEl('dtReceivedCount', `${withAmt.length} slip${withAmt.length !== 1 ? 's' : ''} received`);
+        setEl('dtTotalPending',  fmt(totalPend));
+        setEl('dtPendingCount',  `${withoutAmt.length} slip${withoutAmt.length !== 1 ? 's' : ''} pending`);
+        setEl('dtTotalSlips',    `${allSlips.length} / 2500`);
+
         if (allSlips.length > 0) {
-            const min = Math.min(...allSlips.map(s => s.slipNumber));
-            const max = Math.max(...allSlips.map(s => s.slipNumber));
-            setEl('dtSlipRange', `Slip #${min} – #${max}`);
+            const receipts = allSlips.map(s => Number(s.receiptNumber)).filter(n => !isNaN(n));
+            if (receipts.length > 0) {
+                const min = Math.min(...receipts);
+                const max = Math.max(...receipts);
+                setEl('dtSlipRange', `Receipt #${min} – #${max}`);
+            } else {
+                setEl('dtSlipRange', '');
+            }
+        } else {
+            setEl('dtSlipRange', '');
         }
     } catch (e) {
         console.warn('Could not load donation tracking cards:', e.message);
