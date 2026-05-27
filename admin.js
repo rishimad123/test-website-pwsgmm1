@@ -249,8 +249,8 @@ async function loadDonationTrackingCards() {
         const data = await res.json();
         const allSlips = data.entries || [];
 
-        const withAmt = allSlips.filter(s => s.status === 'Received' && s.paymentMode !== 'Balance');
-        const withoutAmt = allSlips.filter(s => s.status === 'Balance' || s.paymentMode === 'Balance');
+        const withAmt = allSlips.filter(s => s.status === 'Received');
+        const withoutAmt = allSlips.filter(s => s.status !== 'Received' && (s.status === 'Balance' || s.paymentMode === 'Balance' || s.status === 'Pending'));
 
         const totalRec = withAmt.reduce((sum, s) => sum + Number(s.amount || 0), 0);
         const totalPend = withoutAmt.reduce((sum, s) => sum + Number(s.amount || 0), 0);
@@ -2179,7 +2179,7 @@ async function loadBalanceRecovery() {
         });
 
         // Regular balance receipts
-        const receiptBal = (rcData.receipts || []).filter(r => r.type === 'balance' && !r.deleted);
+        const receiptBal = (rcData.receipts || []).filter(r => r.type === 'balance' && !r.deleted && (r.status || '').toLowerCase() !== 'received');
 
         // Donation entries with paymentMode = 'Balance' (from any volunteer or admin)
         const deBal = (deData.entries || []).filter(e =>

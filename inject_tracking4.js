@@ -8,8 +8,8 @@ async function loadDonationTrackingCards() {
         const data = await res.json();
         const allSlips = data.entries || [];
 
-        const withAmt = allSlips.filter(s => s.status === 'Received' && s.paymentMode !== 'Balance');
-        const withoutAmt = allSlips.filter(s => s.status === 'Balance' || s.paymentMode === 'Balance');
+        const withAmt = allSlips.filter(s => s.status === 'Received');
+        const withoutAmt = allSlips.filter(s => s.status !== 'Received' && (s.status === 'Balance' || s.paymentMode === 'Balance'));
 
         const totalRec = withAmt.reduce((sum, s) => sum + Number(s.amount || 0), 0);
         const totalPend = withoutAmt.reduce((sum, s) => sum + Number(s.amount || 0), 0);
