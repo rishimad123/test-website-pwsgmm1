@@ -1159,8 +1159,65 @@ const server = http.createServer(async (req, res) => {
         const bookFilter = qp.get('bookNumber');
         const areaFilter = qp.get('area');
         let result = donationEntries.filter(e => !e.deleted);
-        if (bookFilter) result = result.filter(e => String(e.bookNumber) === String(bookFilter));
+        
+        // Merge Received slips from Pauti Books
+        pautiBooks.forEach(book => {
+            if (bookFilter && String(book.bookNumber) !== String(bookFilter)) return;
+            (book.slips || []).forEach(slip => {
+                if (slip.uploadedAt && !slip.deleted && (slip.status||'').toLowerCase() === 'received' && slip.paymentMode !== 'balance' && slip.amount && Number(slip.amount) > 0) {
+                    result.push({
+                        ...slip,
+                        entryId: `PB-${book.pautiBookId}-${slip.slipNumber}`,
+                        bookNumber: book.bookNumber,
+                        receiptNumber: slip.slipNumber,
+                        donorType: 'Individual',
+                        firstName: slip.firstName || slip.donorName || '',
+                        middleName: slip.middleName || '',
+                        lastName: slip.lastName || '',
+                        amount: slip.amount,
+                        paymentMode: slip.paymentMode || 'Cash',
+                        status: slip.status || 'Received',
+                        photoUrl: slip.photoUrl || null,
+                        submittedAt: slip.uploadedAt,
+                        submittedBy: slip.uploadedBy || 'Auto',
+                        submittedByUserId: slip.uploadedByUserId || null,
+                        area: slip.area || null,
+                        referenceNumber: slip.referenceNumber || slip.checkNumber || null
+                    });
+                }
+            });
+        });
+
+        // Merge Received slips from Receipts
+        receipts.forEach(r => {
+            if (bookFilter && String(r.bookNumber) !== String(bookFilter)) return;
+            if (!r.deleted && (r.status||'').toLowerCase() === 'received' && r.type !== 'balance') {
+                result.push({
+                    ...r,
+                    entryId: r.receiptId || `RC-${r.receiptNumber}`,
+                    bookNumber: r.bookNumber || 0,
+                    receiptNumber: r.receiptNumber || 0,
+                    donorType: 'Individual',
+                    firstName: r.firstName || r.name || '',
+                    middleName: r.middleName || '',
+                    lastName: r.lastName || '',
+                    amount: r.amount,
+                    paymentMode: r.paymentMode || 'Cash',
+                    status: r.status || 'Received',
+                    photoUrl: r.photoUrl || null,
+                    submittedAt: r.date || r.createdAt || new Date().toISOString(),
+                    submittedBy: 'Admin',
+                    area: r.area || null,
+                    referenceNumber: r.referenceNumber || null
+                });
+            }
+        });
+
         if (areaFilter) result = result.filter(e => e.area === areaFilter);
+        
+        // Sort chronologically so they appear in correct order
+        result.sort((a, b) => new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0));
+
         return sendJSON(res, 200, { entries: result, total: result.length, slipsPerBook: SLIPS_PER_BOOK_DE, totalBooks: TOTAL_BOOKS_DE });
     }
 
@@ -1244,6 +1301,42 @@ const server = http.createServer(async (req, res) => {
     // ── PUT /api/donation-entries/:id  (edit — admin: all fields; volunteer: name+amount) ──
     if (req.method === 'PUT' && pathname.startsWith('/api/donation-entries/')) {
         const id  = decodeURIComponent(pathname.replace('/api/donation-entries/', ''));
+        
+        // --- INTERCEPT PB- and RC- ---
+        if (id.startsWith('PB-')) {
+            const parts = id.split('-');
+            const bookId = `PB-${parts[1]}`;
+            const slipNum = Number(parts[2]);
+            const bookIdx = pautiBooks.findIndex(b => b.pautiBookId === bookId);
+            if (bookIdx === -1) return sendJSON(res, 404, { message: 'Pauti book not found.' });
+            const slipIdx = pautiBooks[bookIdx].slips.findIndex(s => s.slipNumber === slipNum);
+            if (slipIdx === -1) return sendJSON(res, 404, { message: 'Slip not found.' });
+            try {
+                const body = await readBody(req);
+                const slip = pautiBooks[bookIdx].slips[slipIdx];
+                Object.keys(body).forEach(k => {
+                    if (!k.startsWith('_')) slip[k] = body[k];
+                });
+                await savePautiBooks();
+                return sendJSON(res, 200, { success: true, entry: slip });
+            } catch(e) { return sendJSON(res, 400, { message: e.message }); }
+        }
+        
+        if (id.startsWith('RC-')) {
+            const rId = id.substring(3);
+            const idx = receipts.findIndex(r => r.receiptId === rId || r.receiptId === `RC-${rId}` || r.receiptId === id);
+            if (idx === -1) return sendJSON(res, 404, { message: 'Receipt not found.' });
+            try {
+                const body = await readBody(req);
+                Object.keys(body).forEach(k => {
+                    if (!k.startsWith('_')) receipts[idx][k] = body[k];
+                });
+                await saveReceipts();
+                return sendJSON(res, 200, { success: true, entry: receipts[idx] });
+            } catch(e) { return sendJSON(res, 400, { message: e.message }); }
+        }
+        // --- END INTERCEPT ---
+
         const idx = donationEntries.findIndex(e => e.entryId === id);
         if (idx === -1) return sendJSON(res, 404, { message: 'Entry not found.' });
         try {
@@ -1459,6 +1552,35 @@ const server = http.createServer(async (req, res) => {
     // ── DELETE /api/donation-entries/:id  (admin hard delete) ────────────────
     if (req.method === 'DELETE' && pathname.startsWith('/api/donation-entries/')) {
         const id  = decodeURIComponent(pathname.replace('/api/donation-entries/', ''));
+        
+        // --- INTERCEPT PB- and RC- ---
+        if (id.startsWith('PB-')) {
+            const parts = id.split('-');
+            const bookId = `PB-${parts[1]}`;
+            const slipNum = Number(parts[2]);
+            const bookIdx = pautiBooks.findIndex(b => b.pautiBookId === bookId);
+            if (bookIdx > -1) {
+                const slipIdx = pautiBooks[bookIdx].slips.findIndex(s => s.slipNumber === slipNum);
+                if (slipIdx > -1) {
+                    pautiBooks[bookIdx].slips[slipIdx].deleted = true;
+                    await savePautiBooks();
+                    return sendJSON(res, 200, { success: true });
+                }
+            }
+            return sendJSON(res, 404, { message: 'Entry not found.' });
+        }
+        if (id.startsWith('RC-')) {
+            const rId = id.substring(3);
+            const idx = receipts.findIndex(r => r.receiptId === rId || r.receiptId === `RC-${rId}` || r.receiptId === id);
+            if (idx > -1) {
+                receipts[idx].deleted = true;
+                await saveReceipts();
+                return sendJSON(res, 200, { success: true });
+            }
+            return sendJSON(res, 404, { message: 'Entry not found.' });
+        }
+        // --- END INTERCEPT ---
+
         const idx = donationEntries.findIndex(e => e.entryId === id);
         if (idx === -1) return sendJSON(res, 404, { message: 'Entry not found.' });
         donationEntries[idx].deleted   = true;
