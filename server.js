@@ -1164,7 +1164,8 @@ const server = http.createServer(async (req, res) => {
         pautiBooks.forEach(book => {
             if (bookFilter && String(book.bookNumber) !== String(bookFilter)) return;
             (book.slips || []).forEach(slip => {
-                if (slip.uploadedAt && !slip.deleted && (slip.status||'').toLowerCase() === 'received' && slip.paymentMode !== 'balance' && slip.amount && Number(slip.amount) > 0) {
+                const getStatus = s => (s.status || (String(s.paymentMode).toLowerCase() === 'balance' ? 'Balance' : 'Received')).toLowerCase();
+                if (slip.uploadedAt && !slip.deleted && getStatus(slip) === 'received' && slip.amount && Number(slip.amount) > 0) {
                     result.push({
                         ...slip,
                         entryId: `PB-${book.pautiBookId}-${slip.slipNumber}`,
@@ -1191,7 +1192,8 @@ const server = http.createServer(async (req, res) => {
         // Merge Received slips from Receipts
         receipts.forEach(r => {
             if (bookFilter && String(r.bookNumber) !== String(bookFilter)) return;
-            if (!r.deleted && (r.status||'').toLowerCase() === 'received' && r.type !== 'balance') {
+            const getStatus = s => (s.status || (String(s.paymentMode||s.type).toLowerCase() === 'balance' ? 'Balance' : 'Received')).toLowerCase();
+            if (!r.deleted && getStatus(r) === 'received') {
                 result.push({
                     ...r,
                     entryId: r.receiptId || `RC-${r.receiptNumber}`,

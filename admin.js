@@ -336,7 +336,8 @@ async function loadBrReceivedBreakdown() {
         // Pauti Slips
         (pbData.pautiBooks || []).forEach(book => {
             (book.slips || []).forEach(slip => {
-                if (slip.uploadedAt && !slip.deleted && (slip.status||'').toLowerCase() === 'received' && slip.paymentMode !== 'balance' && slip.amount && Number(slip.amount) > 0) {
+                const getStatus = s => (s.status || (String(s.paymentMode).toLowerCase() === 'balance' ? 'Balance' : 'Received')).toLowerCase();
+                if (slip.uploadedAt && !slip.deleted && getStatus(slip) === 'received' && slip.amount && Number(slip.amount) > 0) {
                     allSlips.push({
                         receiptId  : `SLIP-${slip.slipNumber}`,
                         name       : slip.donorName || '—',
@@ -356,7 +357,8 @@ async function loadBrReceivedBreakdown() {
 
         // Regular Receipts
         (rcData.receipts || []).forEach(r => {
-            if (!r.deleted && (r.status||'').toLowerCase() === 'received' && r.type !== 'balance') {
+            const getStatus = s => (s.status || (String(s.paymentMode||s.type).toLowerCase() === 'balance' ? 'Balance' : 'Received')).toLowerCase();
+            if (!r.deleted && getStatus(r) === 'received') {
                 allSlips.push({
                     ...r,
                     receiptNumber: r.receiptNumber,
@@ -367,7 +369,8 @@ async function loadBrReceivedBreakdown() {
 
         // Donation Entries
         (deData.entries || []).forEach(e => {
-            if (!e.deleted && (e.status||'').toLowerCase() === 'received' && (e.paymentMode||'').toLowerCase() !== 'balance') {
+            const getStatus = s => (s.status || (String(s.paymentMode||s.type).toLowerCase() === 'balance' ? 'Balance' : 'Received')).toLowerCase();
+            if (!e.deleted && getStatus(e) === 'received') {
                 const donor = e.donorType === 'Business' ? (e.businessName || '—') : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
                 allSlips.push({
                     receiptId  : e.entryId || ('DE-' + e.receiptNumber),
@@ -2179,12 +2182,14 @@ async function loadBalanceRecovery() {
         });
 
         // Regular balance receipts
-        const receiptBal = (rcData.receipts || []).filter(r => r.type === 'balance' && !r.deleted && (r.status || '').toLowerCase() !== 'received');
+        const getStatus = s => (s.status || (String(s.paymentMode||s.type).toLowerCase() === 'balance' ? 'Balance' : 'Received')).toLowerCase();
+        const receiptBal = (rcData.receipts || []).filter(r => String(r.type).toLowerCase() === 'balance' && !r.deleted && getStatus(r) !== 'received');
 
         // Donation entries with paymentMode = 'Balance' (from any volunteer or admin)
-        const deBal = (deData.entries || []).filter(e =>
-            e.paymentMode && e.paymentMode.toLowerCase() === 'balance' && !e.deleted
-        ).map(e => {
+        const deBal = (deData.entries || []).filter(e => {
+            const getStatus = s => (s.status || (String(s.paymentMode||s.type).toLowerCase() === 'balance' ? 'Balance' : 'Received')).toLowerCase();
+            return e.paymentMode && String(e.paymentMode).toLowerCase() === 'balance' && !e.deleted && getStatus(e) !== 'received';
+        }).map(e => {
             const donor = e.donorType === 'Business'
                 ? (e.businessName || '—')
                 : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
