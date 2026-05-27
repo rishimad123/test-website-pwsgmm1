@@ -59,6 +59,15 @@ let pautiBooks        = [];
 let receipts          = [];
 let expenses          = [];
 
+// ─── SSE (Server-Sent Events) for Live Updates ───────────
+const sseClients = [];
+function broadcastLiveEvent(type, payload = {}) {
+    const data = `data: ${JSON.stringify({ type, ...payload })}\n\n`;
+    sseClients.forEach(client => {
+        try { client.res.write(data); } catch (e) {}
+    });
+}
+
 // ─── Save helpers (write in-memory array back to MongoDB) ────────────────────
 
 async function saveDonations() {
@@ -69,6 +78,7 @@ async function saveDonations() {
 async function saveDonationEntries() {
     await colDonationEntries.deleteMany({});
     if (donationEntries.length > 0) await colDonationEntries.insertMany(donationEntries.map(e => ({ ...e })));
+    broadcastLiveEvent('donations_updated');
 }
 
 async function saveBuildings() {
@@ -351,6 +361,25 @@ const server = http.createServer(async (req, res) => {
             console.error('Receipt submission error:', err.message);
             return sendJSON(res, 400, { message: err.message || 'Bad request.' });
         }
+    }
+
+    
+    // ── GET /api/live-updates (SSE) ──────────────────────────────────────────
+    if (req.method === 'GET' && pathname === '/api/live-updates') {
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*'
+        });
+        res.write('data: {"type":"connected"}\n\n');
+        const client = { id: Date.now(), res };
+        sseClients.push(client);
+        req.on('close', () => {
+            const idx = sseClients.indexOf(client);
+            if (idx !== -1) sseClients.splice(idx, 1);
+        });
+        return;
     }
 
     // ── GET /api/receipts ─────────────────────────────────────────────────

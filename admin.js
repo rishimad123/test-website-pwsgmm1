@@ -245,7 +245,9 @@ async function loadLiveRecentDonations() {
 // ==================== DONATION TRACKING LIVE CARDS ====================
 async function loadDonationTrackingCards() {
     try {
-        const allSlips = window._adeAll || [];
+        const res = await fetch('/api/donation-entries');
+        const data = await res.json();
+        const allSlips = data.entries || [];
 
         const withAmt = allSlips.filter(s => s.status === 'Received' && s.paymentMode !== 'Balance');
         const withoutAmt = allSlips.filter(s => s.status === 'Balance' || s.paymentMode === 'Balance');
