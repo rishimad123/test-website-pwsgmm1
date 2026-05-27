@@ -3273,6 +3273,7 @@ window._fmtBytesA = function(b) {
                     return '<div style="padding:8px 12px;background:#fff;border-radius:8px;border:1px solid #E3F2FD;margin-bottom:6px;font-size:.82rem;">' +
                         nameChange + amtChange + bookChange + recChange + modeChange + statusChange +
                         '<span style="color:#888;">Reason:</span> ' + (h.reason||'—') + ' &nbsp;<span style="color:#aaa;font-size:.75rem;">' + dt + ' by ' + (h.changedBy||'—') + '</span>' +
+                        extraInfo +
                     '</div>';
                 }).join('');
             const form = modal.querySelector('form');
