@@ -2268,9 +2268,15 @@ function openBrEditModal(receiptId, name, amount, mode, status, bookNum, receipt
                 if (h.fromMode !== h.toMode && h.fromMode !== undefined && h.toMode !== undefined) modeChange = '<span style="color:#888;">Mode:</span> <strong>' + (h.fromMode||'—') + '</strong> &rarr; <strong>' + (h.toMode||'—') + '</strong><br>';
                 let statusChange = '';
                 if (h.fromStatus !== h.toStatus && h.fromStatus !== undefined && h.toStatus !== undefined) statusChange = '<span style="color:#888;">Status:</span> <strong>' + (h.fromStatus||'—') + '</strong> &rarr; <strong>' + (h.toStatus||'—') + '</strong><br>';
+                let extraInfo = '<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #E3F2FD;font-size:.78rem;color:#666;">' +
+                    'Amount: <strong>' + (h.toAmount !== undefined && h.toAmount !== null ? '₹'+h.toAmount : (amount != null ? '₹'+amount : '—')) + '</strong> &nbsp;|&nbsp; ' +
+                    'Book: <strong>' + (h.toBook !== undefined && h.toBook !== null ? h.toBook : (bookNum || '—')) + '</strong> &nbsp;|&nbsp; ' +
+                    'Receipt: <strong>' + (h.toReceipt !== undefined && h.toReceipt !== null ? h.toReceipt : (receiptNum || '—')) + '</strong>' +
+                    '</div>';
                 return '<div style="padding:8px 12px;background:#fff;border-radius:8px;border:1px solid #E3F2FD;margin-bottom:6px;font-size:.82rem;">' +
                     nameChange + amtChange + bookChange + recChange + modeChange + statusChange +
                     '<span style="color:#888;">Reason:</span> ' + (h.reason||'—') + ' &nbsp;<span style="color:#aaa;font-size:.75rem;">' + dt + ' by ' + (h.changedBy||'—') + '</span>' +
+                    extraInfo +
                 '</div>';
             }).join('');
         form.insertBefore(histDiv, form.firstChild);
