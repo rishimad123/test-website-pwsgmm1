@@ -1158,7 +1158,18 @@ const server = http.createServer(async (req, res) => {
         const qp = new URL(`http://x${req.url}`).searchParams;
         const bookFilter = qp.get('bookNumber');
         const areaFilter = qp.get('area');
-        let result = donationEntries.filter(e => !e.deleted);
+        function normalizeStatus(st, pm) {
+            let s = String(st || '').toLowerCase().trim();
+            if (s === 'undefined' || s === 'null' || s === '') {
+                return String(pm || '').toLowerCase().trim() === 'balance' ? 'Balance' : 'Received';
+            }
+            return s.charAt(0).toUpperCase() + s.slice(1);
+        }
+
+        let result = donationEntries.filter(e => !e.deleted).map(e => ({
+            ...e,
+            status: normalizeStatus(e.status, e.paymentMode)
+        }));
         
         // Merge Received slips from Pauti Books
         pautiBooks.forEach(book => {
@@ -1177,7 +1188,7 @@ const server = http.createServer(async (req, res) => {
                         lastName: slip.lastName || '',
                         amount: slip.amount,
                         paymentMode: slip.paymentMode || 'Cash',
-                        status: slip.status || 'Received',
+                        status: st,
                         photoUrl: slip.photoUrl || null,
                         submittedAt: slip.uploadedAt,
                         submittedBy: slip.uploadedBy || 'Auto',
@@ -1205,7 +1216,7 @@ const server = http.createServer(async (req, res) => {
                     lastName: r.lastName || '',
                     amount: r.amount,
                     paymentMode: r.paymentMode || 'Cash',
-                    status: r.status || 'Received',
+                    status: st,
                     photoUrl: r.photoUrl || null,
                     submittedAt: r.date || r.createdAt || new Date().toISOString(),
                     submittedBy: 'Admin',
