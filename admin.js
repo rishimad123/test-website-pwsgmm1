@@ -414,6 +414,7 @@ async function loadBrReceivedBreakdown() {
             const delBtn = `<button class="btn-icon btn-delete" title="Delete" onclick="softDeleteReceipt('${safeId}','${safeName}')"><i class="fas fa-trash"></i></button>`;
             
             return `<tr>
+                <td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${safeName || '—'}">${safeName || '—'}</td>
                 <td>${r.bookNumber || '—'}</td>
                 <td>${r.receiptNumber || '—'}</td>
                 <td><strong style="color:#1B5E20;">${fmt(r.amount)}</strong></td>
