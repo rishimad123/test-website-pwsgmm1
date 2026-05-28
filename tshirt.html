@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-shirt Applications - Patelwadi Ganesh Mitramandal</title>
+    <meta name="description" content="Apply for Patelwadi Ganesh Mitramandal T-shirts. Select your size, quantity, and submit your application.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .ts-page { padding: 60px 0 80px; }
+        .ts-hero { background: linear-gradient(135deg, #c0392b 0%, #e74c3c 50%, #ff6b35 100%); padding: 60px 0 40px; text-align: center; color: #fff; }
+        .ts-hero h1 { font-size: 2.4rem; font-weight: 700; margin: 0 0 10px; }
+        .ts-hero p  { font-size: 1.05rem; opacity: .85; margin: 0; }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <i class="fas fa-om"></i>
+                    <span>Patelwadi Ganesh Mitramandal</span>
+                </div>
+                <button class="mobile-toggle" id="mobileToggle">
+                    <span></span><span></span><span></span>
+                </button>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="committee.html">Committee</a></li>
+                    <li><a href="volunteers.html">Volunteers</a></li>
+                    <li><a href="gallery.html">Gallery</a></li>
+                    <li><a href="donations.html">Donations</a></li>
+                    <li><a href="tshirt.html" class="active">T-shirts</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                    <li><a href="login.html" class="btn-login">Login</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Banner -->
+    <section class="ts-hero">
+        <div class="container">
+            <h1>&#128248; T-shirt Applications</h1>
+            <p>Apply for your Patelwadi Ganesh Mitramandal T-shirt below</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="ts-page">
+        <div class="container">
+            <div id="tshirtSectionInner" style="max-width:900px;margin:0 auto;">
+                <!-- Content rendered by tshirts.js -->
+                <div style="text-align:center;padding:60px;color:#aaa;">
+                    <i class="fas fa-spinner fa-spin" style="font-size:2rem;"></i>
+                    <p style="margin-top:14px;">Loading T-shirt section...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h3>About Us</h3>
+                    <p>Patelwadi Sarvajanik Ganesh Mitramandal is dedicated to celebrating Ganesh Chaturthi with devotion and community service.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="committee.html">Committee</a></li>
+                        <li><a href="volunteers.html">Volunteers</a></li>
+                        <li><a href="gallery.html">Gallery</a></li>
+                        <li><a href="tshirt.html">T-shirts</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Contact Info</h3>
+                    <ul class="contact-info">
+                        <li><i class="fas fa-map-marker-alt"></i> Patelwadi, Mumbai - 400001</li>
+                        <li><i class="fas fa-phone"></i> +91 98765 43210</li>
+                        <li><i class="fas fa-envelope"></i> info@patelwadiganesh.org</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Newsletter</h3>
+                    <p>Subscribe to get updates about our events</p>
+                    <form class="newsletter-form" onsubmit="return false;">
+                        <input type="email" placeholder="Your email" required>
+                        <button type="submit"><i class="fas fa-paper-plane"></i></button>
+                    </form>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Patelwadi Sarvajanik Ganesh Mitramandal. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="tshirts.js?v=2"></script>
+    <script src="main.js"></script>
+</body>
+</html>
