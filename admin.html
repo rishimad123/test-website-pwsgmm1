@@ -959,6 +959,124 @@ window._fmtBytesA = function(b) {
                 padding: 12px !important;
             }
         }
+        /* ===== DONOR SEARCH STYLES (replicated from volunteer dashboard) ===== */
+        #dsTopBar {
+            background: #fff;
+            border: 1px solid #e8eaf0;
+            border-radius: 12px;
+            padding: 11px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        #dsTopBar input[type=text] {
+            flex: 1;
+            min-width: 180px;
+            padding: 8px 10px 8px 32px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 9px;
+            font-size: .88rem;
+            outline: none;
+            transition: border-color .2s;
+        }
+        #dsTopBar input[type=text]:focus { border-color: #3949AB; }
+        #dsFilterPanel {
+            background: #FAFBFF;
+            border: 1px solid #e8eaf0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+        #dsTableWrap {
+            border-radius: 10px;
+            border: 1px solid #e8eaf0;
+            overflow: hidden;
+        }
+        .ds-scroll {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: calc(100vh - 290px);
+            -webkit-overflow-scrolling: touch;
+        }
+        #dsTableWrap table { width: 100%; border-collapse: collapse; }
+        #dsTableWrap thead th {
+            position: sticky; top: 0; z-index: 2;
+            padding: 8px 12px;
+            background: linear-gradient(135deg,#1a237e,#3949ab);
+            color: #fff;
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-align: left;
+        }
+        #dsTableWrap tbody td {
+            padding: 8px 12px;
+            font-size: .84rem;
+            border-bottom: 1px solid #f0f3fa;
+            vertical-align: middle;
+        }
+        .ds-chip {
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: .73rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        /* Mobile card rows for donor search */
+        @media (max-width: 768px) {
+            #dsTbody tr:has(td.ds-year-header) {
+                background: none !important;
+                border: none !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                padding: 0 !important;
+                margin-bottom: 4px !important;
+            }
+            #dsTbody td.ds-year-header {
+                display: block !important;
+                text-align: center !important;
+                padding: 8px 12px !important;
+                border-bottom: none !important;
+            }
+            #dsTbody td.ds-year-header::before { content: none !important; }
+            #dsTbody tr {
+                background: #fff;
+                border: 1px solid #e0e7ef;
+                border-radius: 12px;
+                margin-bottom: 10px;
+                box-shadow: 0 2px 8px rgba(26,35,126,.07);
+                padding: 6px 4px;
+                display: block;
+            }
+            #dsTbody td {
+                display: flex !important;
+                justify-content: space-between;
+                align-items: flex-start;
+                flex-wrap: wrap;
+                padding: 9px 14px !important;
+                font-size: .9rem;
+                border-bottom: 1px solid #f0f3fa;
+                text-align: right;
+            }
+            #dsTbody td:last-child { border-bottom: none; }
+            #dsTbody td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                color: #1a237e;
+                font-size: .78rem;
+                text-transform: uppercase;
+                letter-spacing: .04em;
+                text-align: left;
+                flex: 0 0 42%;
+                max-width: 42%;
+                margin-right: 8px;
+            }
+            #dsThead { display: none; }
+        }
+        /* ===== END DONOR SEARCH STYLES ===== */
+
         /* Google Translate Customization */
         .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon { display: none !important; }
         body { top: 0px !important; }
@@ -987,6 +1105,12 @@ window._fmtBytesA = function(b) {
                     <a href="#" class="active" onclick="showAdminSection('dashboard')">
                         <i class="fas fa-chart-line"></i>
                         <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" onclick="showAdminSection('donorSearch')">
+                        <i class="fas fa-search"></i>
+                        <span>Donor Search</span>
                     </a>
                 </li>
                 <li>
@@ -1189,6 +1313,87 @@ window._fmtBytesA = function(b) {
                     </div>
                 </div>
                 
+                <!-- Donor Search Section -->
+                <div id="donorSearch" class="content-section" style="display:none;">
+                    <div class="page-title">
+                        <h1><i class="fas fa-search" style="color:var(--primary-color);margin-right:10px;"></i>Donor Search</h1>
+                        <p>Search and filter all donation records</p>
+                    </div>
+                    <div style="background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.06);">
+                        <!-- Top bar: search + chips + buttons -->
+                        <div id="dsTopBar">
+                            <div style="font-weight:700;font-size:.95rem;color:#1a237e;display:flex;align-items:center;gap:7px;white-space:nowrap;">
+                                <i class="fas fa-search" style="font-size:.85rem;"></i>Donor Search
+                            </div>
+                            <div style="flex:1;min-width:180px;position:relative;">
+                                <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#bbb;font-size:.78rem;pointer-events:none;"></i>
+                                <input type="text" id="dsGlobalSearch" placeholder="Search name, road, building, amount&#x2026;" oninput="dsApplyFilters()">
+                            </div>
+                            <span id="dsChipTotal" class="ds-chip" style="background:#E3F2FD;color:#1565C0;">&#x2014; total</span>
+                            <span id="dsChipMatch" class="ds-chip" style="background:#E8F5E9;color:#2E7D32;">&#x2014; shown</span>
+                            <span id="dsChipSum"   class="ds-chip" style="background:#FFF3E0;color:#E65100;">&#x20B9;&#x2014;</span>
+                            <button id="dsToggleFiltersBtn" onclick="dsToggleFilters()" style="padding:6px 12px;border:1.5px solid #e0e0e0;border-radius:8px;background:#f8f9fa;color:#444;font-size:.81rem;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                                <i class="fas fa-sliders-h"></i><span id="dsToggleBtnLabel">Filters</span>
+                            </button>
+                            <button onclick="dsClearFilters()" title="Clear filters" style="padding:6px 10px;border:1.5px solid #ffcdd2;border-radius:8px;background:#fff;color:#c62828;font-size:.81rem;cursor:pointer;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button onclick="dsExportCSV()" style="padding:6px 12px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;font-size:.81rem;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                                <i class="fas fa-download"></i>CSV
+                            </button>
+                        </div>
+
+                        <!-- Filters -->
+                        <div id="dsFilterPanel" style="display:none;">
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;align-items:end;">
+                                <div>
+                                    <label style="font-size:.77rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px;margin-bottom:6px;">
+                                        <i class="fas fa-map-marker-alt" style="color:var(--primary-color);"></i> Location
+                                    </label>
+                                    <input type="text" id="dsLocSearch" placeholder="Road, area, ward&#x2026;" style="width:100%;padding:7px 11px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.85rem;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='#e0e0e0'" oninput="dsApplyFilters()">
+                                </div>
+                                <div>
+                                    <label style="font-size:.77rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px;margin-bottom:6px;">
+                                        <i class="fas fa-building" style="color:#3949AB;"></i> Landmark
+                                    </label>
+                                    <input type="text" id="dsLandSearch" placeholder="Building, society&#x2026;" style="width:100%;padding:7px 11px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.85rem;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='#3949AB'" onblur="this.style.borderColor='#e0e0e0'" oninput="dsApplyFilters()">
+                                </div>
+                                <div>
+                                    <label style="font-size:.77rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px;margin-bottom:6px;">
+                                        <i class="fas fa-rupee-sign" style="color:#E67E22;"></i> Amount Range
+                                    </label>
+                                    <div style="display:flex;gap:6px;align-items:center;">
+                                        <input type="number" id="dsAmtMin" placeholder="Min &#x20B9;" min="0" style="flex:1;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.85rem;box-sizing:border-box;" onfocus="this.style.borderColor='#E67E22'" onblur="this.style.borderColor='#e0e0e0'" oninput="dsApplyFilters()">
+                                        <span style="color:#bbb;">&#x2013;</span>
+                                        <input type="number" id="dsAmtMax" placeholder="Max &#x20B9;" min="0" style="flex:1;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.85rem;box-sizing:border-box;" onfocus="this.style.borderColor='#E67E22'" onblur="this.style.borderColor='#e0e0e0'" oninput="dsApplyFilters()">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loading / table / empty state -->
+                        <div id="dsLoadingMsg" style="text-align:center;color:#aaa;padding:48px 20px;font-size:.92rem;">
+                            <i class="fas fa-spinner fa-spin" style="font-size:1.3rem;margin-bottom:10px;display:block;color:#ccc;"></i>
+                            Loading donor records&#x2026;
+                        </div>
+                        <div id="dsTableWrap" style="display:none;">
+                            <div class="ds-scroll">
+                                <table class="table admin-table"><thead id="dsThead"></thead><tbody id="dsTbody"></tbody></table>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid #eef0f6;background:#fafbff;flex-wrap:wrap;gap:8px;">
+                                <span id="dsPaginationInfo" style="font-size:.78rem;color:#888;"></span>
+                                <div id="dsPaginationBtns" style="display:flex;gap:4px;"></div>
+                            </div>
+                        </div>
+                        <div id="dsNoResults" style="display:none;text-align:center;padding:40px 20px;color:#aaa;font-size:.88rem;">
+                            <i class="fas fa-search" style="font-size:1.6rem;margin-bottom:10px;display:block;opacity:.25;"></i>
+                            No records match your filters.
+                        </div>
+                    </div>
+                </div>
+                <!-- ══════════ END DONOR SEARCH SECTION ══════════ -->
+
+
                 <!-- Users Management Section -->
                 <div id="users" class="content-section">
                     <div class="admin-card">

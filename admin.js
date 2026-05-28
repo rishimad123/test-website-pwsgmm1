@@ -88,6 +88,7 @@ function showAdminSection(sectionId) {
         'balanceRecovery' : 'Balance/Pending Recovery',
         'donationTracking': 'Donations',
         'donationEntries' : 'Donation Data Entry',
+        'donorSearch'     : 'Donor Search',
     };
 
     document.getElementById('pageTitle').textContent = titles[sectionId] || 'Admin Panel';
@@ -104,6 +105,7 @@ function showAdminSection(sectionId) {
     if (sectionId === 'donationEntries')  loadAdminDonationEntries();
     if (sectionId === 'gallery')          loadAdminGallery();
     if (sectionId === 'events')           loadAdminEvents();
+    if (sectionId === 'donorSearch')      loadDonorSearch();
 }
 
 // ── Quick Upload (from Admin Dashboard home) ──────────────────────────────────
@@ -3109,4 +3111,221 @@ async function deleteEvent(id) {
     } catch(e) {
         showNotification('Cannot reach server.', 'error');
     }
+}
+
+
+// ==================== ADMIN DONOR SEARCH (replicated from volunteer dashboard) ====================
+let _dsRecords  = [], _dsColumns = [], _dsFiltered = [], _dsPage = 1;
+let _dsAmtCol   = null;
+let _dsYearCol  = null;
+let _dsNameCol  = null;
+let _dsAddrCols = [];
+let _dsLandCols = [];
+let _dsVolCols  = [];
+const DS_PAGE   = 30;
+let _dsFiltersOpen = false;
+
+const _KW_AMT   = /amount|amt|donation|don|rupee|\brs\b|inr/i;
+const _KW_YEAR  = /year|yr|varshe|वर्ष/i;
+const _KW_NAME  = /donor|name|naam|नाम/i;
+const _KW_ADDR  = /road|area|street|ward|locality|location|address|addr|nagar|galli|lane|plot|flat|house|sector/i;
+const _KW_LAND  = /landmark|building|bldg|society|chawl|complex|tower|apt|apartment|opposite|near/i;
+
+function _dsDetectCols() {
+    _dsAmtCol   = _dsColumns.find(c => _KW_AMT.test(c))  || null;
+    _dsYearCol  = _dsColumns.find(c => _KW_YEAR.test(c)) || null;
+    _dsNameCol  = _dsColumns.find(c => _KW_NAME.test(c)) || null;
+    _dsAddrCols = _dsColumns.filter(c => _KW_ADDR.test(c) && c !== _dsAmtCol);
+    _dsLandCols = _dsColumns.filter(c => _KW_LAND.test(c) && c !== _dsAmtCol);
+    if (_dsLandCols.length === 0 && _dsAddrCols.length > 1)
+        _dsLandCols = [_dsAddrCols[_dsAddrCols.length - 1]];
+    const seen = new Set();
+    _dsVolCols  = [];
+    const addCol = c => { if (c && !seen.has(c)) { seen.add(c); _dsVolCols.push(c); } };
+    addCol(_dsNameCol);
+    _dsAddrCols.forEach(addCol);
+    _dsLandCols.forEach(addCol);
+    addCol(_dsAmtCol);
+    if (_dsVolCols.length > 4) {
+        const keep = [];
+        if (_dsNameCol)             keep.push(_dsNameCol);
+        if (_dsAddrCols.length)     keep.push(_dsAddrCols[0]);
+        if (_dsLandCols.length)     keep.push(_dsLandCols[0]);
+        if (_dsAmtCol)              keep.push(_dsAmtCol);
+        _dsVolCols = [...new Set(keep)];
+    }
+    if (_dsVolCols.length === 0) {
+        const fin = /balance|cash|bank|withdrawn|collection|expense|growth|notes/i;
+        _dsVolCols = _dsColumns.filter(c => !fin.test(c)).slice(0, 4);
+    }
+}
+
+function dsToggleFilters() {
+    _dsFiltersOpen = !_dsFiltersOpen;
+    const panel = document.getElementById('dsFilterPanel');
+    const lbl   = document.getElementById('dsToggleBtnLabel');
+    const btn   = document.getElementById('dsToggleFiltersBtn');
+    if (panel) panel.style.display  = _dsFiltersOpen ? '' : 'none';
+    if (lbl)   lbl.textContent      = _dsFiltersOpen ? 'Hide Filters' : 'Filters';
+    if (btn)   btn.style.background = _dsFiltersOpen ? '#e8eaf6' : '#f8f9fa';
+}
+
+function _dsGetYear(r) {
+    if (_dsYearCol && r[_dsYearCol] !== undefined && String(r[_dsYearCol]).trim() !== '')
+        return String(r[_dsYearCol]).trim();
+    for (const col of _dsColumns) {
+        const m = String(r[col] ?? '').match(/\b(19|20)\d{2}\b/);
+        if (m) return m[0];
+    }
+    return 'Unknown';
+}
+
+function _dsGroupByYear(records) {
+    const map = new Map();
+    records.forEach(r => {
+        const yr = _dsGetYear(r);
+        if (!map.has(yr)) map.set(yr, []);
+        map.get(yr).push(r);
+    });
+    return new Map([...map.entries()].sort((a, b) => b[0].localeCompare(a[0])));
+}
+
+async function loadDonorSearch() {
+    const msgEl = document.getElementById('dsLoadingMsg');
+    const wrap  = document.getElementById('dsTableWrap');
+    if (msgEl) {
+        msgEl.style.display = '';
+        msgEl.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:1.3rem;margin-bottom:10px;display:block;color:#ccc;"></i>Loading donor records…';
+    }
+    if (wrap) wrap.style.display = 'none';
+    try {
+        const res  = await fetch('/api/donations');
+        const data = await res.json();
+        _dsColumns  = data.columns || [];
+        _dsRecords  = data.records || [];
+        _dsFiltered = _dsRecords;
+        _dsPage     = 1;
+        _dsDetectCols();
+        if (_dsVolCols.length > 0) {
+            dsApplyFilters();
+            if (msgEl) msgEl.style.display = 'none';
+        } else if (_dsColumns.length > 0) {
+            if (msgEl) { msgEl.style.display = ''; msgEl.innerHTML = '<i class="fas fa-lock" style="font-size:1.4rem;opacity:.4;margin-bottom:8px;display:block;color:#888;"></i>No donor details available in current dataset.'; }
+        } else {
+            if (msgEl) { msgEl.style.display = ''; msgEl.innerHTML = '<i class="fas fa-cloud-upload-alt" style="font-size:1.8rem;opacity:.3;margin-bottom:8px;display:block;"></i>No data uploaded yet.'; }
+        }
+    } catch (e) {
+        if (msgEl) { msgEl.style.display = ''; msgEl.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size:1.4rem;opacity:.5;margin-bottom:8px;display:block;color:#E67E22;"></i>&#9888; Cannot connect to server.'; }
+    }
+}
+
+function dsApplyFilters() {
+    const gq   = (document.getElementById('dsGlobalSearch')?.value || '').toLowerCase().trim();
+    const locQ = (document.getElementById('dsLocSearch')?.value    || '').toLowerCase().trim();
+    const lanQ = (document.getElementById('dsLandSearch')?.value   || '').toLowerCase().trim();
+    const mn   = parseFloat(document.getElementById('dsAmtMin')?.value || '') || null;
+    const mx   = parseFloat(document.getElementById('dsAmtMax')?.value || '') || null;
+
+    _dsFiltered = _dsRecords.filter(r => {
+        if (locQ) { const hay = (_dsAddrCols.length ? _dsAddrCols : _dsColumns).map(c => String(r[c]??'')).join(' ').toLowerCase(); if (!hay.includes(locQ)) return false; }
+        if (lanQ) { const hay = (_dsLandCols.length ? _dsLandCols : _dsColumns).map(c => String(r[c]??'')).join(' ').toLowerCase(); if (!hay.includes(lanQ)) return false; }
+        if (_dsAmtCol && (mn !== null || mx !== null)) { const a = parseFloat(r[_dsAmtCol]) || 0; if (mn !== null && a < mn) return false; if (mx !== null && a > mx) return false; }
+        if (gq) { const hay = _dsVolCols.map(c => String(r[c]??'')).join(' ').toLowerCase(); if (!hay.includes(gq)) return false; }
+        return true;
+    });
+
+    const sum = _dsAmtCol ? _dsFiltered.reduce((s, r) => s + (parseFloat(r[_dsAmtCol]) || 0), 0) : 0;
+    const ct  = document.getElementById('dsChipTotal');
+    const cm  = document.getElementById('dsChipMatch');
+    const cs  = document.getElementById('dsChipSum');
+    if (ct) ct.textContent = _dsRecords.length.toLocaleString('en-IN') + ' total';
+    if (cm) cm.textContent = _dsFiltered.length.toLocaleString('en-IN') + ' shown';
+    if (cs) cs.textContent = _dsAmtCol ? '₹' + sum.toLocaleString('en-IN') : '';
+    _dsPage = 1;
+    dsRenderTable();
+}
+
+function dsClearFilters() {
+    ['dsGlobalSearch','dsLocSearch','dsLandSearch','dsAmtMin','dsAmtMax'].forEach(id => {
+        const e = document.getElementById(id); if (e) e.value = '';
+    });
+    dsApplyFilters();
+}
+
+function dsRenderTable() {
+    const thead = document.getElementById('dsThead');
+    const tbody = document.getElementById('dsTbody');
+    const wrap  = document.getElementById('dsTableWrap');
+    const noRes = document.getElementById('dsNoResults');
+    const msgEl = document.getElementById('dsLoadingMsg');
+    if (!thead || !tbody) return;
+
+    if (_dsFiltered.length === 0 || _dsVolCols.length === 0) {
+        if (wrap)  wrap.style.display  = 'none';
+        if (noRes) noRes.style.display = '';
+        if (msgEl) msgEl.style.display = 'none';
+        return;
+    }
+    if (wrap)  wrap.style.display  = '';
+    if (noRes) noRes.style.display = 'none';
+    if (msgEl) msgEl.style.display = 'none';
+
+    thead.innerHTML = '<tr>' + _dsVolCols.map(c => '<th>' + c + '</th>').join('') + '</tr>';
+
+    const groups   = _dsGroupByYear(_dsFiltered);
+    const flatRows = [];
+    groups.forEach((recs, yr) => {
+        const yearSum = _dsAmtCol ? recs.reduce((s, r) => s + (parseFloat(r[_dsAmtCol]) || 0), 0) : null;
+        flatRows.push({ type: 'header', yr, count: recs.length, sum: yearSum });
+        recs.forEach(r => flatRows.push({ type: 'row', r }));
+    });
+
+    const start    = (_dsPage - 1) * DS_PAGE;
+    const pageRows = flatRows.slice(start, start + DS_PAGE);
+
+    tbody.innerHTML = pageRows.map(item => {
+        if (item.type === 'header') {
+            const sumTxt = item.sum !== null ? ' &nbsp;&middot;&nbsp; <span style="color:#27AE60;font-weight:700;">₹' + item.sum.toLocaleString('en-IN') + '</span>' : '';
+            return '<tr><td colspan="' + _dsVolCols.length + '" class="ds-year-header" style="padding:9px 12px;background:linear-gradient(90deg,#1a237e0a,transparent);border-top:2px solid #e8eaf0;border-bottom:1px solid #e8eaf0;"><span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;"><span style="background:linear-gradient(135deg,#FF6B35,#FF8C42);color:#fff;border-radius:20px;padding:2px 12px;font-size:.76rem;font-weight:700;letter-spacing:.04em;">' + item.yr + '</span><span style="font-size:.8rem;color:#666;">' + item.count.toLocaleString('en-IN') + ' donors' + sumTxt + '</span></span></td></tr>';
+        }
+        const cells = _dsVolCols.map(col => {
+            const v    = item.r[col] ?? '';
+            const disp = col === _dsAmtCol && v !== '' ? '<strong style="color:#2E7D32;">₹' + Number(v).toLocaleString('en-IN') + '</strong>' : '<span title="' + String(v).replace(/"/g, '&quot;') + '">' + v + '</span>';
+            return '<td data-label="' + String(col).replace(/"/g, '&quot;') + '">' + disp + '</td>';
+        }).join('');
+        return '<tr onmouseover="this.style.background='#eef2ff'" onmouseout="this.style.background=''">' + cells + '</tr>';
+    }).join('');
+
+    const tp = Math.ceil(flatRows.length / DS_PAGE);
+    const pi = document.getElementById('dsPaginationInfo');
+    const pb = document.getElementById('dsPaginationBtns');
+    if (pi) pi.textContent = (start+1) + '–' + Math.min(start+DS_PAGE, flatRows.length) + ' of ' + _dsFiltered.length.toLocaleString('en-IN') + ' records';
+    if (pb) {
+        pb.innerHTML = '';
+        if (tp > 1) {
+            const mk = (lbl, p, active) => {
+                const b = document.createElement('button');
+                b.innerHTML = lbl;
+                b.style.cssText = 'padding:4px 10px;border:1.5px solid ' + (active?'#3949AB':'#ddd') + ';border-radius:6px;background:' + (active?'#3949AB':'#fff') + ';color:' + (active?'#fff':'#333') + ';cursor:pointer;font-size:.78rem;';
+                if (!active) { b.onmouseover=()=>b.style.background='#f0f2ff'; b.onmouseout=()=>b.style.background='#fff'; }
+                b.onclick = () => { _dsPage = p; dsRenderTable(); };
+                return b;
+            };
+            if (_dsPage > 1) pb.appendChild(mk('&laquo;', _dsPage - 1, false));
+            for (let p = Math.max(1, _dsPage - 2); p <= Math.min(tp, _dsPage + 2); p++)
+                pb.appendChild(mk(p, p, p === _dsPage));
+            if (_dsPage < tp) pb.appendChild(mk('&raquo;', _dsPage + 1, false));
+        }
+    }
+}
+
+function dsExportCSV() {
+    if (!_dsFiltered.length) return;
+    const header = _dsVolCols.join(',');
+    const rows   = _dsFiltered.map(r => _dsVolCols.map(c => '"' + String(r[c]??'').replace(/"/g,'""') + '"').join(','));
+    const blob   = new Blob([header + '\n' + rows.join('\n')], { type: 'text/csv' });
+    const url    = URL.createObjectURL(blob);
+    const a      = document.createElement('a');
+    a.href = url; a.download = 'donor_search_export.csv'; a.click();
+    URL.revokeObjectURL(url);
 }
