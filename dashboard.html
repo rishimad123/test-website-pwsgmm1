@@ -477,7 +477,7 @@ window.fixUrl = function(url) {
             .de-payment-grid { grid-template-columns: repeat(2,1fr) !important; }
         }
 
-        /* ===== DASHBOARD MOBILE UX â€” injected ===== */
+        /* ===== DASHBOARD MOBILE UX — injected ===== */
         /* iOS input zoom prevention */
         .content-area input, .content-area select, .content-area textarea {
             font-size: max(16px, 1rem) !important;
@@ -535,7 +535,7 @@ window.fixUrl = function(url) {
             /* Hide profile name on mobile, keep avatar */
             .user-profile > div:not(.user-avatar) { display: none; }
             
-            /* Dashboard stat cards â€” 2 col */
+            /* Dashboard stat cards — 2 col */
             .dashboard-cards { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
             .dash-card { padding: 14px 10px !important; flex-direction: column; text-align: center; gap: 8px; }
             .dash-card-icon { width: 48px; height: 48px; font-size: 1.4rem; margin: 0 auto; }
@@ -553,7 +553,7 @@ window.fixUrl = function(url) {
             #dsTopBar { flex-wrap: wrap; gap: 8px; }
             #dsTopBar input[type=text] { min-width: 100%; }
 
-            /* Edit modals â€” bottom sheet */
+            /* Edit modals — bottom sheet */
             #pbEditModal .pb-edit-box,
             #deVolEditModal > div {
                 width: 100% !important;
@@ -571,6 +571,113 @@ window.fixUrl = function(url) {
         @media (max-width: 380px) {
             .dashboard-cards { grid-template-columns: 1fr !important; }
             .dash-card { flex-direction: row; text-align: left; }
+        }
+
+        /* ===== DONOR SEARCH — MOBILE OPTIMISED ===== */
+
+        /* Donor search container */
+        #donorSearch > div {
+            padding: 14px !important;
+        }
+
+        /* Top search bar wraps cleanly on small screens */
+        #dsTopBar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        #dsTopBar > div:first-child { display: none; } /* hide "Donor Search" label — saves space */
+        #dsTopBar > div[style*="flex:1"] { flex: 1 1 100%; min-width: 0; }
+        #dsGlobalSearch {
+            width: 100%;
+            padding: 10px 10px 10px 32px;
+            font-size: 1rem;
+            border: 1.5px solid #ddd;
+            border-radius: 10px;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+        }
+        #dsChipTotal, #dsChipMatch, #dsChipSum { font-size: .78rem; }
+
+        /* Filter panel stacks vertically on small screens */
+        #dsFilterPanel > div {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+        }
+
+        /* Table scroll container */
+        .ds-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Mobile: card-style rows for donor table */
+        @media (max-width: 768px) {
+            /* Year-header rows — keep as a wide banner, not a card */
+            #dsTbody tr:has(td.ds-year-header) {
+                background: none !important;
+                border: none !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                padding: 0 !important;
+                margin-bottom: 4px !important;
+            }
+            #dsTbody td.ds-year-header {
+                display: block !important;
+                text-align: center !important;
+                padding: 8px 12px !important;
+                border-bottom: none !important;
+            }
+            #dsTbody td.ds-year-header::before { content: none !important; }
+
+            /* Data rows — premium card style */
+            #dsTbody tr {
+                background: #fff;
+                border: 1px solid #e0e7ef;
+                border-radius: 12px;
+                margin-bottom: 10px;
+                box-shadow: 0 2px 8px rgba(26,35,126,.07);
+                padding: 6px 4px;
+            }
+            #dsTbody td {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                flex-wrap: wrap;
+                padding: 9px 14px !important;
+                font-size: .9rem;
+                border-bottom: 1px solid #f0f3fa;
+                text-align: right;
+            }
+            #dsTbody td:last-child { border-bottom: none; }
+            #dsTbody td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                color: #1a237e;
+                font-size: .78rem;
+                text-transform: uppercase;
+                letter-spacing: .04em;
+                text-align: left;
+                flex: 0 0 42%;
+                max-width: 42%;
+                margin-right: 8px;
+                padding-top: 2px;
+            }
+            #dsThead { display: none; }
+
+            /* Pagination bar wraps */
+            #dsPaginationInfo { font-size: .76rem; }
+            #dsPaginationBtns button { min-width: 36px; min-height: 36px; font-size: .85rem; }
+        }
+
+        @media (max-width: 576px) {
+            /* Top bar action buttons go full width */
+            #dsTopBar button { flex: 1 1 calc(50% - 4px); justify-content: center; min-height: 40px; font-size: .85rem; }
+            #dsChipTotal, #dsChipMatch, #dsChipSum { flex: 1; text-align: center; }
+            /* Donor search section padding */
+            #donorSearch > div { padding: 10px !important; }
         }
     </style>
 </head>
@@ -879,7 +986,7 @@ window.fixUrl = function(url) {
                         </div>
                         <div id="dsTableWrap" style="display:none;">
                             <div class="ds-scroll">
-                                <table><thead id="dsThead"></thead><tbody id="dsTbody"></tbody></table>
+                                <table class="table admin-table"><thead id="dsThead"></thead><tbody id="dsTbody"></tbody></table>
                             </div>
                             <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid #eef0f6;background:#fafbff;flex-wrap:wrap;gap:8px;">
                                 <span id="dsPaginationInfo" style="font-size:.78rem;color:#888;"></span>
@@ -2390,9 +2497,9 @@ window.fixUrl = function(url) {
                     ? ` &nbsp;&middot;&nbsp; <span style="color:#27AE60;font-weight:700;">\u20b9${item.sum.toLocaleString('en-IN')}</span>`
                     : '';
                 return `<tr>
-                    <td colspan="${_dsVolCols.length}"
+                    <td colspan="${_dsVolCols.length}" class="ds-year-header"
                         style="padding:9px 12px;background:linear-gradient(90deg,#1a237e0a,transparent);border-top:2px solid #e8eaf0;border-bottom:1px solid #e8eaf0;">
-                        <span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;">
                             <span style="background:linear-gradient(135deg,#FF6B35,#FF8C42);color:#fff;border-radius:20px;padding:2px 12px;font-size:.76rem;font-weight:700;letter-spacing:.04em;">
                                 ${item.yr}
                             </span>
@@ -2408,7 +2515,7 @@ window.fixUrl = function(url) {
                 const disp  = isAmt && v !== ''
                     ? `<strong style="color:#2E7D32;">\u20b9${Number(v).toLocaleString('en-IN')}</strong>`
                     : `<span title="${String(v).replace(/"/g,'&quot;')}">${v}</span>`;
-                return `<td>${disp}</td>`;
+                return `<td data-label="${String(col).replace(/"/g,'&quot;')}">${disp}</td>`;
             }).join('');
             return `<tr onmouseover="this.style.background='#eef2ff'" onmouseout="this.style.background=''">${cells}</tr>`;
         }).join('');
