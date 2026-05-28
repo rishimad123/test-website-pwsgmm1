@@ -690,13 +690,14 @@ window.fixUrl = function(url) {
         }
         .lang-toggle span { padding: 4px 10px; border-radius: 18px; transition: 0.3s; }
         .lang-toggle span.active { background: #fff; color: #1a237e; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        /* Hide Google Translate Top Bar */
-        .goog-te-banner-frame.skiptranslate { display: none !important; }
-        body { top: 0px !important; }
-        .goog-tooltip { display: none !important; box-shadow: none !important; }
-        .goog-tooltip:hover { display: none !important; box-shadow: none !important; }
-        .goog-text-highlight { background-color: transparent !important; border: none !important; box-shadow: none !important; }
-        #goog-gt-tt { display: none !important; }
+        /* Deep Hide Google Translate Top Bar */
+        .goog-te-banner-frame { display: none !important; visibility: hidden !important; }
+        .skiptranslate iframe { display: none !important; visibility: hidden !important; }
+        body { top: 0px !important; position: static !important; }
+        html { margin-top: 0px !important; }
+        #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
+        .goog-text-highlight { background: none !important; box-shadow: none !important; border: none !important; }
+        .VIpgJd-ZVi9od-aZ2wEe-wOHMyf { display: none !important; visibility: hidden !important; }
     </style>
 </head>
 <body>
@@ -3360,7 +3361,13 @@ function navToBalanceRecovery(type) {
                 autoDisplay: false
             }, 'google_translate_element');
         }
-
+        // Force hide the banner asynchronously just in case CSS fails
+        setInterval(function() {
+            var frames = document.getElementsByClassName('goog-te-banner-frame');
+            for(var i=0; i<frames.length; i++) { frames[i].style.display = 'none'; frames[i].style.visibility = 'hidden'; }
+            if (document.body && document.body.style.top !== '0px') document.body.style.top = '0px';
+            if (document.documentElement && document.documentElement.style.marginTop !== '0px') document.documentElement.style.marginTop = '0px';
+        }, 300);
         function toggleLanguage() {
             const isMar = document.getElementById('langMar').classList.contains('active');
             const targetLang = isMar ? 'en' : 'mr';
