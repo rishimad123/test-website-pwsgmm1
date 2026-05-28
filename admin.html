@@ -1088,13 +1088,14 @@ window._fmtBytesA = function(b) {
         }
         .lang-toggle span { padding: 4px 10px; border-radius: 18px; transition: 0.3s; }
         .lang-toggle span.active { background: #fff; color: #1a237e; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        /* Hide Google Translate Top Bar */
-        .goog-te-banner-frame.skiptranslate { display: none !important; }
-        body { top: 0px !important; }
-        .goog-tooltip { display: none !important; box-shadow: none !important; }
-        .goog-tooltip:hover { display: none !important; box-shadow: none !important; }
-        .goog-text-highlight { background-color: transparent !important; border: none !important; box-shadow: none !important; }
-        #goog-gt-tt { display: none !important; }
+        /* Deep Hide Google Translate Top Bar */
+        .goog-te-banner-frame { display: none !important; visibility: hidden !important; }
+        .skiptranslate iframe { display: none !important; visibility: hidden !important; }
+        body { top: 0px !important; position: static !important; }
+        html { margin-top: 0px !important; }
+        #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
+        .goog-text-highlight { background: none !important; box-shadow: none !important; border: none !important; }
+        .VIpgJd-ZVi9od-aZ2wEe-wOHMyf { display: none !important; visibility: hidden !important; }
         </style>
 </head>
 <body>
@@ -2058,6 +2059,9 @@ window._fmtBytesA = function(b) {
                                     oninput="deAdmApplyFilter()">
                                 <button class="btn btn-primary btn-small" onclick="loadAdminDonationEntries()">
                                     <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <button class="btn btn-small" style="background:#1D6F42;color:#fff;" onclick="exportAdminDonationEntriesToExcel()">
+                                    <i class="fas fa-file-excel"></i> Export Excel
                                 </button>
                             </div>
                         </div>

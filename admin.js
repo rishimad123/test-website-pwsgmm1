@@ -2828,6 +2828,67 @@ async function deAdmDelete(entryId) {
     }
 }
 
+function exportAdminDonationEntriesToExcel() {
+    if (typeof XLSX === 'undefined') {
+        showNotification('Excel export library is not loaded.', 'error');
+        return;
+    }
+    
+    if (!_deAdmAllEntries || _deAdmAllEntries.length === 0) {
+        showNotification('No entries to export.', 'error');
+        return;
+    }
+    
+    // Format data following the requested structure
+    const data = _deAdmAllEntries.map(e => {
+        const donorName = e.donorType === 'Business' ? (e.businessName || '') : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
+        
+        let submittedDate = '';
+        let submittedTime = '';
+        if (e.submittedAt) {
+            try {
+                const dtObj = new Date(e.submittedAt);
+                submittedDate = dtObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                submittedTime = dtObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            } catch (err) {}
+        }
+        
+        return {
+            'Book Number': e.bookNumber || '',
+            'Receipt Number': e.receiptNumber || '',
+            'Donor Name': donorName || '',
+            'Landmark': e.landmark || e.buildingName || '',
+            'Location': e.location || e.area || '',
+            'Common Landmark': e.commonLandmark || '',
+            'Amount': e.amount || 0,
+            'Payment Mode': e.paymentMode || '',
+            'Submitted By': e.submittedBy || '',
+            'Date Submitted': submittedDate,
+            'Time Submitted': submittedTime,
+            'Status': e.status || '',
+            'Reference Number': e.referenceNumber || '',
+            'Entry ID': e.entryId || ''
+        };
+    });
+    
+    const ws = XLSX.utils.json_to_sheet(data);
+    
+    const colWidths = [
+        { wch: 12 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
+        { wch: 20 }, { wch: 20 }, { wch: 12 }, { wch: 15 },
+        { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 12 },
+        { wch: 20 }, { wch: 25 }
+    ];
+    ws['!cols'] = colWidths;
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Donation Entries");
+    
+    const filename = "Donation_Data_Entry_" + new Date().toISOString().split('T')[0] + ".xlsx";
+    XLSX.writeFile(wb, filename);
+    showNotification('Exported to Excel successfully!', 'success');
+}
+
 // ==================== GALLERY MANAGEMENT ====================
 let _adminGalleryPhotos = [];
 
