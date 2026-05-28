@@ -180,8 +180,69 @@ async function handleQuickUpload(event) {
 }
 
 // ==================== LOAD DASHBOARD DATA ====================
-function loadDashboardData() {
+async function loadDashboardData() {
     console.log('📊 Loading dashboard data...');
+    try {
+        // Fetch Volunteers
+        fetch('/api/users').then(r => r.json()).then(data => {
+            if (data.users) {
+                const vols = data.users.filter(u => String(u.role).toLowerCase() === 'volunteer').length;
+                const total = data.users.length;
+                const el = document.getElementById('dashStatVolunteers');
+                const trend = document.getElementById('dashStatVolunteersTrend');
+                if (el) el.textContent = vols;
+                if (trend) trend.innerHTML = `<i class="fas fa-user-check"></i> Out of ${total} total users`;
+            }
+        }).catch(e => console.error('Volunteers load error:', e));
+
+        // Fetch Upcoming Events
+        fetch('/api/events').then(r => r.json()).then(data => {
+            if (data.events) {
+                const now = new Date();
+                const upcoming = data.events.filter(e => new Date(e.date) >= now).length;
+                const el = document.getElementById('dashStatEvents');
+                const trend = document.getElementById('dashStatEventsTrend');
+                if (el) el.textContent = upcoming;
+                if (trend) trend.innerHTML = `<i class="fas fa-calendar-alt"></i> Scheduled`;
+            }
+        }).catch(e => console.error('Events load error:', e));
+
+        // Fetch Gallery Photos
+        fetch('/api/gallery').then(r => r.json()).then(data => {
+            if (data.photos) {
+                const total = data.photos.length;
+                const el = document.getElementById('dashStatGallery');
+                const trend = document.getElementById('dashStatGalleryTrend');
+                if (el) el.textContent = total;
+                if (trend) trend.innerHTML = `<i class="fas fa-image"></i> Total uploaded`;
+            }
+        }).catch(e => console.error('Gallery load error:', e));
+
+        // Fetch Total Donations (Entries + Pauti Books)
+        Promise.all([
+            fetch('/api/donation-entries').then(r => r.json()),
+            fetch('/api/pauti-books').then(r => r.json())
+        ]).then(([deData, pbData]) => {
+            let totalSum = 0;
+            // Add donation entries
+            (deData.entries || []).forEach(e => {
+                if (!e.deleted && e.status === 'Received') totalSum += Number(e.amount || 0);
+            });
+            // Add pauti slips
+            (pbData.pautiBooks || []).forEach(book => {
+                (book.slips || []).forEach(s => {
+                    if (s.uploadedAt && !s.deleted) totalSum += Number(s.amount || 0);
+                });
+            });
+            const el = document.getElementById('dashStatDonations');
+            const trend = document.getElementById('dashStatDonationsTrend');
+            if (el) el.textContent = '₹' + totalSum.toLocaleString('en-IN');
+            if (trend) trend.innerHTML = `<i class="fas fa-check-circle"></i> Live collected total`;
+        }).catch(e => console.error('Donations load error:', e));
+        
+    } catch (err) {
+        console.error('Error in loadDashboardData:', err);
+    }
 }
 
 
