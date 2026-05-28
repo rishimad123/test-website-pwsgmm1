@@ -169,6 +169,8 @@ async function handleQuickUpload(event) {
             } catch (_) {}
             // Also refresh Donation Explorer if it's currently open
             if (typeof loadDonationExplorer === 'function') loadDonationExplorer();
+            // Refresh Dashboard Chart
+            if (typeof loadDashboardData === 'function') loadDashboardData();
         } else {
             setStatus('❌ Server error: ' + (data.message || 'Unknown'), false);
             if (badgeEl) badgeEl.textContent = 'Upload Failed';
