@@ -39,7 +39,7 @@ const mongoClient = new MongoClient(MONGODB_URI);
 let db;
 let colReceipts, colExpenses, colFinancials, colPautiBooks;
 let colDonations, colDonationEntries, colBuildings, colAreas;
-let colLandmarks, colCommitteeMembers;
+let colLandmarks, colCommitteeMembers, colGallery, colEvents;
 
 // ─── In-memory stores (populated from MongoDB at startup) ───────────────────
 const SLIPS_PER_BOOK_DE = 50;
@@ -58,6 +58,8 @@ let financials        = [];
 let pautiBooks        = [];
 let receipts          = [];
 let expenses          = [];
+let galleryPhotos     = [];
+let events            = [];
 
 // ─── SSE (Server-Sent Events) for Live Updates ───────────
 const sseClients = [];
@@ -121,6 +123,18 @@ async function saveExpenses() {
     if (expenses.length > 0) await colExpenses.insertMany(expenses.map(e => ({ ...e })));
 }
 
+async function saveGallery() {
+    await colGallery.deleteMany({});
+    if (galleryPhotos.length > 0) await colGallery.insertMany(galleryPhotos.map(p => ({ ...p })));
+    broadcastLiveEvent('gallery_updated');
+}
+
+async function saveEvents() {
+    await colEvents.deleteMany({});
+    if (events.length > 0) await colEvents.insertMany(events.map(e => ({ ...e })));
+    broadcastLiveEvent('events_updated');
+}
+
 // ─── Strip MongoDB _id fields from returned objects ──────────────────────────
 function stripId(obj) {
     if (!obj) return obj;
@@ -143,6 +157,8 @@ async function connectDB() {
     colAreas            = db.collection('areas');
     colLandmarks        = db.collection('landmarks');
     colCommitteeMembers = db.collection('committeeMembers');
+    colGallery          = db.collection('gallery');
+    colEvents           = db.collection('events');
 
     // ── Load donations store ──────────────────────────────────────────────────
     const donDoc = await colDonations.findOne({ _storeKey: 'donationsStore' });
@@ -184,6 +200,14 @@ async function connectDB() {
     // ── Load expenses ─────────────────────────────────────────────────────────
     expenses = (await colExpenses.find({}).toArray()).map(stripId);
     console.log(`📂 Loaded ${expenses.length} existing expense(s) from MongoDB`);
+
+    // ── Load gallery photos ───────────────────────────────────────────────────
+    galleryPhotos = (await colGallery.find({}).toArray()).map(stripId);
+    console.log(`📂 Loaded ${galleryPhotos.length} gallery photo(s) from MongoDB`);
+
+    // ── Load events ───────────────────────────────────────────────────────────
+    events = (await colEvents.find({}).toArray()).map(stripId);
+    console.log(`📂 Loaded ${events.length} event(s) from MongoDB`);
 
     console.log('✅ MongoDB connected:', MONGODB_URI);
 }
@@ -1812,6 +1836,124 @@ const server = http.createServer(async (req, res) => {
             }
             return sendJSON(res, 200, { success: true, fileName: uniqueName });
         } catch(err) { return sendJSON(res, 500, { message: 'Upload error: ' + err.message }); }
+    }
+    // ══════════════════════════════════════════════════════════════
+    // ─── GALLERY API ──────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════
+
+    if (req.method === 'GET' && pathname === '/api/gallery') {
+        return sendJSON(res, 200, { photos: galleryPhotos });
+    }
+    if (req.method === 'POST' && pathname === '/api/gallery') {
+        try {
+            const ct = req.headers['content-type'] || '';
+            const bm = ct.match(/boundary=([^;]+)/i);
+            if (!bm) return sendJSON(res, 400, { message: 'Missing boundary.' });
+            const rawBody = await readRawBody(req);
+            const parts   = parseMultipart(rawBody, bm[1].trim());
+            const filePart = parts.find(p => p.name === 'photo' && p.filename);
+            if (!filePart) return sendJSON(res, 400, { message: 'No photo received.' });
+            
+            const descPart = parts.find(p => p.name === 'description' && !p.filename);
+            const description = descPart ? descPart.data.toString('utf8').trim() : '';
+
+            const safeName   = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const uniqueName = `gallery_${Date.now()}_${safeName}`;
+            try {
+                fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
+            } catch (fsErr) {
+                console.warn('⚠️  Could not write gallery photo to disk:', fsErr.message);
+                return sendJSON(res, 500, { message: 'Failed to save photo to disk.' });
+            }
+            
+            const photo = {
+                id: `GAL-${Date.now()}`,
+                description: description,
+                photoFile: uniqueName,
+                photoUrl: `/uploads/${uniqueName}`,
+                createdAt: new Date().toISOString()
+            };
+            galleryPhotos.push(photo);
+            await saveGallery();
+            
+            return sendJSON(res, 200, { success: true, photo });
+        } catch(err) { return sendJSON(res, 500, { message: 'Upload error: ' + err.message }); }
+    }
+    if (req.method === 'PUT' && pathname.startsWith('/api/gallery/')) {
+        const id = decodeURIComponent(pathname.replace('/api/gallery/', ''));
+        const idx = galleryPhotos.findIndex(p => p.id === id);
+        if (idx === -1) return sendJSON(res, 404, { message: 'Photo not found.' });
+        try {
+            const body = await readBody(req);
+            if (body.description !== undefined) {
+                galleryPhotos[idx].description = String(body.description).trim();
+            }
+            galleryPhotos[idx].updatedAt = new Date().toISOString();
+            await saveGallery();
+            return sendJSON(res, 200, { success: true, photo: galleryPhotos[idx] });
+        } catch(err) { return sendJSON(res, 400, { message: err.message }); }
+    }
+    if (req.method === 'DELETE' && pathname.startsWith('/api/gallery/')) {
+        const id = decodeURIComponent(pathname.replace('/api/gallery/', ''));
+        const idx = galleryPhotos.findIndex(p => p.id === id);
+        if (idx === -1) return sendJSON(res, 404, { message: 'Photo not found.' });
+        galleryPhotos.splice(idx, 1);
+        await saveGallery();
+        return sendJSON(res, 200, { success: true });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // ─── EVENTS API ───────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════
+
+    if (req.method === 'GET' && pathname === '/api/events') {
+        return sendJSON(res, 200, { events });
+    }
+    if (req.method === 'POST' && pathname === '/api/events') {
+        try {
+            const body = await readBody(req);
+            const { title, date, time, location, description } = body;
+            if (!title || !title.trim()) return sendJSON(res, 400, { message: 'Event title is required.' });
+            if (!date || !date.trim()) return sendJSON(res, 400, { message: 'Event date is required.' });
+            
+            const event = {
+                id: `EVT-${Date.now()}`,
+                title: title.trim(),
+                date: date.trim(),
+                time: (time || '').trim(),
+                location: (location || '').trim(),
+                description: (description || '').trim(),
+                createdAt: new Date().toISOString()
+            };
+            events.push(event);
+            await saveEvents();
+            return sendJSON(res, 200, { success: true, event });
+        } catch(err) { return sendJSON(res, 400, { message: err.message }); }
+    }
+    if (req.method === 'PUT' && pathname.startsWith('/api/events/')) {
+        const id = decodeURIComponent(pathname.replace('/api/events/', ''));
+        const idx = events.findIndex(e => e.id === id);
+        if (idx === -1) return sendJSON(res, 404, { message: 'Event not found.' });
+        try {
+            const body = await readBody(req);
+            const e = events[idx];
+            if (body.title !== undefined) e.title = String(body.title).trim();
+            if (body.date !== undefined) e.date = String(body.date).trim();
+            if (body.time !== undefined) e.time = String(body.time).trim();
+            if (body.location !== undefined) e.location = String(body.location).trim();
+            if (body.description !== undefined) e.description = String(body.description).trim();
+            e.updatedAt = new Date().toISOString();
+            await saveEvents();
+            return sendJSON(res, 200, { success: true, event: e });
+        } catch(err) { return sendJSON(res, 400, { message: err.message }); }
+    }
+    if (req.method === 'DELETE' && pathname.startsWith('/api/events/')) {
+        const id = decodeURIComponent(pathname.replace('/api/events/', ''));
+        const idx = events.findIndex(e => e.id === id);
+        if (idx === -1) return sendJSON(res, 404, { message: 'Event not found.' });
+        events.splice(idx, 1);
+        await saveEvents();
+        return sendJSON(res, 200, { success: true });
     }
 
     // ── Static file serving ───────────────────────────────────────────────

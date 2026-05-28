@@ -130,4 +130,73 @@ if (newsletterForm) {
     });
 }
 
+// ==================== DYNAMIC DATA FETCHING ====================
+async function loadPublicData() {
+    // Load Events
+    const eventsGrid = document.getElementById('publicEventsGrid');
+    if (eventsGrid) {
+        try {
+            const res = await fetch('/api/events');
+            const data = await res.json();
+            if (res.ok && data.events && data.events.length > 0) {
+                // Sort by date closest to today
+                const sorted = data.events.sort((a,b) => new Date(a.date) - new Date(b.date));
+                eventsGrid.innerHTML = sorted.map(ev => {
+                    const d = new Date(ev.date);
+                    const day = d.getDate();
+                    const month = d.toLocaleString('default', { month: 'short' });
+                    return `
+                        <div class="event-card">
+                            <div class="event-date">
+                                <span class="day">${day}</span>
+                                <span class="month">${month}</span>
+                            </div>
+                            <div class="event-content">
+                                <h3>${ev.title}</h3>
+                                <p><i class="fas fa-clock"></i> ${ev.time || 'All Day'}</p>
+                                ${ev.description ? `<p>${ev.description}</p>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                eventsGrid.innerHTML = '<div style="text-align:center;grid-column:1/-1;color:#aaa;">No upcoming events.</div>';
+            }
+        } catch(e) {
+            console.error('Failed to load events:', e);
+        }
+    }
+
+    // Load Gallery
+    const galleryGrid = document.getElementById('publicGalleryGrid');
+    if (galleryGrid) {
+        try {
+            const res = await fetch('/api/gallery');
+            const data = await res.json();
+            if (res.ok && data.photos && data.photos.length > 0) {
+                galleryGrid.innerHTML = data.photos.slice(0, 8).map(photo => `
+                    <div class="gallery-item">
+                        <img src="${photo.photoUrl}" alt="${photo.description || 'Gallery image'}" style="width:100%;height:100%;object-fit:cover;">
+                        <div class="gallery-overlay">
+                            <span>${photo.description || 'Photo'}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                galleryGrid.innerHTML = '<div style="text-align:center;grid-column:1/-1;color:#aaa;">No photos in gallery.</div>';
+            }
+        } catch(e) {
+            console.error('Failed to load gallery:', e);
+        }
+    }
+}
+
+// Initialize on DOM load
+document.addEventListener('DOMContentLoaded', loadPublicData);
+
+// Live Updates via SSE
+const sse = new EventSource('/api/live');
+sse.addEventListener('gallery_updated', loadPublicData);
+sse.addEventListener('events_updated', loadPublicData);
+
 console.log('🕉️ Ganpati Bappa Morya! Website loaded successfully.');

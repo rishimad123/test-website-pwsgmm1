@@ -106,6 +106,8 @@ function showAdminSection(sectionId) {
     if (sectionId === 'volunteers')       loadVolunteers();
     if (sectionId === 'users')            loadUsers();
     if (sectionId === 'donationEntries')  loadAdminDonationEntries();
+    if (sectionId === 'gallery')          loadAdminGallery();
+    if (sectionId === 'events')           loadAdminEvents();
 }
 
 // ── Quick Upload (from Admin Dashboard home) ──────────────────────────────────
@@ -2722,6 +2724,291 @@ async function deAdmDelete(entryId) {
             deAdmApplyFilter();
         } else {
             showNotification('Error: ' + (data.message || 'Delete failed.'), 'error');
+        }
+    } catch(e) {
+        showNotification('Cannot reach server.', 'error');
+    }
+}
+
+// ==================== GALLERY MANAGEMENT ====================
+let _adminGalleryPhotos = [];
+
+async function loadAdminGallery() {
+    const grid = document.getElementById('adminGalleryGrid');
+    if (!grid) return;
+    grid.innerHTML = '<div style="text-align:center;color:#aaa;grid-column: 1 / -1;padding:30px;"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+    
+    try {
+        const res = await fetch('/api/gallery');
+        const data = await res.json();
+        if (res.ok && data.photos) {
+            _adminGalleryPhotos = data.photos;
+            renderAdminGallery();
+        }
+    } catch(e) {
+        grid.innerHTML = '<div style="text-align:center;color:#c0392b;grid-column: 1 / -1;padding:30px;">Failed to load gallery.</div>';
+    }
+}
+
+function renderAdminGallery() {
+    const grid = document.getElementById('adminGalleryGrid');
+    if (!grid) return;
+    
+    if (_adminGalleryPhotos.length === 0) {
+        grid.innerHTML = '<div style="text-align:center;color:#aaa;grid-column: 1 / -1;padding:30px;">No photos uploaded yet.</div>';
+        return;
+    }
+    
+    grid.innerHTML = _adminGalleryPhotos.map(photo => `
+        <div class="gallery-card" style="border:1px solid #eee; border-radius:8px; overflow:hidden; display:flex; flex-direction:column; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+            <div style="height:150px; overflow:hidden; background:#fafafa;">
+                <img src="${photo.photoUrl}" style="width:100%; height:100%; object-fit:cover;" alt="Gallery Image">
+            </div>
+            <div style="padding:12px; flex:1; display:flex; flex-direction:column; justify-content:space-between;">
+                <p style="font-size:0.9rem; color:#555; margin-bottom:10px;">${escHtml(photo.description || 'No description')}</p>
+                <div style="display:flex; justify-content:space-between;">
+                    <button class="btn btn-small" style="padding:4px 8px; font-size:0.8rem; background:#f0f0f0;" onclick="editGalleryPhoto('${photo.id}')"><i class="fas fa-edit"></i> Edit</button>
+                    <button class="btn btn-small btn-delete" style="padding:4px 8px; font-size:0.8rem;" onclick="deleteGalleryPhoto('${photo.id}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function openGalleryModal() {
+    document.getElementById('galleryForm').reset();
+    document.getElementById('galleryId').value = '';
+    document.getElementById('galleryModalTitle').textContent = 'Upload Photo';
+    document.getElementById('galleryPhotoGroup').style.display = 'block';
+    document.getElementById('galleryPhoto').required = true;
+    document.getElementById('galleryModal').style.display = 'flex';
+}
+
+function closeGalleryModal() {
+    document.getElementById('galleryModal').style.display = 'none';
+}
+
+function editGalleryPhoto(id) {
+    const photo = _adminGalleryPhotos.find(p => p.id === id);
+    if (!photo) return;
+    
+    document.getElementById('galleryForm').reset();
+    document.getElementById('galleryId').value = photo.id;
+    document.getElementById('galleryDesc').value = photo.description || '';
+    
+    document.getElementById('galleryModalTitle').textContent = 'Edit Photo Description';
+    document.getElementById('galleryPhotoGroup').style.display = 'none';
+    document.getElementById('galleryPhoto').required = false;
+    
+    document.getElementById('galleryModal').style.display = 'flex';
+}
+
+async function saveGalleryPhoto(event) {
+    event.preventDefault();
+    const submitBtn = document.getElementById('gallerySubmitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    
+    const id = document.getElementById('galleryId').value;
+    const desc = document.getElementById('galleryDesc').value;
+    
+    try {
+        if (id) {
+            // Edit existing (only description)
+            const res = await fetch(`/api/gallery/${encodeURIComponent(id)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description: desc })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showNotification('Photo updated.', 'success');
+                closeGalleryModal();
+                loadAdminGallery();
+            } else {
+                showNotification(data.message || 'Update failed.', 'error');
+            }
+        } else {
+            // Upload new
+            const fileInput = document.getElementById('galleryPhoto');
+            if (!fileInput.files.length) {
+                showNotification('Please select a photo.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Upload';
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('photo', fileInput.files[0]);
+            formData.append('description', desc);
+            
+            const res = await fetch('/api/gallery', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showNotification('Photo uploaded.', 'success');
+                closeGalleryModal();
+                loadAdminGallery();
+            } else {
+                showNotification(data.message || 'Upload failed.', 'error');
+            }
+        }
+    } catch(e) {
+        showNotification('Cannot reach server.', 'error');
+    }
+    
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = id ? 'Save Changes' : 'Upload';
+}
+
+async function deleteGalleryPhoto(id) {
+    if (!confirm('Delete this photo? This cannot be undone.')) return;
+    try {
+        const res = await fetch(`/api/gallery/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showNotification('Photo deleted.', 'success');
+            loadAdminGallery();
+        } else {
+            showNotification(data.message || 'Delete failed.', 'error');
+        }
+    } catch(e) {
+        showNotification('Cannot reach server.', 'error');
+    }
+}
+
+// ==================== EVENTS MANAGEMENT ====================
+let _adminEventsList = [];
+
+async function loadAdminEvents() {
+    const tbody = document.getElementById('adminEventsTbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:30px;"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>';
+    
+    try {
+        const res = await fetch('/api/events');
+        const data = await res.json();
+        if (res.ok && data.events) {
+            _adminEventsList = data.events;
+            // Sort by date (newest first)
+            _adminEventsList.sort((a,b) => new Date(b.date) - new Date(a.date));
+            renderAdminEvents();
+        }
+    } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#c0392b;padding:24px;">Failed to load events.</td></tr>';
+    }
+}
+
+function renderAdminEvents() {
+    const tbody = document.getElementById('adminEventsTbody');
+    if (!tbody) return;
+    
+    if (_adminEventsList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:24px;">No events added yet.</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = _adminEventsList.map(ev => {
+        let dateStr = ev.date;
+        try { dateStr = new Date(ev.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }); } catch(e){}
+        
+        return `
+            <tr>
+                <td><strong>${escHtml(ev.title)}</strong></td>
+                <td>${dateStr} ${ev.time ? `<br><span style="font-size:0.85em;color:#777;">${escHtml(ev.time)}</span>` : ''}</td>
+                <td>${escHtml(ev.location || '—')}</td>
+                <td><span title="${escHtml(ev.description || '')}">${escHtml(ev.description || '—').substring(0, 50)}${ev.description && ev.description.length > 50 ? '...' : ''}</span></td>
+                <td>
+                    <div class="action-btns">
+                        <button class="btn-icon" title="Edit" onclick="editEvent('${ev.id}')" style="color:var(--primary-color);"><i class="fas fa-edit"></i></button>
+                        <button class="btn-icon btn-delete" title="Delete" onclick="deleteEvent('${ev.id}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function openEventModal() {
+    document.getElementById('eventForm').reset();
+    document.getElementById('eventId').value = '';
+    document.getElementById('eventModalTitle').textContent = 'Add Event';
+    document.getElementById('eventModal').style.display = 'flex';
+}
+
+function closeEventModal() {
+    document.getElementById('eventModal').style.display = 'none';
+}
+
+function editEvent(id) {
+    const ev = _adminEventsList.find(e => e.id === id);
+    if (!ev) return;
+    
+    document.getElementById('eventForm').reset();
+    document.getElementById('eventId').value = ev.id;
+    document.getElementById('eventTitle').value = ev.title || '';
+    document.getElementById('eventDate').value = ev.date || '';
+    document.getElementById('eventTime').value = ev.time || '';
+    document.getElementById('eventLocation').value = ev.location || '';
+    document.getElementById('eventDesc').value = ev.description || '';
+    
+    document.getElementById('eventModalTitle').textContent = 'Edit Event';
+    document.getElementById('eventModal').style.display = 'flex';
+}
+
+async function saveEvent(event) {
+    event.preventDefault();
+    const submitBtn = document.getElementById('eventSubmitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    
+    const id = document.getElementById('eventId').value;
+    const payload = {
+        title: document.getElementById('eventTitle').value,
+        date: document.getElementById('eventDate').value,
+        time: document.getElementById('eventTime').value,
+        location: document.getElementById('eventLocation').value,
+        description: document.getElementById('eventDesc').value
+    };
+    
+    try {
+        const url = id ? `/api/events/${encodeURIComponent(id)}` : '/api/events';
+        const method = id ? 'PUT' : 'POST';
+        
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showNotification(id ? 'Event updated.' : 'Event added.', 'success');
+            closeEventModal();
+            loadAdminEvents();
+        } else {
+            showNotification(data.message || 'Operation failed.', 'error');
+        }
+    } catch(e) {
+        showNotification('Cannot reach server.', 'error');
+    }
+    
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = 'Save Event';
+}
+
+async function deleteEvent(id) {
+    if (!confirm('Delete this event? This cannot be undone.')) return;
+    try {
+        const res = await fetch(`/api/events/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showNotification('Event deleted.', 'success');
+            loadAdminEvents();
+        } else {
+            showNotification(data.message || 'Delete failed.', 'error');
         }
     } catch(e) {
         showNotification('Cannot reach server.', 'error');

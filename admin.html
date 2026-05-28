@@ -1901,10 +1901,108 @@ window._fmtBytesA = function(b) {
                         </div>
                     </div>
                 </div>
+                <!-- ═══════════ Gallery Section (Admin) ═══════════ -->
+                <div id="gallery" class="content-section">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-images" style="color:var(--primary-color);margin-right:8px;"></i>Manage Gallery</h3>
+                            <button class="btn btn-primary" onclick="openGalleryModal()">
+                                <i class="fas fa-upload"></i> Upload Photo
+                            </button>
+                        </div>
+                        <div class="gallery-grid" id="adminGalleryGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 20px;">
+                            <div style="text-align:center;color:#aaa;grid-column: 1 / -1;padding:30px;">Loading&#8230;</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ Events Section (Admin) ═══════════ -->
+                <div id="events" class="content-section">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-calendar-alt" style="color:var(--primary-color);margin-right:8px;"></i>Manage Events</h3>
+                            <button class="btn btn-primary" onclick="openEventModal()">
+                                <i class="fas fa-plus"></i> Add Event
+                            </button>
+                        </div>
+                        <div style="overflow-x:auto; margin-top: 20px;">
+                            <table class="admin-table" id="adminEventsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Date &amp; Time</th>
+                                        <th>Location</th>
+                                        <th>Description</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminEventsTbody">
+                                    <tr><td colspan="5" style="text-align:center;color:#aaa;padding:30px;">Loading&#8230;</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
             </main>
     </div>
     
+    <!-- Gallery Modal -->
+    <div id="galleryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="galleryModalTitle">Upload Photo</h3>
+                <span class="modal-close" onclick="closeGalleryModal()">&times;</span>
+            </div>
+            <form id="galleryForm" autocomplete="off" onsubmit="saveGalleryPhoto(event)">
+                <input type="hidden" id="galleryId">
+                <div class="form-group" id="galleryPhotoGroup">
+                    <label>Photo <span style="color:red;">*</span></label>
+                    <input type="file" id="galleryPhoto" accept="image/*" required>
+                </div>
+                <div class="form-group">
+                    <label>Description (Optional)</label>
+                    <textarea id="galleryDesc" rows="3" placeholder="Enter photo description"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" id="gallerySubmitBtn" style="width: 100%;">Upload</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Event Modal -->
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="eventModalTitle">Add Event</h3>
+                <span class="modal-close" onclick="closeEventModal()">&times;</span>
+            </div>
+            <form id="eventForm" autocomplete="off" onsubmit="saveEvent(event)">
+                <input type="hidden" id="eventId">
+                <div class="form-group">
+                    <label>Title <span style="color:red;">*</span></label>
+                    <input type="text" id="eventTitle" required placeholder="Event Name">
+                </div>
+                <div class="form-group">
+                    <label>Date <span style="color:red;">*</span></label>
+                    <input type="date" id="eventDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Time</label>
+                    <input type="time" id="eventTime">
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="eventLocation" placeholder="Event Location">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="eventDesc" rows="3" placeholder="Event Details"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" id="eventSubmitBtn" style="width: 100%;">Save Event</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Add User Modal -->
     <div id="addUserModal" class="modal">
         <div class="modal-content">
