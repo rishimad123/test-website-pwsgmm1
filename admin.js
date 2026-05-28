@@ -89,6 +89,7 @@ function showAdminSection(sectionId) {
         'donationTracking': 'Donations',
         'donationEntries' : 'Donation Data Entry',
         'donorSearch'     : 'Donor Search',
+        'tshirtSection'   : 'T-shirt Section',
     };
 
     document.getElementById('pageTitle').textContent = titles[sectionId] || 'Admin Panel';
@@ -106,6 +107,7 @@ function showAdminSection(sectionId) {
     if (sectionId === 'gallery')          loadAdminGallery();
     if (sectionId === 'events')           loadAdminEvents();
     if (sectionId === 'donorSearch')      loadDonorSearch();
+    if (sectionId === 'tshirtSection' && typeof renderTshirtSection === 'function') renderTshirtSection();
 }
 
 // ── Quick Upload (from Admin Dashboard home) ──────────────────────────────────

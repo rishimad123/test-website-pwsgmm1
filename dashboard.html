@@ -1804,6 +1804,7 @@ window.fixUrl = function(url) {
             if (sectionId === 'donorSearch') {
                 if (typeof loadDonorSearch === 'function') loadDonorSearch();
             }
+            if (sectionId === 'tshirtSection' && typeof renderTshirtSection === 'function') renderTshirtSection();
         }
 
         // Mobile sidebar helpers
