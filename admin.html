@@ -1159,43 +1159,7 @@ window._fmtBytesA = function(b) {
                         </div>
                     </div>
 
-                    <!-- Live Recent Donations -->
-                    <div class="admin-card" style="position:relative;">
-                        <div class="card-header">
-                            <h3 style="display:flex;align-items:center;gap:10px;">Recent Pauti Submissions
-                                <span id="liveBadge" style="display:inline-flex;align-items:center;gap:5px;background:#FFEBEE;color:#C62828;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.04em;">
-                                    <span style="width:7px;height:7px;border-radius:50%;background:#E53935;animation:livePulse 1.2s infinite;"></span>LIVE
-                                </span>
-                            </h3>
-                            <div style="display:flex;gap:8px;align-items:center;">
-                                <span id="liveLastRefreshed" style="font-size:.75rem;color:#aaa;"></span>
-                                <button class="btn btn-primary btn-small" onclick="loadLiveRecentDonations()">
-                                    <i class="fas fa-sync-alt"></i> Refresh
-                                </button>
-                                <button class="btn btn-small" style="background:#E8F5E9;color:#1B5E20;" onclick="showAdminSection('pautiBooks')">
-                                    <i class="fas fa-book-open"></i> All Slips
-                                </button>
-                            </div>
-                        </div>
-                        <style>@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.3)}}</style>
-                        <div style="overflow-x:auto;">
-                        <table class="admin-table" id="liveRecentDonationsTable">
-                            <thead>
-                                <tr>
-                                    <th>Slip #</th>
-                                    <th>Donor Name</th>
-                                    <th>Amount (&#8377;)</th>
-                                    <th>Mode</th>
-                                    <th style="color:#3949AB;">Volunteer</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody id="liveRecentDonationsTbody">
-                                <tr><td colspan="6" style="text-align:center;color:#aaa;padding:24px;">Loading live data&hellip;</td></tr>
-                            </tbody>
-                        </table>
-                        </div>
-                    </div>
+                    
 
                     <!-- Analytics placeholder -->
                     <div class="admin-card">
