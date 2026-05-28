@@ -2142,6 +2142,10 @@ window._fmtBytesA = function(b) {
                             </table>
                         </div>
                     </div>
+
+                <!-- ══════════ T-SHIRT SECTION ══════════ -->
+                <div id="tshirtSection" class="content-section"></div>
+
                 </div>
             </div>
         </main>
@@ -2568,7 +2572,7 @@ window._fmtBytesA = function(b) {
 
     <script src="admin.js?v=4"></script>
     <script src="donations.js?v=3"></script>
-    <script src="tshirts.js?v=1780000261484"></script>
+    <script src="tshirts.js?v=1780000761992"></script>
 
     <!-- ══════════ BALANCE/PENDING RECOVERY EDIT MODAL ══════════ -->
     <div id="brEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
@@ -4391,12 +4395,7 @@ window._fmtBytesA = function(b) {
 
     <!-- Sidebar overlay for mobile -->
     <div id="adminSidebarOverlay" onclick="toggleAdminSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;"></div>
-
-    
-    <!-- ══════════ T-SHIRT SECTION ══════════ -->
-    <div id="tshirtSection" class="content-section"></div>
-    
-    <!-- Live Updates (SSE) -->
+                        </div><!-- Live Updates (SSE) -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof loadDonationTrackingCards === 'function') loadDonationTrackingCards(); // Initial fetch

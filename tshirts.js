@@ -44,10 +44,15 @@ async function loadTshirtSection() {
 }
 
 function renderTshirtSection() {
-    const container = document.getElementById('tshirtSection');
+    // On the landing page, render inside #tshirtSectionInner; on dashboards use #tshirtSection
+    const container = document.getElementById('tshirtSectionInner') || document.getElementById('tshirtSection');
     if (!container) return;
     
-    let html = `
+    let html = '';
+
+    // Show the section header & refresh button only inside dashboards (not on landing page)
+    if (!isPublicMode) {
+        html += `
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px;">
             <div>
                 <h2 style="color:var(--dark-color);margin:0 0 4px;">T-shirt Section</h2>
@@ -56,6 +61,7 @@ function renderTshirtSection() {
             <button onclick="loadTshirtSection()" class="btn btn-small" style="background:#f4f4f4;color:#555;"><i class="fas fa-sync-alt"></i> Refresh</button>
         </div>
     `;
+    }
 
     // 1. Coordinators
     html += `
