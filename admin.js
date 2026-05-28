@@ -239,6 +239,98 @@ async function loadDashboardData() {
             if (el) el.textContent = '₹' + totalSum.toLocaleString('en-IN');
             if (trend) trend.innerHTML = `<i class="fas fa-check-circle"></i> Live collected total`;
         }).catch(e => console.error('Donations load error:', e));
+
+        // Fetch Donation Analytics for Chart
+        fetch('/api/donations').then(r => r.json()).then(data => {
+            if (data && data.records && data.columns) {
+                // Find Amount and Year columns based on heuristics
+                let amtCol = null, yearCol = null;
+                for (const col of data.columns) {
+                    const low = col.toLowerCase();
+                    if (low.includes('amount') || low.includes('rs') || low.includes('rupee')) amtCol = col;
+                    if (low.includes('year')) yearCol = col;
+                }
+                
+                const yearlyTotals = {};
+                data.records.forEach(r => {
+                    if (r._deleted) return;
+                    let yr = 'Unknown';
+                    if (yearCol && r[yearCol]) {
+                        yr = String(r[yearCol]).trim();
+                    } else {
+                        // Fallback regex for years 20xx
+                        for (const col of data.columns) {
+                            const m = String(r[col] || '').match(/\b(20)\d{2}\b/);
+                            if (m) { yr = m[0]; break; }
+                        }
+                    }
+                    if (yr === 'Unknown') return; // skip if no year found
+                    
+                    const amt = amtCol ? (parseFloat(String(r[amtCol]).replace(/,/g, '')) || 0) : 0;
+                    if (!yearlyTotals[yr]) yearlyTotals[yr] = 0;
+                    yearlyTotals[yr] += amt;
+                });
+                
+                const labels = Object.keys(yearlyTotals).sort();
+                const amounts = labels.map(y => yearlyTotals[y]);
+                
+                const ctx = document.getElementById('yearlyDonationChart');
+                if (ctx) {
+                    if (window._donationChartInst) {
+                        window._donationChartInst.destroy();
+                    }
+                    window._donationChartInst = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Total Donations (₹)',
+                                data: amounts,
+                                backgroundColor: 'rgba(57, 73, 171, 0.85)',
+                                borderColor: 'rgba(57, 73, 171, 1)',
+                                borderWidth: 1,
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.dataset.label || '';
+                                            if (label) { label += ': '; }
+                                            if (context.parsed.y !== null) {
+                                                label += '₹' + context.parsed.y.toLocaleString('en-IN');
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { color: '#f0f0f0' },
+                                    ticks: {
+                                        callback: function(value) {
+                                            if (value >= 100000) return '₹' + (value/100000).toFixed(1) + 'L';
+                                            if (value >= 1000) return '₹' + (value/1000).toFixed(0) + 'K';
+                                            return '₹' + value;
+                                        }
+                                    }
+                                },
+                                x: {
+                                    grid: { display: false }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }).catch(e => console.error('Analytics load error:', e));
         
     } catch (err) {
         console.error('Error in loadDashboardData:', err);

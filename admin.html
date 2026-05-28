@@ -63,7 +63,8 @@ window._fmtBytesA = function(b) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - Patelwadi Ganesh Mitramandal</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <!-- SheetJS for client-side Excel parsing -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
@@ -1166,9 +1167,8 @@ window._fmtBytesA = function(b) {
                         <div class="card-header">
                             <h3>Donation Analytics</h3>
                         </div>
-                        <div class="chart-container">
-                            <i class="fas fa-chart-bar" style="font-size: 3rem;"></i>
-                            <p style="margin-left: 20px;">Chart visualization here</p>
+                        <div class="chart-container" style="height: 300px; padding: 10px;">
+                            <canvas id="yearlyDonationChart"></canvas>
                         </div>
                     </div>
                 </div>
