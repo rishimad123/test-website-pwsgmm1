@@ -959,6 +959,17 @@ window._fmtBytesA = function(b) {
                 padding: 12px !important;
             }
         }
+        /* Google Translate Customization */
+        .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon { display: none !important; }
+        body { top: 0px !important; }
+        #google_translate_element { display: none; }
+        .lang-toggle {
+            display: flex; align-items: center; background: #f0f2f5; border-radius: 20px;
+            padding: 2px; cursor: pointer; margin-right: 12px; font-size: 0.8rem;
+            font-weight: 600; color: #555; border: 1px solid #ddd; user-select: none;
+        }
+        .lang-toggle span { padding: 4px 10px; border-radius: 18px; transition: 0.3s; }
+        .lang-toggle span.active { background: #fff; color: #1a237e; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         </style>
 </head>
 <body>
@@ -1067,6 +1078,11 @@ window._fmtBytesA = function(b) {
             <div class="admin-topbar">
                 <button id="adminHamburger" onclick="toggleAdminSidebar()" aria-label="Open menu" style="background:none;border:none;cursor:pointer;padding:6px 10px;margin-right:4px;border-radius:8px;color:#555;font-size:1.3rem;vertical-align:middle;"><i class="fas fa-bars"></i></button><h1 id="pageTitle">Dashboard Overview</h1>
                 <div class="admin-user-section">
+                    <div id="google_translate_element"></div>
+                    <div class="lang-toggle" onclick="toggleLanguage()">
+                        <span id="langEng" class="active">ENG</span>
+                        <span id="langMar">MAR</span>
+                    </div>
                     <div class="admin-notifications">
                         <i class="fas fa-bell"></i>
                         <span class="notification-badge">5</span>
@@ -4108,5 +4124,36 @@ window._fmtBytesA = function(b) {
             };
         });
     </script>
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,mr',
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+
+        function toggleLanguage() {
+            const isMar = document.getElementById('langMar').classList.contains('active');
+            const targetLang = isMar ? 'en' : 'mr';
+            
+            // Update toggle UI
+            if(isMar) {
+                document.getElementById('langMar').classList.remove('active');
+                document.getElementById('langEng').classList.add('active');
+            } else {
+                document.getElementById('langEng').classList.remove('active');
+                document.getElementById('langMar').classList.add('active');
+            }
+            
+            // Trigger Google Translate
+            const select = document.querySelector('.goog-te-combo');
+            if (select) {
+                select.value = targetLang;
+                select.dispatchEvent(new Event('change'));
+            }
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>

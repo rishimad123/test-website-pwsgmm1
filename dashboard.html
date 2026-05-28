@@ -679,6 +679,17 @@ window.fixUrl = function(url) {
             /* Donor search section padding */
             #donorSearch > div { padding: 10px !important; }
         }
+        /* Google Translate Customization */
+        .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon { display: none !important; }
+        body { top: 0px !important; }
+        #google_translate_element { display: none; }
+        .lang-toggle {
+            display: flex; align-items: center; background: #f0f2f5; border-radius: 20px;
+            padding: 2px; cursor: pointer; margin-right: 16px; font-size: 0.8rem;
+            font-weight: 600; color: #555; border: 1px solid #ddd; user-select: none;
+        }
+        .lang-toggle span { padding: 4px 10px; border-radius: 18px; transition: 0.3s; }
+        .lang-toggle span.active { background: #fff; color: #1a237e; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -731,11 +742,22 @@ window.fixUrl = function(url) {
                     </button>
                     <h2 style="margin:0;">Volunteer Dashboard</h2>
                 </div>
-                <div class="user-profile">
-                    <div class="user-avatar" id="userAvatar">V</div>
-                    <div>
-                        <strong id="topBarName">Volunteer</strong>
-                        <p style="font-size: 0.85rem; color: #777;">Volunteer</p>
+                <div style="display:flex;align-items:center;">
+                    <div id="google_translate_element"></div>
+                    <div class="lang-toggle" onclick="toggleLanguage()">
+                        <span id="langEng" class="active">ENG</span>
+                        <span id="langMar">MAR</span>
+                    </div>
+                    <div style="margin-right:18px;color:#555;font-size:1.2rem;position:relative;cursor:pointer;">
+                        <i class="fas fa-bell"></i>
+                        <span style="position:absolute;top:-4px;right:-8px;background:#e74c3c;color:#fff;font-size:.65rem;font-weight:700;padding:2px 5px;border-radius:10px;">2</span>
+                    </div>
+                    <div class="user-profile">
+                        <div class="user-avatar" id="userAvatar">V</div>
+                        <div>
+                            <strong id="topBarName">Volunteer</strong>
+                            <p style="font-size: 0.85rem; color: #777; margin:0;">Volunteer</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3323,5 +3345,34 @@ function navToBalanceRecovery(type) {
     console.log('Balance recovery view not available in volunteer panel.');
 }
 </script>
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,mr',
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+
+        function toggleLanguage() {
+            const isMar = document.getElementById('langMar').classList.contains('active');
+            const targetLang = isMar ? 'en' : 'mr';
+            
+            if(isMar) {
+                document.getElementById('langMar').classList.remove('active');
+                document.getElementById('langEng').classList.add('active');
+            } else {
+                document.getElementById('langEng').classList.remove('active');
+                document.getElementById('langMar').classList.add('active');
+            }
+            
+            const select = document.querySelector('.goog-te-combo');
+            if (select) {
+                select.value = targetLang;
+                select.dispatchEvent(new Event('change'));
+            }
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
