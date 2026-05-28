@@ -40,6 +40,7 @@ let db;
 let colReceipts, colExpenses, colFinancials, colPautiBooks;
 let colDonations, colDonationEntries, colBuildings, colAreas;
 let colLandmarks, colCommitteeMembers, colGallery, colEvents;
+let colTshirts, colTshirtSettings;
 
 // ─── In-memory stores (populated from MongoDB at startup) ───────────────────
 const SLIPS_PER_BOOK_DE = 50;
@@ -58,6 +59,8 @@ let financials        = [];
 let pautiBooks        = [];
 let receipts          = [];
 let expenses          = [];
+let tshirts           = [];
+let tshirtSettings    = { price: 350 };
 let galleryPhotos     = [];
 let events            = [];
 
@@ -159,6 +162,8 @@ async function connectDB() {
     colCommitteeMembers = db.collection('committeeMembers');
     colGallery          = db.collection('gallery');
     colEvents           = db.collection('events');
+    colTshirts          = db.collection('tshirts');
+    colTshirtSettings   = db.collection('tshirtSettings');
 
     // ── Load donations store ──────────────────────────────────────────────────
     const donDoc = await colDonations.findOne({ _storeKey: 'donationsStore' });
