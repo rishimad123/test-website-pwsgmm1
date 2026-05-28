@@ -167,16 +167,17 @@ async function loadPublicData() {
         }
     }
 
-    // Load Gallery
+    // Load Gallery (Highlights on index.html)
     const galleryGrid = document.getElementById('publicGalleryGrid');
     if (galleryGrid) {
         try {
             const res = await fetch('/api/gallery');
             const data = await res.json();
             if (res.ok && data.photos && data.photos.length > 0) {
-                galleryGrid.innerHTML = data.photos.slice(0, 8).map(photo => `
-                    <div class="gallery-item">
-                        <img src="${photo.photoUrl}" alt="${photo.description || 'Gallery image'}" style="width:100%;height:100%;object-fit:cover;">
+                // Exactly 9 photos in the highlights
+                galleryGrid.innerHTML = data.photos.slice(0, 9).map(photo => `
+                    <div class="gallery-item" onclick="openPublicLightbox('${photo.photoUrl.replace(/'/g, "\\'")}', '${(photo.description || '').replace(/'/g, "\\'")}')" style="cursor:pointer;">
+                        <img src="${photo.photoUrl}" alt="${(photo.description || '').replace(/"/g, '&quot;')}" style="width:100%;height:100%;object-fit:cover;">
                         <div class="gallery-overlay">
                             <span>${photo.description || 'Photo'}</span>
                         </div>
@@ -189,7 +190,51 @@ async function loadPublicData() {
             console.error('Failed to load gallery:', e);
         }
     }
+
+    // Load Full Gallery (gallery.html)
+    const fullGalleryGrid = document.getElementById('publicFullGalleryGrid');
+    if (fullGalleryGrid) {
+        try {
+            const res = await fetch('/api/gallery');
+            const data = await res.json();
+            if (res.ok && data.photos && data.photos.length > 0) {
+                // All photos
+                fullGalleryGrid.innerHTML = data.photos.map(photo => `
+                    <div class="gallery-item" onclick="openPublicLightbox('${photo.photoUrl.replace(/'/g, "\\'")}', '${(photo.description || '').replace(/'/g, "\\'")}')" style="cursor:pointer;">
+                        <img src="${photo.photoUrl}" alt="${(photo.description || '').replace(/"/g, '&quot;')}" style="width:100%;height:100%;object-fit:cover;">
+                        <div class="gallery-overlay">
+                            <span>${photo.description || 'Photo'}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                fullGalleryGrid.innerHTML = '<div style="text-align:center;grid-column:1/-1;color:#aaa;">No photos uploaded yet.</div>';
+            }
+        } catch(e) {
+            console.error('Failed to load full gallery:', e);
+        }
+    }
 }
+
+// Lightbox logic for public gallery
+window.openPublicLightbox = function(url, desc) {
+    let lb = document.getElementById('publicLightbox');
+    if (!lb) {
+        lb = document.createElement('div');
+        lb.id = 'publicLightbox';
+        lb.innerHTML = `
+            <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:10000;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:20px;box-sizing:border-box;">
+                <span style="position:absolute;top:20px;right:30px;color:white;font-size:40px;cursor:pointer;line-height:1;" onclick="document.getElementById('publicLightbox').style.display='none'">&times;</span>
+                <img id="plbImg" src="" style="max-width:100%;max-height:80vh;border-radius:10px;box-shadow:0 5px 25px rgba(0,0,0,0.5);object-fit:contain;">
+                <p id="plbDesc" style="color:white;margin-top:20px;font-size:1.1rem;text-align:center;max-width:800px;line-height:1.4;"></p>
+            </div>
+        `;
+        document.body.appendChild(lb);
+    }
+    document.getElementById('plbImg').src = url;
+    document.getElementById('plbDesc').textContent = desc || '';
+    lb.style.display = 'block';
+};
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', loadPublicData);
