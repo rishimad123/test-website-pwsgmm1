@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <script>
@@ -1487,8 +1487,37 @@ window.fixUrl = function(url) {
                         <p>Track your submitted entries with pending balance</p>
                     </div>
 
+
+        <div style="margin-bottom:28px;">
+                        <div class="card-header">
+                            <h3>My Pending Balances</h3>
+                            <button onclick="loadVolBalanceRecovery()" class="btn btn-small" style="background:#f4f4f4;color:#555;font-size:.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Bk/Rcpt</th>
+                                        <th>Donor Name</th>
+                                        <th>Area</th>
+                                        <th>Amount (₹)</th>
+                                        <th>Submitted Date</th>
+                                        <th>Status</th>
+                                        <th>Photo</th>
+                                        <th>Edit</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="volBalTbody">
+                                    <tr><td colspan="7" style="text-align:center;color:#999;padding:24px;">Loading…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- ══════════ END BALANCE RECOVERY SECTION ══════════ -->
+
                 <!-- ══════════ T-SHIRT SECTION ══════════ -->
-                <div id="tshirtSection" class="content-section">
+                <div id="tshirtSection" class="content-section" style="display:none;">
     <div style="padding:24px;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:24px;">
             <div>
@@ -1632,37 +1661,8 @@ window.fixUrl = function(url) {
         </div>
     </div>
 </div>
+<!-- ══════════ END T-SHIRT SECTION ══════════ -->
 
-
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>My Pending Balances</h3>
-                            <button onclick="loadVolBalanceRecovery()" class="btn btn-small" style="background:#f4f4f4;color:#555;font-size:.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
-                        </div>
-                        <div style="overflow-x:auto;">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Bk/Rcpt</th>
-                                        <th>Donor Name</th>
-                                        <th>Area</th>
-                                        <th>Amount (₹)</th>
-                                        <th>Submitted Date</th>
-                                        <th>Status</th>
-                                        <th>Photo</th>
-                                        <th>Edit</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="volBalTbody">
-                                    <tr><td colspan="7" style="text-align:center;color:#999;padding:24px;">Loading…</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <!-- ══════════ END BALANCE RECOVERY SECTION ══════════ -->
-
-            </div>
         </main>
     </div>
 
