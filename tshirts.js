@@ -11,12 +11,17 @@ let tsApplications = [];
 let isAdminMode = false;
 let isPublicMode = false;
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Determine if we are in admin mode by checking for a specific admin element
+function initTshirts() {
     isAdminMode = !!document.getElementById('adminName') || window.location.pathname.includes('admin.html');
     isPublicMode = window.location.pathname.includes('index.html') || window.location.pathname === '/' || (!document.getElementById('adminName') && !document.getElementById('topBarName'));
     loadTshirtSection();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTshirts);
+} else {
+    initTshirts();
+}
 
 async function loadTshirtSection() {
     try {
@@ -31,9 +36,10 @@ async function loadTshirtSection() {
         if (settData.price) tsPrice = settData.price;
         if (appData.tshirts) tsApplications = appData.tshirts;
         
-        renderTshirtSection();
     } catch (e) {
         console.error('Error loading T-shirt data:', e);
+    } finally {
+        renderTshirtSection();
     }
 }
 
