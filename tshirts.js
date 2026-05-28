@@ -9,10 +9,12 @@ const TS_COORDINATORS = [
 let tsPrice = 350;
 let tsApplications = [];
 let isAdminMode = false;
+let isPublicMode = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     // Determine if we are in admin mode by checking for a specific admin element
     isAdminMode = !!document.getElementById('adminName') || window.location.pathname.includes('admin.html');
+    isPublicMode = window.location.pathname.includes('index.html') || window.location.pathname === '/' || (!document.getElementById('adminName') && !document.getElementById('topBarName'));
     loadTshirtSection();
 });
 
@@ -124,38 +126,40 @@ function renderTshirtSection() {
     
     html += `</div>`;
 
-    // 3. Summary view
-    const sizeGroups = {};
-    [18,20,22,24,26,28,30,32,34,36,38,40,42,44,46].forEach(s => sizeGroups[s] = 0);
-    
-    let totalShirts = 0;
-    tsApplications.forEach(app => {
-        if (sizeGroups[app.size] !== undefined) {
-            sizeGroups[app.size] += app.quantity;
-            totalShirts += app.quantity;
-        }
-    });
+    if (!isPublicMode) {
+        // 3. Summary view
+        const sizeGroups = {};
+        [18,20,22,24,26,28,30,32,34,36,38,40,42,44,46].forEach(s => sizeGroups[s] = 0);
+        
+        let totalShirts = 0;
+        tsApplications.forEach(app => {
+            if (sizeGroups[app.size] !== undefined) {
+                sizeGroups[app.size] += app.quantity;
+                totalShirts += app.quantity;
+            }
+        });
 
-    html += `
-        <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border:1px solid #ddd;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                <h3 style="margin:0;color:var(--dark-color);"><i class="fas fa-chart-pie" style="color:#E65100;margin-right:8px;"></i>Sizes Overview</h3>
-                <span style="font-weight:700;background:#FFF3E0;color:#E65100;padding:4px 12px;border-radius:12px;">Total: ${totalShirts} shirts</span>
+        html += `
+            <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05);border:1px solid #ddd;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <h3 style="margin:0;color:var(--dark-color);"><i class="fas fa-chart-pie" style="color:#E65100;margin-right:8px;"></i>Sizes Overview</h3>
+                    <span style="font-weight:700;background:#FFF3E0;color:#E65100;padding:4px 12px;border-radius:12px;">Total: ${totalShirts} shirts</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:12px;">
+                    ${Object.keys(sizeGroups).map(size => {
+                        const count = sizeGroups[size];
+                        return `
+                            <div onclick="openTsApplicantsModal(${size})" style="cursor:pointer;flex:1;min-width:70px;text-align:center;padding:12px;border-radius:8px;background:${count > 0 ? '#E8F5E9' : '#f9f9f9'};border:1px solid ${count > 0 ? '#C8E6C9' : '#eee'};transition:all .2s;">
+                                <div style="font-size:1.1rem;font-weight:700;color:${count > 0 ? '#2E7D32' : '#999'};">${size}</div>
+                                <div style="font-size:0.8rem;color:#777;margin-top:4px;">${count} req</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                <p style="margin:12px 0 0;font-size:0.8rem;color:#888;text-align:center;">Click on any size to view applicants and update status.</p>
             </div>
-            <div style="display:flex;flex-wrap:wrap;gap:12px;">
-                ${Object.keys(sizeGroups).map(size => {
-                    const count = sizeGroups[size];
-                    return `
-                        <div onclick="openTsApplicantsModal(${size})" style="cursor:pointer;flex:1;min-width:70px;text-align:center;padding:12px;border-radius:8px;background:${count > 0 ? '#E8F5E9' : '#f9f9f9'};border:1px solid ${count > 0 ? '#C8E6C9' : '#eee'};transition:all .2s;">
-                            <div style="font-size:1.1rem;font-weight:700;color:${count > 0 ? '#2E7D32' : '#999'};">${size}</div>
-                            <div style="font-size:0.8rem;color:#777;margin-top:4px;">${count} req</div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-            <p style="margin:12px 0 0;font-size:0.8rem;color:#888;text-align:center;">Click on any size to view applicants and update status.</p>
-        </div>
-    `;
+        `;
+    }
 
     container.innerHTML = html;
 }
