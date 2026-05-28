@@ -3293,7 +3293,7 @@ function dsRenderTable() {
             const disp = col === _dsAmtCol && v !== '' ? '<strong style="color:#2E7D32;">₹' + Number(v).toLocaleString('en-IN') + '</strong>' : '<span title="' + String(v).replace(/"/g, '&quot;') + '">' + v + '</span>';
             return '<td data-label="' + String(col).replace(/"/g, '&quot;') + '">' + disp + '</td>';
         }).join('');
-        return '<tr onmouseover="this.style.background='#eef2ff'" onmouseout="this.style.background=''">' + cells + '</tr>';
+        return '<tr onmouseover="this.style.background=\\\'#eef2ff\\\'" onmouseout="this.style.background=\\\'\\\'">' + cells + '</tr>';
     }).join('');
 
     const tp = Math.ceil(flatRows.length / DS_PAGE);
