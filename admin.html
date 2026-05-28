@@ -1088,6 +1088,13 @@ window._fmtBytesA = function(b) {
         }
         .lang-toggle span { padding: 4px 10px; border-radius: 18px; transition: 0.3s; }
         .lang-toggle span.active { background: #fff; color: #1a237e; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        /* Hide Google Translate Top Bar */
+        .goog-te-banner-frame.skiptranslate { display: none !important; }
+        body { top: 0px !important; }
+        .goog-tooltip { display: none !important; box-shadow: none !important; }
+        .goog-tooltip:hover { display: none !important; box-shadow: none !important; }
+        .goog-text-highlight { background-color: transparent !important; border: none !important; box-shadow: none !important; }
+        #goog-gt-tt { display: none !important; }
         </style>
 </head>
 <body>
