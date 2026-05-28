@@ -2650,6 +2650,7 @@ window._fmtBytesA = function(b) {
                 <button onclick="adeAreaModal()" class="btn btn-small" style="background:#00796B;color:#fff;"><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Manage Areas</button>
                 <button onclick="adeLandmarkModal()" class="btn btn-small" style="background:#6A1B9A;color:#fff;"><i class="fas fa-flag" style="margin-right:6px;"></i>Manage Landmarks</button>
                 <button onclick="adeToggleForm()" class="btn btn-small" style="background:var(--primary-color);color:#fff;"><i class="fas fa-plus" style="margin-right:6px;"></i>Record Donation</button>
+                <button onclick="adeExportExcel()" class="btn btn-small" style="background:#1D6F42;color:#fff;"><i class="fas fa-file-excel" style="margin-right:6px;"></i>Export Excel</button>
                 <button onclick="adeLoad()" class="btn btn-small" style="background:#f4f4f4;color:#555;"><i class="fas fa-sync-alt"></i></button>
             </div>
         </div>
@@ -3332,6 +3333,71 @@ window._fmtBytesA = function(b) {
         document.getElementById('apbDocCamera')?.addEventListener('change', handleApbFileSelect);
         document.getElementById('apbDocCameraCapture')?.addEventListener('change', handleApbFileSelect);
     });
+
+    function adeExportExcel() {
+        if (typeof XLSX === 'undefined') {
+            const status = document.getElementById('adeStatus');
+            if(status) { status.style.display='block'; status.style.background='#FFEBEE'; status.style.color='#c0392b'; status.textContent='Excel export library is not loaded.'; }
+            return;
+        }
+        
+        if (!_adeAll || _adeAll.length === 0) {
+            const status = document.getElementById('adeStatus');
+            if(status) { status.style.display='block'; status.style.background='#FFEBEE'; status.style.color='#c0392b'; status.textContent='No entries to export.'; }
+            return;
+        }
+        
+        // Format data following the requested structure
+        const data = _adeAll.map(e => {
+            const donorName = e.donorType === 'Business' ? (e.businessName || '') : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
+            
+            let submittedDate = '';
+            let submittedTime = '';
+            if (e.submittedAt) {
+                try {
+                    const dtObj = new Date(e.submittedAt);
+                    submittedDate = dtObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                    submittedTime = dtObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                } catch (err) {}
+            }
+            
+            return {
+                'Book Number': e.bookNumber || '',
+                'Receipt Number': e.receiptNumber || '',
+                'Donor Name': donorName || '',
+                'Landmark': e.landmark || e.buildingName || '',
+                'Location': e.location || e.area || '',
+                'Common Landmark': e.commonLandmark || '',
+                'Amount': e.amount || 0,
+                'Payment Mode': e.paymentMode || '',
+                'Submitted By': e.submittedBy || '',
+                'Date Submitted': submittedDate,
+                'Time Submitted': submittedTime,
+                'Status': e.status || '',
+                'Reference Number': e.referenceNumber || '',
+                'Entry ID': e.entryId || ''
+            };
+        });
+        
+        const ws = XLSX.utils.json_to_sheet(data);
+        
+        const colWidths = [
+            { wch: 12 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
+            { wch: 20 }, { wch: 20 }, { wch: 12 }, { wch: 15 },
+            { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 12 },
+            { wch: 20 }, { wch: 25 }
+        ];
+        ws['!cols'] = colWidths;
+        
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Donation Entries");
+        
+        const filename = "Donation_Data_Entry_" + new Date().toISOString().split('T')[0] + ".xlsx";
+        XLSX.writeFile(wb, filename);
+        
+        const status = document.getElementById('adeStatus');
+        if(status) { status.style.display='block'; status.style.background='#E8F5E9'; status.style.color='#1B5E20'; status.textContent='Exported to Excel successfully!'; setTimeout(()=>status.style.display='none', 3000); }
+    }
 
     async function adeLoad() {
         const tbody = document.getElementById('adeTbody');
