@@ -67,7 +67,7 @@ window._fmtBytesA = function(b) {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <!-- SheetJS for client-side Excel parsing -->
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <style>
         body {
             background: #F5F6FA;
@@ -3380,6 +3380,12 @@ window._fmtBytesA = function(b) {
         });
         
         const ws = XLSX.utils.json_to_sheet(data);
+        
+        for (const cellAddress in ws) {
+            if (cellAddress[0] === '!') continue;
+            if (!ws[cellAddress].s) ws[cellAddress].s = {};
+            ws[cellAddress].s.alignment = { horizontal: "center", vertical: "center" };
+        }
         
         const colWidths = [
             { wch: 12 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
