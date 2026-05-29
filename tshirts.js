@@ -231,8 +231,12 @@ async function tsSubmitApplication(e) {
         if (res.ok) {
             msgEl.style.display = 'block'; msgEl.style.background = '#E8F5E9'; msgEl.style.color = '#1B5E20';
             msgEl.textContent = '✓ Application submitted successfully!';
+            if (resp.application) {
+                tsApplications.push(resp.application);
+                renderTshirtSection();
+            }
             e.target.reset(); tsUpdateTotal();
-            setTimeout(() => { msgEl.style.display='none'; renderTshirtSection(); }, 2500);
+            setTimeout(() => { msgEl.style.display='none'; }, 2500);
         } else { throw new Error(resp.message || 'Submission failed'); }
     } catch(err) {
         msgEl.style.display='block'; msgEl.style.background='#FFEBEE'; msgEl.style.color='#c62828';
