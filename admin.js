@@ -2340,7 +2340,17 @@ async function loadBalanceRecovery() {
 
         let html = '';
         bookNumbers.forEach(bn => {
-            html += `<tr><td colspan="8" style="background:#F4F6FB;color:#1A237E;font-weight:700;font-size:1.05rem;padding:12px 16px;">Book Number ${bn}</td></tr>`;
+                        let bnDisplay = bn;
+            let btBadge = '';
+            if (bn.includes(' (')) {
+                const parts = bn.split(' (');
+                bnDisplay = parts[0];
+                const btPart = parts[1].replace(')', '');
+                btBadge = btPart === 'Old' 
+                  ? '<span style="background:#FFF3E0;color:#E65100;font-size:.75rem;padding:3px 8px;border-radius:12px;font-weight:700;margin-left:8px;vertical-align:middle;">Old</span>' 
+                  : '<span style="background:#E3F2FD;color:#1565C0;font-size:.75rem;padding:3px 8px;border-radius:12px;font-weight:700;margin-left:8px;vertical-align:middle;">New</span>';
+            }
+            html += `<tr><td colspan="8" style="background:#F4F6FB;color:#1A237E;font-weight:700;font-size:1.05rem;padding:12px 16px;vertical-align:middle;">Book Number ${bnDisplay} ${btBadge}</td></tr>`;
             html += grouped[bn].map(r => {
                 const dt = new Date(r.submittedAt);
                 const dateStr = dt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase()
@@ -2818,7 +2828,7 @@ function deAdmApplyFilter() {
         const modeBadge = `<span style="padding:3px 9px;border-radius:10px;background:#E3F2FD;color:#1565C0;font-size:.76rem;font-weight:700;">${e.paymentMode||'—'}</span>`;
         const safeId  = (e.entryId||'').replace(/'/g,"\\'");
         return `<tr>
-            <td><strong>Bk${e.bookNumber}</strong> <span style="font-size:0.75rem;color:#888;">(${e.bookType || 'New'})</span><br><span style="font-size:.8rem;color:#888;">#${e.receiptNumber}</span></td>
+            <td style="vertical-align:middle;"><strong>Bk${e.bookNumber}</strong> ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF3E0;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>' }<br><span style="font-size:.8rem;color:#888;">#${e.receiptNumber}</span></td>
             <td>${escHtml(donor)}</td>
             <td>${escHtml(e.area||'—')}</td>
             <td style="color:#2E7D32;font-weight:600;">${amt}</td>
