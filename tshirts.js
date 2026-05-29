@@ -147,15 +147,20 @@ function renderTshirtSection() {
         const sizeGroups = {};
         [18,20,22,24,26,28,30,32,34,36,38,40,42,44,46].forEach(s => sizeGroups[s] = 0);
         let totalShirts = 0;
+        let totalReceived = 0;
+        let totalPending = 0;
         
         if (tsApplications && Array.isArray(tsApplications)) {
             tsApplications.forEach(app => {
                 const s = parseInt(app.size);
+                const q = parseInt(app.quantity) || 1;
                 if (sizeGroups[s] !== undefined) { 
-                    const q = parseInt(app.quantity) || 1;
                     sizeGroups[s] += q; 
                     totalShirts += q; 
                 }
+                const amt = app.totalAmount || (q * tsPrice);
+                if (app.status === 'Received') totalReceived += amt;
+                else totalPending += amt;
             });
         }
 
