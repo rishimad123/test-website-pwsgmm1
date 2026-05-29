@@ -530,22 +530,30 @@ const server = http.createServer(async (req, res) => {
             if (email !== undefined) updateFields.email = String(email);
             if (password) updateFields.password = String(password); // Simple update since system stores plain text
             
-            // Handle Photo upload
+            // Handle Photo upload — store as base64 data URL in MongoDB so it
+            // survives Render's ephemeral filesystem (no disk writes needed).
             if (photoBase64) {
                 const pExt = (photoExt || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
-                const filename = `profile_${username}_${Date.now()}.${pExt}`;
-                const filepath = path.join(__dirname, 'uploads', filename);
-                fs.writeFileSync(filepath, Buffer.from(photoBase64, 'base64'));
-                updateFields.photoUrl = `/uploads/${filename}`;
+                const mime = pExt === 'png' ? 'image/png' : (pExt === 'gif' ? 'image/gif' : 'image/jpeg');
+                updateFields.photoUrl = `data:${mime};base64,${photoBase64}`;
+                // Also attempt disk write for local dev (silently ignore errors on Render)
+                try {
+                    const filename = `profile_${username}_${Date.now()}.${pExt}`;
+                    const filepath = path.join(__dirname, 'uploads', filename);
+                    fs.writeFileSync(filepath, Buffer.from(photoBase64, 'base64'));
+                } catch (_e) { /* read-only FS on Render — data URL is the source of truth */ }
             }
             
-            // Handle ID Proof upload
+            // Handle ID Proof upload — same approach: store as base64 data URL in MongoDB
             if (idProofBase64) {
                 const iExt = (idProofExt || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
-                const filename = `idproof_${username}_${Date.now()}.${iExt}`;
-                const filepath = path.join(__dirname, 'uploads', filename);
-                fs.writeFileSync(filepath, Buffer.from(idProofBase64, 'base64'));
-                updateFields.idProofUrl = `/uploads/${filename}`;
+                const mime = iExt === 'png' ? 'image/png' : (iExt === 'gif' ? 'image/gif' : 'image/jpeg');
+                updateFields.idProofUrl = `data:${mime};base64,${idProofBase64}`;
+                try {
+                    const filename = `idproof_${username}_${Date.now()}.${iExt}`;
+                    const filepath = path.join(__dirname, 'uploads', filename);
+                    fs.writeFileSync(filepath, Buffer.from(idProofBase64, 'base64'));
+                } catch (_e) { /* read-only FS on Render — data URL is the source of truth */ }
             }
             
             if (user) {
