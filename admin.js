@@ -2325,8 +2325,10 @@ async function loadBalanceRecovery() {
                 const grouped = {};
         list.forEach(r => {
             const bn = r._bookNum || r._bookNumber || r.bookNumber || 'Unknown';
-            if(!grouped[bn]) grouped[bn] = [];
-            grouped[bn].push(r);
+            const bt = r._bookType || r.bookType || 'New';
+            const groupKey = bn === 'Unknown' ? bn : `${bn} (${bt})`;
+            if(!grouped[groupKey]) grouped[groupKey] = [];
+            grouped[groupKey].push(r);
         });
 
         const bookNumbers = Object.keys(grouped).sort((a, b) => {
@@ -2816,7 +2818,7 @@ function deAdmApplyFilter() {
         const modeBadge = `<span style="padding:3px 9px;border-radius:10px;background:#E3F2FD;color:#1565C0;font-size:.76rem;font-weight:700;">${e.paymentMode||'—'}</span>`;
         const safeId  = (e.entryId||'').replace(/'/g,"\\'");
         return `<tr>
-            <td><strong>Bk${e.bookNumber}</strong><br><span style="font-size:.8rem;color:#888;">#${e.receiptNumber}</span></td>
+            <td><strong>Bk${e.bookNumber}</strong> <span style="font-size:0.75rem;color:#888;">(${e.bookType || 'New'})</span><br><span style="font-size:.8rem;color:#888;">#${e.receiptNumber}</span></td>
             <td>${escHtml(donor)}</td>
             <td>${escHtml(e.area||'—')}</td>
             <td style="color:#2E7D32;font-weight:600;">${amt}</td>
@@ -2875,6 +2877,7 @@ function exportAdminDonationEntriesToExcel() {
         
         return {
             'Book Number': e.bookNumber || '',
+            'Book Type': e.bookType || 'New',
             'Receipt Number': e.receiptNumber || '',
             'Donor Name': donorName || '',
             'Landmark': e.landmark || e.buildingName || '',

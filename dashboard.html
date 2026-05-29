@@ -1277,6 +1277,21 @@ window.fixUrl = function(url) {
                             <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
                                 <i class="fas fa-book-open" style="margin-right:6px;"></i>Receipt Details
                             </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="font-weight:600;font-size:0.85rem;color:#333;margin-bottom:8px;display:block;">Book Type</label>
+                                <div style="display:flex;gap:15px;align-items:center;">
+                                    <label style="cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem;">
+                                        <input type="radio" name="deBookType" value="New" checked onchange="dePopulateBooks(); deOnBookChange();">
+                                        New Book (50 Books)
+                                    </label>
+                                    <label style="cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem;">
+                                        <input type="radio" name="deBookType" value="Old" onchange="dePopulateBooks(); deOnBookChange();">
+                                        Old Book (30 Books)
+                                    </label>
+                                </div>
+                            </div>
+                            
                             <div id="deReceiptGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
                                 <div class="form-group" style="margin:0;">
                                     <label for="deBookNumber">Book Number <span style="color:red;">*</span> <button type="button" onclick="deAutoReceipt()" style="margin-left:6px;padding:2px 9px;border:none;border-radius:8px;background:#E8F5E9;color:#1B5E20;font-size:.72rem;font-weight:700;cursor:pointer;"><i class="fas fa-magic"></i> Auto</button></label>
@@ -2030,7 +2045,7 @@ window.fixUrl = function(url) {
                             : '<span style="font-size:0.8rem;color:#999;">-</span>';
 
                         return `<tr>
-                            <td style="font-weight:700;">Bk ${r.bookNumber} #${r.receiptNumber}</td>
+                            <td style="font-weight:700;">Bk ${r.bookNumber} (${r.bookType || 'New'}) #${r.receiptNumber}</td>
                             <td style="font-weight:600;">${r.name}</td>
                             <td>${r.area}</td>
                             <td style="color:#2E7D32;font-weight:700;">${amtCell}</td>
@@ -2773,9 +2788,11 @@ window.fixUrl = function(url) {
     // ── Book dropdown (Books 1–50) ──────────────────────────
     function dePopulateBooks() {
         const sel = document.getElementById('deBookNumber');
+        const bType = document.querySelector('input[name="deBookType"]:checked')?.value || 'New';
         if (!sel) return;
         sel.innerHTML = '<option value="">— Select Book —</option>';
-        for (let b = 1; b <= 50; b++) {
+        const maxBooks = bType === 'Old' ? 30 : 50;
+        for (let b = 1; b <= maxBooks; b++) {
             const from = (b - 1) * 50 + 1, to = b * 50;
             sel.innerHTML += `<option value="${b}">Book ${b}  (Receipts ${from}–${to})</option>`;
         }
@@ -2790,8 +2807,9 @@ window.fixUrl = function(url) {
         sel.innerHTML = '<option value="">Loading…</option>';
         const from = (bn - 1) * 50 + 1, to = bn * 50;
         let used = [];
+        const bType = document.querySelector('input[name="deBookType"]:checked')?.value || 'New';
         try {
-            const r = await fetch(`/api/donation-entries/used-receipts/${bn}`);
+            const r = await fetch(`/api/donation-entries/used-receipts/${bn}?type=${bType}`);
             const d = await r.json();
             used = d.usedReceipts || [];
         } catch(e) {}
@@ -2926,6 +2944,7 @@ window.fixUrl = function(url) {
             payload = {
                 bookNumber      : Number(getVal('deBookNumber')),
                 receiptNumber   : Number(getVal('deReceiptNumber')),
+                bookType        : document.querySelector('input[name="deBookType"]:checked')?.value || 'New',
                 donorType,
                 firstName       : donorType === 'Individual' ? getTrim('deFirstName').toUpperCase()    : null,
                 middleName      : donorType === 'Individual' ? getTrim('deMiddleName').toUpperCase()   : null,
@@ -3022,7 +3041,8 @@ window.fixUrl = function(url) {
     // ── Auto-receipt for volunteer form ──────────────────────────────────────
     async function deAutoReceipt() {
         try {
-            const resp = await fetch('/api/donation-entries/next-receipt');
+            const bType = document.querySelector('input[name="deBookType"]:checked')?.value || 'New';
+            const resp = await fetch(`/api/donation-entries/next-receipt?type=${bType}`);
             const slot = await resp.json();
             if (!slot.bookNumber) { alert('❌ All receipt numbers are used.'); return; }
             const bookSel = document.getElementById('deBookNumber');
@@ -3091,7 +3111,7 @@ window.fixUrl = function(url) {
                     ? `<img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" alt="Receipt" loading="lazy" decoding="async" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;vertical-align:middle;" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')" title="Click to enlarge">`
                     : '<span style="color:#ccc;font-size:.8rem;">—</span>';
                 return `<tr id="de-vol-row-${e.entryId}">
-                    <td style="font-weight:700;">Bk ${e.bookNumber}</td>
+                    <td style="font-weight:700;">Bk ${e.bookNumber} <span style="font-size:0.75rem;color:#888;">(${e.bookType || 'New'})</span></td>
                     <td>#${e.receiptNumber}</td>
                     <td>${donor}</td>
                     <td>${e.area||'—'}</td>
@@ -3133,7 +3153,7 @@ window.fixUrl = function(url) {
                                 <div style="font-weight:700;font-size:.97rem;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${donor}</div>
                                 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;">
                                     <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
-                                        <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${e.bookNumber} / #${e.receiptNumber}
+                                        <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${e.bookNumber} (${e.bookType || 'New'}) / #${e.receiptNumber}
                                     </span>
                                     <span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
                                         <i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${e.area||'—'}

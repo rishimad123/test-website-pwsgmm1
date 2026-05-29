@@ -1,0 +1,34 @@
+        async function loadVolBalanceRecovery() {
+            const tbody = document.getElementById('volBalTbody');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:24px;">Loading…</td></tr>';
+            try {
+                const uid = currentUser ? currentUser.id : null;
+                if (!uid) return;
+
+                // Fetch donation entries and Pauti books
+                const [deRes, pbRes] = await Promise.all([
+                    fetch(`/api/donation-entries?userId=${uid}`),
+                    fetch(`/api/pauti-books?userId=${uid}`)
+                ]);
+                const deData = await deRes.json();
+                const pbData = await pbRes.json();
+
+                // Pauti slips submitted by this volunteer where payment mode = balance (or no amount)
+                const pautiPending = [];
+                (pbData.pautiBooks || []).forEach(book => {
+                    (book.slips || []).forEach(slip => {
+                        if (!slip.deleted && slip.uploadedAt &&
+                            (slip.paymentMode === 'balance' || !slip.amount || Number(slip.amount) <= 0)) {
+                            pautiPending.push({
+                                receiptId: `SLIP-${slip.slipNumber}`,
+                                name: slip.donorName || '—',
+                                amount: slip.amount || 0,
+                                photoUrl: slip.photoUrl || null,
+                                submittedAt: slip.uploadedAt,
+                                status: 'pending',
+                                type: 'pauti-slip',
+                                bookNumber: book.bookNumber,
+                                receiptNumber: slip.slipNumber,
+                                area: '—'
+                            });

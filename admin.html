@@ -2794,6 +2794,21 @@ window._fmtBytesA = function(b) {
                 <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
                     <i class="fas fa-book-open" style="margin-right:6px;"></i>Receipt Details
                 </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight:600;font-size:0.85rem;color:#333;margin-bottom:8px;display:block;">Book Type</label>
+                    <div style="display:flex;gap:15px;align-items:center;">
+                        <label style="cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem;">
+                            <input type="radio" name="adeBookType" value="New" checked onchange="adePopulateBooks(); adeOnBookChange();">
+                            New Book (50 Books)
+                        </label>
+                        <label style="cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem;">
+                            <input type="radio" name="adeBookType" value="Old" onchange="adePopulateBooks(); adeOnBookChange();">
+                            Old Book (30 Books)
+                        </label>
+                    </div>
+                </div>
+                
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
                     <div class="form-group" style="margin:0;">
                         <label for="adeBookNumber">Book Number <span style="color:red;">*</span> <button type="button" onclick="adeAutoReceipt()" style="margin-left:6px;padding:2px 9px;border:none;border-radius:8px;background:#E8F5E9;color:#1B5E20;font-size:.72rem;font-weight:700;cursor:pointer;"><i class="fas fa-magic"></i> Auto</button></label>
@@ -3135,9 +3150,11 @@ window._fmtBytesA = function(b) {
 
     function adePopulateBooks() {
         const sel = document.getElementById('adeBookNumber');
+        const bType = document.querySelector('input[name="adeBookType"]:checked')?.value || 'New';
         if (!sel) return;
         sel.innerHTML = '<option value="">— Select Book —</option>';
-        for (let b = 1; b <= 50; b++) {
+        const maxBooks = bType === 'Old' ? 30 : 50;
+        for (let b = 1; b <= maxBooks; b++) {
             const from = (b - 1) * 50 + 1, to = b * 50;
             sel.innerHTML += `<option value="${b}">Book ${b}  (Receipts ${from}–${to})</option>`;
         }
@@ -3156,8 +3173,9 @@ window._fmtBytesA = function(b) {
         sel.innerHTML = '<option value="">Loading…</option>';
         const from = (bn - 1) * 50 + 1, to = bn * 50;
         let used = [];
+        const bType = document.querySelector('input[name="adeBookType"]:checked')?.value || 'New';
         try {
-            const r = await fetch(`/api/donation-entries/used-receipts/${bn}`);
+            const r = await fetch(`/api/donation-entries/used-receipts/${bn}?type=${bType}`);
             const d = await r.json();
             used = d.usedReceipts || [];
         } catch (e) {}
@@ -3297,7 +3315,8 @@ window._fmtBytesA = function(b) {
 
     async function adeAutoReceipt() {
         try {
-            const resp = await fetch('/api/donation-entries/next-receipt');
+            const bType = document.querySelector('input[name="adeBookType"]:checked')?.value || 'New';
+            const resp = await fetch(`/api/donation-entries/next-receipt?type=${bType}`);
             const slot = await resp.json();
             if (!slot.bookNumber) { alert('❌ All receipt numbers are used.'); return; }
             const bookSel = document.getElementById('adeBookNumber');

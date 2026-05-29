@@ -1350,7 +1350,7 @@ const server = http.createServer(async (req, res) => {
         try {
             const body = await readBody(req);
             const {
-                bookNumber, receiptNumber, donorType,
+                bookNumber, receiptNumber, donorType, bookType,
                 firstName, middleName, lastName, businessName,
                 whatsappNumber, mobileNumber, mailId,
                 buildingName, area, landmark,
@@ -1361,16 +1361,18 @@ const server = http.createServer(async (req, res) => {
             // ── Validation ──────────────────────────────────────────────
             const bn = Number(bookNumber);
             const rn = Number(receiptNumber);
-            if (!bn || bn < 1 || bn > TOTAL_BOOKS_DE)
-                return sendJSON(res, 400, { message: `Book number must be 1–${TOTAL_BOOKS_DE}.` });
+            const bType = bookType === 'Old' ? 'Old' : 'New';
+            const maxBooks = bType === 'Old' ? 30 : TOTAL_BOOKS_DE;
+            if (!bn || bn < 1 || bn > maxBooks)
+                return sendJSON(res, 400, { message: `Book number must be 1–${maxBooks}.` });
             const expectedFrom = (bn - 1) * SLIPS_PER_BOOK_DE + 1;
             const expectedTo   = bn * SLIPS_PER_BOOK_DE;
             if (!rn || rn < expectedFrom || rn > expectedTo)
                 return sendJSON(res, 400, { message: `Receipt number for Book ${bn} must be ${expectedFrom}–${expectedTo}.` });
 
             // Check receipt number not already used
-            const dup = donationEntries.find(e => !e.deleted && e.bookNumber === bn && e.receiptNumber === rn);
-            if (dup) return sendJSON(res, 400, { message: `Receipt #${rn} in Book ${bn} is already used.` });
+            const dup = donationEntries.find(e => !e.deleted && e.bookNumber === bn && e.receiptNumber === rn && (e.bookType || 'New') === bType);
+            if (dup) return sendJSON(res, 400, { message: `Receipt #${rn} in Book ${bn} (${bType}) is already used.` });
 
             if (!donorType || !['Individual', 'Business'].includes(donorType))
                 return sendJSON(res, 400, { message: 'Donor type must be Individual or Business.' });
@@ -1390,6 +1392,7 @@ const server = http.createServer(async (req, res) => {
                 entryId          : `DE-${Date.now()}`,
                 bookNumber       : bn,
                 receiptNumber    : rn,
+                bookType         : bType,
                 donorType        : donorType,
                 firstName        : donorType === 'Individual' ? String(firstName).trim().toUpperCase() : null,
                 middleName       : donorType === 'Individual' ? String(middleName).trim().toUpperCase() : null,
@@ -1470,7 +1473,7 @@ const server = http.createServer(async (req, res) => {
 
             if (isAdmin) {
                 // Admin: all editable fields
-                const fields = ['bookNumber','receiptNumber','donorType','firstName','middleName','lastName',
+                const fields = ['bookNumber','receiptNumber','bookType','donorType','firstName','middleName','lastName',
                                 'businessName','whatsappNumber','mobileNumber','mailId','buildingName',
                                 'area','amount','paymentMode','referenceNumber','status'];
                 fields.forEach(f => {
@@ -1716,9 +1719,12 @@ const server = http.createServer(async (req, res) => {
 
     // ── GET /api/donation-entries/next-receipt  (auto-assign next free slot) ───────────
     if (req.method === 'GET' && pathname === '/api/donation-entries/next-receipt') {
-        const BOOKS = 50, SLIPS = 50;
-        for (let b = 1; b <= BOOKS; b++) {
-            const used = donationEntries.filter(e => !e.deleted && e.bookNumber === b).map(e => e.receiptNumber);
+        const qp = new URL(`http://x${req.url}`).searchParams;
+        const bType = qp.get('type') || 'New';
+        const maxBooks = bType === 'Old' ? 30 : 50;
+        const SLIPS = 50;
+        for (let b = 1; b <= maxBooks; b++) {
+            const used = donationEntries.filter(e => !e.deleted && e.bookNumber === b && (e.bookType || 'New') === bType).map(e => e.receiptNumber);
             const from = (b-1)*SLIPS+1, to = b*SLIPS;
             for (let r = from; r <= to; r++) {
                 if (!used.includes(r)) return sendJSON(res, 200, { bookNumber: b, receiptNumber: r });
@@ -1730,8 +1736,10 @@ const server = http.createServer(async (req, res) => {
     // ── GET /api/donation-entries/used-receipts/:bookNumber  (check which are used) ──
     if (req.method === 'GET' && pathname.startsWith('/api/donation-entries/used-receipts/')) {
         const bn  = Number(pathname.replace('/api/donation-entries/used-receipts/', ''));
+        const qp = new URL(`http://x${req.url}`).searchParams;
+        const bType = qp.get('type') || 'New';
         const used = donationEntries
-            .filter(e => !e.deleted && e.bookNumber === bn)
+            .filter(e => !e.deleted && e.bookNumber === bn && (e.bookType || 'New') === bType)
             .map(e => e.receiptNumber);
         return sendJSON(res, 200, { bookNumber: bn, usedReceipts: used });
     }
