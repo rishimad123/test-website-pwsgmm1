@@ -3425,3 +3425,117 @@ function dsExportCSV() {
     a.href = url; a.download = 'donor_search_export.csv'; a.click();
     URL.revokeObjectURL(url);
 }
+
+
+// --- MY PROFILE (ADMIN) ---
+function loadMyProfileAdmin() {
+    const user = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+    document.getElementById('profAdminName').value = user.name || '';
+    document.getElementById('profAdminEmail').value = user.email || user.username || '';
+    document.getElementById('profAdminContact').value = user.contactNumber || '';
+    document.getElementById('profAdminPassword').value = '';
+    
+    if (user.photoUrl) {
+        document.getElementById('profAdminPhotoPreview').src = user.photoUrl;
+        document.getElementById('profAdminPhotoPreview').style.display = 'block';
+    } else {
+        document.getElementById('profAdminPhotoPreview').style.display = 'none';
+    }
+    
+    if (user.idProofUrl) {
+        document.getElementById('profAdminIdPreview').src = user.idProofUrl;
+        document.getElementById('profAdminIdPreview').style.display = 'block';
+    } else {
+        document.getElementById('profAdminIdPreview').style.display = 'none';
+    }
+}
+
+function previewProfileImage(input, previewId) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById(previewId).src = e.target.result;
+            document.getElementById(previewId).style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+async function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+    });
+}
+
+async function saveAdminProfile(e) {
+    e.preventDefault();
+    const btn = document.getElementById('profAdminBtn');
+    btn.disabled = true;
+    btn.innerHTML = 'Saving...';
+    
+    const user = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+    const payload = {
+        username: user.username,
+        name: document.getElementById('profAdminName').value.trim(),
+        contactNumber: document.getElementById('profAdminContact').value.trim(),
+        password: document.getElementById('profAdminPassword').value || undefined
+    };
+    
+    const photoFile = document.getElementById('profAdminPhoto').files[0];
+    if (photoFile) {
+        payload.photoBase64 = await fileToBase64(photoFile);
+        payload.photoExt = photoFile.name.split('.').pop();
+    }
+    
+    const idFile = document.getElementById('profAdminId').files[0];
+    if (idFile) {
+        payload.idProofBase64 = await fileToBase64(idFile);
+        payload.idProofExt = idFile.name.split('.').pop();
+    }
+    
+    try {
+        const res = await fetch('/api/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            // Update session storage
+            user.name = data.user.name;
+            user.contactNumber = data.user.contactNumber || '';
+            if (data.user.photoUrl) user.photoUrl = data.user.photoUrl;
+            if (data.user.idProofUrl) user.idProofUrl = data.user.idProofUrl;
+            sessionStorage.setItem('currentUser', JSON.stringify(user));
+            
+            // Update UI Name immediately
+            document.getElementById('adminName').textContent = user.name;
+            alert('Profile updated successfully!');
+            document.getElementById('profAdminPassword').value = '';
+            
+            // Refresh users list if we are looking at it
+            if(typeof loadUsers === 'function') loadUsers();
+            
+        } else {
+            alert('Error updating profile: ' + (data.message || 'Unknown error'));
+        }
+    } catch (err) {
+        alert('Server unreachable');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Save Profile';
+}
+
+// Hook into showAdminSection
+const originalShowAdminSection = window.showAdminSection;
+if (originalShowAdminSection) {
+    window.showAdminSection = function(id) {
+        if (id === 'myprofile') {
+            loadMyProfileAdmin();
+        }
+        originalShowAdminSection(id);
+    };
+}

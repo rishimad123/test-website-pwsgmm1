@@ -512,6 +512,60 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
+
+    // ── PUT /api/profile (Admin and Volunteer update profile) ────────
+    if (req.method === 'PUT' && pathname === '/api/profile') {
+        try {
+            const body = await readBody(req);
+            const { username, name, contactNumber, email, password, photoBase64, photoExt, idProofBase64, idProofExt } = body;
+            
+            if (!username) return sendJSON(res, 400, { message: 'Username is required' });
+            
+            const colUsers = db.collection('users');
+            let user = await colUsers.findOne({ username });
+            
+            const updateFields = {};
+            if (name !== undefined) updateFields.name = String(name);
+            if (contactNumber !== undefined) updateFields.contactNumber = String(contactNumber);
+            if (email !== undefined) updateFields.email = String(email);
+            if (password) updateFields.password = String(password); // Simple update since system stores plain text
+            
+            // Handle Photo upload
+            if (photoBase64) {
+                const pExt = (photoExt || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
+                const filename = `profile_${username}_${Date.now()}.${pExt}`;
+                const filepath = path.join(__dirname, 'uploads', filename);
+                fs.writeFileSync(filepath, Buffer.from(photoBase64, 'base64'));
+                updateFields.photoUrl = `/uploads/${filename}`;
+            }
+            
+            // Handle ID Proof upload
+            if (idProofBase64) {
+                const iExt = (idProofExt || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
+                const filename = `idproof_${username}_${Date.now()}.${iExt}`;
+                const filepath = path.join(__dirname, 'uploads', filename);
+                fs.writeFileSync(filepath, Buffer.from(idProofBase64, 'base64'));
+                updateFields.idProofUrl = `/uploads/${filename}`;
+            }
+            
+            if (user) {
+                await colUsers.updateOne({ username }, { $set: updateFields });
+            } else {
+                // E.g. mastercontrol or built-in volunteer updating profile for the first time
+                updateFields.username = username;
+                updateFields.role = (username === process.env.MASTER_USERNAME || username === 'mastercontrol') ? 'admin' : 'volunteer';
+                await colUsers.insertOne(updateFields);
+            }
+            
+            const updatedUser = await colUsers.findOne({ username });
+            
+            return sendJSON(res, 200, { success: true, message: 'Profile updated successfully.', user: updatedUser });
+        } catch (err) {
+            console.error('PUT /api/profile error:', err.message);
+            return sendJSON(res, 500, { message: 'Server error' });
+        }
+    }
+
     // ── POST /api/users/block  ────────────────────────────────────────────
     if (req.method === 'POST' && pathname === '/api/users/block') {
         try {
@@ -541,19 +595,23 @@ const server = http.createServer(async (req, res) => {
             // ── Master control check (env-only, never touches DB, never visible in user list) ──
             const MASTER_USER = process.env.MASTER_USERNAME || 'mastercontrol';
             const MASTER_PASS = process.env.MASTER_PASSWORD || 'M@sterC0ntrol#2025!';
+            const colUsers = db.collection('users');
+            
             if (username === MASTER_USER && password === MASTER_PASS) {
-                // Return admin-level response without DB record
+                const masterProfile = await colUsers.findOne({ username: MASTER_USER });
                 return sendJSON(res, 200, { success: true, isMaster: true, user: {
                     id        : '__master__',
                     username  : MASTER_USER,
-                    name      : 'Master Control',
+                    name      : masterProfile?.name || 'Master Control',
                     role      : 'admin',
-                    email     : '',
+                    email     : masterProfile?.email || '',
                     department: '',
+                    contactNumber: masterProfile?.contactNumber || '',
+                    photoUrl  : masterProfile?.photoUrl || '',
+                    idProofUrl: masterProfile?.idProofUrl || ''
                 }});
             }
 
-            const colUsers = db.collection('users');
             // First check if user exists at all
             const existing = await colUsers.findOne({ $or: [{ username }, { email: username }] });
             if (!existing) return sendJSON(res, 404, { success: false, message: 'User not found.' });
@@ -568,6 +626,9 @@ const server = http.createServer(async (req, res) => {
                 role      : existing.role || 'volunteer',
                 email     : existing.email || '',
                 department: existing.department || '',
+                contactNumber: existing.contactNumber || '',
+                photoUrl  : existing.photoUrl || '',
+                idProofUrl: existing.idProofUrl || ''
             }});
         } catch (err) {
             console.error('POST /api/login error:', err.message);
@@ -592,6 +653,9 @@ const server = http.createServer(async (req, res) => {
                         role     : u.role || 'volunteer',
                         email    : u.email || '',
                         department: u.department || '',
+                        contactNumber: u.contactNumber || '',
+                        photoUrl : u.photoUrl || '',
+                        idProofUrl: u.idProofUrl || '',
                         blocked  : u.blocked === true,
                     }))
             });

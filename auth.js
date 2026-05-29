@@ -114,6 +114,9 @@ if (loginForm) {
             username: user.username,
             role    : user.role,
             email   : user.email,
+            contactNumber: user.contactNumber,
+            photoUrl: user.photoUrl,
+            idProofUrl: user.idProofUrl,
             isMaster: isMasterLogin
         }));
         localStorage.removeItem('currentUser');
