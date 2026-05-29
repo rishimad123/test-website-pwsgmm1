@@ -3419,6 +3419,7 @@ window._fmtBytesA = function(b) {
             payload = {
                     bookNumber      : Number(getVal('adeBookNumber')),
                     receiptNumber   : Number(getVal('adeReceiptNumber')),
+                    bookType        : document.querySelector('input[name="adeBookType"]:checked')?.value || 'New',
                     donorType,
                     firstName       : donorType === 'Individual' ? getTrim('adeFirstName').toUpperCase()    : null,
                     middleName      : donorType === 'Individual' ? getTrim('adeMiddleName').toUpperCase()   : null,
