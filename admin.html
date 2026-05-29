@@ -3194,7 +3194,7 @@ window._fmtBytesA = function(b) {
             el.style.border = active ? '2px solid var(--primary-color)' : '2px solid #ddd';
         });
         const lbl = document.getElementById('adeRefLabel');
-        if (lbl) lbl.innerHTML = \`\${_adeRefLabels[mode] || 'Reference Number'} \${(mode === 'Cheque' || mode === 'RTGS') ? '<span style="color:#e74c3c;font-weight:600;font-size:.85rem;">(required)</span>' : '<span style="color:#aaa;font-weight:400;font-size:.85rem;">(optional)</span>'}\`;
+        if (lbl) lbl.innerHTML = `${_adeRefLabels[mode] || 'Reference Number'} ${(mode === 'Cheque' || mode === 'RTGS') ? '<span style="color:#e74c3c;font-weight:600;font-size:.85rem;">(required)</span>' : '<span style="color:#aaa;font-weight:400;font-size:.85rem;">(optional)</span>'}`;
         const refGroup = document.getElementById('adeRefGroup');
         if (refGroup) refGroup.style.display = mode === 'Balance' ? 'none' : '';
     }
