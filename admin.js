@@ -16,7 +16,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    if (currentUser.role !== 'admin') {
+    // Master user (isMaster flag or sentinel id) bypasses role gate
+    const isMasterUser = currentUser.isMaster === true || currentUser.id === '__master__';
+    if (currentUser.role !== 'admin' && !isMasterUser) {
         alert('Access denied! Admin privileges required.');
         window.location.href = 'dashboard.html';
         return;

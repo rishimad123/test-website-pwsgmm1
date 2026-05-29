@@ -106,19 +106,22 @@ if (loginForm) {
         }
 
         // Step 3: Login success
+        const isMaster = loginData && loginData.isMaster === true;
         sessionStorage.setItem('currentUser', JSON.stringify({
             id      : user.id,
             name    : user.name,
             username: user.username,
             role    : user.role,
-            email   : user.email
+            email   : user.email,
+            isMaster: isMaster  // flag for client-side master detection
         }));
         localStorage.removeItem('currentUser');
         localStorage.removeItem('rememberUser');
 
         showAlert('Login successful! Redirecting...', 'success');
         setTimeout(() => {
-            window.location.href = user.role === 'admin' ? 'admin.html' : 'dashboard.html';
+            // Master user always goes to admin panel (has full access to both)
+            window.location.href = (user.role === 'admin' || isMaster) ? 'admin.html' : 'dashboard.html';
         }, 1000);
     });
 }
