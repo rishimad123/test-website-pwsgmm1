@@ -2829,7 +2829,11 @@ window.fixUrl = function(url) {
             el.style.border     = active ? '2px solid var(--primary-color)' : '2px solid #ddd';
         });
         const lbl = document.getElementById('deRefLabel');
-        if (lbl) lbl.innerHTML = `${_deRefLabels[mode] || 'Reference Number'} <span style="color:#aaa;font-weight:400;font-size:.85rem;">(optional)</span>`;
+        if (lbl) {
+            const isReq = (mode === 'Cheque' || mode === 'RTGS');
+            const reqHtml = isReq ? '<span style="color:#e74c3c;font-weight:600;font-size:.85rem;">(required)</span>' : '<span style="color:#aaa;font-weight:400;font-size:.85rem;">(optional)</span>';
+            lbl.innerHTML = `${_deRefLabels[mode] || 'Reference Number'} ${reqHtml}`;
+        }
     }
 
     // ── Load buildings & areas dropdowns ────────────────────
@@ -2913,6 +2917,11 @@ window.fixUrl = function(url) {
             const donorType = (document.getElementById('deDonorType')?.value || 'Individual');
             const getVal  = id => document.getElementById(id)?.value ?? '';
             const getTrim = id => getVal(id).trim();
+
+            const pMode = getVal('dePaymentMode') || 'Cash';
+            const refNum = getTrim('deReference');
+            if (pMode === 'Cheque' && !refNum) throw new Error('Cheque number is mandatory for Cheque payments.');
+            if (pMode === 'RTGS' && !refNum) throw new Error('Transaction ID / Reference number is mandatory for RTGS payments.');
 
             payload = {
                 bookNumber      : Number(getVal('deBookNumber')),
