@@ -266,12 +266,12 @@ function tsOpenModal(size) {
                     ${applicants.map(app => `
                         <tr style="border-bottom:1px solid #f0f0f0;">
                             <td style="padding:10px;font-weight:600;">${app.name}</td>
-                            <td style="padding:10px;color:#666;">${app.number}</td>
+                            <td style="padding:10px;color:#666;">${app.phone || app.number || '-'}</td>
                             <td style="padding:10px;text-align:center;">${app.quantity}</td>
-                            <td style="padding:10px;text-align:right;color:#27ae60;font-weight:600;">&#8377;${app.totalAmount||'-'}</td>
+                            <td style="padding:10px;text-align:right;color:#27ae60;font-weight:600;">&#8377;${app.totalAmount || ((app.quantity || 1) * tsPrice)}</td>
                             <td style="padding:10px;text-align:center;">
-                                <select onchange="tsUpdateStatus('${app.id||app._id}',this.value)"
-                                    style="padding:4px 8px;border-radius:6px;border:1px solid #ddd;font-size:.8rem;background:${app.status==='Received'?'#E8F5E9':'#fff'};color:${app.status==='Received'?'#1B5E20':'#333'};">
+                                <select onchange="this.style.background=this.value==='Received'?'#E8F5E9':'#FFF3E0';this.style.color=this.value==='Received'?'#1B5E20':'#E65100';tsUpdateStatus('${app.id||app._id}',this.value)"
+                                    style="padding:4px 8px;border-radius:6px;border:1px solid #ddd;font-size:.8rem;background:${app.status==='Received'?'#E8F5E9':'#FFF3E0'};color:${app.status==='Received'?'#1B5E20':'#E65100'};">
                                     <option value="Pending" ${app.status!=='Received'?'selected':''}>Pending</option>
                                     <option value="Received" ${app.status==='Received'?'selected':''}>Received</option>
                                 </select>
