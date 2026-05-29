@@ -1372,7 +1372,7 @@ const server = http.createServer(async (req, res) => {
                 bookNumber, receiptNumber, donorType, bookType,
                 firstName, middleName, lastName, businessName,
                 whatsappNumber, mobileNumber, mailId,
-                buildingName, area, landmark,
+                buildingName, flatNumber, area, landmark,
                 amount, paymentMode, referenceNumber,
                 submittedBy, submittedByUserId
             } = body;
@@ -1421,6 +1421,7 @@ const server = http.createServer(async (req, res) => {
                 mobileNumber     : (mobileNumber   || '').trim() || null,
                 mailId           : (mailId          || '').trim() || null,
                 buildingName     : (buildingName    || '').trim() || null,
+                flatNumber       : (flatNumber      || '').trim() || null,
                 area             : (area            || '').trim() || null,
                 landmark         : (landmark         || '').trim() || null,
                 amount           : amount != null && !isNaN(Number(amount)) ? Number(amount) : null,
@@ -1513,7 +1514,7 @@ const server = http.createServer(async (req, res) => {
                 // Admin: all editable fields
                 const fields = ['bookNumber','receiptNumber','bookType','donorType','firstName','middleName','lastName',
                                 'businessName','whatsappNumber','mobileNumber','mailId','buildingName',
-                                'area','amount','paymentMode','referenceNumber','status'];
+                                'flatNumber','area','amount','paymentMode','referenceNumber','status'];
                 fields.forEach(f => {
                     if (body[f] !== undefined) {
                         if (['firstName','middleName','lastName','businessName'].includes(f) && body[f])
@@ -1538,6 +1539,7 @@ const server = http.createServer(async (req, res) => {
                 if (body.receiptNumber !== undefined) e.receiptNumber = Number(body.receiptNumber);
                 if (body.area          !== undefined) e.area          = String(body.area);
                 if (body.buildingName  !== undefined) e.buildingName  = String(body.buildingName);
+                if (body.flatNumber    !== undefined) e.flatNumber    = String(body.flatNumber);
                 if (body.referenceNumber !== undefined) e.referenceNumber = String(body.referenceNumber);
                 if (body.landmark       !== undefined) e.landmark       = String(body.landmark);
                 // Volunteer name, amount, book, receipt, mode, or status change — requires changeReason for donor details, but we track all

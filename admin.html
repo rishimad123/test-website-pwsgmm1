@@ -2887,9 +2887,13 @@ window._fmtBytesA = function(b) {
                     <div class="form-group" style="margin:0;">
                         <label for="adeBuildingNameSelect">Building Name</label>
                         <div style="display:flex;gap:8px;">
-                            <select id="adeBuildingNameSelect" class="form-control" style="flex:1;"></select>
+                            <select id="adeBuildingNameSelect" class="form-control" style="flex:1;" onchange="document.getElementById('adeFlatNumberGroup').style.display = this.value ? 'block' : 'none';"></select>
                             <button type="button" onclick="adeAddBuildingPrompt()" style="padding:0 14px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;cursor:pointer;font-size:.85rem;white-space:nowrap;">＋ Add</button>
                         </div>
+                    </div>
+                    <div class="form-group" id="adeFlatNumberGroup" style="margin:0; display:none;">
+                        <label for="adeFlatNumber">Enter Flat Number</label>
+                        <input type="text" id="adeFlatNumber" class="form-control" placeholder="Flat No.">
                     </div>
                     <div class="form-group" style="margin:0;">
                         <label for="adeAreaSelect">Area</label>
@@ -3431,6 +3435,7 @@ window._fmtBytesA = function(b) {
                     mobileNumber    : getTrim('adeMobile')    || null,
                     mailId          : getTrim('adeMail')      || null,
                     buildingName    : getVal('adeBuildingNameSelect') || null,
+                    flatNumber      : getTrim('adeFlatNumber')        || null,
                     area            : getVal('adeAreaSelect')         || null,
                     landmark        : getVal('adeLandmarkSelect')     || null,
                     amount          : getVal('adeAmount') !== '' ? Number(getVal('adeAmount')) : null,
@@ -4030,7 +4035,8 @@ window._fmtBytesA = function(b) {
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
                     <div class="form-group" style="margin:0;"><label>Area</label><select id="aneArea" class="form-control"><option value="">— Select Area —</option><option>Patelwadi</option><option>Shindewadi</option><option>Gurkhawadi</option></select></div>
-                    <div class="form-group" style="margin:0;"><label>Building Name</label><select id="aneBuilding" class="form-control"><option value="">— Select Building —</option></select></div>
+                    <div class="form-group" style="margin:0;"><label>Building Name</label><select id="aneBuilding" class="form-control" onchange="document.getElementById('aneFlatNumberGroup').style.display = this.value ? 'block' : 'none';"><option value="">— Select Building —</option></select></div>
+                    <div class="form-group" id="aneFlatNumberGroup" style="margin:0; display:none;"><label>Enter Flat Number</label><input type="text" id="aneFlatNumber" class="form-control" placeholder="Flat No."></div>
                     <div class="form-group" style="margin:0;"><label>Common Landmark</label><select id="aneLandmark" class="form-control"><option value="">— Select Landmark —</option></select></div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
@@ -4204,6 +4210,7 @@ window._fmtBytesA = function(b) {
             bookNumber:bn, receiptNumber:rn, donorType:'Individual',
             firstName:fn, middleName:mn, lastName:ln,
             area:document.getElementById('aneArea').value||null,
+            flatNumber:document.getElementById('aneFlatNumber')?.value.trim()||null,
             amount:document.getElementById('aneAmount').value!==''?Number(document.getElementById('aneAmount').value):null,
             paymentMode:document.getElementById('anePaymentMode')?.value||document.getElementById('aneMode')?.value||'Cash',
             referenceNumber:document.getElementById('aneRef').value.trim()||null,

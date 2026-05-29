@@ -1372,9 +1372,13 @@ window.fixUrl = function(url) {
                                 <div class="form-group" style="margin:0;">
                                     <label for="deBuildingName">Building Name</label>
                                     <div style="display:flex;gap:8px;">
-                                        <select id="deBuildingName" class="form-control" style="flex:1;"></select>
+                                        <select id="deBuildingName" class="form-control" style="flex:1;" onchange="document.getElementById('deFlatNumberGroup').style.display = this.value ? 'block' : 'none';"></select>
                                         <button type="button" id="deAddBldgBtn" onclick="deAddBuilding()" style="display:none;padding:0 14px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;cursor:pointer;font-size:.85rem;white-space:nowrap;">＋ Add</button>
                                     </div>
+                                </div>
+                                <div class="form-group" id="deFlatNumberGroup" style="margin:0; display:none;">
+                                    <label for="deFlatNumber">Enter Flat Number</label>
+                                    <input type="text" id="deFlatNumber" class="form-control" placeholder="Flat No.">
                                 </div>
                                 <div class="form-group" style="margin:0;">
                                     <label for="deArea">Area</label>
@@ -2968,6 +2972,7 @@ window.fixUrl = function(url) {
                 mobileNumber    : getTrim('deMobile')    || null,
                 mailId          : getTrim('deMail')      || null,
                 buildingName    : getVal('deBuildingName') || null,
+                flatNumber      : getTrim('deFlatNumber') || null,
                 area            : getVal('deArea')         || null,
                 landmark        : getVal('deLandmark')     || null,
                 amount          : getVal('deAmount') !== '' ? Number(getVal('deAmount')) : null,
