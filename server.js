@@ -398,7 +398,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/tshirts/settings') {
         try {
             const settings = await db.collection('tshirtSettings').findOne({}) || { price: 350 };
-            return sendJSON(res, 200, { price: settings.price });
+            return sendJSON(res, 200, { price: settings.price, coordinators: settings.coordinators });
         } catch (err) {
             return sendJSON(res, 500, { message: 'Server error' });
         }
@@ -408,12 +408,18 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && pathname === '/api/tshirts/settings') {
         try {
             const body = await readBody(req);
-            if (body.price === undefined || isNaN(Number(body.price))) {
-                return sendJSON(res, 400, { message: 'Valid price required' });
+            const updateDoc = {};
+            if (body.price !== undefined && !isNaN(Number(body.price))) {
+                updateDoc.price = Number(body.price);
             }
-            const price = Number(body.price);
-            await db.collection('tshirtSettings').updateOne({}, { $set: { price } }, { upsert: true });
-            return sendJSON(res, 200, { success: true, price });
+            if (Array.isArray(body.coordinators)) {
+                updateDoc.coordinators = body.coordinators;
+            }
+            if (Object.keys(updateDoc).length === 0) {
+                return sendJSON(res, 400, { message: 'Valid price or coordinators required' });
+            }
+            await db.collection('tshirtSettings').updateOne({}, { $set: updateDoc }, { upsert: true });
+            return sendJSON(res, 200, { success: true, ...updateDoc });
         } catch (err) {
             return sendJSON(res, 500, { message: 'Server error' });
         }

@@ -3,7 +3,7 @@
 // ════════════════════════════════════════════
 // COORDINATOR DATA - Update these with real details
 // ════════════════════════════════════════════
-const TS_COORDINATORS = [
+let tsCoordinators = [
     { name: "Coordinator 1", position: "Lead Coordinator",    phone: "919876543210", photo: "https://ui-avatars.com/api/?name=C1&background=1565c0&color=fff&size=80" },
     { name: "Coordinator 2", position: "Logistics Head",      phone: "919876543211", photo: "https://ui-avatars.com/api/?name=C2&background=1b5e20&color=fff&size=80" },
     { name: "Coordinator 3", position: "Distribution Head",   phone: "919876543212", photo: "https://ui-avatars.com/api/?name=C3&background=e65100&color=fff&size=80" }
@@ -23,7 +23,10 @@ let tsRendered = false;
     // Then fetch real data from API and re-render
     fetch('/api/tshirts/settings')
         .then(r => r.json())
-        .then(d => { if (d && d.price) tsPrice = d.price; })
+        .then(d => { 
+            if (d && d.price) tsPrice = d.price; 
+            if (d && Array.isArray(d.coordinators)) tsCoordinators = d.coordinators;
+        })
         .catch(() => {})
         .finally(() => {
             fetch('/api/tshirts')
@@ -62,7 +65,7 @@ function renderTshirtSection() {
                 <span style="margin-right:6px;">&#128100;</span> T-shirt Coordinators
             </h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;">
-                ${TS_COORDINATORS.map(c => `
+                ${tsCoordinators.map(c => `
                 <div style="background:#fff;border-radius:14px;padding:18px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.08);border:1px solid #f0f0f0;">
                     <img src="${c.photo}" alt="${c.name}" style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:2px solid #eee;" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=e74c3c&color=fff&size=58'">
                     <div style="flex:1;min-width:0;">
@@ -158,7 +161,25 @@ function renderTshirtSection() {
 
         const totalCountEl = document.getElementById('tsTotalCount');
         if (totalCountEl) {
-            totalCountEl.textContent = 'Total: ' + totalShirts + ' shirts';
+            if (!publicMode) {
+                totalCountEl.outerHTML = `
+                <div id="tsTotalCount" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <span style="background:#E3F2FD;color:#1565C0;padding:6px 12px;border-radius:12px;font-weight:700;font-size:.85rem;box-shadow:0 2px 4px rgba(0,0,0,.05);">
+                        &#128085; Total: ${totalShirts}
+                    </span>
+                    <span style="background:#E8F5E9;color:#2E7D32;padding:6px 12px;border-radius:12px;font-weight:700;font-size:.85rem;box-shadow:0 2px 4px rgba(0,0,0,.05);">
+                        &#8377; Received: ${totalReceived.toLocaleString('en-IN')}
+                    </span>
+                    <span style="background:#FFF3E0;color:#E65100;padding:6px 12px;border-radius:12px;font-weight:700;font-size:.85rem;box-shadow:0 2px 4px rgba(0,0,0,.05);">
+                        &#8377; Pending: ${totalPending.toLocaleString('en-IN')}
+                    </span>
+                    <button id="tsRefreshBtn" onclick="tsFetchAndRender()" style="padding:6px 14px;background:#3949AB;color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;box-shadow:0 2px 6px rgba(57,73,171,.3);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>`;
+            } else {
+                totalCountEl.textContent = 'Total: ' + totalShirts + ' shirts';
+            }
         }
 
         Object.keys(sizeGroups).forEach(size => {
@@ -294,4 +315,69 @@ async function tsUpdateStatus(id, newStatus) {
         if (res.ok) { const entry = tsApplications.find(a => (a.id||a._id) === id); if (entry) entry.status = newStatus; }
         else alert('Failed to update status.');
     } catch(e) { console.error(e); alert('Network error.'); }
+}
+
+
+// ════════════════════════════════════════════
+// LIVE REFRESH & COORDINATOR CRUD
+// ════════════════════════════════════════════
+function tsFetchAndRender() {
+    const btn = document.getElementById('tsRefreshBtn');
+    if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+    fetch('/api/tshirts')
+        .then(r => r.json())
+        .then(d => { if (d && d.tshirts) tsApplications = d.tshirts; })
+        .catch(e => console.error(e))
+        .finally(() => {
+            renderTshirtSection();
+        });
+}
+
+async function tsSaveCoordinators() {
+    try {
+        const res = await fetch('/api/tshirts/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ price: tsPrice, coordinators: tsCoordinators })
+        });
+        if (res.ok) {
+            renderTshirtSection();
+        } else {
+            alert("Failed to save coordinators.");
+        }
+    } catch(e) { console.error(e); alert("Network error."); }
+}
+
+function tsAddCoordinator() {
+    const name = prompt("Enter Name:");
+    if (!name) return;
+    const position = prompt("Enter Position (e.g. Lead Coordinator):", "Coordinator");
+    if (!position) return;
+    const phone = prompt("Enter 10-digit Phone:");
+    if (!phone) return;
+    const photo = prompt("Enter Photo URL:", `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3949AB&color=fff&size=80`);
+    
+    tsCoordinators.push({ name, position, phone, photo: photo || '' });
+    tsSaveCoordinators();
+}
+
+function tsEditCoordinator(idx) {
+    const c = tsCoordinators[idx];
+    const name = prompt("Edit Name:", c.name);
+    if (!name) return;
+    const position = prompt("Edit Position:", c.position);
+    if (!position) return;
+    const phone = prompt("Edit Phone:", c.phone);
+    if (!phone) return;
+    const photo = prompt("Edit Photo URL:", c.photo);
+    
+    tsCoordinators[idx] = { name, position, phone, photo: photo || '' };
+    tsSaveCoordinators();
+}
+
+function tsDeleteCoordinator(idx) {
+    if (confirm(`Delete ${tsCoordinators[idx].name}?`)) {
+        tsCoordinators.splice(idx, 1);
+        tsSaveCoordinators();
+    }
 }
