@@ -1471,6 +1471,25 @@ const server = http.createServer(async (req, res) => {
             const isAdmin = body._isAdmin === true;
             const e = donationEntries[idx];
 
+            // Common Validation for Edit: Ensure book/receipt aren't duplicated and bounds are valid
+            const newBook = body.bookNumber !== undefined ? Number(body.bookNumber) : e.bookNumber;
+            const newReceipt = body.receiptNumber !== undefined ? Number(body.receiptNumber) : e.receiptNumber;
+            const newType = body.bookType !== undefined ? body.bookType : (e.bookType || 'New');
+
+            if (newBook !== e.bookNumber || newReceipt !== e.receiptNumber || newType !== (e.bookType || 'New')) {
+                const maxBooks = newType === 'Old' ? 30 : TOTAL_BOOKS_DE;
+                if (!newBook || newBook < 1 || newBook > maxBooks) {
+                    return sendJSON(res, 400, { message: `Book number must be 1–${maxBooks}.` });
+                }
+                const dup = donationEntries.find(x => !x.deleted && x.entryId !== id && x.bookNumber === newBook && x.receiptNumber === newReceipt && (x.bookType || 'New') === newType);
+                if (dup) return sendJSON(res, 400, { message: `Receipt #${newReceipt} in Book ${newBook} (${newType}) is already used.` });
+                
+                const expectedFrom = (newBook - 1) * SLIPS_PER_BOOK_DE + 1;
+                const expectedTo   = newBook * SLIPS_PER_BOOK_DE;
+                if (newReceipt < expectedFrom || newReceipt > expectedTo)
+                    return sendJSON(res, 400, { message: `Receipt number for Book ${newBook} must be ${expectedFrom}–${expectedTo}.` });
+            }
+
             if (isAdmin) {
                 // Admin: all editable fields
                 const fields = ['bookNumber','receiptNumber','bookType','donorType','firstName','middleName','lastName',
