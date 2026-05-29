@@ -48,6 +48,9 @@ function initializeAdminPanel() {
 
 // ==================== SHOW SECTION ====================
 function showAdminSection(sectionId) {
+    if (sectionId === 'myprofile') {
+        if (typeof loadMyProfileAdmin === 'function') loadMyProfileAdmin();
+    }
     // Hide all sections
     document.querySelectorAll('.content-section').forEach(section => {
         section.classList.remove('active');
