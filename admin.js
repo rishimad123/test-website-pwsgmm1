@@ -31,8 +31,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('topNavName')) {
         document.getElementById('topNavName').textContent = currentUser.name;
         document.getElementById('topNavRole').textContent = (currentUser.role === 'admin' ? 'Administrator' : currentUser.role);
-        if (currentUser.name && currentUser.name.length > 0) {
-            document.getElementById('topNavAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+        const avatarEl = document.getElementById('topNavAvatar');
+        if (avatarEl) {
+            if (currentUser.photoUrl) {
+                avatarEl.innerHTML = '<img src="' + currentUser.photoUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+                avatarEl.style.padding = '0';
+                avatarEl.style.overflow = 'hidden';
+            } else if (currentUser.name && currentUser.name.length > 0) {
+                avatarEl.textContent = currentUser.name.charAt(0).toUpperCase();
+            }
         }
     }
     
@@ -3516,6 +3523,19 @@ async function saveAdminProfile(e) {
             
             // Update UI Name immediately
             document.getElementById('adminName').textContent = user.name;
+            if (document.getElementById('topNavName')) document.getElementById('topNavName').textContent = user.name;
+            const avatarEl = document.getElementById('topNavAvatar');
+            if (avatarEl) {
+                if (user.photoUrl) {
+                    avatarEl.innerHTML = '<img src="' + user.photoUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+                    avatarEl.style.padding = '0';
+                    avatarEl.style.overflow = 'hidden';
+                } else {
+                    avatarEl.innerHTML = '';
+                    avatarEl.textContent = user.name.charAt(0).toUpperCase();
+                    avatarEl.style.padding = '';
+                }
+            }
             alert('Profile updated successfully!');
             document.getElementById('profAdminPassword').value = '';
             

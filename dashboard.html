@@ -1760,7 +1760,14 @@ window.fixUrl = function(url) {
         } else {
             document.getElementById('userName').textContent = 'Welcome ' + currentUser.name;
             document.getElementById('topBarName').textContent = currentUser.name;
-            document.getElementById('userAvatar').textContent = currentUser.name.charAt(0);
+            const avatarEl = document.getElementById('userAvatar');
+            if (currentUser.photoUrl) {
+                avatarEl.innerHTML = '<img src="' + currentUser.photoUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+                avatarEl.style.padding = '0';
+                avatarEl.style.overflow = 'hidden';
+            } else {
+                avatarEl.textContent = currentUser.name.charAt(0);
+            }
         }
         
         function showSection(sectionId) {
@@ -3612,6 +3619,17 @@ async function saveVolProfile(e) {
             sessionStorage.setItem('currentUser', JSON.stringify(user));
             
             document.getElementById('userName').textContent = 'Welcome ' + user.name;
+            document.getElementById('topBarName').textContent = user.name;
+            const avatarEl = document.getElementById('userAvatar');
+            if (user.photoUrl) {
+                avatarEl.innerHTML = '<img src="' + user.photoUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+                avatarEl.style.padding = '0';
+                avatarEl.style.overflow = 'hidden';
+            } else {
+                avatarEl.innerHTML = '';
+                avatarEl.textContent = user.name.charAt(0);
+                avatarEl.style.padding = '';
+            }
             alert('Profile updated successfully!');
         } else {
             alert('Error updating profile: ' + (data.message || 'Unknown error'));
