@@ -50,6 +50,7 @@ if (loginForm) {
 
         let user = null;
         let stopFallback = false; // if server found the user but credentials were wrong, don't fallback
+        let isMasterLogin = false; // set to true if server confirms master credentials
 
         // Step 1: Try server login (handles DB-created users)
         try {
@@ -61,7 +62,8 @@ if (loginForm) {
             const loginData = await loginRes.json();
 
             if (loginRes.status === 200 && loginData.success) {
-                user = loginData.user;           // ✅ Server login success
+                user = loginData.user;                         // ✅ Server login success
+                isMasterLogin = loginData.isMaster === true;  // ✅ Capture master flag while in scope
             } else if (loginRes.status === 401) {
                 stopFallback = true;             // ❌ Found on server but wrong password / blocked
                 const msg = loginData.message === 'Account is blocked.'
@@ -105,15 +107,14 @@ if (loginForm) {
             return;
         }
 
-        // Step 3: Login success
-        const isMaster = loginData && loginData.isMaster === true;
+        // Step 3: Login success — isMasterLogin is safely in outer scope
         sessionStorage.setItem('currentUser', JSON.stringify({
             id      : user.id,
             name    : user.name,
             username: user.username,
             role    : user.role,
             email   : user.email,
-            isMaster: isMaster  // flag for client-side master detection
+            isMaster: isMasterLogin
         }));
         localStorage.removeItem('currentUser');
         localStorage.removeItem('rememberUser');
@@ -121,7 +122,7 @@ if (loginForm) {
         showAlert('Login successful! Redirecting...', 'success');
         setTimeout(() => {
             // Master user always goes to admin panel (has full access to both)
-            window.location.href = (user.role === 'admin' || isMaster) ? 'admin.html' : 'dashboard.html';
+            window.location.href = (user.role === 'admin' || isMasterLogin) ? 'admin.html' : 'dashboard.html';
         }, 1000);
     });
 }
