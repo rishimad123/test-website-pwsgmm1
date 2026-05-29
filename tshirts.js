@@ -181,6 +181,9 @@ function renderTshirtSection() {
                     <button id="tsRefreshBtn" onclick="tsFetchAndRender()" style="padding:6px 14px;background:#3949AB;color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;box-shadow:0 2px 6px rgba(57,73,171,.3);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                         <i class="fas fa-sync-alt"></i> Refresh
                     </button>
+                    <button id="tsExportBtn" onclick="tsExportToExcel()" style="padding:6px 14px;background:#1b5e20;color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;box-shadow:0 2px 6px rgba(27,94,32,.3);" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <i class="fas fa-file-excel"></i> Export to Excel
+                    </button>
                 </div>`;
             } else {
                 totalCountEl.textContent = 'Total: ' + totalShirts + ' shirts';
