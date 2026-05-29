@@ -1484,201 +1484,6 @@ window.fixUrl = function(url) {
                 <div id="balanceRecovery" class="content-section" style="display:none;">
                     <div class="page-title">
                         <h1><i class="fas fa-hand-holding-usd" style="color:var(--primary-color);margin-right:10px;"></i>Balance Recovery</h1>
-                                </div>
-                            </div>
-
-                            <!-- ── Section B: Donor Type ── -->
-                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
-                                <i class="fas fa-user-circle" style="margin-right:6px;"></i>Donor Type
-                            </div>
-                            <div class="de-donor-toggle" style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
-                                <label id="deBtnInd" onclick="deSetDonorType('Individual')" style="display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid var(--primary-color);border-radius:20px;cursor:pointer;font-weight:600;font-size:.82rem;background:var(--primary-color);color:#fff;transition:all .2s;">
-                                    <i class="fas fa-user" style="font-size:.78rem;"></i> Individual
-                                </label>
-                                <label id="deBtnBiz" onclick="deSetDonorType('Business')" style="display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid #ddd;border-radius:20px;cursor:pointer;font-weight:600;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;">
-                                    <i class="fas fa-building" style="font-size:.78rem;"></i> Business
-                                </label>
-                            </div>
-                            <input type="hidden" id="deDonorType" value="Individual">
-
-                            <!-- Individual name fields -->
-                            <div id="deIndFields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;">
-                                <div class="form-group" style="margin:0;">
-                                    <label for="deFirstName">First Name <span style="color:red;">*</span></label>
-                                    <input type="text" id="deFirstName" class="form-control" placeholder="FIRST" oninput="this.value=this.value.toUpperCase()" required>
-                                </div>
-                                <div class="form-group" style="margin:0;">
-                                    <label for="deMiddleName">Middle Name <span style="color:red;">*</span></label>
-                                    <input type="text" id="deMiddleName" class="form-control" placeholder="MIDDLE" oninput="this.value=this.value.toUpperCase()" required>
-                                </div>
-                                <div class="form-group" style="margin:0;">
-                                    <label for="deLastName">Last Name <span style="color:red;">*</span></label>
-                                    <input type="text" id="deLastName" class="form-control" placeholder="LAST" oninput="this.value=this.value.toUpperCase()" required>
-                                </div>
-                            </div>
-
-                            <!-- Business name field -->
-                            <div id="deBizFields" style="display:none;margin-bottom:20px;">
-                                <div class="form-group" style="margin:0;">
-                                    <label for="deBusinessName">Business Name <span style="color:red;">*</span></label>
-                                    <input type="text" id="deBusinessName" class="form-control" placeholder="BUSINESS NAME" oninput="this.value=this.value.toUpperCase()">
-                                </div>
-                            </div>
-
-                            <!-- ── Section C: Contact ── -->
-                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
-                                <i class="fas fa-address-book" style="margin-right:6px;"></i>Contact Information
-                            </div>
-                            <div id="deContactFields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;">
-                                <div class="form-group" style="margin:0;">
-                                    <label for="deWhatsapp"><i class="fab fa-whatsapp" style="color:#25D366;"></i> WhatsApp Number</label>
-                                    <input type="tel" id="deWhatsapp" class="form-control" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}">
-                                </div>
-                                <div class="form-group" style="margin:0;">
-                                    <label for="deMobile"><i class="fas fa-mobile-alt" style="color:#3949AB;"></i> Mobile Number</label>
-                                    <input type="tel" id="deMobile" class="form-control" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}">
-                                </div>
-                                <div class="form-group" style="margin:0;">
-                                    <label for="deMail"><i class="fas fa-envelope" style="color:#E67E22;"></i> Mail ID</label>
-                                    <input type="email" id="deMail" class="form-control" placeholder="email@example.com">
-                                </div>
-                            </div>
-
-                            <!-- ── Section D: Landmark ── -->
-                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
-                                <i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Landmark
-                            </div>
-                            <div id="deLandmarkFields" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
-                                <div class="form-group" style="margin:0;">
-                                    <label for="deBuildingName">Building Name</label>
-                                    <div style="display:flex;gap:8px;">
-                                        <select id="deBuildingName" class="form-control" style="flex:1;"></select>
-                                        <button type="button" id="deAddBldgBtn" onclick="deAddBuilding()" style="display:none;padding:0 14px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;cursor:pointer;font-size:.85rem;white-space:nowrap;">＋ Add</button>
-                                    </div>
-                                </div>
-                                <div class="form-group" style="margin:0;">
-                                    <label for="deArea">Area</label>
-                                    <div style="display:flex;gap:8px;">
-                                        <select id="deArea" class="form-control" style="flex:1;">
-                                            <option value="">— Select Area —</option>
-                                            <option value="Patelwadi">Patelwadi</option>
-                                            <option value="Shindewadi">Shindewadi</option>
-                                            <option value="Gurkhawadi">Gurkhawadi</option>
-                                        </select>
-                                        <button type="button" id="deAddAreaBtn" onclick="deAddArea()" style="display:none;padding:0 14px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;cursor:pointer;font-size:.85rem;white-space:nowrap;">＋ Add</button>
-                                    </div>
-                                </div>
-                            <div class="form-group" style="margin-top:12px;">
-                                <label for="deLandmark">Common Landmark</label>
-                                <select id="deLandmark" class="form-control">
-                                    <option value="">— Select Landmark (optional) —</option>
-                                </select>
-                            </div>
-                            </div>
-
-                            <!-- ── Section E: Payment ── -->
-                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
-                                <i class="fas fa-rupee-sign" style="margin-right:6px;"></i>Amount &amp; Payment
-                            </div>
-                            <div class="form-group">
-                                <label for="deAmount">Donation Amount (₹)</label>
-                                <input type="number" id="deAmount" class="form-control" placeholder="Enter amount" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label>Payment Mode <span style="color:red;">*</span></label>
-                                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
-                                    <label class="de-mode-btn active" id="deModeCash" onclick="deSetMode('Cash')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid var(--primary-color);border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:var(--primary-color);color:#fff;transition:all .2s;">
-                                        <i class="fas fa-money-bill-wave" style="font-size:1.2rem;"></i>Cash
-                                    </label>
-                                    <label class="de-mode-btn" id="deModeChq" onclick="deSetMode('Cheque')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
-                                        <i class="fas fa-file-alt" style="font-size:1.2rem;"></i>Cheque
-                                    </label>
-                                    <label class="de-mode-btn" id="deModeUPI" onclick="deSetMode('UPI')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
-                                        <i class="fas fa-qrcode" style="font-size:1.2rem;"></i>UPI
-                                    </label>
-                                    <label class="de-mode-btn" id="deModeRTGS" onclick="deSetMode('RTGS')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
-                                        <i class="fas fa-university" style="font-size:1.2rem;"></i>RTGS
-                                    </label>
-                                    <label class="de-mode-btn" id="deModeBal" onclick="deSetMode('Balance')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
-                                        <i class="fas fa-hand-holding-usd" style="font-size:1.2rem;"></i>Balance
-                                    </label>
-                                </div>
-                            </div>
-                            <input type="hidden" id="dePaymentMode" value="Cash">
-                            <div class="form-group" id="deRefGroup">
-                                <label for="deReference" id="deRefLabel">Reference Number <span style="color:#aaa;font-weight:400;font-size:.85rem;">(optional)</span></label>
-                                <input type="text" id="deReference" class="form-control" placeholder="Reference / Transaction / Cheque number">
-                            </div>
-
-                            <!-- ── Section F: Passbook Document Upload ── -->
-                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;margin-top:8px;">
-                                <i class="fas fa-camera" style="margin-right:6px;"></i>Passbook Document
-                            </div>
-                            <div class="card" style="margin-bottom:0;box-shadow:none;border:1.5px solid #ffe0d0;padding:18px;">
-                                <div id="pbDocStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:500;"></div>
-                                <!-- Camera / Gallery button — uses capture=environment for rear camera on mobile -->
-                                <div id="pbUploadContainer" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
-                                    <button type="button" id="pbCameraBtn"
-                                        onclick="document.getElementById('pbDocCamera').click()"
-                                        style="flex:1;min-width:140px;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-                                        <i class="fas fa-camera" style="font-size:1.3rem;"></i> Take Photo / Select Image
-                                    </button>
-                                </div>
-                                <!-- Hidden file inputs: one for camera, one for gallery -->
-                                <input type="file" id="pbDocCamera" style="display:none;" accept="image/*">
-                                <input type="file" id="pbDocCameraCapture" style="display:none;" accept="image/*" capture="environment">
-                                <!-- Compress status -->
-                                <div id="pbCompressStatus" style="display:none;font-size:.82rem;color:#888;margin-bottom:10px;">
-                                    <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Compressing image…
-                                </div>
-                                <!-- Preview -->
-                                <div id="pbDocPreview" style="display:none;margin-bottom:14px;">
-                                    <img id="pbDocThumb" src="" alt="Receipt preview" style="max-width:100%;max-height:220px;border-radius:10px;border:1.5px solid #e0e0e0;object-fit:contain;">
-                                    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
-                                        <span id="pbDocFileName" style="font-size:.83rem;color:#555;flex:1;"></span>
-                                        <span id="pbDocFileSize" style="font-size:.78rem;color:#27ae60;font-weight:600;"></span>
-                                        <button type="button" onclick="pbClearDoc()" style="background:none;border:none;color:#E74C3C;cursor:pointer;font-size:.85rem;"><i class="fas fa-times"></i> Remove</button>
-                                    </div>
-                                </div>
-                                <p style="font-size:.78rem;color:#aaa;margin:0;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Image is automatically compressed to under 1 MB. Works on Android, iOS, and desktop.</p>
-                            </div>
-
-                            <!-- ── Submit ── -->
-                            <button type="submit" id="deSubmitBtn" class="btn btn-primary" style="width:100%;max-width:360px;display:block;padding:14px 30px;font-size:1rem;border-radius:10px;margin-top:8px;">
-                                <i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- My Submitted Entries table -->
-                    <div class="card" style="margin-top:20px;">
-                        <div class="card-header">
-                            <h3><i class="fas fa-list" style="color:var(--primary-color);margin-right:8px;"></i>My Submitted Entries</h3>
-                            <button onclick="deLoadMyEntries()" class="btn btn-small" style="background:#f4f4f4;color:#555;font-size:.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
-                        </div>
-                        <div class="de-entries-table-wrap" id="deMyEntriesWrap" style="overflow-x:auto;">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Book</th><th>Receipt</th><th>Donor</th><th>Area</th>
-                                        <th>Amount (₹)</th><th>Mode</th><th>Photo</th><th>Date</th><th>Edit</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="deMyEntriesTbody">
-                                    <tr><td colspan="9" style="text-align:center;color:#999;">Loading…</td></tr>
-                                </tbody>
-                            </table>
-                                                </div>
-                        <!-- Mobile cards -->
-                        <div class="de-entries-cards" id="deMyEntriesCards" style="display:none;padding:8px 0;"></div>
-                    </div>
-                </div>
-                <!-- ══════════ END DONATION DATA ENTRY SECTION ══════════ -->
-
-                <!-- ══════════ BALANCE RECOVERY SECTION (VOLUNTEER) ══════════ -->
-                <div id="balanceRecovery" class="content-section" style="display:none;">
-                    <div class="page-title">
-                        <h1><i class="fas fa-hand-holding-usd" style="color:var(--primary-color);margin-right:10px;"></i>Balance Recovery</h1>
                         <p>Track your submitted entries with pending balance</p>
                     </div>
 
@@ -1766,17 +1571,495 @@ window.fixUrl = function(url) {
         </div>
                         
                         <div style="margin-top:28px;">
-                        <td style="color:#2E7D32;font-weight:700;">${amtCell}</td>
-                        <td style="color:#777;font-size:.82rem;">${dateStr}</td>
-                        <td>${statusBadge}</td>
-                        <td style="text-align:center;">${photoCell}</td>
-                        <td style="text-align:center;">
-                            ${r.type === 'donation-entry' ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#1565C0;padding:6px 10px;" onclick="deOpenVolEdit('${r.receiptId}')"><i class="fas fa-edit"></i> Edit</button>` : '<span style="font-size:0.8rem;color:#999;">-</span>'}
-                        </td>
-                    </tr>`;
-                }).join('');
+                            <!-- Sizes Overview -->
+        <div id="tsSizesOverview" style="background:#fff;border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e0e0e0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+                <h3 style="margin:0;color:#2c3e50;font-size:1rem;">&#128202; Sizes Overview</h3>
+                <span id="tsTotalCount" style="background:#FFF3E0;color:#E65100;padding:4px 12px;border-radius:12px;font-weight:700;font-size:.85rem;">Total: 0 shirts</span>
+            </div>
+            <div id="tsSizeBoxes" style="display:flex;flex-wrap:wrap;gap:10px;">
+                <div onclick="tsOpenModal(18)" id="tsBox18" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">18</div>
+                    <div id="tsBoxCount18" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(20)" id="tsBox20" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">20</div>
+                    <div id="tsBoxCount20" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(22)" id="tsBox22" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">22</div>
+                    <div id="tsBoxCount22" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(24)" id="tsBox24" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">24</div>
+                    <div id="tsBoxCount24" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(26)" id="tsBox26" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">26</div>
+                    <div id="tsBoxCount26" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(28)" id="tsBox28" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">28</div>
+                    <div id="tsBoxCount28" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(30)" id="tsBox30" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">30</div>
+                    <div id="tsBoxCount30" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(32)" id="tsBox32" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">32</div>
+                    <div id="tsBoxCount32" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(34)" id="tsBox34" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">34</div>
+                    <div id="tsBoxCount34" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(36)" id="tsBox36" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">36</div>
+                    <div id="tsBoxCount36" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(38)" id="tsBox38" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">38</div>
+                    <div id="tsBoxCount38" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(40)" id="tsBox40" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">40</div>
+                    <div id="tsBoxCount40" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(42)" id="tsBox42" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">42</div>
+                    <div id="tsBoxCount42" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(44)" id="tsBox44" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">44</div>
+                    <div id="tsBoxCount44" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(46)" id="tsBox46" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">46</div>
+                    <div id="tsBoxCount46" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div>
+            </div>
+            <p style="margin:12px 0 0;font-size:.78rem;color:#aaa;text-align:center;">Click any size to view applicants</p>
+        </div>
+    </div>
+                        </div>
+                    </div>
+                </div>
+
+<!-- ══════════ END T-SHIRT SECTION ══════════ -->
+
+        </main>
+    </div>
+
+    <!-- ── Lightbox Modal ─────────────────────────────────────────── -->
+    <div id="pbLightbox">
+        <span id="pbLightboxClose" onclick="closePbLightbox()">&times;</span>
+        <img id="pbLightboxImg" src="" alt="Passbook image">
+    </div>
+
+    <!-- ── Volunteer Entry Edit Modal ──────────────────────────────── -->
+    <div id="deVolEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
+        <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:560px;width:94%;margin:auto;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;color:#222;"><i class="fas fa-edit" style="color:var(--primary-color);margin-right:8px;"></i>Edit Entry</h3>
+                <span onclick="deCloseVolEdit()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <div id="deVolEditStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
+            <form id="deVolEditForm" onsubmit="deSaveVolEdit(event)" autocomplete="off">
+                <input type="hidden" id="deVolEditId">
+                <!-- Details: Area, Mode, Status -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;">
+                        <label>Area <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                        <select id="deVolEditArea" class="form-control"></select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>Payment Mode <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                        <select id="deVolEditMode" class="form-control">
+                            <option>Cash</option><option>Cheque</option><option>UPI</option><option>RTGS</option><option>Balance</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0;grid-column:1/-1;">
+                        <label>Status <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                        <select id="deVolEditStatusField" class="form-control" style="background:#FFF3E0;color:#E65100;font-weight:700;">
+                            <option value="Balance">Balance</option>
+                            <option value="Received">Received</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Photo section -->
+                <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:16px;margin-bottom:16px;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--primary-color);margin-bottom:12px;">
+                        <i class="fas fa-camera" style="margin-right:6px;"></i>Receipt Photo
+                    </div>
+                    <!-- Current photo -->
+                    <div id="deVolEditCurrentPhoto" style="display:none;margin-bottom:10px;">
+                        <p style="font-size:.8rem;color:#777;margin:0 0 6px;">Current photo:</p>
+                        <img id="deVolEditCurrentImg" src="" alt="Current receipt" style="max-width:100%;max-height:160px;border-radius:8px;border:1.5px solid #e0e0e0;object-fit:contain;cursor:pointer;">
+                    </div>
+                    <!-- Upload new -->
+                    <button type="button" onclick="document.getElementById('deVolEditPhotoInput').click()"
+                        style="width:100%;padding:12px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.88rem;font-weight:600;">
+                        <i class="fas fa-upload" style="margin-right:6px;color:var(--primary-color);"></i>Upload / Replace Photo
+                    </button>
+                    <input type="file" id="deVolEditPhotoInput" style="display:none;" accept="image/*">
+                    <div id="deVolEditPhotoPreview" style="display:none;margin-top:10px;">
+                        <img id="deVolEditPhotoThumb" src="" alt="Preview" style="max-width:100%;max-height:160px;border-radius:8px;border:1.5px solid #ffe0d0;object-fit:contain;">
+                        <p id="deVolEditPhotoName" style="font-size:.8rem;color:#555;margin:6px 0 0;"></p>
+                    </div>
+                </div>
+                <!-- Donor name, Amount, Book, Receipt (editable with reason) -->
+                <div style="border:1.5px solid #E3F2FD;border-radius:10px;padding:14px;margin-bottom:14px;background:#F8FBFF;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#1565C0;margin-bottom:10px;"><i class="fas fa-edit" style="margin-right:6px;"></i>DETAILS <span style="font-weight:400;color:#777;">(edit with reason)</span></div>
+                    
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px;">
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:.78rem;">Book Number</label>
+                            <select id="deVolEditBook" class="form-control" onchange="deVolEditBookChange()"></select>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:.78rem;">Receipt Number</label>
+                            <select id="deVolEditReceipt" class="form-control"></select>
+                        </div>
+                    </div>
+                    <div id="deVolNameIndFields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+                        <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">First Name</label><input id="deVolEditFirst" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+                        <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Middle Name</label><input id="deVolEditMid" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+                        <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Last Name</label><input id="deVolEditLast" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+                    </div>
+                    
+                    <div id="deVolNameBizFields" style="display:none;margin-bottom:10px;">
+                        <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Business Name</label><input id="deVolEditBiz" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label style="font-size:.78rem;">Amount (&#8377;)</label>
+                        <input type="number" id="deVolEditAmount" class="form-control" min="0" placeholder="0">
+                    </div>
+                    <div id="deVolNameReasonWrap" style="margin-top:8px;">
+                        <label style="font-size:.78rem;color:#c0392b;font-weight:700;"><i class="fas fa-exclamation-circle" style="margin-right:4px;"></i>Reason for Change <span style="color:#c0392b;">*</span> <span style="color:#aaa;font-weight:400;">(required if any detail above changed)</span></label>
+                        <input id="deVolEditReason" class="form-control" placeholder="e.g. Spelling correction, wrong amount entered..." style="margin-top:4px;">
+                    </div>
+                    <p style="font-size:.76rem;color:#aaa;margin:8px 0 0;"><i class="fas fa-info-circle" style="margin-right:3px;"></i>Submission date cannot be changed. Edits are logged for admin review.</p>
+                </div>
+
+                <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button type="button" class="btn" style="background:#eee;color:#555;" onclick="deCloseVolEdit()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="deVolEditSaveBtn"><i class="fas fa-save" style="margin-right:6px;"></i>Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        } else {
+            document.getElementById('userName').textContent = 'Welcome ' + currentUser.name;
+            document.getElementById('topBarName').textContent = currentUser.name;
+            document.getElementById('userAvatar').textContent = currentUser.name.charAt(0);
+        }
+        
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            // Show selected section
+            const target = document.getElementById(sectionId);
+            if (target) target.style.display = 'block';
+
+            // Update active menu item
+            document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                link.classList.remove('active');
+            });
+            if (event && event.target) {
+                const link = event.target.closest('a');
+                if (link) link.classList.add('active');
+            }
+
+            // Load donation entries when that section is opened
+            if (sectionId === 'donationEntry') { deLoadDropdowns(); deLoadMyEntries(); }
+            // Load balance recovery when that section is opened
+            if (sectionId === 'balanceRecovery') { loadVolBalanceRecovery(); }
+            // Load donor search when that section is opened
+            if (sectionId === 'donorSearch') {
+                if (typeof loadDonorSearch === 'function') loadDonorSearch();
+            }
+            if (sectionId === 'tshirtSection' && typeof renderTshirtSection === 'function') renderTshirtSection();
+        }
+
+        // Mobile sidebar helpers
+        function openSidebar() {
+            document.querySelector('.sidebar').classList.add('open');
+            document.getElementById('sidebarOverlay').classList.add('active');
+        }
+        function closeSidebar() {
+            document.querySelector('.sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                sessionStorage.removeItem('currentUser');
+                window.location.href = 'login.html';
+            }
+        }
+        
+        // ==================== PASSBOOK DOCUMENT — Camera + Auto-Compress ====================
+        // Works on Android, iOS (via capture=environment) and desktop (file picker)
+        let _pbDocBlob = null;  // compressed Blob ready to upload
+
+        // Canvas-based compression: reduces image to ≤1 MB (or targetKB) using quality loop
+        function _compressImage(file, targetKB, callback) {
+            const MAX_BYTES = (targetKB || 950) * 1024;
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = function() {
+                URL.revokeObjectURL(url);
+                // Determine render size (max 1920px wide)
+                let w = img.naturalWidth, h = img.naturalHeight;
+                const MAX_DIM = 1920;
+                if (w > MAX_DIM) { h = Math.round(h * MAX_DIM / w); w = MAX_DIM; }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+                // Binary-search quality until file fits
+                let lo = 0.1, hi = 0.92, q = 0.82, blob = null;
+                function tryQ(quality) {
+                    canvas.toBlob(function(b) {
+                        blob = b;
+                        if (b.size <= MAX_BYTES || (hi - lo) < 0.03) {
+                            callback(blob);
+                        } else {
+                            hi = quality;
+                            q = (lo + hi) / 2;
+                            tryQ(q);
+                        }
+                    }, 'image/jpeg', quality);
+                }
+                if (file.size <= MAX_BYTES) {
+                    // Already small enough — still convert to JPEG for uniformity
+                    canvas.toBlob(function(b) { callback(b); }, 'image/jpeg', 0.9);
+                } else {
+                    tryQ(q);
+                }
+            };
+            img.onerror = function() { callback(null); }; // fallback: no compression
+            img.src = url;
+        }
+
+        function _fmtBytes(b) {
+            return b < 1024 ? b + ' B' : b < 1048576 ? (b/1024).toFixed(1) + ' KB' : (b/1048576).toFixed(2) + ' MB';
+        }
+
+        const handleImageUpload = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            // Non-image? reject.
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a JPG or PNG image.');
+                this.value = ''; return;
+            }
+            // Show compression spinner
+            const cmpEl  = document.getElementById('pbCompressStatus');
+            const preEl  = document.getElementById('pbDocPreview');
+            const thumbEl = document.getElementById('pbDocThumb');
+            const nameEl  = document.getElementById('pbDocFileName');
+            const sizeEl  = document.getElementById('pbDocFileSize');
+            if (cmpEl)  cmpEl.style.display  = '';
+            if (preEl)  preEl.style.display  = 'none';
+            _pbDocBlob = null;
+
+            _compressImage(file, 950, function(blob) {
+                if (cmpEl) cmpEl.style.display = 'none';
+                if (!blob) {
+                    alert('Could not process image. Please try a different file.');
+                    return;
+                }
+                _pbDocBlob = blob;
+                // Show thumbnail — revoke any previous object URL to prevent memory leak
+                if (thumbEl && thumbEl.src && thumbEl.src.startsWith('blob:')) URL.revokeObjectURL(thumbEl.src);
+                const objURL = URL.createObjectURL(blob);
+                if (thumbEl) { thumbEl.src = objURL; }
+                if (nameEl)  nameEl.textContent  = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+                if (sizeEl)  sizeEl.textContent  = '✅ ' + _fmtBytes(blob.size) + (file.size > blob.size ? '  (compressed from ' + _fmtBytes(file.size) + ')' : '');
+                if (preEl)  preEl.style.display  = '';
+            });
+        };
+
+        document.getElementById('pbDocCamera')?.addEventListener('change', handleImageUpload);
+        document.getElementById('pbDocCameraCapture')?.addEventListener('change', handleImageUpload);
+
+        function pbClearDoc() {
+            _pbDocBlob = null;
+            const inp = document.getElementById('pbDocCamera');
+            if (inp) inp.value = '';
+            const inpCap = document.getElementById('pbDocCameraCapture');
+            if (inpCap) inpCap.value = '';
+            const preEl = document.getElementById('pbDocPreview');
+            if (preEl) preEl.style.display = 'none';
+            const thumb = document.getElementById('pbDocThumb');
+            if (thumb) thumb.src = '';
+        }
+
+        // Android-specific layout modification
+        (function checkAndroidUpload() {
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const pbUploadContainer = document.getElementById('pbUploadContainer');
+            if (isAndroid && pbUploadContainer) {
+                pbUploadContainer.innerHTML = `
+                    <button type="button" onclick="document.getElementById('pbDocCameraCapture').click()"
+                        style="flex:1;min-width:120px;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                        <i class="fas fa-camera" style="font-size:1.3rem;"></i> Take Photo
+                    </button>
+                    <button type="button" onclick="document.getElementById('pbDocCamera').click()"
+                        style="flex:1;min-width:120px;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                        <i class="fas fa-images" style="font-size:1.3rem;"></i> Select Gallery
+                    </button>
+                `;
+            }
+        })();
+
+        // ==================== LIGHTBOX ====================
+        function openPbLightbox(url) {
+            const lb = document.getElementById('pbLightbox');
+            const img = document.getElementById('pbLightboxImg');
+            img.src = url;
+            lb.classList.add('active');
+        }
+        function closePbLightbox() {
+            document.getElementById('pbLightbox').classList.remove('active');
+            document.getElementById('pbLightboxImg').src = '';
+        }
+        document.getElementById('pbLightbox').addEventListener('click', function(e) {
+            if (e.target === this) closePbLightbox();
+        });
+
+        // ==================== BALANCE RECOVERY MODULE ====================
+        async function loadVolBalanceRecovery() {
+            const tbody = document.getElementById('volBalTbody');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:24px;">Loading...</td></tr>';
+            try {
+                // Fetch all donation entries and Pauti books (across entire website)
+                const [deRes, pbRes] = await Promise.all([
+                    fetch('/api/donation-entries'),
+                    fetch('/api/pauti-books')
+                ]);
+                const deData = await deRes.json();
+                const pbData = await pbRes.json();
+
+                const pautiPending = [];
+                (pbData.pautiBooks || []).forEach(book => {
+                    (book.slips || []).forEach(slip => {
+                        if (!slip.deleted && slip.uploadedAt &&
+                            (slip.paymentMode === 'balance' || !slip.amount || Number(slip.amount) <= 0)) {
+                            pautiPending.push({
+                                receiptId: `SLIP-${slip.slipNumber}`,
+                                name: slip.donorName || '—',
+                                amount: slip.amount || 0,
+                                photoUrl: slip.photoUrl || null,
+                                submittedAt: slip.uploadedAt,
+                                status: 'pending',
+                                type: 'pauti-slip',
+                                bookNumber: book.bookNumber,
+                                receiptNumber: slip.slipNumber,
+                                area: '—'
+                            });
+                        }
+                    });
+                });
+
+                const dePending = (deData.entries || []).filter(e =>
+                    e.paymentMode && e.paymentMode.toLowerCase() === 'balance' && !e.deleted
+                ).map(e => {
+                    const donor = e.donorType === 'Business'
+                        ? (e.businessName || '—')
+                        : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+                    return {
+                        receiptId: e.entryId,
+                        name: donor,
+                        amount: e.amount || 0,
+                        photoUrl: e.photoUrl || null,
+                        submittedAt: e.submittedAt,
+                        status: e.status || 'Balance',
+                        type: 'donation-entry',
+                        bookNumber: e.bookNumber,
+                        receiptNumber: e.receiptNumber,
+                        area: e.area || '—'
+                    };
+                });
+
+                const list = [...pautiPending, ...dePending];
+
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:24px;">No pending balance slips found.</td></tr>';
+                    return;
+                }
+
+                const grouped = {};
+                list.forEach(r => {
+                    const bn = r.bookNumber || 'Unknown';
+                    if(!grouped[bn]) grouped[bn] = [];
+                    grouped[bn].push(r);
+                });
+
+                const bookNumbers = Object.keys(grouped).sort((a, b) => {
+                    const na = parseInt(a);
+                    const nb = parseInt(b);
+                    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+                    return String(a).localeCompare(String(b));
+                });
+
+                let html = '';
+                bookNumbers.forEach(bn => {
+                    html += `<tr><td colspan="8" style="background:#F4F6FB;color:#1A237E;font-weight:700;font-size:1.05rem;padding:12px 16px;">Book Number ${bn}</td></tr>`;
+                    html += grouped[bn].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)).map(r => {
+                        const dt = new Date(r.submittedAt);
+                        const dateStr = dt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase()
+                                      + ', ' + dt.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+                        const amtCell = r.amount && Number(r.amount) > 0
+                            ? '₹' + Number(r.amount).toLocaleString('en-IN')
+                            : '<span style="color:#ccc;font-style:italic;">No amount</span>';
+                        const photoCell = r.photoUrl
+                            ? `<img src="${r.photoUrl}?t=${Date.now()}" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${r.photoUrl}')" title="Click to enlarge">`
+                            : '<span style="color:#ccc;">—</span>';
+                        
+                        const isReceived  = (r.status || '').toLowerCase() === 'received';
+                        const statusBadge = isReceived 
+                            ? '<span class="badge badge-success" style="background:#E8F5E9;color:#1B5E20;">Received</span>'
+                            : '<span class="badge badge-warning" style="background:#FFF8E1;color:#F57F17;">Balance</span>';
+
+                        const safeId = r.receiptId.replace(/'/g, "\\'");
+                        const markBtn = (!isReceived)
+                            ? `<button class="btn-icon btn-edit" style="background:#E8F5E9;color:#1B5E20;padding:6px 10px;margin-right:5px;" title="Mark as Received" onclick="markBalanceReceived('${safeId}')"><i class="fas fa-check"></i></button>`
+                            : '';
+                        const editBtn = r.type === 'donation-entry'
+                            ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#1565C0;padding:6px 10px;" onclick="deOpenVolEdit('${safeId}')"><i class="fas fa-edit"></i> Edit</button>`
+                            : '<span style="font-size:0.8rem;color:#999;">-</span>';
+
+                        return `<tr>
+                            <td style="font-weight:700;">Bk ${r.bookNumber} #${r.receiptNumber}</td>
+                            <td style="font-weight:600;">${r.name}</td>
+                            <td>${r.area}</td>
+                            <td style="color:#2E7D32;font-weight:700;">${amtCell}</td>
+                            <td style="color:#777;font-size:.82rem;">${dateStr}</td>
+                            <td>${statusBadge}</td>
+                            <td style="text-align:center;">${photoCell}</td>
+                            <td style="text-align:center;white-space:nowrap;">${markBtn}${editBtn}</td>
+                        </tr>`;
+                    }).join('');
+                });
+                tbody.innerHTML = html;
             } catch(e) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#c00;padding:24px;">Error loading balance data.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#c00;padding:24px;">Error loading balance data.</td></tr>';
+            }
+        }
+
+        async function markBalanceReceived(id) {
+            if (!confirm('Mark this balance recovery slip as Received?')) return;
+            try {
+                const res  = await fetch(`/api/receipts/${encodeURIComponent(id)}/mark-received`, { method: 'PATCH' });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showNotification('Balance slip marked as received!', 'success');
+                    loadVolBalanceRecovery();
+                } else {
+                    showNotification('Error: ' + (data.message || 'Could not update.'), 'error');
+                }
+            } catch (e) {
+                showNotification('Cannot reach server.', 'error');
             }
         }
 
@@ -3106,7 +3389,9 @@ window.fixUrl = function(url) {
                     <div style="font-size:.82rem;color:var(--primary-color);font-weight:600;">${m.role||m.department||'Member'}</div>
                     ${m.phone?'<div style=\"font-size:.78rem;color:#666;\"><i class=\"fas fa-phone\" style=\"margin-right:3px;\"></i>'+m.phone+'</div>':''}
                 </div></div>`).join('') + '</div>';
-        } catch(e) { sec.innerHTML = '<div style=\"text-align:center;color:#c00;padding:40px;\">⚠ Cannot load.</div>
+        } catch(e) { sec.innerHTML = '<div style=\"text-align:center;color:#c00;padding:40px;\">⚠ Cannot load.</div>'; }
+    }
+    </script>
 </div><!-- Live Updates (SSE) -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
