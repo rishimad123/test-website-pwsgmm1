@@ -3411,6 +3411,8 @@ window._fmtBytesA = function(b) {
                 const getVal  = id => document.getElementById(id)?.value ?? '';
                 const getTrim = id => getVal(id).trim();
 
+            const amtVal = getVal('adeAmount');
+            if (amtVal === '') throw new Error('Donation Amount is mandatory.');
             const pMode = getVal('adePaymentMode') || 'Cash';
             const refNum = getTrim('adeReference');
             if (pMode === 'Cheque' && !refNum) throw new Error('Cheque number is mandatory for Cheque payments.');
@@ -4195,6 +4197,8 @@ window._fmtBytesA = function(b) {
         const ln=(document.getElementById('aneLast').value||'').trim().toUpperCase();
         if(!bn||!rn){aneShowStatus('\u274c Select Book and Receipt Number.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
         if(!fn||!mn||!ln){aneShowStatus('\u274c First, Middle, and Last Name are required.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
+        const amtVal = document.getElementById('aneAmount').value;
+        if(amtVal === ''){aneShowStatus('\u274c Donation Amount is mandatory.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
         const currentUser = JSON.parse(sessionStorage.getItem('currentUser')||'null');
         const payload={
             bookNumber:bn, receiptNumber:rn, donorType:'Individual',

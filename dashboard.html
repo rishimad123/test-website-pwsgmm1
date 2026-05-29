@@ -2948,6 +2948,8 @@ window.fixUrl = function(url) {
             const getVal  = id => document.getElementById(id)?.value ?? '';
             const getTrim = id => getVal(id).trim();
 
+            const amtVal = getVal('deAmount');
+            if (amtVal === '') throw new Error('Donation Amount is mandatory.');
             const pMode = getVal('dePaymentMode') || 'Cash';
             const refNum = getTrim('deReference');
             if (pMode === 'Cheque' && !refNum) throw new Error('Cheque number is mandatory for Cheque payments.');
