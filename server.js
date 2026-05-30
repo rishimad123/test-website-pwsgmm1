@@ -803,12 +803,15 @@ const server = http.createServer(async (req, res) => {
     // ── PATCH /api/receipts/:id/mark-received  (balance recovery complete) ───
     if (req.method === 'PATCH' && pathname.startsWith('/api/receipts/') && pathname.endsWith('/mark-received')) {
         const id  = decodeURIComponent(pathname.replace('/api/receipts/', '').replace('/mark-received', ''));
+        const qp  = new URL(`http://x${req.url}`).searchParams;
+        const by  = qp.get('by') || 'Unknown';
         
         // 1. Check Receipts
         const rIdx = receipts.findIndex(r => r.receiptId === id);
         if (rIdx !== -1) {
             receipts[rIdx].status = 'received';
             receipts[rIdx].paymentMode = 'Cash';
+            receipts[rIdx].markedReceivedBy = by;
             receipts[rIdx].updatedAt = new Date().toISOString();
             await saveReceipts();
             console.log(`✅  Balance marked received (Receipt): ${receipts[rIdx].receiptId}`);
@@ -820,6 +823,7 @@ const server = http.createServer(async (req, res) => {
         if (dIdx !== -1) {
             donationEntries[dIdx].status = 'Received';
             donationEntries[dIdx].paymentMode = 'Cash';
+            donationEntries[dIdx].markedReceivedBy = by;
             donationEntries[dIdx].updatedAt = new Date().toISOString();
             await saveDonationEntries();
             console.log(`✅  Balance marked received (Donation): ${donationEntries[dIdx].entryId}`);
@@ -835,6 +839,7 @@ const server = http.createServer(async (req, res) => {
                 if (sIdx !== -1) {
                     book.slips[sIdx].status = 'Received';
                     book.slips[sIdx].paymentMode = 'Cash';
+                    book.slips[sIdx].markedReceivedBy = by;
                     book.slips[sIdx].updatedAt = new Date().toISOString();
                     foundSlip = book.slips[sIdx];
                     break;
@@ -1432,13 +1437,14 @@ const server = http.createServer(async (req, res) => {
                         lastName: slip.lastName || '',
                         amount: slip.amount,
                         paymentMode: slip.paymentMode || 'Cash',
-                        status: st,
+                        status: normalizeStatus(slip.status, slip.paymentMode),
                         photoUrl: slip.photoUrl || null,
                         submittedAt: slip.uploadedAt,
                         submittedBy: slip.uploadedBy || 'Auto',
                         submittedByUserId: slip.uploadedByUserId || null,
                         area: slip.area || null,
-                        referenceNumber: slip.referenceNumber || slip.checkNumber || null
+                        referenceNumber: slip.referenceNumber || slip.checkNumber || null,
+                        markedReceivedBy: slip.markedReceivedBy || null
                     });
                 }
             });
@@ -1460,12 +1466,13 @@ const server = http.createServer(async (req, res) => {
                     lastName: r.lastName || '',
                     amount: r.amount,
                     paymentMode: r.paymentMode || 'Cash',
-                    status: st,
+                    status: normalizeStatus(r.status, r.paymentMode),
                     photoUrl: r.photoUrl || null,
                     submittedAt: r.date || r.createdAt || new Date().toISOString(),
                     submittedBy: 'Admin',
                     area: r.area || null,
-                    referenceNumber: r.referenceNumber || null
+                    referenceNumber: r.referenceNumber || null,
+                    markedReceivedBy: r.markedReceivedBy || null
                 });
             }
         });

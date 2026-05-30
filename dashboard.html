@@ -1967,7 +1967,9 @@ window.fixUrl = function(url) {
         async function markBalanceReceived(id) {
             if (!confirm('Mark this balance recovery slip as Received?')) return;
             try {
-                const res  = await fetch(`/api/receipts/${encodeURIComponent(id)}/mark-received`, { method: 'PATCH' });
+                const curUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+                const byName  = curUser.name || 'Unknown';
+                const res  = await fetch(`/api/receipts/${encodeURIComponent(id)}/mark-received?by=${encodeURIComponent(byName)}`, { method: 'PATCH' });
                 const data = await res.json();
                 if (res.ok && data.success) {
                     showNotification('Balance slip marked as received!', 'success');
