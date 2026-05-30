@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us – Patelwadi Sarvajanik Ganesh Mitramandal</title>
+    <meta name="description" content="Learn about Patelwadi Sarvajanik Ganesh Mitramandal – our mission, history, and community work.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .about-page-hero {
+            background: linear-gradient(135deg, #FF6B35 0%, #8B0000 100%);
+            color: white;
+            text-align: center;
+            padding: 100px 20px 60px;
+        }
+        .about-page-hero h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .about-page-hero p {
+            font-size: 1.15rem;
+            opacity: 0.9;
+        }
+        .about-page-body {
+            padding: 60px 20px;
+        }
+        .about-page-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: start;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        @media (max-width: 768px) {
+            .about-page-layout { grid-template-columns: 1fr; }
+            .about-page-hero h1 { font-size: 2rem; }
+        }
+        .about-page-img-wrap {
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            background: linear-gradient(135deg, #FF6B35, #8B0000);
+            min-height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .about-page-img-wrap img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            display: none;
+        }
+        .about-page-img-wrap svg {
+            width: 100%;
+            height: 320px;
+        }
+        .about-page-text-block h2 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 16px;
+        }
+        .about-page-text-block p {
+            color: #555;
+            line-height: 1.8;
+            margin-bottom: 14px;
+            font-size: 1rem;
+        }
+        #aboutPageContentText { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <i class="fas fa-om"></i>
+                    <span>Patelwadi Ganesh Mitramandal</span>
+                </div>
+                <button class="mobile-toggle" id="mobileToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html" class="active">About</a></li>
+                    <li><a href="committee.html">Committee</a></li>
+                    <li><a href="volunteers.html">Volunteers</a></li>
+                    <li><a href="tshirt.html">T-shirts</a></li>
+                    <li><a href="gallery.html">Gallery</a></li>
+                    <li><a href="donations.html">Donations</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                    <li><a href="login.html" class="btn-login">Login</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Banner -->
+    <div class="about-page-hero">
+        <h1><i class="fas fa-om" style="margin-right:10px;"></i>About Our Mandal</h1>
+        <p>Patelwadi Sarvajanik Ganesh Mitramandal – Serving the community with devotion</p>
+    </div>
+
+    <!-- Main Content -->
+    <section class="about-page-body">
+        <div class="about-page-layout">
+            <!-- Image -->
+            <div class="about-page-img-wrap" id="aboutPageImgContainer">
+                <img id="aboutPageImg" src="" alt="About Our Mandal">
+                <svg id="aboutPageSvg" viewBox="0 0 400 320">
+                    <defs>
+                        <linearGradient id="apGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#FF6B35;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#8B0000;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <rect width="400" height="320" fill="url(#apGrad)"/>
+                    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="90" font-family="Arial">ॐ</text>
+                </svg>
+            </div>
+
+            <!-- Text -->
+            <div class="about-page-text-block">
+                <h2>Who We Are</h2>
+                <div id="aboutPageContentText">
+                    <p>Patelwadi Sarvajanik Ganesh Mitramandal has been a cornerstone of our community for over 25 years. Founded with a spirit of devotion and unity, our Mandal organizes one of the most celebrated Ganesh Chaturthi festivals in the area.</p>
+                    <p>Our mission goes beyond celebration — we are committed to social service, cultural preservation, and bringing people together in the spirit of Ganpati Bappa's blessings.</p>
+                    <p>Every year, hundreds of dedicated volunteers come together to make our festival a grand success, ensuring that every devotee leaves with joy and blessings in their heart.</p>
+                </div>
+                <a href="index.html" class="btn btn-primary" style="display:inline-block;margin-top:10px;">
+                    <i class="fas fa-home"></i> Back to Home
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h3>About Us</h3>
+                    <p>Patelwadi Sarvajanik Ganesh Mitramandal is dedicated to celebrating Ganesh Chaturthi with devotion and community service.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="committee.html">Committee</a></li>
+                        <li><a href="volunteers.html">Volunteers</a></li>
+                        <li><a href="gallery.html">Gallery</a></li>
+                        <li><a href="tshirt.html">T-shirts</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Contact Info</h3>
+                    <ul class="contact-info">
+                        <li><i class="fas fa-map-marker-alt"></i> Patelwadi, Mumbai - 400001</li>
+                        <li><i class="fas fa-phone"></i> +91 98765 43210</li>
+                        <li><i class="fas fa-envelope"></i> info@patelwadiganesh.org</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Newsletter</h3>
+                    <p>Subscribe to get updates about our events</p>
+                    <form class="newsletter-form" onsubmit="return false;">
+                        <input type="email" placeholder="Your email" required>
+                        <button type="submit"><i class="fas fa-paper-plane"></i></button>
+                    </form>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Patelwadi Sarvajanik Ganesh Mitramandal. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+</body>
+</html>

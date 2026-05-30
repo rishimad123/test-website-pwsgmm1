@@ -3749,17 +3749,47 @@ async function loadAdminEventDate() {
         const res = await fetch('/api/settings');
         const data = await res.json();
         if (data && data.eventDate) {
-            const dateStr = data.eventDate.split('T')[0]; // simple YYYY-MM-DD
+            const dateStr = data.eventDate.split('T')[0];
             document.getElementById('adminEventDate').value = dateStr;
         }
-        if (data && data.eventName) {
-            document.getElementById('adminEventName').value = data.eventName;
+        if (data && data.eventName) document.getElementById('adminEventName').value = data.eventName;
+        if (data && data.eventDesc) document.getElementById('adminEventDesc').value = data.eventDesc;
+
+        // Quick Stats
+        if (data && data.yearsOfService !== undefined) {
+            const el = document.getElementById('adminYearsOfService');
+            if (el) el.value = data.yearsOfService;
         }
-        if (data && data.eventDesc) {
-            document.getElementById('adminEventDesc').value = data.eventDesc;
+        if (data && data.activeVolunteers !== undefined) {
+            const el = document.getElementById('adminActiveVolunteers');
+            if (el) el.value = data.activeVolunteers;
         }
 
-        // Load countdown timer inputs
+        // About Section text
+        if (data && data.aboutText) {
+            const el = document.getElementById('adminAboutText');
+            if (el) el.value = data.aboutText;
+        }
+        // About Section photo preview
+        if (data && data.aboutPhoto) {
+            const wrap = document.getElementById('adminAboutPhotoPreviewWrap');
+            const img  = document.getElementById('adminAboutPhotoPreview');
+            if (wrap && img) { img.src = data.aboutPhoto; wrap.style.display = 'block'; }
+        }
+
+        // About Page text
+        if (data && data.aboutPageText) {
+            const el = document.getElementById('adminAboutPageText');
+            if (el) el.value = data.aboutPageText;
+        }
+        // About Page photo preview
+        if (data && data.aboutPagePhoto) {
+            const wrap = document.getElementById('adminAboutPagePhotoPreviewWrap');
+            const img  = document.getElementById('adminAboutPagePhotoPreview');
+            if (wrap && img) { img.src = data.aboutPagePhoto; wrap.style.display = 'block'; }
+        }
+
+        // Countdown timer inputs
         const cdDateInput = document.getElementById('countdownDateInput');
         const cdTimeInput = document.getElementById('countdownTimeInput');
         const previewBox  = document.getElementById('countdownPreviewBox');
@@ -3767,13 +3797,10 @@ async function loadAdminEventDate() {
         const cdIso = data && (data.countdownDate || data.eventDate);
         if (cdIso && cdDateInput) {
             const dt = new Date(cdIso);
-            // Fill date
             cdDateInput.value = dt.toISOString().split('T')[0];
-            // Fill time as HH:MM
             const hh = String(dt.getHours()).padStart(2, '0');
             const mm = String(dt.getMinutes()).padStart(2, '0');
             if (cdTimeInput) cdTimeInput.value = `${hh}:${mm}`;
-            // Show preview
             if (previewBox && previewText) {
                 previewText.textContent = dt.toLocaleString('en-IN', {
                     weekday: 'short', year: 'numeric', month: 'long',
@@ -3782,8 +3809,8 @@ async function loadAdminEventDate() {
                 previewBox.style.display = 'block';
             }
         }
-        
-        // Load banner preview
+
+        // Banner preview
         const bannerPreview = document.getElementById('adminBannerPreview');
         if (data && data.dashboardBanner) {
             bannerPreview.src = data.dashboardBanner;
@@ -3795,6 +3822,101 @@ async function loadAdminEventDate() {
         console.warn('Failed to load settings:', e.message);
     }
 }
+
+// Save Quick Stats (Years of Service + Active Volunteers)
+async function saveQuickStats() {
+    const yos = document.getElementById('adminYearsOfService')?.value;
+    const av  = document.getElementById('adminActiveVolunteers')?.value;
+    try {
+        const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ yearsOfService: yos, activeVolunteers: av })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const s = document.getElementById('quickStatsStatus');
+            if (s) { s.style.opacity = '1'; setTimeout(() => s.style.opacity = '0', 3000); }
+        } else { alert('Failed to save stats: ' + (data.message || 'Unknown error')); }
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+// Save About Section (text + optional photo)
+async function saveAboutSection() {
+    const text      = document.getElementById('adminAboutText')?.value || '';
+    const fileInput = document.getElementById('adminAboutPhoto');
+    let photoUrl    = null;
+
+    // Upload photo first if one was selected
+    if (fileInput && fileInput.files[0]) {
+        const fd = new FormData();
+        fd.append('photo', fileInput.files[0]);
+        try {
+            const r = await fetch('/api/about-photo', { method: 'POST', body: fd });
+            const d = await r.json();
+            if (d.success) {
+                photoUrl = d.url;
+                const wrap = document.getElementById('adminAboutPhotoPreviewWrap');
+                const img  = document.getElementById('adminAboutPhotoPreview');
+                if (wrap && img) { img.src = photoUrl; wrap.style.display = 'block'; }
+                fileInput.value = '';
+            } else { alert('Photo upload failed: ' + (d.message || 'Unknown error')); return; }
+        } catch(e) { alert('Photo upload error: ' + e.message); return; }
+    }
+
+    // Save text
+    try {
+        const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ aboutText: text })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const s = document.getElementById('aboutSectionStatus');
+            if (s) { s.style.opacity = '1'; setTimeout(() => s.style.opacity = '0', 3000); }
+        } else { alert('Failed to save: ' + (data.message || 'Unknown error')); }
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+// Save About Page (text + optional photo)
+async function saveAboutPage() {
+    const text      = document.getElementById('adminAboutPageText')?.value || '';
+    const fileInput = document.getElementById('adminAboutPagePhoto');
+    let photoUrl    = null;
+
+    // Upload photo first if one was selected
+    if (fileInput && fileInput.files[0]) {
+        const fd = new FormData();
+        fd.append('photo', fileInput.files[0]);
+        try {
+            const r = await fetch('/api/about-page-photo', { method: 'POST', body: fd });
+            const d = await r.json();
+            if (d.success) {
+                photoUrl = d.url;
+                const wrap = document.getElementById('adminAboutPagePhotoPreviewWrap');
+                const img  = document.getElementById('adminAboutPagePhotoPreview');
+                if (wrap && img) { img.src = photoUrl; wrap.style.display = 'block'; }
+                fileInput.value = '';
+            } else { alert('Photo upload failed: ' + (d.message || 'Unknown error')); return; }
+        } catch(e) { alert('Photo upload error: ' + e.message); return; }
+    }
+
+    // Save text
+    try {
+        const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ aboutPageText: text })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const s = document.getElementById('aboutPageStatus');
+            if (s) { s.style.opacity = '1'; setTimeout(() => s.style.opacity = '0', 3000); }
+        } else { alert('Failed to save: ' + (data.message || 'Unknown error')); }
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
 
 async function saveCountdownTimer() {
     const dateVal = document.getElementById('countdownDateInput')?.value;

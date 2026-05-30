@@ -2231,6 +2231,10 @@ const server = http.createServer(async (req, res) => {
             if (body.eventName !== undefined) globalSettings.eventName = body.eventName;
             if (body.eventDesc !== undefined) globalSettings.eventDesc = body.eventDesc;
             if (body.countdownDate !== undefined) globalSettings.countdownDate = body.countdownDate;
+            if (body.yearsOfService !== undefined) globalSettings.yearsOfService = body.yearsOfService;
+            if (body.activeVolunteers !== undefined) globalSettings.activeVolunteers = body.activeVolunteers;
+            if (body.aboutText !== undefined) globalSettings.aboutText = body.aboutText;
+            if (body.aboutPageText !== undefined) globalSettings.aboutPageText = body.aboutPageText;
             
             if (colSettings) {
                 await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
@@ -2298,6 +2302,46 @@ const server = http.createServer(async (req, res) => {
         }
         broadcastLiveEvent('events_updated', { timestamp: Date.now() });
         return sendJSON(res, 200, { success: true });
+    }
+
+    // ── About Section Photo Upload ──────────────────────────────────
+    if (req.method === 'POST' && pathname === '/api/about-photo') {
+        try {
+            const ct = req.headers['content-type'] || '';
+            const bm = ct.match(/boundary=([^;]+)/i);
+            if (!bm) return sendJSON(res, 400, { message: 'Missing boundary.' });
+            const rawBody = await readRawBody(req);
+            const parts = parseMultipart(rawBody, bm[1]);
+            const filePart = parts.find(p => p.filename && p.data);
+            if (!filePart) return sendJSON(res, 400, { message: 'No file uploaded.' });
+            const safeName = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const uniqueName = `about_${Date.now()}_${safeName}`;
+            try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); }
+            catch (fsErr) { return sendJSON(res, 500, { message: 'Failed to save file: ' + fsErr.message }); }
+            globalSettings.aboutPhoto = '/uploads/' + uniqueName;
+            if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
+            return sendJSON(res, 200, { success: true, url: globalSettings.aboutPhoto });
+        } catch(err) { return sendJSON(res, 500, { message: 'Upload error: ' + err.message }); }
+    }
+
+    // ── About Page Photo Upload ─────────────────────────────────────
+    if (req.method === 'POST' && pathname === '/api/about-page-photo') {
+        try {
+            const ct = req.headers['content-type'] || '';
+            const bm = ct.match(/boundary=([^;]+)/i);
+            if (!bm) return sendJSON(res, 400, { message: 'Missing boundary.' });
+            const rawBody = await readRawBody(req);
+            const parts = parseMultipart(rawBody, bm[1]);
+            const filePart = parts.find(p => p.filename && p.data);
+            if (!filePart) return sendJSON(res, 400, { message: 'No file uploaded.' });
+            const safeName = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const uniqueName = `aboutpage_${Date.now()}_${safeName}`;
+            try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); }
+            catch (fsErr) { return sendJSON(res, 500, { message: 'Failed to save file: ' + fsErr.message }); }
+            globalSettings.aboutPagePhoto = '/uploads/' + uniqueName;
+            if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
+            return sendJSON(res, 200, { success: true, url: globalSettings.aboutPagePhoto });
+        } catch(err) { return sendJSON(res, 500, { message: 'Upload error: ' + err.message }); }
     }
 
     // ── Static file serving ───────────────────────────────────────────────

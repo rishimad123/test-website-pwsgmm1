@@ -2174,6 +2174,91 @@ window._fmtBytesA = function(b) {
 
                 <!-- ═══════════ Events Section (Admin) ═══════════ -->
                 <div id="events" class="content-section">
+
+                    <!-- Quick Stats Editor -->
+                    <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #3498db;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-bar" style="color:#3498db;margin-right:8px;"></i>Quick Stats Editor</h3>
+                        </div>
+                        <p style="color:#666;font-size:0.9rem;margin:8px 0 16px;">Update the numbers displayed in the landing page stats section.</p>
+                        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;">
+                            <div style="flex:1;min-width:160px;">
+                                <label for="adminYearsOfService" style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Years of Service</label>
+                                <input type="number" id="adminYearsOfService" class="admin-input" placeholder="e.g. 25" min="0" style="width:100%;margin:0;">
+                            </div>
+                            <div style="flex:1;min-width:160px;">
+                                <label for="adminActiveVolunteers" style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Active Volunteers</label>
+                                <input type="number" id="adminActiveVolunteers" class="admin-input" placeholder="e.g. 150" min="0" style="width:100%;margin:0;">
+                            </div>
+                            <div>
+                                <button class="btn btn-primary btn-small" onclick="saveQuickStats()" style="background:#3498db;border-color:#3498db;">
+                                    <i class="fas fa-save"></i> Save Stats
+                                </button>
+                                <span id="quickStatsStatus" style="display:block;margin-top:6px;font-size:0.82rem;color:#27AE60;font-weight:600;opacity:0;transition:opacity 0.3s;">Stats saved!</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- About Section Editor (Landing Page) -->
+                    <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #9b59b6;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-info-circle" style="color:#9b59b6;margin-right:8px;"></i>About Our Mandal – Landing Page Section</h3>
+                        </div>
+                        <p style="color:#666;font-size:0.9rem;margin:8px 0 16px;">Edit the text and photo shown in the 'About Our Mandal' section on the landing page.</p>
+                        <div style="display:flex;flex-direction:column;gap:15px;">
+                            <div>
+                                <label for="adminAboutText" style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">About Text (each line becomes a paragraph)</label>
+                                <textarea id="adminAboutText" class="admin-input" rows="5" placeholder="Enter about text. Each new line will become a separate paragraph." style="width:100%;margin:0;resize:vertical;"></textarea>
+                            </div>
+                            <div style="display:flex;gap:15px;flex-wrap:wrap;align-items:flex-end;">
+                                <div style="flex:1;min-width:200px;">
+                                    <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Upload Photo</label>
+                                    <input type="file" id="adminAboutPhoto" accept="image/*" class="admin-input" style="width:100%;margin:0;padding:6px;">
+                                </div>
+                                <div>
+                                    <button class="btn btn-primary btn-small" onclick="saveAboutSection()" style="background:#9b59b6;border-color:#9b59b6;">
+                                        <i class="fas fa-save"></i> Save About Section
+                                    </button>
+                                    <span id="aboutSectionStatus" style="display:block;margin-top:6px;font-size:0.82rem;color:#27AE60;font-weight:600;opacity:0;transition:opacity 0.3s;">Saved!</span>
+                                </div>
+                            </div>
+                            <div id="adminAboutPhotoPreviewWrap" style="display:none;margin-top:5px;">
+                                <p style="font-size:0.82rem;color:#888;margin-bottom:4px;">Current photo:</p>
+                                <img id="adminAboutPhotoPreview" src="" alt="About section photo" style="max-height:120px;border-radius:8px;border:1px solid #eee;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- About Page Editor -->
+                    <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #27ae60;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-file-alt" style="color:#27ae60;margin-right:8px;"></i>About Page Editor (Learn More page)</h3>
+                        </div>
+                        <p style="color:#666;font-size:0.9rem;margin:8px 0 16px;">Edit the content shown on the dedicated About page (<a href="about.html" target="_blank" style="color:#27ae60;">about.html</a>) that opens when visitors click 'Learn More'.</p>
+                        <div style="display:flex;flex-direction:column;gap:15px;">
+                            <div>
+                                <label for="adminAboutPageText" style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">About Page Text (each line becomes a paragraph)</label>
+                                <textarea id="adminAboutPageText" class="admin-input" rows="6" placeholder="Enter text for the About page. Each new line becomes a separate paragraph." style="width:100%;margin:0;resize:vertical;"></textarea>
+                            </div>
+                            <div style="display:flex;gap:15px;flex-wrap:wrap;align-items:flex-end;">
+                                <div style="flex:1;min-width:200px;">
+                                    <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Upload Photo</label>
+                                    <input type="file" id="adminAboutPagePhoto" accept="image/*" class="admin-input" style="width:100%;margin:0;padding:6px;">
+                                </div>
+                                <div>
+                                    <button class="btn btn-primary btn-small" onclick="saveAboutPage()" style="background:#27ae60;border-color:#27ae60;">
+                                        <i class="fas fa-save"></i> Save About Page
+                                    </button>
+                                    <span id="aboutPageStatus" style="display:block;margin-top:6px;font-size:0.82rem;color:#27AE60;font-weight:600;opacity:0;transition:opacity 0.3s;">Saved!</span>
+                                </div>
+                            </div>
+                            <div id="adminAboutPagePhotoPreviewWrap" style="display:none;margin-top:5px;">
+                                <p style="font-size:0.82rem;color:#888;margin-bottom:4px;">Current photo:</p>
+                                <img id="adminAboutPagePhotoPreview" src="" alt="About page photo" style="max-height:120px;border-radius:8px;border:1px solid #eee;">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Event Settings (Global) -->
                     <div class="admin-card" style="margin-bottom:20px;">
                         <div class="card-header">

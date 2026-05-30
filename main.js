@@ -253,6 +253,70 @@ window.openPublicLightbox = function(url, desc) {
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', loadPublicData);
 
+// ==================== LOAD ADMIN-CONTROLLED SITE SETTINGS ====================
+async function loadSiteSettings() {
+    try {
+        const res = await fetch('/api/settings');
+        if (!res.ok) return;
+        const s = await res.json();
+
+        // --- Years of Service stat ---
+        const yosEl = document.getElementById('statYearsOfService');
+        if (yosEl && s.yearsOfService !== undefined) {
+            const val = parseInt(s.yearsOfService) || 0;
+            yosEl.setAttribute('data-target', val);
+            yosEl.textContent = val.toLocaleString();
+        }
+
+        // --- Active Volunteers stat ---
+        const avEl = document.getElementById('statActiveVolunteers');
+        if (avEl && s.activeVolunteers !== undefined) {
+            const val = parseInt(s.activeVolunteers) || 0;
+            avEl.setAttribute('data-target', val);
+            avEl.textContent = val.toLocaleString();
+        }
+
+        // --- About Section text (index.html) ---
+        const aboutTextEl = document.getElementById('aboutSectionText');
+        if (aboutTextEl && s.aboutText && s.aboutText.trim()) {
+            // Render line breaks as paragraphs
+            const paras = s.aboutText.split('\n').filter(l => l.trim());
+            aboutTextEl.innerHTML = paras.map(p => `<p>${p}</p>`).join('');
+        }
+
+        // --- About Section photo (index.html) ---
+        const aboutImg = document.getElementById('aboutSectionImg');
+        const aboutSvg = document.getElementById('aboutSectionSvg');
+        if (aboutImg && s.aboutPhoto) {
+            aboutImg.src = s.aboutPhoto;
+            aboutImg.style.display = 'block';
+            if (aboutSvg) aboutSvg.style.display = 'none';
+        }
+
+        // --- About Page text (about.html) ---
+        const aboutPageTextEl = document.getElementById('aboutPageContentText');
+        if (aboutPageTextEl && s.aboutPageText && s.aboutPageText.trim()) {
+            const paras = s.aboutPageText.split('\n').filter(l => l.trim());
+            aboutPageTextEl.innerHTML = paras.map(p => `<p>${p}</p>`).join('');
+        }
+
+        // --- About Page photo (about.html) ---
+        const aboutPageImg = document.getElementById('aboutPageImg');
+        const aboutPageSvg = document.getElementById('aboutPageSvg');
+        if (aboutPageImg && s.aboutPagePhoto) {
+            aboutPageImg.src = s.aboutPagePhoto;
+            aboutPageImg.style.display = 'block';
+            if (aboutPageSvg) aboutPageSvg.style.display = 'none';
+        }
+
+    } catch(e) {
+        console.warn('Failed to load site settings:', e.message);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadSiteSettings);
+
+
 // Live Updates via SSE
 const sse = new EventSource('/api/live-updates');
 sse.onmessage = (event) => {
