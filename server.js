@@ -2170,6 +2170,48 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 200, { success: true });
     }
 
+    // ══════════════════════════════════════════════════════════════
+    // ─── SETTINGS API ─────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════
+
+    if (req.method === 'GET' && pathname === '/api/settings') {
+        return sendJSON(res, 200, globalSettings);
+    }
+    
+    if (req.method === 'POST' && pathname === '/api/settings') {
+        try {
+            const body = await readBody(req);
+            if (body.eventDate !== undefined) globalSettings.eventDate = body.eventDate;
+            if (body.eventName !== undefined) globalSettings.eventName = body.eventName;
+            if (body.eventDesc !== undefined) globalSettings.eventDesc = body.eventDesc;
+            
+            if (colSettings) {
+                await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
+            }
+
+            // Sync with global events for the landing page
+            if (body.eventName && body.eventDate) {
+                let gEvent = events.find(e => e.isGlobalEvent === true);
+                if (!gEvent) {
+                    gEvent = { id: `EVT-GLOBAL`, isGlobalEvent: true };
+                    events.push(gEvent);
+                }
+                gEvent.title = body.eventName.trim();
+                gEvent.date = body.eventDate.split('T')[0];
+                gEvent.description = (body.eventDesc || '').trim();
+                gEvent.updatedAt = new Date().toISOString();
+                await saveEvents();
+            }
+
+            // Broadcast the update so frontend logic can re-fetch
+            broadcastLiveEvent('events_updated', { timestamp: Date.now() });
+
+            return sendJSON(res, 200, { success: true, settings: globalSettings });
+        } catch(err) {
+            return sendJSON(res, 400, { message: err.message });
+        }
+    }
+
     // ── Static file serving ───────────────────────────────────────────────
     // Only serve static files for GET/HEAD — all other methods should have
     // been handled by an API route above.  If we reach here with POST/PUT/DELETE

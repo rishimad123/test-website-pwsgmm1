@@ -3572,31 +3572,40 @@ async function loadAdminEventDate() {
             const dateStr = data.eventDate.split('T')[0]; // simple YYYY-MM-DD
             document.getElementById('adminEventDate').value = dateStr;
         }
+        if (data && data.eventName) {
+            document.getElementById('adminEventName').value = data.eventName;
+        }
+        if (data && data.eventDesc) {
+            document.getElementById('adminEventDesc').value = data.eventDesc;
+        }
     } catch (e) {
         console.warn('Failed to load event date:', e.message);
     }
 }
 
 async function saveAdminEventDate() {
+    const n = document.getElementById('adminEventName').value;
     const d = document.getElementById('adminEventDate').value;
-    if (!d) return alert('Please select a date');
+    const desc = document.getElementById('adminEventDesc').value;
+    if (!d || !n) return alert('Please provide event name and date');
     const isoDate = new Date(d).toISOString();
     try {
         const res = await fetch('/api/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ eventDate: isoDate })
+            body: JSON.stringify({ eventName: n, eventDate: isoDate, eventDesc: desc })
         });
         const data = await res.json();
         if (data.success) {
             const statusEl = document.getElementById('adminEventDateStatus');
             statusEl.style.opacity = '1';
             setTimeout(() => statusEl.style.opacity = '0', 3000);
+            if (typeof loadAdminEvents === 'function') loadAdminEvents();
         } else {
-            alert('Failed to save: ' + (data.error || 'Unknown error'));
+            alert('Failed to save: ' + (data.message || data.error || 'Unknown error'));
         }
     } catch (e) {
-        alert('Error saving date: ' + e.message);
+        alert('Error saving event: ' + e.message);
     }
 }
 

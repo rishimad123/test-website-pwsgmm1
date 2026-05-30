@@ -240,7 +240,15 @@ window.openPublicLightbox = function(url, desc) {
 document.addEventListener('DOMContentLoaded', loadPublicData);
 
 // Live Updates via SSE
-const sse = new EventSource('/api/live');
+const sse = new EventSource('/api/live-updates');
+sse.onmessage = (event) => {
+    try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'events_updated' || data.type === 'gallery_updated') {
+            loadPublicData();
+        }
+    } catch(e) {}
+};
 sse.addEventListener('gallery_updated', loadPublicData);
 sse.addEventListener('events_updated', loadPublicData);
 

@@ -872,9 +872,9 @@ window.fixUrl = function(url) {
                         
                         <!-- Countdown Card -->
                         <div style="background:#fff;border-radius:14px;padding:20px;border:1px solid #eee;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,.04);">
-                            <h3 style="margin:0;color:#555;font-size:1.1rem;text-transform:uppercase;letter-spacing:1px;">Days to Event</h3>
+                            <h3 id="volEventNameDisplay" style="margin:0;color:#555;font-size:1.1rem;text-transform:uppercase;letter-spacing:1px;">Days to Event</h3>
                             <div id="eventCountdownDisplay" style="font-size:3rem;font-weight:800;color:#E65100;line-height:1.2;margin:10px 0;">--</div>
-                            <p style="margin:0;color:#888;font-size:0.85rem;">Automatic countdown based on IST</p>
+                            <p id="volEventDescDisplay" style="margin:0;color:#888;font-size:0.85rem;">Automatic countdown based on IST</p>
                         </div>
                     </div>
 
@@ -937,6 +937,15 @@ window.fixUrl = function(url) {
                                         if (diffDays > 0) el.textContent = diffDays;
                                         else if (diffDays === 0) el.textContent = 'Today!';
                                         else el.textContent = 'Passed';
+                                    }
+                                    
+                                    if (data.eventName) {
+                                        const nameEl = document.getElementById('volEventNameDisplay');
+                                        if (nameEl) nameEl.textContent = data.eventName + ' Countdown';
+                                    }
+                                    if (data.eventDesc) {
+                                        const descEl = document.getElementById('volEventDescDisplay');
+                                        if (descEl) descEl.textContent = data.eventDesc;
                                     }
                                 }
                             } catch(e) {
@@ -3348,6 +3357,8 @@ window.fixUrl = function(url) {
                         // Refresh My Donations section if it is currently visible
                         const _myDonSec = document.getElementById('donations');
                         if (typeof myDonLoad === 'function' && _myDonSec && _myDonSec.style.display !== 'none') { myDonLoad(); }
+                    } else if (data.type === 'events_updated') {
+                        if (typeof loadEventCountdown === 'function') loadEventCountdown();
                     }
                 } catch (e) {
                     console.error('SSE Error:', e);
