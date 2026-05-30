@@ -1428,7 +1428,11 @@ const server = http.createServer(async (req, res) => {
             }
         });
 
+        const userIdFilter = qp.get('userId');
         if (areaFilter) result = result.filter(e => e.area === areaFilter);
+        if (userIdFilter) result = result.filter(e =>
+            String(e.submittedByUserId || e.userId || '') === String(userIdFilter)
+        );
         
         // Sort chronologically so they appear in correct order
         result.sort((a, b) => new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0));

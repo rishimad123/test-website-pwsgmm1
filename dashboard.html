@@ -908,48 +908,101 @@ window.fixUrl = function(url) {
                 <!-- Donations Section -->
                 <div id="donations" class="content-section" style="display:none;">
                     <div class="page-title">
-                        <h1>My Donations</h1>
-                        <p>Track your contribution history</p>
+                        <h1><i class="fas fa-hand-holding-heart" style="color:var(--primary-color);margin-right:10px;"></i>My Donations</h1>
+                        <p>Your personal donation history &mdash; grouped by Indian date, updated live</p>
                     </div>
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Donation History</h3>
-                            <button class="btn btn-primary">Add Donation</button>
+
+                    <!-- Summary Bar -->
+                    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:22px;">
+                        <div style="flex:1;min-width:140px;background:linear-gradient(135deg,#E65100,#ff8c42);border-radius:14px;padding:18px 20px;color:#fff;box-shadow:0 4px 18px rgba(230,81,0,.22);">
+                            <div style="font-size:.78rem;font-weight:600;opacity:.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;">Total Entries</div>
+                            <div id="myDonTotalEntries" style="font-size:1.9rem;font-weight:800;">&#x2014;</div>
                         </div>
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Amount</th>
-                                    <th>Payment Method</th>
-                                    <th>Receipt</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>10 Sept 2024</td>
-                                    <td>&#8377;2,000</td>
-                                    <td>UPI</td>
-                                    <td><a href="#" class="btn btn-sm btn-primary">Download</a></td>
-                                </tr>
-                                <tr>
-                                    <td>5 Sept 2024</td>
-                                    <td>&#8377;3,000</td>
-                                    <td>Cash</td>
-                                    <td><a href="#" class="btn btn-sm btn-primary">Download</a></td>
-                                </tr>
-                                <tr>
-                                    <td>2 Sept 2024</td>
-                                    <td>&#8377;1,500</td>
-                                    <td>Check</td>
-                                    <td><a href="#" class="btn btn-sm btn-primary">Download</a></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div style="flex:1;min-width:140px;background:linear-gradient(135deg,#1a237e,#3949ab);border-radius:14px;padding:18px 20px;color:#fff;box-shadow:0 4px 18px rgba(26,35,126,.22);">
+                            <div style="font-size:.78rem;font-weight:600;opacity:.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;">Total Amount</div>
+                            <div id="myDonTotalAmount" style="font-size:1.9rem;font-weight:800;">&#x2014;</div>
+                        </div>
+                        <div style="flex:1;min-width:140px;background:linear-gradient(135deg,#1b5e20,#43a047);border-radius:14px;padding:18px 20px;color:#fff;box-shadow:0 4px 18px rgba(27,94,32,.22);">
+                            <div style="font-size:.78rem;font-weight:600;opacity:.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;">Days Active</div>
+                            <div id="myDonTotalDays" style="font-size:1.9rem;font-weight:800;">&#x2014;</div>
+                        </div>
+                        <div style="flex:1;min-width:140px;background:linear-gradient(135deg,#4a148c,#7b1fa2);border-radius:14px;padding:18px 20px;color:#fff;box-shadow:0 4px 18px rgba(74,20,140,.22);">
+                            <div style="font-size:.78rem;font-weight:600;opacity:.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;">Books Used</div>
+                            <div id="myDonTotalBooks" style="font-size:1.9rem;font-weight:800;">&#x2014;</div>
+                        </div>
+                    </div>
+
+                    <!-- Toolbar -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+                        <div style="font-size:.83rem;color:#888;display:flex;align-items:center;gap:8px;">
+                            <span id="myDonLiveIndicator" style="width:9px;height:9px;border-radius:50%;background:#4caf50;display:inline-block;animation:myDonPulse 1.5s infinite;flex-shrink:0;"></span>
+                            Live &mdash; auto-updates from Donation Data Entry
+                        </div>
+                        <button onclick="myDonLoad()" style="border:1.5px solid #E65100;background:#fff8f5;color:#E65100;border-radius:8px;padding:7px 16px;font-size:.82rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;" onmouseover="this.style.background='#E65100';this.style.color='#fff'" onmouseout="this.style.background='#fff8f5';this.style.color='#E65100'">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+
+                    <!-- Daily Groups Container -->
+                    <div id="myDonGroups">
+                        <div style="text-align:center;padding:50px;color:#bbb;">
+                            <i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:14px;display:block;color:#E65100;opacity:.5;"></i>
+                            Loading your donations&hellip;
+                        </div>
                     </div>
                 </div>
-                
+
+                <!-- My Donations: Edit Modal (outside section so fixed positioning works) -->
+                <div id="myDonEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+                    <div style="background:#fff;border-radius:18px;width:100%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;max-height:92vh;display:flex;flex-direction:column;">
+                        <div style="background:linear-gradient(135deg,#E65100,#ff8c42);padding:18px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+                            <div>
+                                <div style="font-weight:700;font-size:1.05rem;"><i class="fas fa-edit" style="margin-right:8px;"></i>Edit Donation Entry</div>
+                                <div id="myDonEditSubtitle" style="font-size:.82rem;opacity:.85;margin-top:2px;"></div>
+                            </div>
+                            <button onclick="myDonCloseEdit()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div style="padding:22px;overflow-y:auto;">
+                            <input type="hidden" id="myDonEditId">
+                            <div style="background:#fff3e0;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:.82rem;color:#e65100;border-left:4px solid #E65100;">
+                                <i class="fas fa-info-circle" style="margin-right:6px;"></i>
+                                You can edit <strong>Amount</strong> and <strong>Payment Mode</strong>. A reason is <strong>required</strong> for any change.
+                            </div>
+                            <div style="margin-bottom:14px;">
+                                <label style="font-size:.82rem;font-weight:600;color:#444;display:block;margin-bottom:6px;">Amount (&#x20B9;)</label>
+                                <input type="number" id="myDonEditAmount" min="1" step="1"
+                                    style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:10px 14px;font-size:.95rem;box-sizing:border-box;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='#E65100'" onblur="this.style.borderColor='#ddd'">
+                            </div>
+                            <div style="margin-bottom:16px;">
+                                <label style="font-size:.82rem;font-weight:600;color:#444;display:block;margin-bottom:6px;">Payment Mode</label>
+                                <select id="myDonEditMode" style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:10px 14px;font-size:.95rem;box-sizing:border-box;outline:none;background:#fff;transition:border-color .2s;" onfocus="this.style.borderColor='#E65100'" onblur="this.style.borderColor='#ddd'">
+                                    <option value="Cash">Cash</option>
+                                    <option value="UPI">UPI</option>
+                                    <option value="Cheque">Cheque</option>
+                                    <option value="NEFT">NEFT</option>
+                                    <option value="Balance">Balance</option>
+                                </select>
+                            </div>
+                            <div style="margin-bottom:16px;">
+                                <label style="font-size:.82rem;font-weight:600;color:#c0392b;display:block;margin-bottom:6px;">
+                                    <i class="fas fa-exclamation-circle" style="margin-right:5px;"></i>Reason for Edit <span style="color:#c0392b;">*</span>
+                                </label>
+                                <textarea id="myDonEditReason" rows="3" placeholder="Explain why you are editing this entry (required)&hellip;"
+                                    style="width:100%;border:1.5px solid #ffcdd2;border-radius:9px;padding:10px 14px;font-size:.88rem;box-sizing:border-box;resize:vertical;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='#c0392b'" onblur="this.style.borderColor='#ffcdd2'"></textarea>
+                            </div>
+                            <div id="myDonEditStatus" style="display:none;border-radius:9px;padding:10px 14px;font-size:.85rem;font-weight:600;margin-bottom:14px;"></div>
+                            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                                <button onclick="myDonCloseEdit()" style="border:1.5px solid #e0e0e0;background:#f5f5f5;color:#555;border-radius:9px;padding:9px 18px;font-size:.88rem;cursor:pointer;font-weight:600;">Cancel</button>
+                                <button id="myDonEditSaveBtn" onclick="myDonSaveEdit()" style="background:linear-gradient(135deg,#E65100,#ff8c42);color:#fff;border:none;border-radius:9px;padding:9px 24px;font-size:.88rem;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(230,81,0,.3);">
+                                    <i class="fas fa-save" style="margin-right:6px;"></i>Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Donor Search Section -->
                 <div id="donorSearch" class="content-section" style="display:none;">
                     <div class="page-title">
@@ -3462,6 +3515,9 @@ window.fixUrl = function(url) {
                         // Refresh volunteer data if function exists
                         if (typeof loadRecentEntries === 'function') loadRecentEntries();
                         
+                        // Refresh My Donations section if it is currently visible
+                        const _myDonSec = document.getElementById('donations');
+                        if (typeof myDonLoad === 'function' && _myDonSec && _myDonSec.style.display !== 'none') { myDonLoad(); }
                     }
                 } catch (e) {
                     console.error('SSE Error:', e);
@@ -3653,5 +3709,300 @@ if (originalShowSection) {
 }
 
 </script>
+
+    <!-- ============================================================
+         MY DONATIONS SECTION — Full JS
+    ============================================================ -->
+    <script>
+    // ── Helpers ──────────────────────────────────────────────────────────
+    /** Convert any UTC ISO string to IST (UTC+5:30) and return
+     *  a date-label like "30 May 2026" and a sort-key "2026-05-30". */
+    function myDonISTLabel(isoStr) {
+        const d = new Date(isoStr);
+        // IST offset = +330 minutes
+        const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+        const day   = ist.getUTCDate();
+        const month = ist.toLocaleString('en-IN', { month: 'long', timeZone: 'UTC' });
+        const year  = ist.getUTCFullYear();
+        const mm    = String(ist.getUTCMonth() + 1).padStart(2,'0');
+        const dd    = String(day).padStart(2,'0');
+        return { label: `${day} ${month} ${year}`, key: `${year}-${mm}-${dd}` };
+    }
+
+    function myDonFmtAmt(n) {
+        if (n == null) return '—';
+        return '₹' + Number(n).toLocaleString('en-IN');
+    }
+
+    function myDonFmtTime(isoStr) {
+        const d = new Date(isoStr);
+        const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+        const h = ist.getUTCHours(), m = ist.getUTCMinutes();
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const hh = h % 12 || 12;
+        return hh + ':' + String(m).padStart(2,'0') + ' ' + ampm;
+    }
+
+    // ── Main Load ─────────────────────────────────────────────────────────
+    async function myDonLoad() {
+        const grp = document.getElementById('myDonGroups');
+        if (!grp) return;
+        grp.innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:12px;display:block;color:#E65100;opacity:.5;"></i>Loading&hellip;</div>';
+
+        try {
+            const uid = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : null;
+            const url = uid ? `/api/donation-entries?userId=${encodeURIComponent(uid)}` : '/api/donation-entries';
+            const res = await fetch(url);
+            const data = await res.json();
+            let entries = (data.entries || []).filter(e => !e.deleted);
+
+            // Filter to only this volunteer's entries (double-check client-side)
+            if (uid && (typeof currentUser !== 'undefined') && currentUser.role !== 'admin') {
+                entries = entries.filter(e =>
+                    String(e.submittedByUserId) === String(uid) ||
+                    String(e.userId) === String(uid)
+                );
+            }
+
+            // Sort newest first
+            entries.sort((a,b) => new Date(b.submittedAt||0) - new Date(a.submittedAt||0));
+
+            // ── Summary stats ─────────────────────────────────────────────
+            const totalEntries = entries.length;
+            const totalAmount  = entries.reduce((s,e) => s + (Number(e.amount)||0), 0);
+            const uniqueDays   = new Set(entries.map(e => myDonISTLabel(e.submittedAt).key)).size;
+            const uniqueBooks  = new Set(entries.map(e => e.bookNumber)).size;
+
+            const safeSet = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            safeSet('myDonTotalEntries', totalEntries);
+            safeSet('myDonTotalAmount',  myDonFmtAmt(totalAmount));
+            safeSet('myDonTotalDays',    uniqueDays);
+            safeSet('myDonTotalBooks',   uniqueBooks);
+
+            if (!totalEntries) {
+                grp.innerHTML = `
+                    <div style="text-align:center;padding:60px 20px;color:#bbb;">
+                        <i class="fas fa-hand-holding-heart" style="font-size:3rem;display:block;margin-bottom:16px;opacity:.2;color:#E65100;"></i>
+                        <div style="font-size:1.05rem;font-weight:600;color:#ccc;">No donation entries yet</div>
+                        <div style="font-size:.85rem;margin-top:6px;">Entries you submit in <strong>Donation Data Entry</strong> will appear here.</div>
+                    </div>`;
+                return;
+            }
+
+            // ── Group by IST date ─────────────────────────────────────────
+            const dayMap = {};
+            entries.forEach(e => {
+                const { label, key } = myDonISTLabel(e.submittedAt);
+                if (!dayMap[key]) dayMap[key] = { label, key, entries: [] };
+                dayMap[key].entries.push(e);
+            });
+
+            // Sort days descending
+            const days = Object.values(dayMap).sort((a,b) => b.key.localeCompare(a.key));
+
+            grp.innerHTML = days.map(day => {
+                const dayTotal = day.entries.reduce((s,e) => s + (Number(e.amount)||0), 0);
+                const today    = myDonISTLabel(new Date().toISOString()).key === day.key;
+
+                const rows = day.entries.map(e => {
+                    const donor = e.donorType === 'Business'
+                        ? (e.businessName || '—')
+                        : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+                    const bookBadge = (e.bookType||'New') === 'Old'
+                        ? '<span style="background:#FFF3E0;color:#E65100;font-size:.68rem;padding:2px 7px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>'
+                        : '<span style="background:#E3F2FD;color:#1565C0;font-size:.68rem;padding:2px 7px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>';
+                    const time = myDonFmtTime(e.submittedAt);
+                    const safeId = (e.entryId||'').replace(/'/g,"\'");
+                    const canEdit = !e.entryId?.startsWith('PB-') && !e.entryId?.startsWith('RC-');
+
+                    return `<tr id="mydon-row-${e.entryId}">
+                        <td style="white-space:nowrap;">
+                            <span style="font-weight:700;color:#333;">Bk ${e.bookNumber}${bookBadge}</span>
+                            <div style="font-size:.73rem;color:#aaa;margin-top:2px;">#${e.receiptNumber}</div>
+                        </td>
+                        <td>
+                            <div style="font-weight:600;font-size:.88rem;">${donor}</div>
+                            <div style="font-size:.73rem;color:#bbb;">${e.area||''}</div>
+                        </td>
+                        <td style="color:#2E7D32;font-weight:700;white-space:nowrap;">${myDonFmtAmt(e.amount)}</td>
+                        <td style="white-space:nowrap;">
+                            <span style="background:#F3F4F6;border-radius:6px;padding:3px 8px;font-size:.78rem;color:#555;">${e.paymentMode||'—'}</span>
+                        </td>
+                        <td style="white-space:nowrap;font-size:.78rem;color:#aaa;">${time}</td>
+                        <td>${canEdit ? `<button onclick="myDonOpenEdit('${safeId}')" style="background:#FFF3E0;color:#E65100;border:1.5px solid #ffe0b2;border-radius:7px;padding:5px 11px;font-size:.78rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;"><i class='fas fa-edit'></i>Edit</button>` : '<span style="font-size:.75rem;color:#ccc;">—</span>'}</td>
+                    </tr>`;
+                }).join('');
+
+                return `
+                <div style="background:#fff;border-radius:16px;box-shadow:0 2px 14px rgba(0,0,0,.07);margin-bottom:20px;overflow:hidden;">
+                    <!-- Day header -->
+                    <div style="background:${today ? 'linear-gradient(135deg,#E65100,#ff8c42)' : 'linear-gradient(135deg,#f5f5f5,#eeeeee)'};padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            ${today ? '<span style="background:rgba(255,255,255,.25);color:#fff;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.04em;">TODAY</span>' : ''}
+                            <span style="font-weight:700;font-size:1rem;color:${today ? '#fff' : '#333'};">${day.label}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <span style="font-size:.82rem;color:${today ? 'rgba(255,255,255,.85)' : '#888'};">${day.entries.length} entr${day.entries.length===1?'y':'ies'}</span>
+                            <span style="font-weight:700;font-size:.95rem;color:${today ? '#fff' : '#E65100'};">${myDonFmtAmt(dayTotal)}</span>
+                        </div>
+                    </div>
+                    <!-- Entries table -->
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
+                            <thead>
+                                <tr style="background:#fafafa;border-bottom:2px solid #f0f0f0;">
+                                    <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;white-space:nowrap;">Book / Rcpt</th>
+                                    <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;">Donor</th>
+                                    <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;white-space:nowrap;">Amount</th>
+                                    <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;">Mode</th>
+                                    <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;">Time (IST)</th>
+                                    <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                    <!-- Day footer total -->
+                    <div style="background:#fafafa;border-top:1px solid #f0f0f0;padding:10px 20px;display:flex;justify-content:flex-end;align-items:center;gap:8px;">
+                        <span style="font-size:.82rem;color:#999;">Day Total:</span>
+                        <span style="font-weight:700;color:#2E7D32;font-size:.95rem;">${myDonFmtAmt(dayTotal)}</span>
+                    </div>
+                </div>`;
+            }).join('');
+
+        } catch (err) {
+            if (grp) grp.innerHTML = `<div style="text-align:center;padding:40px;color:#e74c3c;font-size:.88rem;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>Failed to load donations: ${err.message}</div>`;
+        }
+    }
+
+    // ── Open Edit Modal ───────────────────────────────────────────────────
+    async function myDonOpenEdit(entryId) {
+        try {
+            // Fetch fresh entry from server
+            const res  = await fetch('/api/donation-entries');
+            const data = await res.json();
+            const entries = data.entries || [];
+            const e = entries.find(x => x.entryId === entryId);
+            if (!e) { alert('Entry not found.'); return; }
+
+            document.getElementById('myDonEditId').value      = entryId;
+            document.getElementById('myDonEditAmount').value  = e.amount != null ? e.amount : '';
+            document.getElementById('myDonEditMode').value    = e.paymentMode || 'Cash';
+            document.getElementById('myDonEditReason').value  = '';
+
+            const donor = e.donorType === 'Business'
+                ? (e.businessName || '—')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+            document.getElementById('myDonEditSubtitle').textContent =
+                'Bk ' + e.bookNumber + ' #' + e.receiptNumber + ' · ' + donor;
+
+            const st = document.getElementById('myDonEditStatus');
+            if (st) { st.style.display = 'none'; st.textContent = ''; }
+
+            const btn = document.getElementById('myDonEditSaveBtn');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; }
+
+            document.getElementById('myDonEditModal').style.display = 'flex';
+        } catch(err) {
+            alert('Could not load entry: ' + err.message);
+        }
+    }
+
+    // ── Close Edit Modal ──────────────────────────────────────────────────
+    function myDonCloseEdit() {
+        document.getElementById('myDonEditModal').style.display = 'none';
+    }
+
+    // ── Save Edit ─────────────────────────────────────────────────────────
+    async function myDonSaveEdit() {
+        const id     = document.getElementById('myDonEditId').value;
+        const amt    = document.getElementById('myDonEditAmount').value.trim();
+        const mode   = document.getElementById('myDonEditMode').value;
+        const reason = document.getElementById('myDonEditReason').value.trim();
+        const btn    = document.getElementById('myDonEditSaveBtn');
+        const st     = document.getElementById('myDonEditStatus');
+
+        function showSt(msg, type) {
+            if (!st) return;
+            st.style.display = '';
+            st.textContent = msg;
+            st.style.background = type === 'success' ? '#D5F4E6' : '#FFEBEE';
+            st.style.color      = type === 'success' ? '#1a7a45' : '#c0392b';
+        }
+
+        if (!reason) { showSt('⚠ A reason is required to save changes.', 'error'); return; }
+        if (!amt || isNaN(Number(amt)) || Number(amt) <= 0) { showSt('⚠ Please enter a valid amount.', 'error'); return; }
+
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Saving…'; }
+
+        try {
+            const payload = {
+                _isAdmin     : false,
+                amount       : Number(amt),
+                paymentMode  : mode,
+                changeReason : reason,
+                changedBy    : (typeof currentUser !== 'undefined' && currentUser) ? currentUser.name : 'Volunteer'
+            };
+            const res  = await fetch('/api/donation-entries/' + encodeURIComponent(id), {
+                method : 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body   : JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showSt('✅ Entry updated successfully!', 'success');
+                setTimeout(() => {
+                    myDonCloseEdit();
+                    myDonLoad(); // refresh list
+                }, 900);
+            } else {
+                showSt('⚠ ' + (data.message || 'Update failed.'), 'error');
+            }
+        } catch(err) {
+            showSt('⚠ Server unreachable: ' + err.message, 'error');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; }
+        }
+    }
+
+    // ── Auto-load when section shown ──────────────────────────────────────
+    (function() {
+        const originalShowSection = window.showSection;
+        if (typeof originalShowSection === 'function') {
+            window.showSection = function(id) {
+                originalShowSection(id);
+                if (id === 'donations') {
+                    setTimeout(myDonLoad, 50);
+                }
+            };
+        }
+    })();
+
+    // SSE handled by existing evtSource connection in the page
+
+    // ── CSS animations (pulse dot) ────────────────────────────────────────
+    (function() {
+        if (document.getElementById('myDonStyles')) return;
+        const s = document.createElement('style');
+        s.id = 'myDonStyles';
+        s.textContent = `
+            @keyframes myDonPulse {
+                0%   { transform: scale(1);   opacity: 1; }
+                50%  { transform: scale(1.5); opacity: 0.5; }
+                100% { transform: scale(1);   opacity: 1; }
+            }
+            #myDonGroups tbody tr:hover { background:#fffaf8; }
+            #myDonGroups tbody td { padding: 10px 16px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+            @media(max-width:600px) {
+                #myDonGroups table thead { display:none; }
+                #myDonGroups table tbody tr { display:block; border-bottom:2px solid #f0f0f0; padding:10px 0; }
+                #myDonGroups table tbody td { display:flex; justify-content:space-between; padding:5px 16px; border:none; font-size:.82rem; }
+                #myDonGroups table tbody td::before { content: attr(data-label); font-weight:600; color:#999; font-size:.74rem; }
+            }
+        `;
+        document.head.appendChild(s);
+    })();
+    </script>
+    <!-- ============================================================ -->
 </body>
 </html>
