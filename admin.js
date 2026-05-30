@@ -1598,7 +1598,7 @@ function exportExpensesExcel() {
     list.forEach(r => {
         let subcatDisplay = r.subcategory || '—';
         if (r.category === 'Sound and Banjo Expense') {
-            subcatDisplay = [r.subcategory, r.soundEvent ? \`(\${r.soundEvent})\` : ''].filter(Boolean).join(' ');
+            subcatDisplay = [r.subcategory, r.soundEvent ? `(${r.soundEvent})` : ''].filter(Boolean).join(' ');
         }
         if (r.reason) {
             subcatDisplay += ' - ' + r.reason;
@@ -1610,14 +1610,14 @@ function exportExpensesExcel() {
 
         html += `
 <tr>
-  <td>\${escHtml(r.serialNumber || '—')}</td>
-  <td>\${dateDisp}</td>
-  <td>\${escHtml(r.commonHeader || '—')}</td>
-  <td>\${escHtml(r.category || '—')}</td>
-  <td>\${escHtml(subcatDisplay)}</td>
-  <td>\${escHtml(r.particulars || '—')}</td>
-  <td>\${escHtml(r.referenceNumber || '—')}</td>
-  <td class="num">\${rupee(r.amount)}</td>
+  <td>${escHtml(r.serialNumber || '—')}</td>
+  <td>${dateDisp}</td>
+  <td>${escHtml(r.commonHeader || '—')}</td>
+  <td>${escHtml(r.category || '—')}</td>
+  <td>${escHtml(subcatDisplay)}</td>
+  <td>${escHtml(r.particulars || '—')}</td>
+  <td>${escHtml(r.referenceNumber || '—')}</td>
+  <td class="num">${rupee(r.amount)}</td>
 </tr>`;
     });
 
@@ -1630,7 +1630,7 @@ function exportExpensesExcel() {
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href     = url;
-    a.download = \`Expense_Records_\${new Date().getFullYear()}.xls\`;
+    a.download = `Expense_Records_${new Date().getFullYear()}.xls`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
