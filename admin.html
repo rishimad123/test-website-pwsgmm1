@@ -1243,6 +1243,25 @@ window._fmtBytesA = function(b) {
             <div class="admin-content">
                 <!-- Dashboard Section -->
                 <div id="dashboard" class="content-section active">
+                    <!-- Event Settings (Global) -->
+                    <div class="admin-card" style="margin-bottom:20px;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-calendar-day" style="color:var(--primary-color);margin-right:8px;"></i>Global Event Settings</h3>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:15px;flex-wrap:wrap;margin-top:10px;">
+                            <div>
+                                <label for="adminEventDate" style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Target Event Date</label>
+                                <input type="date" id="adminEventDate" class="admin-input" style="width:200px;margin:0;">
+                            </div>
+                            <div style="margin-top:22px;">
+                                <button class="btn btn-primary btn-small" onclick="saveAdminEventDate()">
+                                    <i class="fas fa-save"></i> Save Event Date
+                                </button>
+                                <span id="adminEventDateStatus" style="margin-left:10px;font-size:0.85rem;color:#27AE60;font-weight:600;opacity:0;transition:opacity 0.3s;">Saved!</span>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Stats Cards -->
                     <div class="admin-stats">
                         <div class="admin-stat-card">

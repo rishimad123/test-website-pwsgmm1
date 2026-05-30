@@ -37,6 +37,8 @@ const DB_NAME     = 'patelwadi';
 // ─── MongoDB client & collections ────────────────────────────────────────────
 const mongoClient = new MongoClient(MONGODB_URI);
 let db;
+let colSettings;
+let globalSettings = { eventDate: '2026-09-07T00:00:00.000Z' };
 let colReceipts, colExpenses, colFinancials, colPautiBooks;
 let colDonations, colDonationEntries, colBuildings, colAreas;
 let colLandmarks, colCommitteeMembers, colGallery, colEvents;
@@ -154,6 +156,7 @@ async function connectDB() {
     colExpenses         = db.collection('expenses');
     colFinancials       = db.collection('financials');
     colPautiBooks       = db.collection('pautiBooks');
+    colSettings         = db.collection('settings');
     colDonations        = db.collection('donations');
     colDonationEntries  = db.collection('donationEntries');
     colBuildings        = db.collection('buildings');

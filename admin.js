@@ -3562,3 +3562,45 @@ if (originalShowAdminSection) {
         originalShowAdminSection(id);
     };
 }
+
+// ==================== GLOBAL EVENT SETTINGS ====================
+async function loadAdminEventDate() {
+    try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        if (data && data.eventDate) {
+            const dateStr = data.eventDate.split('T')[0]; // simple YYYY-MM-DD
+            document.getElementById('adminEventDate').value = dateStr;
+        }
+    } catch (e) {
+        console.warn('Failed to load event date:', e.message);
+    }
+}
+
+async function saveAdminEventDate() {
+    const d = document.getElementById('adminEventDate').value;
+    if (!d) return alert('Please select a date');
+    const isoDate = new Date(d).toISOString();
+    try {
+        const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ eventDate: isoDate })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const statusEl = document.getElementById('adminEventDateStatus');
+            statusEl.style.opacity = '1';
+            setTimeout(() => statusEl.style.opacity = '0', 3000);
+        } else {
+            alert('Failed to save: ' + (data.error || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Error saving date: ' + e.message);
+    }
+}
+
+// Call loadAdminEventDate on init
+document.addEventListener('DOMContentLoaded', () => {
+    loadAdminEventDate();
+});
