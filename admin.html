@@ -2198,6 +2198,31 @@ window._fmtBytesA = function(b) {
 
                 <!-- ═══════════ Events Section (Admin) ═══════════ -->
                 <div id="events" class="content-section">
+                    <!-- Banner Upload Card -->
+                    <div class="admin-card" style="margin-bottom:20px;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-image" style="color:var(--primary-color);margin-right:8px;"></i>Volunteer Dashboard Overview Banner</h3>
+                        </div>
+                        <div style="margin-top:10px;">
+                            <p style="font-size:0.85rem;color:#666;margin-bottom:15px;">Upload a banner image to replace the default banner on the volunteer dashboard overview page.</p>
+                            
+                            <div style="display:flex;gap:15px;align-items:center;flex-wrap:wrap;">
+                                <input type="file" id="adminBannerFile" accept="image/*" class="admin-input" style="max-width:300px;margin:0;">
+                                <button class="btn btn-primary" onclick="uploadAdminBanner()">
+                                    <i class="fas fa-upload"></i> Upload Banner
+                                </button>
+                                <button class="btn" onclick="deleteAdminBanner()" style="background:#ffcdd2;color:#c62828;border:none;">
+                                    <i class="fas fa-trash"></i> Remove Banner
+                                </button>
+                            </div>
+                            
+                            <div style="margin-top:15px;">
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Current Banner Preview:</label>
+                                <img id="adminBannerPreview" src="" alt="No banner uploaded" style="max-width:100%;max-height:200px;border-radius:8px;border:1px dashed #ccc;display:block;">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="admin-card">
                         <div class="card-header">
                             <h3><i class="fas fa-calendar-alt" style="color:var(--primary-color);margin-right:8px;"></i>Manage Events</h3>

@@ -3578,8 +3578,17 @@ async function loadAdminEventDate() {
         if (data && data.eventDesc) {
             document.getElementById('adminEventDesc').value = data.eventDesc;
         }
+        
+        // Load banner preview
+        const bannerPreview = document.getElementById('adminBannerPreview');
+        if (data && data.dashboardBanner) {
+            bannerPreview.src = data.dashboardBanner;
+            bannerPreview.style.display = 'block';
+        } else {
+            bannerPreview.style.display = 'none';
+        }
     } catch (e) {
-        console.warn('Failed to load event date:', e.message);
+        console.warn('Failed to load settings:', e.message);
     }
 }
 
@@ -3606,6 +3615,50 @@ async function saveAdminEventDate() {
         }
     } catch (e) {
         alert('Error saving event: ' + e.message);
+    }
+}
+
+async function uploadAdminBanner() {
+    const fileInput = document.getElementById('adminBannerFile');
+    const file = fileInput.files[0];
+    if (!file) return alert('Please select an image file first.');
+    
+    const formData = new FormData();
+    formData.append('banner', file);
+    
+    try {
+        const res = await fetch('/api/banner', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('adminBannerPreview').src = data.url;
+            document.getElementById('adminBannerPreview').style.display = 'block';
+            fileInput.value = '';
+            alert('Banner uploaded successfully!');
+        } else {
+            alert('Failed to upload: ' + (data.message || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Error uploading banner: ' + e.message);
+    }
+}
+
+async function deleteAdminBanner() {
+    if (!confirm('Are you sure you want to remove the banner?')) return;
+    try {
+        const res = await fetch('/api/banner', { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('adminBannerPreview').style.display = 'none';
+            document.getElementById('adminBannerPreview').src = '';
+            alert('Banner removed successfully!');
+        } else {
+            alert('Failed to remove: ' + (data.message || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Error removing banner: ' + e.message);
     }
 }
 

@@ -2211,6 +2211,47 @@ const server = http.createServer(async (req, res) => {
             return sendJSON(res, 400, { message: err.message });
         }
     }
+    // ══════════════════════════════════════════════════════════════
+    // ─── BANNER API ───────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════
+
+    if (req.method === 'POST' && pathname === '/api/banner') {
+        try {
+            const ct = req.headers['content-type'] || '';
+            const bm = ct.match(/boundary=([^;]+)/i);
+            if (!bm) return sendJSON(res, 400, { message: 'Missing boundary.' });
+            const rawBody = await readRawBody(req);
+            const parts = parseMultipart(rawBody, bm[1]);
+            const filePart = parts.find(p => p.filename && p.data);
+            if (!filePart) return sendJSON(res, 400, { message: 'No file uploaded.' });
+
+            const safeName   = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const uniqueName = `banner_${Date.now()}_${safeName}`;
+            try {
+                fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
+            } catch (fsErr) {
+                console.warn('⚠️ Could not write banner to disk:', fsErr.message);
+                return sendJSON(res, 500, { message: 'Failed to save banner to disk.' });
+            }
+            
+            globalSettings.dashboardBanner = '/uploads/' + uniqueName;
+            if (colSettings) {
+                await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
+            }
+            broadcastLiveEvent('events_updated', { timestamp: Date.now() });
+            
+            return sendJSON(res, 200, { success: true, url: globalSettings.dashboardBanner });
+        } catch(err) { return sendJSON(res, 500, { message: 'Upload error: ' + err.message }); }
+    }
+
+    if (req.method === 'DELETE' && pathname === '/api/banner') {
+        globalSettings.dashboardBanner = null;
+        if (colSettings) {
+            await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
+        }
+        broadcastLiveEvent('events_updated', { timestamp: Date.now() });
+        return sendJSON(res, 200, { success: true });
+    }
 
     // ── Static file serving ───────────────────────────────────────────────
     // Only serve static files for GET/HEAD — all other methods should have
