@@ -803,13 +803,51 @@ const server = http.createServer(async (req, res) => {
     // ── PATCH /api/receipts/:id/mark-received  (balance recovery complete) ───
     if (req.method === 'PATCH' && pathname.startsWith('/api/receipts/') && pathname.endsWith('/mark-received')) {
         const id  = decodeURIComponent(pathname.replace('/api/receipts/', '').replace('/mark-received', ''));
-        const idx = receipts.findIndex(r => r.receiptId === id);
-        if (idx === -1) return sendJSON(res, 404, { message: 'Receipt not found.' });
-        receipts[idx].status    = 'received';
-        receipts[idx].updatedAt = new Date().toISOString();
-        await saveReceipts();
-        console.log(`✅  Balance marked received: ${receipts[idx].receiptId}`);
-        return sendJSON(res, 200, { success: true, receipt: receipts[idx] });
+        
+        // 1. Check Receipts
+        const rIdx = receipts.findIndex(r => r.receiptId === id);
+        if (rIdx !== -1) {
+            receipts[rIdx].status = 'received';
+            receipts[rIdx].paymentMode = 'Cash';
+            receipts[rIdx].updatedAt = new Date().toISOString();
+            await saveReceipts();
+            console.log(`✅  Balance marked received (Receipt): ${receipts[rIdx].receiptId}`);
+            return sendJSON(res, 200, { success: true, receipt: receipts[rIdx] });
+        }
+
+        // 2. Check Donation Entries
+        const dIdx = donationEntries.findIndex(e => e.entryId === id);
+        if (dIdx !== -1) {
+            donationEntries[dIdx].status = 'Received';
+            donationEntries[dIdx].paymentMode = 'Cash';
+            donationEntries[dIdx].updatedAt = new Date().toISOString();
+            await saveDonationEntries();
+            console.log(`✅  Balance marked received (Donation): ${donationEntries[dIdx].entryId}`);
+            return sendJSON(res, 200, { success: true, receipt: donationEntries[dIdx] });
+        }
+
+        // 3. Check Pauti Books
+        let foundSlip = null;
+        if (id.startsWith('SLIP-')) {
+            const slipNum = id.replace('SLIP-', '');
+            for (const book of pautiBooks) {
+                const sIdx = (book.slips || []).findIndex(s => String(s.slipNumber) === slipNum);
+                if (sIdx !== -1) {
+                    book.slips[sIdx].status = 'Received';
+                    book.slips[sIdx].paymentMode = 'Cash';
+                    book.slips[sIdx].updatedAt = new Date().toISOString();
+                    foundSlip = book.slips[sIdx];
+                    break;
+                }
+            }
+        }
+        if (foundSlip) {
+            await savePautiBooks();
+            console.log(`✅  Balance marked received (Pauti): ${foundSlip.slipNumber}`);
+            return sendJSON(res, 200, { success: true, receipt: foundSlip });
+        }
+
+        return sendJSON(res, 404, { message: 'Receipt not found.' });
     }
 
     // ── PATCH /api/receipts/:id/clear-amount  (wipe only the amount) ─────────
