@@ -1291,33 +1291,7 @@ window._fmtBytesA = function(b) {
                         </div>
                     </div>
 
-                    <!-- Quick Actions Row -->
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:28px;">
-                        <!-- One-Click Excel Upload Card -->
-                        <div id="quickUploadCard" style="background:linear-gradient(135deg,#1D6F42 0%,#2E7D32 50%,#1B5E20 100%);border-radius:16px;padding:22px 24px;color:#fff;display:flex;align-items:center;gap:18px;box-shadow:0 6px 24px rgba(29,111,66,.35);cursor:pointer;transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden;" onclick="triggerQuickUpload()" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 32px rgba(29,111,66,.45)'" onmouseout="this.style.transform='';this.style.boxShadow='0 6px 24px rgba(29,111,66,.35)'">
-                            <div style="background:rgba(255,255,255,.15);border-radius:14px;width:56px;height:56px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                <i class="fas fa-file-excel" style="font-size:1.8rem;"></i>
-                            </div>
-                            <div style="flex:1;">
-                                <div style="font-weight:700;font-size:1.05rem;letter-spacing:.02em;">Upload Donation Excel</div>
-                                <div style="font-size:.82rem;opacity:.85;margin-top:3px;">Click to select &amp; upload instantly</div>
-                                <div id="quickUploadBadge" style="display:inline-block;margin-top:6px;background:rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:.75rem;font-weight:600;">One-Click Upload</div>
-                            </div>
-                            <i class="fas fa-cloud-upload-alt" style="font-size:2.2rem;opacity:.2;position:absolute;right:16px;bottom:10px;"></i>
-                            <input type="file" id="quickUploadInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleQuickUpload(event)">
-                        </div>
-                        <!-- Upload mode toggle -->
-                        <div style="background:#fff;border-radius:16px;padding:20px 22px;box-shadow:0 2px 12px rgba(0,0,0,.07);border:1.5px solid #e8f5e9;">
-                            <div style="font-weight:700;color:#2E7D32;margin-bottom:10px;"><i class="fas fa-sliders-h" style="margin-right:6px;"></i>Upload Mode</div>
-                            <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer;font-size:.9rem;color:#333;">
-                                <input type="radio" name="quickUploadMode" value="append" checked id="quickModeAppend"> <span>Append to existing records</span>
-                            </label>
-                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;color:#333;">
-                                <input type="radio" name="quickUploadMode" value="replace" id="quickModeReplace"> <span>Replace all data (fresh upload)</span>
-                            </label>
-                            <div id="quickUploadStatus" style="display:none;margin-top:10px;padding:8px 12px;border-radius:8px;font-size:.85rem;font-weight:600;"></div>
-                        </div>
-                    </div>
+
 
                     
 
@@ -1918,6 +1892,33 @@ window._fmtBytesA = function(b) {
                 <!-- Settings Section -->
                 <!-- ═══════════ Upload Excel Section ═══════════ -->
                 <div id="donations" class="content-section">
+                    <!-- Quick Actions Row -->
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:28px;">
+                        <!-- One-Click Excel Upload Card -->
+                        <div id="quickUploadCard" style="background:linear-gradient(135deg,#1D6F42 0%,#2E7D32 50%,#1B5E20 100%);border-radius:16px;padding:22px 24px;color:#fff;display:flex;align-items:center;gap:18px;box-shadow:0 6px 24px rgba(29,111,66,.35);cursor:pointer;transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden;" onclick="triggerQuickUpload()" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 32px rgba(29,111,66,.45)'" onmouseout="this.style.transform='';this.style.boxShadow='0 6px 24px rgba(29,111,66,.35)'">
+                            <div style="background:rgba(255,255,255,.15);border-radius:14px;width:56px;height:56px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fas fa-file-excel" style="font-size:1.8rem;"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-weight:700;font-size:1.05rem;letter-spacing:.02em;">Upload Donation Excel</div>
+                                <div style="font-size:.82rem;opacity:.85;margin-top:3px;">Click to select &amp; upload instantly</div>
+                                <div id="quickUploadBadge" style="display:inline-block;margin-top:6px;background:rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:.75rem;font-weight:600;">One-Click Upload</div>
+                            </div>
+                            <i class="fas fa-cloud-upload-alt" style="font-size:2.2rem;opacity:.2;position:absolute;right:16px;bottom:10px;"></i>
+                            <input type="file" id="quickUploadInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleQuickUpload(event)">
+                        </div>
+                        <!-- Upload mode toggle -->
+                        <div style="background:#fff;border-radius:16px;padding:20px 22px;box-shadow:0 2px 12px rgba(0,0,0,.07);border:1.5px solid #e8f5e9;">
+                            <div style="font-weight:700;color:#2E7D32;margin-bottom:10px;"><i class="fas fa-sliders-h" style="margin-right:6px;"></i>Upload Mode</div>
+                            <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer;font-size:.9rem;color:#333;">
+                                <input type="radio" name="quickUploadMode" value="append" checked id="quickModeAppend"> <span>Append to existing records</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;color:#333;">
+                                <input type="radio" name="quickUploadMode" value="replace" id="quickModeReplace"> <span>Replace all data (fresh upload)</span>
+                            </label>
+                            <div id="quickUploadStatus" style="display:none;margin-top:10px;padding:8px 12px;border-radius:8px;font-size:.85rem;font-weight:600;"></div>
+                        </div>
+                    </div>
 
                     <!-- Upload Card -->
                     <div class="admin-card" id="donUploadCard">
