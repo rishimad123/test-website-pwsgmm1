@@ -1518,6 +1518,95 @@ async function saveExpenseRecord(ev) {
     }
 }
 
+// ── Excel Export for Expenses ──────────────────────────────────────────
+function exportExpensesExcel() {
+    const list = getFilteredExpenses();
+    if (list.length === 0) {
+        showNotification('No expense records to export.', 'error');
+        return;
+    }
+
+    const orgName  = 'Patelwadi Sarvajnik Ganesh Mitra Mandal';
+    const exportDt = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+    const rupee = n => Number(n || 0).toFixed(2);
+
+    let html = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8">
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+<x:Name>Expenses</x:Name>
+<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; }
+  .title  { font-size:16pt; font-weight:bold; color:#2C3E50; }
+  .sub    { font-size:10pt; color:#7F8C8D; }
+  th { background:#2C3E50; color:#fff; font-weight:bold; text-align:center; border:1px solid #ccc; padding:6px 10px; }
+  td { border:1px solid #ddd; padding:5px 8px; text-align:center; }
+  .num { text-align:center; mso-number-format:"#,##0.00"; }
+</style>
+</head><body>
+<p class="title">${orgName}</p>
+<p class="sub">Expense Records &mdash; Exported on ${exportDt}</p>
+<br>
+<table>
+<thead>
+<tr>
+  <th>Serial Number</th>
+  <th>Date</th>
+  <th>Common Header</th>
+  <th>Category</th>
+  <th>Subcategory</th>
+  <th>Particulars</th>
+  <th>Reference Number</th>
+  <th>Amount (₹)</th>
+</tr>
+</thead>
+<tbody>`;
+
+    list.forEach(r => {
+        let subcatDisplay = r.subcategory || '—';
+        if (r.category === 'Sound and Banjo Expense') {
+            subcatDisplay = [r.subcategory, r.soundEvent ? \`(\${r.soundEvent})\` : ''].filter(Boolean).join(' ');
+        }
+        if (r.reason) {
+            subcatDisplay += ' - ' + r.reason;
+        }
+
+        const dateDisp = r.date 
+            ? new Date(r.date + 'T00:00:00').toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}) 
+            : '—';
+
+        html += `
+<tr>
+  <td>\${escHtml(r.serialNumber || '—')}</td>
+  <td>\${dateDisp}</td>
+  <td>\${escHtml(r.commonHeader || '—')}</td>
+  <td>\${escHtml(r.category || '—')}</td>
+  <td>\${escHtml(subcatDisplay)}</td>
+  <td>\${escHtml(r.particulars || '—')}</td>
+  <td>\${escHtml(r.referenceNumber || '—')}</td>
+  <td class="num">\${rupee(r.amount)}</td>
+</tr>`;
+    });
+
+    html += `
+</tbody>
+</table>
+</body></html>`;
+
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = \`Expense_Records_\${new Date().getFullYear()}.xls\`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showNotification('Excel file downloaded successfully!', 'success');
+}
+
 
 // =====================================================================
 // FINANCIAL STATEMENTS â€” Reports & Analytics  (enhanced)
