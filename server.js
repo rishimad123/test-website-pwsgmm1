@@ -951,6 +951,7 @@ const server = http.createServer(async (req, res) => {
             if (!date)         return sendJSON(res, 400, { message: 'Date is required.' });
             if (!serialNumber) return sendJSON(res, 400, { message: 'Serial Number is required.' });
             if (!category)     return sendJSON(res, 400, { message: 'Category is required.' });
+            if (!referenceNumber) return sendJSON(res, 400, { message: 'Reference Number is required.' });
             if (amount === undefined || amount === null || isNaN(Number(amount)) || Number(amount) < 0)
                 return sendJSON(res, 400, { message: 'A valid amount is required.' });
             const record = {

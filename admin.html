@@ -2556,14 +2556,14 @@ window._fmtBytesA = function(b) {
                         <input type="text" id="expCommonHeader" placeholder="e.g. Ganesh Utsav 2024">
                     </div>
                     <div class="form-group">
-                        <label>Reference Number</label>
-                        <input type="text" id="expRefNo" placeholder="e.g. REF-001">
+                        <label>Reference Number <span style="color:red;">*</span></label>
+                        <input type="text" id="expRefNo" placeholder="e.g. REF-001" required>
                     </div>
                 </div>
                 <!-- Particulars -->
                 <div class="form-group">
-                    <label>Particulars <span style="color:red;">*</span></label>
-                    <input type="text" id="expParticulars" placeholder="Details of this expense" required>
+                    <label>Particulars</label>
+                    <input type="text" id="expParticulars" placeholder="Details of this expense">
                 </div>
                 <!-- Category -->
                 <p class="exp-section-label">Category &amp; Subcategory</p>
