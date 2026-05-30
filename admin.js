@@ -292,30 +292,55 @@ async function loadDashboardData() {
         // Fetch Donation Analytics for Chart
         fetch('/api/donations').then(r => r.json()).then(data => {
             if (data && data.records && data.columns) {
-                // Find Amount and Year columns based on heuristics
-                let amtCol = null, yearCol = null;
+                // Find Amount, Year, and Date columns based on heuristics
+                let amtCol = null, yearCol = null, dateCol = null;
                 for (const col of data.columns) {
                     const low = col.toLowerCase();
-                    if (low.includes('amount') || low.includes('rs') || low.includes('rupee')) amtCol = col;
-                    if (low.includes('year')) yearCol = col;
+                    if (low.includes('amount')) {
+                        amtCol = col;
+                    } else if (!amtCol && (low.includes('rs') || low.includes('rupee'))) {
+                        amtCol = col;
+                    }
+                    if (low.includes('year') && !yearCol) yearCol = col;
+                    if (low.includes('date') && !dateCol) dateCol = col;
                 }
                 
                 const yearlyTotals = {};
                 data.records.forEach(r => {
                     if (r._deleted) return;
-                    let yr = 'Unknown';
+                    let yr = null;
+                    
+                    // 1. Try explicit year column
                     if (yearCol && r[yearCol]) {
-                        yr = String(r[yearCol]).trim();
-                    } else {
-                        // Fallback regex for years 20xx
+                        const m = String(r[yearCol]).match(/\b(19|20)\d{2}\b/);
+                        if (m) yr = m[0];
+                    }
+                    
+                    // 2. Try explicit date column
+                    if (!yr && dateCol && r[dateCol]) {
+                        const m = String(r[dateCol]).match(/\b(19|20)\d{2}\b/);
+                        if (m) yr = m[0];
+                    }
+                    
+                    // 3. Fallback to searching any column for a 4-digit year
+                    if (!yr) {
                         for (const col of data.columns) {
-                            const m = String(r[col] || '').match(/\b(20)\d{2}\b/);
+                            if (col === amtCol) continue; // don't extract year from amount
+                            const m = String(r[col] || '').match(/\b(19|20)\d{2}\b/);
                             if (m) { yr = m[0]; break; }
                         }
                     }
-                    if (yr === 'Unknown') return; // skip if no year found
                     
-                    const amt = amtCol ? (parseFloat(String(r[amtCol]).replace(/,/g, '')) || 0) : 0;
+                    if (!yr) return; // skip if no year found
+                    
+                    // Extract amount robustly
+                    let amt = 0;
+                    if (amtCol && r[amtCol]) {
+                        // Remove commas, currency symbols, keeping only digits and decimal point
+                        const amtStr = String(r[amtCol]).replace(/[^0-9.-]+/g, '');
+                        amt = parseFloat(amtStr) || 0;
+                    }
+                    
                     if (!yearlyTotals[yr]) yearlyTotals[yr] = 0;
                     yearlyTotals[yr] += amt;
                 });
