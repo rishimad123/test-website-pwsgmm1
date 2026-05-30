@@ -106,6 +106,7 @@ function showAdminSection(sectionId) {
 
     document.getElementById('pageTitle').textContent = titles[sectionId] || 'Admin Panel';
 
+    if (sectionId === 'dashboard')        loadDashboardData();
     if (sectionId === 'passbookReceipts') loadAdminReceipts();
     if (sectionId === 'expenses')         loadExpenses();
     if (sectionId === 'reports')          loadFinancials();
@@ -210,8 +211,16 @@ async function loadDashboardData() {
                 const trend = document.getElementById('dashStatVolunteersTrend');
                 if (el) el.textContent = vols;
                 if (trend) trend.innerHTML = `<i class="fas fa-user-check"></i> Out of ${total} total users`;
+            } else {
+                throw new Error('Invalid users data');
             }
-        }).catch(e => console.error('Volunteers load error:', e));
+        }).catch(e => {
+            console.error('Volunteers load error:', e);
+            const el = document.getElementById('dashStatVolunteers');
+            const trend = document.getElementById('dashStatVolunteersTrend');
+            if (el) el.textContent = '0';
+            if (trend) trend.textContent = 'Failed to load';
+        });
 
         // Fetch Upcoming Events
         fetch('/api/events').then(r => r.json()).then(data => {
@@ -222,8 +231,16 @@ async function loadDashboardData() {
                 const trend = document.getElementById('dashStatEventsTrend');
                 if (el) el.textContent = upcoming;
                 if (trend) trend.innerHTML = `<i class="fas fa-calendar-alt"></i> Scheduled`;
+            } else {
+                throw new Error('Invalid events data');
             }
-        }).catch(e => console.error('Events load error:', e));
+        }).catch(e => {
+            console.error('Events load error:', e);
+            const el = document.getElementById('dashStatEvents');
+            const trend = document.getElementById('dashStatEventsTrend');
+            if (el) el.textContent = '0';
+            if (trend) trend.textContent = 'Failed to load';
+        });
 
         // Fetch Gallery Photos
         fetch('/api/gallery').then(r => r.json()).then(data => {
@@ -233,8 +250,16 @@ async function loadDashboardData() {
                 const trend = document.getElementById('dashStatGalleryTrend');
                 if (el) el.textContent = total;
                 if (trend) trend.innerHTML = `<i class="fas fa-image"></i> Total uploaded`;
+            } else {
+                throw new Error('Invalid gallery data');
             }
-        }).catch(e => console.error('Gallery load error:', e));
+        }).catch(e => {
+            console.error('Gallery load error:', e);
+            const el = document.getElementById('dashStatGallery');
+            const trend = document.getElementById('dashStatGalleryTrend');
+            if (el) el.textContent = '0';
+            if (trend) trend.textContent = 'Failed to load';
+        });
 
         // Fetch Total Donations (Entries + Pauti Books)
         Promise.all([
@@ -256,7 +281,13 @@ async function loadDashboardData() {
             const trend = document.getElementById('dashStatDonationsTrend');
             if (el) el.textContent = '₹' + totalSum.toLocaleString('en-IN');
             if (trend) trend.innerHTML = `<i class="fas fa-check-circle"></i> Live collected total`;
-        }).catch(e => console.error('Donations load error:', e));
+        }).catch(e => {
+            console.error('Donations load error:', e);
+            const el = document.getElementById('dashStatDonations');
+            const trend = document.getElementById('dashStatDonationsTrend');
+            if (el) el.textContent = '₹0';
+            if (trend) trend.textContent = 'Failed to load';
+        });
 
         // Fetch Donation Analytics for Chart
         fetch('/api/donations').then(r => r.json()).then(data => {
