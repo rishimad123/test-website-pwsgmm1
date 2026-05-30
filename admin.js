@@ -298,11 +298,11 @@ async function loadDashboardData() {
                     const low = col.toLowerCase();
                     if (low.includes('amount')) {
                         amtCol = col;
-                    } else if (!amtCol && (low.includes('rs') || low.includes('rupee'))) {
+                    } else if (!amtCol && (low.includes('rs') || low.includes('rupee') || low.includes('donation'))) {
                         amtCol = col;
                     }
-                    if (low.includes('year') && !yearCol) yearCol = col;
-                    if (low.includes('date') && !dateCol) dateCol = col;
+                    if (!yearCol && (low.includes('year') || low === 'fy' || low.includes('financial'))) yearCol = col;
+                    if (!dateCol && low.includes('date')) dateCol = col;
                 }
                 
                 const yearlyTotals = {};
@@ -312,8 +312,16 @@ async function loadDashboardData() {
                     
                     // 1. Try explicit year column
                     if (yearCol && r[yearCol]) {
-                        const m = String(r[yearCol]).match(/\b(19|20)\d{2}\b/);
+                        const val = String(r[yearCol]).trim();
+                        // Try 4-digit
+                        const m = val.match(/\b(19|20)\d{2}\b/);
                         if (m) yr = m[0];
+                        else {
+                            // Try 2-digit range like 21-22
+                            const m2 = val.match(/\b(\d{2})-(\d{2})\b/);
+                            if (m2) yr = "20" + m2[1]; // e.g. "21-22" -> "2021"
+                            else yr = val.substring(0,4); // Fallback to raw string
+                        }
                     }
                     
                     // 2. Try explicit date column
@@ -325,18 +333,21 @@ async function loadDashboardData() {
                     // 3. Fallback to searching any column for a 4-digit year
                     if (!yr) {
                         for (const col of data.columns) {
-                            if (col === amtCol) continue; // don't extract year from amount
+                            if (col === amtCol) continue;
                             const m = String(r[col] || '').match(/\b(19|20)\d{2}\b/);
                             if (m) { yr = m[0]; break; }
                         }
                     }
                     
-                    if (!yr) return; // skip if no year found
+                    if (!yr || yr === 'Unknown') return;
+                    
+                    // Normalize to 4 digits if possible for neatness
+                    const normMatch = yr.match(/\b(19|20)\d{2}\b/);
+                    if (normMatch) yr = normMatch[0];
                     
                     // Extract amount robustly
                     let amt = 0;
                     if (amtCol && r[amtCol]) {
-                        // Remove commas, currency symbols, keeping only digits and decimal point
                         const amtStr = String(r[amtCol]).replace(/[^0-9.-]+/g, '');
                         amt = parseFloat(amtStr) || 0;
                     }
@@ -348,22 +359,31 @@ async function loadDashboardData() {
                 const labels = Object.keys(yearlyTotals).sort();
                 const amounts = labels.map(y => yearlyTotals[y]);
                 
-                const ctx = document.getElementById('yearlyDonationChart');
-                if (ctx) {
+                const ctxCanvas = document.getElementById('yearlyDonationChart');
+                if (ctxCanvas) {
+                    const ctx = ctxCanvas.getContext('2d');
                     if (window._donationChartInst) {
                         window._donationChartInst.destroy();
                     }
+                    
+                    // Premium Gradient
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                    gradient.addColorStop(0, 'rgba(46, 125, 50, 0.85)'); // Vibrant green
+                    gradient.addColorStop(1, 'rgba(46, 125, 50, 0.15)');
+
                     window._donationChartInst = new Chart(ctx, {
                         type: 'bar',
                         data: {
                             labels: labels,
                             datasets: [{
-                                label: 'Total Donations (₹)',
+                                label: 'Total Donations',
                                 data: amounts,
-                                backgroundColor: 'rgba(57, 73, 171, 0.85)',
-                                borderColor: 'rgba(57, 73, 171, 1)',
-                                borderWidth: 1,
-                                borderRadius: 6
+                                backgroundColor: gradient,
+                                borderColor: '#2E7D32',
+                                borderWidth: 2,
+                                borderRadius: 8,
+                                borderSkipped: false,
+                                hoverBackgroundColor: '#1B5E20'
                             }]
                         },
                         options: {
@@ -372,14 +392,15 @@ async function loadDashboardData() {
                             plugins: {
                                 legend: { display: false },
                                 tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                                    titleFont: { size: 14, family: "'Inter', sans-serif" },
+                                    bodyFont: { size: 15, weight: 'bold', family: "'Inter', sans-serif" },
+                                    padding: 12,
+                                    cornerRadius: 8,
+                                    displayColors: false,
                                     callbacks: {
                                         label: function(context) {
-                                            let label = context.dataset.label || '';
-                                            if (label) { label += ': '; }
-                                            if (context.parsed.y !== null) {
-                                                label += '₹' + context.parsed.y.toLocaleString('en-IN');
-                                            }
-                                            return label;
+                                            return '₹ ' + context.parsed.y.toLocaleString('en-IN');
                                         }
                                     }
                                 }
@@ -387,9 +408,11 @@ async function loadDashboardData() {
                             scales: {
                                 y: {
                                     beginAtZero: true,
-                                    grid: { color: '#f0f0f0' },
+                                    grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
                                     ticks: {
+                                        font: { size: 12, family: "'Inter', sans-serif", color: '#666' },
                                         callback: function(value) {
+                                            if (value >= 10000000) return '₹' + (value/10000000).toFixed(1) + 'Cr';
                                             if (value >= 100000) return '₹' + (value/100000).toFixed(1) + 'L';
                                             if (value >= 1000) return '₹' + (value/1000).toFixed(0) + 'K';
                                             return '₹' + value;
@@ -397,12 +420,18 @@ async function loadDashboardData() {
                                     }
                                 },
                                 x: {
-                                    grid: { display: false }
+                                    grid: { display: false, drawBorder: false },
+                                    ticks: { font: { size: 13, weight: '600', family: "'Inter', sans-serif", color: '#444' } }
                                 }
+                            },
+                            animation: {
+                                duration: 1200,
+                                easing: 'easeOutQuart'
                             }
                         }
                     });
                 }
+
             }
         }).catch(e => console.error('Analytics load error:', e));
         
