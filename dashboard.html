@@ -952,58 +952,8 @@ window.fixUrl = function(url) {
                     </div>
                 </div>
 
-                <!-- My Donations: Edit Modal (outside section so fixed positioning works) -->
-                <div id="myDonEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:16px;">
-                    <div style="background:#fff;border-radius:18px;width:100%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;max-height:92vh;display:flex;flex-direction:column;">
-                        <div style="background:linear-gradient(135deg,#E65100,#ff8c42);padding:18px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-                            <div>
-                                <div style="font-weight:700;font-size:1.05rem;"><i class="fas fa-edit" style="margin-right:8px;"></i>Edit Donation Entry</div>
-                                <div id="myDonEditSubtitle" style="font-size:.82rem;opacity:.85;margin-top:2px;"></div>
-                            </div>
-                            <button onclick="myDonCloseEdit()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div style="padding:22px;overflow-y:auto;">
-                            <input type="hidden" id="myDonEditId">
-                            <div style="background:#fff3e0;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:.82rem;color:#e65100;border-left:4px solid #E65100;">
-                                <i class="fas fa-info-circle" style="margin-right:6px;"></i>
-                                You can edit <strong>Amount</strong> and <strong>Payment Mode</strong>. A reason is <strong>required</strong> for any change.
-                            </div>
-                            <div style="margin-bottom:14px;">
-                                <label style="font-size:.82rem;font-weight:600;color:#444;display:block;margin-bottom:6px;">Amount (&#x20B9;)</label>
-                                <input type="number" id="myDonEditAmount" min="1" step="1"
-                                    style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:10px 14px;font-size:.95rem;box-sizing:border-box;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='#E65100'" onblur="this.style.borderColor='#ddd'">
-                            </div>
-                            <div style="margin-bottom:16px;">
-                                <label style="font-size:.82rem;font-weight:600;color:#444;display:block;margin-bottom:6px;">Payment Mode</label>
-                                <select id="myDonEditMode" style="width:100%;border:1.5px solid #ddd;border-radius:9px;padding:10px 14px;font-size:.95rem;box-sizing:border-box;outline:none;background:#fff;transition:border-color .2s;" onfocus="this.style.borderColor='#E65100'" onblur="this.style.borderColor='#ddd'">
-                                    <option value="Cash">Cash</option>
-                                    <option value="UPI">UPI</option>
-                                    <option value="Cheque">Cheque</option>
-                                    <option value="NEFT">NEFT</option>
-                                    <option value="Balance">Balance</option>
-                                </select>
-                            </div>
-                            <div style="margin-bottom:16px;">
-                                <label style="font-size:.82rem;font-weight:600;color:#c0392b;display:block;margin-bottom:6px;">
-                                    <i class="fas fa-exclamation-circle" style="margin-right:5px;"></i>Reason for Edit <span style="color:#c0392b;">*</span>
-                                </label>
-                                <textarea id="myDonEditReason" rows="3" placeholder="Explain why you are editing this entry (required)&hellip;"
-                                    style="width:100%;border:1.5px solid #ffcdd2;border-radius:9px;padding:10px 14px;font-size:.88rem;box-sizing:border-box;resize:vertical;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='#c0392b'" onblur="this.style.borderColor='#ffcdd2'"></textarea>
-                            </div>
-                            <div id="myDonEditStatus" style="display:none;border-radius:9px;padding:10px 14px;font-size:.85rem;font-weight:600;margin-bottom:14px;"></div>
-                            <div style="display:flex;gap:10px;justify-content:flex-end;">
-                                <button onclick="myDonCloseEdit()" style="border:1.5px solid #e0e0e0;background:#f5f5f5;color:#555;border-radius:9px;padding:9px 18px;font-size:.88rem;cursor:pointer;font-weight:600;">Cancel</button>
-                                <button id="myDonEditSaveBtn" onclick="myDonSaveEdit()" style="background:linear-gradient(135deg,#E65100,#ff8c42);color:#fff;border:none;border-radius:9px;padding:9px 24px;font-size:.88rem;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(230,81,0,.3);">
-                                    <i class="fas fa-save" style="margin-right:6px;"></i>Save Changes
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Donor Search Section -->
+                                <!-- Donor Search Section -->
                 <div id="donorSearch" class="content-section" style="display:none;">
                     <div class="page-title">
                         <h1><i class="fas fa-search" style="color:var(--primary-color);margin-right:10px;"></i>Donor Search</h1>
@@ -3515,6 +3465,13 @@ window.fixUrl = function(url) {
                         // Refresh volunteer data if function exists
                         if (typeof loadRecentEntries === 'function') loadRecentEntries();
                         
+                          // Refresh Donation Data Entry submitted list if function exists
+                          if (typeof deLoadMyEntries === 'function') {
+                              const deWrap = document.getElementById('deMyEntriesWrap');
+                              if (deWrap && document.getElementById('donationEntry').style.display !== 'none') {
+                                  deLoadMyEntries();
+                              }
+                          }
                         // Refresh My Donations section if it is currently visible
                         const _myDonSec = document.getElementById('donations');
                         if (typeof myDonLoad === 'function' && _myDonSec && _myDonSec.style.display !== 'none') { myDonLoad(); }
@@ -3829,7 +3786,7 @@ if (originalShowSection) {
                             <span style="background:#F3F4F6;border-radius:6px;padding:3px 8px;font-size:.78rem;color:#555;">${e.paymentMode||'—'}</span>
                         </td>
                         <td style="white-space:nowrap;font-size:.78rem;color:#aaa;">${time}</td>
-                        <td>${canEdit ? `<button onclick="myDonOpenEdit('${safeId}')" style="background:#FFF3E0;color:#E65100;border:1.5px solid #ffe0b2;border-radius:7px;padding:5px 11px;font-size:.78rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;"><i class='fas fa-edit'></i>Edit</button>` : '<span style="font-size:.75rem;color:#ccc;">—</span>'}</td>
+                        
                     </tr>`;
                 }).join('');
 
@@ -3856,7 +3813,7 @@ if (originalShowSection) {
                                     <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;white-space:nowrap;">Amount</th>
                                     <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;">Mode</th>
                                     <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;">Time (IST)</th>
-                                    <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;">Action</th>
+
                                 </tr>
                             </thead>
                             <tbody>${rows}</tbody>
@@ -3875,97 +3832,7 @@ if (originalShowSection) {
         }
     }
 
-    // ── Open Edit Modal ───────────────────────────────────────────────────
-    async function myDonOpenEdit(entryId) {
-        try {
-            // Fetch fresh entry from server
-            const res  = await fetch('/api/donation-entries');
-            const data = await res.json();
-            const entries = data.entries || [];
-            const e = entries.find(x => x.entryId === entryId);
-            if (!e) { alert('Entry not found.'); return; }
-
-            document.getElementById('myDonEditId').value      = entryId;
-            document.getElementById('myDonEditAmount').value  = e.amount != null ? e.amount : '';
-            document.getElementById('myDonEditMode').value    = e.paymentMode || 'Cash';
-            document.getElementById('myDonEditReason').value  = '';
-
-            const donor = e.donorType === 'Business'
-                ? (e.businessName || '—')
-                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
-            document.getElementById('myDonEditSubtitle').textContent =
-                'Bk ' + e.bookNumber + ' #' + e.receiptNumber + ' · ' + donor;
-
-            const st = document.getElementById('myDonEditStatus');
-            if (st) { st.style.display = 'none'; st.textContent = ''; }
-
-            const btn = document.getElementById('myDonEditSaveBtn');
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; }
-
-            document.getElementById('myDonEditModal').style.display = 'flex';
-        } catch(err) {
-            alert('Could not load entry: ' + err.message);
-        }
-    }
-
-    // ── Close Edit Modal ──────────────────────────────────────────────────
-    function myDonCloseEdit() {
-        document.getElementById('myDonEditModal').style.display = 'none';
-    }
-
-    // ── Save Edit ─────────────────────────────────────────────────────────
-    async function myDonSaveEdit() {
-        const id     = document.getElementById('myDonEditId').value;
-        const amt    = document.getElementById('myDonEditAmount').value.trim();
-        const mode   = document.getElementById('myDonEditMode').value;
-        const reason = document.getElementById('myDonEditReason').value.trim();
-        const btn    = document.getElementById('myDonEditSaveBtn');
-        const st     = document.getElementById('myDonEditStatus');
-
-        function showSt(msg, type) {
-            if (!st) return;
-            st.style.display = '';
-            st.textContent = msg;
-            st.style.background = type === 'success' ? '#D5F4E6' : '#FFEBEE';
-            st.style.color      = type === 'success' ? '#1a7a45' : '#c0392b';
-        }
-
-        if (!reason) { showSt('⚠ A reason is required to save changes.', 'error'); return; }
-        if (!amt || isNaN(Number(amt)) || Number(amt) <= 0) { showSt('⚠ Please enter a valid amount.', 'error'); return; }
-
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Saving…'; }
-
-        try {
-            const payload = {
-                _isAdmin     : false,
-                amount       : Number(amt),
-                paymentMode  : mode,
-                changeReason : reason,
-                changedBy    : (typeof currentUser !== 'undefined' && currentUser) ? currentUser.name : 'Volunteer'
-            };
-            const res  = await fetch('/api/donation-entries/' + encodeURIComponent(id), {
-                method : 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body   : JSON.stringify(payload)
-            });
-            const data = await res.json();
-            if (res.ok && data.success) {
-                showSt('✅ Entry updated successfully!', 'success');
-                setTimeout(() => {
-                    myDonCloseEdit();
-                    myDonLoad(); // refresh list
-                }, 900);
-            } else {
-                showSt('⚠ ' + (data.message || 'Update failed.'), 'error');
-            }
-        } catch(err) {
-            showSt('⚠ Server unreachable: ' + err.message, 'error');
-        } finally {
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; }
-        }
-    }
-
-    // ── Auto-load when section shown ──────────────────────────────────────
+        // ── Auto-load when section shown ──────────────────────────────────────
     (function() {
         const originalShowSection = window.showSection;
         if (typeof originalShowSection === 'function') {
