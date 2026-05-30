@@ -2961,7 +2961,8 @@ function deAdmApplyFilter() {
             : '<span style="color:#ccc;font-size:.8rem;">—</span>';
         let modeBadge = `<span style="padding:3px 9px;border-radius:10px;background:#E3F2FD;color:#1565C0;font-size:.76rem;font-weight:700;">${e.paymentMode||'—'}</span>`;
         if (e.markedReceivedBy) {
-            modeBadge += `<div style="font-size:0.75rem;color:#E65100;font-weight:700;margin-top:5px;line-height:1.2;"><i class="fas fa-check-circle" style="color:#2E7D32;"></i> Rcvd by<br>${escHtml(e.markedReceivedBy)}</div>`;
+            modeBadge = `<span style="padding:3px 9px;border-radius:10px;background:#E8F5E9;color:#2E7D32;font-size:.76rem;font-weight:700;">Received</span>
+                         <div style="font-size:0.75rem;color:#E65100;font-weight:700;margin-top:6px;line-height:1.2;">Marked received by ${escHtml(e.markedReceivedBy)}</div>`;
         }
         const safeId  = (e.entryId||'').replace(/'/g,"\\'");
         return `<tr>
