@@ -1890,7 +1890,7 @@ window.fixUrl = function(url) {
                     };
                 });
 
-                const list = [...pautiPending, ...dePending];
+                const list = [...pautiPending, ...dePending].filter(r => (r.status || '').toLowerCase() !== 'received');
 
                 if (list.length === 0) {
                     container.innerHTML = '<div style="text-align:center;color:#999;padding:24px;">No pending balance slips found.</div>';
