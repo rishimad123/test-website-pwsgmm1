@@ -2538,7 +2538,9 @@ async function loadBalanceRecovery() {
 async function markBalanceReceived(id) {
     if (!confirm('Mark this balance recovery slip as Received?')) return;
     try {
-        const res  = await fetch(`/api/receipts/${encodeURIComponent(id)}/mark-received`, { method: 'PATCH' });
+        const curUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+        const byName  = curUser.name || 'Admin';
+        const res  = await fetch(`/api/receipts/${encodeURIComponent(id)}/mark-received?by=${encodeURIComponent(byName)}`, { method: 'PATCH' });
         const data = await res.json();
         if (res.ok && data.success) {
             showNotification('Balance slip marked as received!', 'success');
@@ -2957,7 +2959,10 @@ function deAdmApplyFilter() {
         const photoCell = e.photoUrl
             ? `<img src="${e.photoUrl}?t=${Date.now()}" loading="lazy" onclick="openAdminPbLightbox('${e.photoUrl}')" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" title="Click to enlarge">`
             : '<span style="color:#ccc;font-size:.8rem;">—</span>';
-        const modeBadge = `<span style="padding:3px 9px;border-radius:10px;background:#E3F2FD;color:#1565C0;font-size:.76rem;font-weight:700;">${e.paymentMode||'—'}</span>`;
+        let modeBadge = `<span style="padding:3px 9px;border-radius:10px;background:#E3F2FD;color:#1565C0;font-size:.76rem;font-weight:700;">${e.paymentMode||'—'}</span>`;
+        if (e.markedReceivedBy) {
+            modeBadge += `<div style="font-size:0.75rem;color:#E65100;font-weight:700;margin-top:5px;line-height:1.2;"><i class="fas fa-check-circle" style="color:#2E7D32;"></i> Rcvd by<br>${escHtml(e.markedReceivedBy)}</div>`;
+        }
         const safeId  = (e.entryId||'').replace(/'/g,"\\'");
         return `<tr>
             <td style="vertical-align:middle;"><strong>Bk${e.bookNumber}</strong> ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF3E0;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>' }<br><span style="font-size:.8rem;color:#888;">#${e.receiptNumber}</span></td>
