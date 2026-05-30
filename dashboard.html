@@ -1410,24 +1410,8 @@ window.fixUrl = function(url) {
                             <h3>My Pending Balances</h3>
                             <button onclick="loadVolBalanceRecovery()" class="btn btn-small" style="background:#f4f4f4;color:#555;font-size:.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
                         </div>
-                        <div style="overflow-x:auto;">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Bk/Rcpt</th>
-                                        <th>Donor Name</th>
-                                        <th>Area</th>
-                                        <th>Amount (₹)</th>
-                                        <th>Submitted Date</th>
-                                        <th>Status</th>
-                                        <th>Photo</th>
-                                        <th>Edit</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="volBalTbody">
-                                    <tr><td colspan="7" style="text-align:center;color:#999;padding:24px;">Loading…</td></tr>
-                                </tbody>
-                            </table>
+                        <div id="volBalCards" style="padding:10px 0;">
+                            <div style="text-align:center;color:#999;padding:24px;">Loading…</div>
                         </div>
                     </div>
                 </div>
@@ -1852,9 +1836,9 @@ window.fixUrl = function(url) {
 
         // ==================== BALANCE RECOVERY MODULE ====================
         async function loadVolBalanceRecovery() {
-            const tbody = document.getElementById('volBalTbody');
-            if (!tbody) return;
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:24px;">Loading...</td></tr>';
+            const container = document.getElementById('volBalCards');
+            if (!container) return;
+            container.innerHTML = '<div style="text-align:center;color:#999;padding:24px;">Loading...</div>';
             try {
                 // Fetch all donation entries and Pauti books (across entire website)
                 const [deRes, pbRes] = await Promise.all([
@@ -1901,85 +1885,82 @@ window.fixUrl = function(url) {
                         type: 'donation-entry',
                         bookNumber: e.bookNumber,
                         receiptNumber: e.receiptNumber,
-                        area: e.area || '—'
+                        area: e.area || '—',
+                        bookType: e.bookType
                     };
                 });
 
                 const list = [...pautiPending, ...dePending];
 
                 if (list.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;padding:24px;">No pending balance slips found.</td></tr>';
+                    container.innerHTML = '<div style="text-align:center;color:#999;padding:24px;">No pending balance slips found.</div>';
                     return;
                 }
 
-                const grouped = {};
-                list.forEach(r => {
-                    const bn = r.bookNumber || 'Unknown';
-                    const bt = r.bookType || 'New';
-                    const groupKey = bn === 'Unknown' ? bn : bn + ' (' + bt + ')';
-                    if(!grouped[groupKey]) grouped[groupKey] = [];
-                    grouped[groupKey].push(r);
-                });
+                // Sort newest first
+                list.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
 
-                const bookNumbers = Object.keys(grouped).sort((a, b) => {
-                    const na = parseInt(a);
-                    const nb = parseInt(b);
-                    if (!isNaN(na) && !isNaN(nb)) return na - nb;
-                    return String(a).localeCompare(String(b));
-                });
+                container.innerHTML = list.map(r => {
+                    const isReceived  = (r.status || '').toLowerCase() === 'received';
+                    const donor = r.name || '—';
+                    const amt   = r.amount && Number(r.amount) > 0 ? '₹' + Number(r.amount).toLocaleString('en-IN') : '—';
+                    const dtObj = new Date(r.submittedAt);
+                    const dtStr = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()
+                                + '\n' + dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+                    const dtParts = dtStr.split('\n');
+                    const photoSection = r.photoUrl
+                        ? `<div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(r.photoUrl)}')">
+                               <img src="${fixUrl(r.photoUrl)}?t=${Date.now()}" loading="lazy" alt="Receipt photo"
+                                   style="width:100%;max-height:200px;object-fit:cover;display:block;">
+                               <div style="background:#fff8f5;padding:5px 10px;font-size:.72rem;color:#E65100;font-weight:600;display:flex;align-items:center;gap:5px;">
+                                   <i class="fas fa-expand-alt"></i> Tap to view full receipt
+                               </div>
+                           </div>`
+                        : `<div style="margin-top:10px;border:1.5px dashed #f0e0d0;border-radius:10px;padding:14px;text-align:center;background:#fffaf8;">
+                               <i class="fas fa-camera" style="font-size:1.4rem;color:#ddd;display:block;margin-bottom:6px;"></i>
+                               <span style="font-size:.75rem;color:#ccc;font-weight:600;">No Receipt Photo</span>
+                           </div>`;
+                           
+                    const paymentMode = isReceived ? 'Received' : 'Balance';
+                    const paymentModeColor = isReceived ? 'background:#E8F5E9;color:#2E7D32;' : 'background:#FFF3E0;color:#E65100;';
 
-                let html = '';
-                bookNumbers.forEach(bn => {
-                                let bnDisplay = bn;
-                    let btBadge = '';
-                    if (bn.includes(' (')) {
-                        const parts = bn.split(' (');
-                        bnDisplay = parts[0];
-                        const btPart = parts[1].replace(')', '');
-                        btBadge = btPart === 'Old' 
-                          ? '<span style="background:#FFF3E0;color:#E65100;font-size:.75rem;padding:3px 8px;border-radius:12px;font-weight:700;margin-left:8px;vertical-align:middle;">Old</span>' 
-                          : '<span style="background:#E3F2FD;color:#1565C0;font-size:.75rem;padding:3px 8px;border-radius:12px;font-weight:700;margin-left:8px;vertical-align:middle;">New</span>';
-                    }
-                    html += `<tr><td colspan="8" style="background:#F4F6FB;color:#1A237E;font-weight:700;font-size:1.05rem;padding:12px 16px;vertical-align:middle;">Book Number ${bnDisplay} ${btBadge}</td></tr>`;
-                    html += grouped[bn].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)).map(r => {
-                        const dt = new Date(r.submittedAt);
-                        const dateStr = dt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase()
-                                      + ', ' + dt.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-                        const amtCell = r.amount && Number(r.amount) > 0
-                            ? '₹' + Number(r.amount).toLocaleString('en-IN')
-                            : '<span style="color:#ccc;font-style:italic;">No amount</span>';
-                        const photoCell = r.photoUrl
-                            ? `<img src="${r.photoUrl}?t=${Date.now()}" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${r.photoUrl}')" title="Click to enlarge">`
-                            : '<span style="color:#ccc;">—</span>';
-                        
-                        const isReceived  = (r.status || '').toLowerCase() === 'received';
-                        const statusBadge = isReceived 
-                            ? '<span class="badge badge-success" style="background:#E8F5E9;color:#1B5E20;">Received</span>'
-                            : '<span class="badge badge-warning" style="background:#FFF8E1;color:#F57F17;">Balance</span>';
+                    const safeId = r.receiptId.replace(/'/g, "\\'");
+                    const editBtn = r.type === 'donation-entry' && !isReceived
+                        ? `<button onclick="deOpenVolEdit('${safeId}')" style="padding:8px 12px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;flex-shrink:0;margin-left:4px;"><i class="fas fa-edit"></i></button>`
+                        : '';
+                    const markBtn = !isReceived 
+                        ? `<button onclick="markBalanceReceived('${safeId}')" style="padding:8px 12px;border:none;border-radius:8px;background:linear-gradient(135deg,#2E7D32,#4CAF50);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;flex-shrink:0;margin-left:4px;" title="Mark as Received"><i class="fas fa-check"></i></button>`
+                        : '';
 
-                        const safeId = r.receiptId.replace(/'/g, "\\'");
-                        const markBtn = (!isReceived)
-                            ? `<button class="btn-icon btn-edit" style="background:#E8F5E9;color:#1B5E20;padding:6px 10px;margin-right:5px;" title="Mark as Received" onclick="markBalanceReceived('${safeId}')"><i class="fas fa-check"></i></button>`
-                            : '';
-                        const editBtn = r.type === 'donation-entry'
-                            ? `<button class="btn btn-sm" style="background:#E3F2FD;color:#1565C0;padding:6px 10px;" onclick="deOpenVolEdit('${safeId}')"><i class="fas fa-edit"></i> Edit</button>`
-                            : '<span style="font-size:0.8rem;color:#999;">-</span>';
-
-                        return `<tr>
-                            <td style="font-weight:700;vertical-align:middle;">Bk ${r.bookNumber} ${ (r.bookType||'New')==='Old' ? '<span style="background:#FFF3E0;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;margin-right:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;margin-right:4px;">New</span>' } #${r.receiptNumber}</td>
-                            <td style="font-weight:600;">${r.name}</td>
-                            <td>${r.area}</td>
-                            <td style="color:#2E7D32;font-weight:700;">${amtCell}</td>
-                            <td style="color:#777;font-size:.82rem;">${dateStr}</td>
-                            <td>${statusBadge}</td>
-                            <td style="text-align:center;">${photoCell}</td>
-                            <td style="text-align:center;white-space:nowrap;">${markBtn}${editBtn}</td>
-                        </tr>`;
-                    }).join('');
-                });
-                tbody.innerHTML = html;
+                    return `<div style="border:1px solid #f0e8e0;border-radius:14px;padding:14px;margin:0 0 12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+                        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:700;font-size:.97rem;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${donor}</div>
+                                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;">
+                                    <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
+                                        <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${r.bookNumber} / #${r.receiptNumber} ${ (r.bookType||'New')==='Old' ? '<span style="background:#FFF3E0;color:#E65100;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">New</span>' }
+                                    </span>
+                                    <span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
+                                        <i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${r.area||'—'}
+                                    </span>
+                                    <span style="${paymentModeColor}padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">${paymentMode}</span>
+                                </div>
+                                <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+                                    <span style="color:#2E7D32;font-weight:700;font-size:1.05rem;">${amt}</span>
+                                    <span style="font-size:.72rem;color:#aaa;text-align:right;">${dtParts[0]}<br><span style="color:#bbb;">${dtParts[1]}</span></span>
+                                </div>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:6px;">
+                                ${markBtn}
+                                ${editBtn}
+                            </div>
+                        </div>
+                        ${photoSection}
+                    </div>`;
+                }).join('');
             } catch(e) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#c00;padding:24px;">Error loading balance data.</td></tr>';
+                const container = document.getElementById('volBalCards');
+                if (container) container.innerHTML = '<div style="text-align:center;color:#c00;padding:24px;">Error loading balance data.</div>';
             }
         }
 
@@ -3626,22 +3607,46 @@ if (originalShowSection) {
                     const safeId = (e.entryId||'').replace(/'/g,"\'");
                     const canEdit = !e.entryId?.startsWith('PB-') && !e.entryId?.startsWith('RC-');
 
-                    return `<tr id="mydon-row-${e.entryId}">
-                        <td style="white-space:nowrap;">
-                            <span style="font-weight:700;color:#333;">Bk ${e.bookNumber}${bookBadge}</span>
-                            <div style="font-size:.73rem;color:#aaa;margin-top:2px;">#${e.receiptNumber}</div>
-                        </td>
-                        <td>
-                            <div style="font-weight:600;font-size:.88rem;">${donor}</div>
-                            <div style="font-size:.73rem;color:#bbb;">${e.area||''}</div>
-                        </td>
-                        <td style="color:#2E7D32;font-weight:700;white-space:nowrap;">${myDonFmtAmt(e.amount)}</td>
-                        <td style="white-space:nowrap;">
-                            <span style="background:#F3F4F6;border-radius:6px;padding:3px 8px;font-size:.78rem;color:#555;">${e.paymentMode||'—'}</span>
-                        </td>
-                        <td style="white-space:nowrap;font-size:.78rem;color:#aaa;">${time}</td>
-                        
-                    </tr>`;
+                    const dtObj = new Date(e.submittedAt);
+                    const dtStr = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()
+                                + '\n' + dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+                    const dtParts = dtStr.split('\n');
+                    const photoSection = e.photoUrl
+                        ? `<div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')">
+                               <img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" loading="lazy" alt="Receipt photo"
+                                   style="width:100%;max-height:200px;object-fit:cover;display:block;">
+                               <div style="background:#fff8f5;padding:5px 10px;font-size:.72rem;color:#E65100;font-weight:600;display:flex;align-items:center;gap:5px;">
+                                   <i class="fas fa-expand-alt"></i> Tap to view full receipt
+                               </div>
+                           </div>`
+                        : `<div style="margin-top:10px;border:1.5px dashed #f0e0d0;border-radius:10px;padding:14px;text-align:center;background:#fffaf8;">
+                               <i class="fas fa-camera" style="font-size:1.4rem;color:#ddd;display:block;margin-bottom:6px;"></i>
+                               <span style="font-size:.75rem;color:#ccc;font-weight:600;">No Receipt Photo</span>
+                           </div>`;
+                    
+                    const paymentModeColor = (e.paymentMode||'').toLowerCase() === 'balance' ? 'background:#FFF3E0;color:#E65100;' : 'background:#E8F5E9;color:#2E7D32;';
+
+                    return `<div style="border:1px solid #f0e8e0;border-radius:14px;padding:14px;margin:0 0 12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+                        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:700;font-size:.97rem;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${donor}</div>
+                                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;">
+                                    <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
+                                        <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${e.bookNumber} / #${e.receiptNumber} ${bookBadge}
+                                    </span>
+                                    <span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
+                                        <i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${e.area||'—'}
+                                    </span>
+                                    <span style="${paymentModeColor}padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">${e.paymentMode||'—'}</span>
+                                </div>
+                                <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+                                    <span style="color:#2E7D32;font-weight:700;font-size:1.05rem;">${myDonFmtAmt(e.amount)}</span>
+                                    <span style="font-size:.72rem;color:#aaa;text-align:right;">${dtParts[0]}<br><span style="color:#bbb;">${dtParts[1]}</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        ${photoSection}
+                    </div>`;
                 }).join('');
 
                 return `
@@ -3657,21 +3662,9 @@ if (originalShowSection) {
                             <span style="font-weight:700;font-size:.95rem;color:${today ? '#fff' : '#E65100'};">${myDonFmtAmt(dayTotal)}</span>
                         </div>
                     </div>
-                    <!-- Entries table -->
-                    <div style="overflow-x:auto;">
-                        <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
-                            <thead>
-                                <tr style="background:#fafafa;border-bottom:2px solid #f0f0f0;">
-                                    <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;white-space:nowrap;">Book / Rcpt</th>
-                                    <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;">Donor</th>
-                                    <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;white-space:nowrap;">Amount</th>
-                                    <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;">Mode</th>
-                                    <th style="padding:10px 16px;text-align:left;font-size:.74rem;color:#888;font-weight:700;text-transform:uppercase;">Time (IST)</th>
-
-                                </tr>
-                            </thead>
-                            <tbody>${rows}</tbody>
-                        </table>
+                    <!-- Entries -->
+                    <div style="padding:14px;">
+                        ${rows}
                     </div>
                     <!-- Day footer total -->
                     <div style="background:#fafafa;border-top:1px solid #f0f0f0;padding:10px 20px;display:flex;justify-content:flex-end;align-items:center;gap:8px;">
