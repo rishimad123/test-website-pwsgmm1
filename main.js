@@ -16,28 +16,28 @@ if (mobileToggle) {
 }
 
 // ==================== COUNTDOWN TIMER ====================
+let _countdownTarget = new Date('September 19, 2025 10:00:00').getTime(); // default fallback
+
 function updateCountdown() {
-    // Set event date (Change this to your actual event date)
-    const eventDate = new Date('September 19, 2025 10:00:00').getTime();
     const now = new Date().getTime();
-    const distance = eventDate - now;
+    const distance = _countdownTarget - now;
     
     if (distance > 0) {
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const days    = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours   = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
         
         if (document.getElementById('days')) {
-            document.getElementById('days').textContent = String(days).padStart(2, '0');
-            document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+            document.getElementById('days').textContent    = String(days).padStart(2, '0');
+            document.getElementById('hours').textContent   = String(hours).padStart(2, '0');
             document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
             document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
         }
     } else {
         if (document.getElementById('days')) {
-            document.getElementById('days').textContent = '00';
-            document.getElementById('hours').textContent = '00';
+            document.getElementById('days').textContent    = '00';
+            document.getElementById('hours').textContent   = '00';
             document.getElementById('minutes').textContent = '00';
             document.getElementById('seconds').textContent = '00';
         }
@@ -45,9 +45,23 @@ function updateCountdown() {
 }
 
 if (document.getElementById('countdown')) {
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
+    // Fetch admin-configured countdown date from settings
+    fetch('/api/settings')
+        .then(r => r.json())
+        .then(data => {
+            const isoDate = (data && (data.countdownDate || data.eventDate)) || null;
+            if (isoDate) {
+                const parsed = new Date(isoDate).getTime();
+                if (!isNaN(parsed)) _countdownTarget = parsed;
+            }
+        })
+        .catch(() => {}) // silently fall back to default
+        .finally(() => {
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        });
 }
+
 
 // ==================== ANIMATED COUNTER ====================
 function animateCounter() {

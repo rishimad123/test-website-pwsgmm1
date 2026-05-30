@@ -3758,6 +3758,30 @@ async function loadAdminEventDate() {
         if (data && data.eventDesc) {
             document.getElementById('adminEventDesc').value = data.eventDesc;
         }
+
+        // Load countdown timer inputs
+        const cdDateInput = document.getElementById('countdownDateInput');
+        const cdTimeInput = document.getElementById('countdownTimeInput');
+        const previewBox  = document.getElementById('countdownPreviewBox');
+        const previewText = document.getElementById('countdownPreviewText');
+        const cdIso = data && (data.countdownDate || data.eventDate);
+        if (cdIso && cdDateInput) {
+            const dt = new Date(cdIso);
+            // Fill date
+            cdDateInput.value = dt.toISOString().split('T')[0];
+            // Fill time as HH:MM
+            const hh = String(dt.getHours()).padStart(2, '0');
+            const mm = String(dt.getMinutes()).padStart(2, '0');
+            if (cdTimeInput) cdTimeInput.value = `${hh}:${mm}`;
+            // Show preview
+            if (previewBox && previewText) {
+                previewText.textContent = dt.toLocaleString('en-IN', {
+                    weekday: 'short', year: 'numeric', month: 'long',
+                    day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                previewBox.style.display = 'block';
+            }
+        }
         
         // Load banner preview
         const bannerPreview = document.getElementById('adminBannerPreview');
@@ -3771,6 +3795,41 @@ async function loadAdminEventDate() {
         console.warn('Failed to load settings:', e.message);
     }
 }
+
+async function saveCountdownTimer() {
+    const dateVal = document.getElementById('countdownDateInput')?.value;
+    const timeVal = document.getElementById('countdownTimeInput')?.value || '00:00';
+    if (!dateVal) return alert('Please select a date for the countdown.');
+    const isoStr = new Date(`${dateVal}T${timeVal}:00`).toISOString();
+    try {
+        const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ countdownDate: isoStr })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const statusEl = document.getElementById('countdownTimerStatus');
+            if (statusEl) { statusEl.style.opacity = '1'; setTimeout(() => statusEl.style.opacity = '0', 3000); }
+            // Update preview
+            const dt = new Date(isoStr);
+            const previewText = document.getElementById('countdownPreviewText');
+            const previewBox  = document.getElementById('countdownPreviewBox');
+            if (previewText) {
+                previewText.textContent = dt.toLocaleString('en-IN', {
+                    weekday: 'short', year: 'numeric', month: 'long',
+                    day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+            }
+            if (previewBox) previewBox.style.display = 'block';
+        } else {
+            alert('Failed to save: ' + (data.message || data.error || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Error saving countdown: ' + e.message);
+    }
+}
+
 
 async function saveAdminEventDate() {
     const n = document.getElementById('adminEventName').value;

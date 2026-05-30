@@ -2230,6 +2230,7 @@ const server = http.createServer(async (req, res) => {
             if (body.eventDate !== undefined) globalSettings.eventDate = body.eventDate;
             if (body.eventName !== undefined) globalSettings.eventName = body.eventName;
             if (body.eventDesc !== undefined) globalSettings.eventDesc = body.eventDesc;
+            if (body.countdownDate !== undefined) globalSettings.countdownDate = body.countdownDate;
             
             if (colSettings) {
                 await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
