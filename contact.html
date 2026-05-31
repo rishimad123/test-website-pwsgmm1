@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - Patelwadi Sarvajanik Ganesh Mitramandal</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .contact-section {
+            padding: 80px 0;
+        }
+        
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+        
+        .contact-card {
+            background: var(--white);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .contact-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .contact-card-image {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 4rem;
+        }
+        
+        .contact-card-info {
+            padding: 25px;
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .contact-card-info h3 {
+            color: var(--dark-color);
+            margin-bottom: 5px;
+            font-size: 1.3rem;
+        }
+        
+        .contact-card-role {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+        
+        .contact-card-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .contact-card-links a {
+            padding: 10px 20px;
+            border-radius: 25px;
+            background: var(--light-color);
+            color: var(--dark-color);
+            font-weight: 600;
+            font-size: 0.88rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .contact-card-links a.btn-whatsapp {
+            background: #25D366;
+            color: white;
+        }
+        
+        .contact-card-links a.btn-phone {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .contact-card-links a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <i class="fas fa-om"></i>
+                    <span>Patelwadi Ganesh Mitramandal</span>
+                </div>
+                <button class="mobile-toggle" id="mobileToggle">
+                    <span></span><span></span><span></span>
+                </button>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="committee.html">Committee</a></li>
+                    <li><a href="volunteers.html">Volunteers</a></li>
+                    <li><a href="gallery.html">Gallery</a></li>
+                    <li><a href="tshirt.html">T-shirts</a></li>
+                    <li><a href="contact.html" class="active">Contact</a></li>
+                    <li><a href="login.html" class="btn-login">Login</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Page Header -->
+    <section class="hero" style="height: 40vh;">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1 class="hero-title" style="font-size: 3rem;">Contact Us</h1>
+            <p class="hero-subtitle">Get in touch with our team members</p>
+        </div>
+    </section>
+    
+    <!-- Contact Cards Grid -->
+    <section class="contact-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Our Contact Representatives</h2>
+                <div class="divider"></div>
+                <p style="margin-top: 15px; color: #777; max-width: 600px; margin-left: auto; margin-right: auto;">
+                    Reach out to the appropriate coordinator for any inquiries regarding donations, events, or volunteer registration.
+                </p>
+            </div>
+            
+            <div class="contact-grid" id="contactGrid">
+                <!-- 5 Slot-based spaces populated dynamically -->
+                <div style="text-align:center;grid-column:1/-1;color:#aaa;padding:40px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:12px;color:var(--primary-color);"></i>
+                    <p>Loading contact representatives...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h3>About Us</h3>
+                    <p>Patelwadi Sarvajanik Ganesh Mitramandal is dedicated to celebrating Ganesh Chaturthi with devotion and community service.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="committee.html">Committee</a></li>
+                        <li><a href="volunteers.html">Volunteers</a></li>
+                        <li><a href="gallery.html">Gallery</a></li>
+                        <li><a href="tshirt.html">T-shirts</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Contact Info</h3>
+                    <ul class="contact-info">
+                        <li><i class="fas fa-map-marker-alt"></i> Patelwadi, Mumbai - 400001</li>
+                        <li><i class="fas fa-phone"></i> +91 98765 43210</li>
+                        <li><i class="fas fa-envelope"></i> info@patelwadiganesh.org</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Newsletter</h3>
+                    <p>Subscribe to get updates about our events</p>
+                    <form class="newsletter-form" onsubmit="return false;">
+                        <input type="email" placeholder="Your email" required>
+                        <button type="submit"><i class="fas fa-paper-plane"></i></button>
+                    </form>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Patelwadi Sarvajanik Ganesh Mitramandal. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script src="main.js"></script>
+    <script>
+        async function loadContactCards() {
+            const grid = document.getElementById('contactGrid');
+            try {
+                const res = await fetch('/api/contact-cards');
+                const data = await res.json();
+                if (res.ok && data.cards && data.cards.length > 0) {
+                    grid.innerHTML = data.cards.map((c, i) => {
+                        const hasCustomContent = c.title || c.subtitle || c.phone || c.whatsapp || c.photoUrl;
+                        
+                        // If no custom content, show standard slots as fallbacks
+                        const title = c.title || `Representative Slot ${i+1}`;
+                        const subtitle = c.subtitle || (i === 0 ? 'General Inquiries' : i === 1 ? 'Donations Desk' : i === 2 ? 'Cultural Events' : i === 3 ? 'Public Relations' : 'Volunteer Management');
+                        const photoHTML = c.photoUrl
+                            ? `<img src="${c.photoUrl}" alt="${title}" style="width:100%;height:100%;object-fit:cover;">`
+                            : `<i class="fas fa-id-card"></i>`;
+                        
+                        return `
+                            <div class="contact-card">
+                                <div class="contact-card-image" style="${c.photoUrl ? 'background:none;' : ''}">
+                                    ${photoHTML}
+                                </div>
+                                <div class="contact-card-info">
+                                    <div>
+                                        <h3>${title}</h3>
+                                        <div class="contact-card-role">${subtitle}</div>
+                                    </div>
+                                    <div class="contact-card-links">
+                                        ${c.phone ? `<a href="tel:${c.phone}" class="btn-phone" title="Call representative"><i class="fas fa-phone"></i> Call</a>` : `<span style="color:#aaa;font-size:0.9rem;">No contact number set</span>`}
+                                        ${c.whatsapp ? `<a href="https://wa.me/91${c.whatsapp.replace(/[^0-9]/g, '')}" target="_blank" class="btn-whatsapp" title="WhatsApp representative"><i class="fab fa-whatsapp"></i> Chat</a>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    grid.innerHTML = '<div style="text-align:center;grid-column:1/-1;color:#aaa;padding:40px;">No contact representatives listed yet.</div>';
+                }
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = '<div style="text-align:center;grid-column:1/-1;color:#e74c3c;padding:40px;">Failed to load contact cards.</div>';
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadContactCards);
+    </script>
+</body>
+</html>

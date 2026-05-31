@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Core Committee - Patelwadi Ganesh Mitramandal</title>
+    <title>Volunteers - Patelwadi Sarvajanik Ganesh Mitramandal</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        .committee-section {
+        .volunteers-section {
             padding: 80px 0;
         }
         
-        .committee-grid {
+        .volunteers-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 30px;
             margin-top: 50px;
         }
         
-        .committee-card {
+        .volunteer-card {
             background: var(--white);
             border-radius: 15px;
             overflow: hidden;
@@ -26,12 +27,12 @@
             transition: all 0.3s ease;
         }
         
-        .committee-card:hover {
+        .volunteer-card:hover {
             transform: translateY(-10px);
             box-shadow: var(--shadow-lg);
         }
         
-        .committee-image {
+        .volunteer-image {
             width: 100%;
             height: 300px;
             background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
@@ -42,37 +43,30 @@
             font-size: 4rem;
         }
         
-        .committee-info {
+        .volunteer-info {
             padding: 25px;
             text-align: center;
         }
         
-        .committee-info h3 {
+        .volunteer-info h3 {
             color: var(--dark-color);
             margin-bottom: 10px;
         }
         
-        .committee-position {
+        .volunteer-position {
             color: var(--primary-color);
             font-weight: 600;
             margin-bottom: 15px;
         }
         
-        .committee-info p {
-            color: #777;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-        
-        .committee-contact {
+        .volunteer-contact {
             display: flex;
             justify-content: center;
             gap: 15px;
             margin-top: 15px;
         }
         
-        .committee-contact a {
+        .volunteer-contact a {
             width: 35px;
             height: 35px;
             border-radius: 50%;
@@ -84,14 +78,14 @@
             transition: all 0.3s ease;
         }
         
-        .committee-contact a:hover {
+        .volunteer-contact a:hover {
             background: var(--primary-color);
             color: var(--white);
         }
     </style>
 </head>
 <body>
-    <!-- Include navigation from index.html -->
+    <!-- Navigation -->
     <nav class="navbar">
         <div class="container">
             <div class="nav-wrapper">
@@ -99,12 +93,16 @@
                     <i class="fas fa-om"></i>
                     <span>Patelwadi Ganesh Mitramandal</span>
                 </div>
-                <ul class="nav-menu">
+                <button class="mobile-toggle" id="mobileToggle">
+                    <span></span><span></span><span></span>
+                </button>
+                <ul class="nav-menu" id="navMenu">
                     <li><a href="index.html">Home</a></li>
                     <li><a href="about.html">About</a></li>
-                    <li><a href="committee.html" class="active">Committee</a></li>
-                    <li><a href="volunteers.html">Volunteers</a></li>
+                    <li><a href="committee.html">Committee</a></li>
+                    <li><a href="volunteers.html" class="active">Volunteers</a></li>
                     <li><a href="gallery.html">Gallery</a></li>
+                    <li><a href="tshirt.html">T-shirts</a></li>
                     <li><a href="contact.html">Contact</a></li>
                     <li><a href="login.html" class="btn-login">Login</a></li>
                 </ul>
@@ -116,71 +114,32 @@
     <section class="hero" style="height: 40vh;">
         <div class="hero-overlay"></div>
         <div class="hero-content">
-            <h1 class="hero-title" style="font-size: 3rem;">Core Committee</h1>
-            <p class="hero-subtitle">Meet our dedicated leadership team</p>
+            <h1 class="hero-title" style="font-size: 3rem;">Our Volunteers</h1>
+            <p class="hero-subtitle">The backbone of Patelwadi Ganesh Mitramandal</p>
         </div>
     </section>
     
-    <!-- Committee Members -->
-    <section class="committee-section">
+    <!-- Volunteers List -->
+    <section class="volunteers-section">
         <div class="container">
             <div class="section-header">
-                <h2>Our Leadership Team</h2>
+                <h2>Meet Our Dedicated Volunteers</h2>
                 <div class="divider"></div>
                 <p style="margin-top: 15px; color: #777; max-width: 600px; margin-left: auto; margin-right: auto;">
-                    Our committee members work tirelessly to ensure every aspect of the celebration is perfect
+                    Dozens of active community members work around the clock to support Ganeshotsav activities.
                 </p>
             </div>
             
-            <div class="committee-grid" id="committeeGrid">
+            <div class="volunteers-grid" id="volunteersGrid">
                 <div style="text-align:center;grid-column:1/-1;color:#aaa;padding:40px;">
                     <i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:12px;color:var(--primary-color);"></i>
-                    <p>Loading leadership team...</p>
+                    <p>Loading active volunteers...</p>
                 </div>
             </div>
-
-            <script>
-                async function loadCommittee() {
-                    const grid = document.getElementById('committeeGrid');
-                    try {
-                        const res = await fetch('/api/committee-members');
-                        const data = await res.json();
-                        if (res.ok && data.members && data.members.length > 0) {
-                            grid.innerHTML = data.members.map(m => {
-                                const photoHTML = m.photoUrl
-                                    ? `<img src="${m.photoUrl}" alt="${m.name}" style="width:100%;height:100%;object-fit:cover;">`
-                                    : `<i class="fas fa-user"></i>`;
-                                return `
-                                    <div class="committee-card">
-                                        <div class="committee-image" style="${m.photoUrl ? 'background:none;' : ''}">
-                                            ${photoHTML}
-                                        </div>
-                                        <div class="committee-info">
-                                            <h3>${m.name}</h3>
-                                            <div class="committee-position">${m.role || m.department || 'Committee Member'}</div>
-                                            <p>Active core committee member serving Patelwadi Sarvajanik Ganesh Mitramandal.</p>
-                                            <div class="committee-contact">
-                                                ${m.phone ? `<a href="tel:${m.phone}" title="Call Contact"><i class="fas fa-phone"></i></a>` : ''}
-                                                ${m.whatsapp ? `<a href="https://wa.me/91${m.whatsapp.replace(/[^0-9]/g, '')}" target="_blank" title="WhatsApp Message"><i class="fab fa-whatsapp"></i></a>` : ''}
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('');
-                        } else {
-                            grid.innerHTML = '<div style="text-align:center;grid-column:1/-1;color:#aaa;padding:40px;">No committee members listed yet.</div>';
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        grid.innerHTML = '<div style="text-align:center;grid-column:1/-1;color:#e74c3c;padding:40px;">Failed to load committee members.</div>';
-                    }
-                }
-                document.addEventListener('DOMContentLoaded', loadCommittee);
-            </script>
         </div>
     </section>
     
-    <!-- Include footer from index.html -->
+    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-grid">
@@ -201,6 +160,7 @@
                         <li><a href="committee.html">Committee</a></li>
                         <li><a href="volunteers.html">Volunteers</a></li>
                         <li><a href="gallery.html">Gallery</a></li>
+                        <li><a href="tshirt.html">T-shirts</a></li>
                         <li><a href="contact.html">Contact</a></li>
                     </ul>
                 </div>
@@ -215,8 +175,8 @@
                 <div class="footer-col">
                     <h3>Newsletter</h3>
                     <p>Subscribe to get updates about our events</p>
-                    <form class="newsletter-form">
-                        <input type="email" placeholder="Your email">
+                    <form class="newsletter-form" onsubmit="return false;">
+                        <input type="email" placeholder="Your email" required>
                         <button type="submit"><i class="fas fa-paper-plane"></i></button>
                     </form>
                 </div>
@@ -228,5 +188,42 @@
     </footer>
     
     <script src="main.js"></script>
+    <script>
+        async function loadVolunteers() {
+            const grid = document.getElementById('volunteersGrid');
+            try {
+                const res = await fetch('/api/volunteer-cards');
+                const data = await res.json();
+                if (res.ok && data.cards && data.cards.length > 0) {
+                    grid.innerHTML = data.cards.map(v => {
+                        const photoHTML = v.photoUrl
+                            ? `<img src="${v.photoUrl}" alt="${v.name}" style="width:100%;height:100%;object-fit:cover;">`
+                            : `<i class="fas fa-user-circle"></i>`;
+                        return `
+                            <div class="volunteer-card">
+                                <div class="volunteer-image" style="${v.photoUrl ? 'background:none;' : ''}">
+                                    ${photoHTML}
+                                </div>
+                                <div class="volunteer-info">
+                                    <h3>${v.name}</h3>
+                                    <div class="volunteer-position">${v.position || 'Active Volunteer'}</div>
+                                    <div class="volunteer-contact">
+                                        ${v.phone ? `<a href="tel:${v.phone}" title="Call Volunteer"><i class="fas fa-phone"></i></a>` : ''}
+                                        ${v.phone ? `<a href="https://wa.me/91${v.phone.replace(/[^0-9]/g, '')}" target="_blank" title="WhatsApp Message"><i class="fab fa-whatsapp"></i></a>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    grid.innerHTML = '<div style="text-align:center;grid-column:1/-1;color:#aaa;padding:40px;">No volunteers listed yet.</div>';
+                }
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = '<div style="text-align:center;grid-column:1/-1;color:#e74c3c;padding:40px;">Failed to load volunteers.</div>';
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadVolunteers);
+    </script>
 </body>
 </html>

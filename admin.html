@@ -1158,6 +1158,12 @@ window._fmtBytesA = function(b) {
                     </a>
                 </li>
                 <li>
+                    <a href="#" onclick="showAdminSection('contactCards')">
+                        <i class="fas fa-address-book"></i>
+                        <span>Contact Cards</span>
+                    </a>
+                </li>
+                <li>
                     <a href="#" onclick="showAdminSection('donationTracking')">
                         <i class="fas fa-hand-holding-usd"></i>
                         <span>Donations</span>
@@ -1416,71 +1422,102 @@ window._fmtBytesA = function(b) {
                 
                 <!-- Volunteers Section -->
                 <div id="volunteers" class="content-section">
-                    <!-- Stats strip -->
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;margin-bottom:22px;" id="volStatsStrip">
-                        <div class="admin-stat-card">
-                            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
-                            <div class="stat-details">
-                                <h3 id="volStatTotal" style="font-size:1.6rem;">0</h3>
-                                <p>Total Volunteers</p>
+                    <!-- Tab bar for Volunteers Section -->
+                    <div id="volTabBar" style="display:flex;gap:0;border-bottom:2px solid #E0E0E0;margin-bottom:20px;">
+                        <button id="volTabCards" onclick="switchVolTab('cards')"
+                            style="padding:10px 24px;border:none;background:none;font-size:.92rem;font-weight:600;color:var(--primary-color);border-bottom:3px solid var(--primary-color);cursor:pointer;transition:all .2s;">
+                            <i class="fas fa-id-badge" style="margin-right:6px;"></i>Volunteer Cards (Public)
+                        </button>
+                        <button id="volTabAccounts" onclick="switchVolTab('accounts')"
+                            style="padding:10px 24px;border:none;background:none;font-size:.92rem;font-weight:600;color:#999;border-bottom:3px solid transparent;cursor:pointer;transition:all .2s;">
+                            <i class="fas fa-user-cog" style="margin-right:6px;"></i>System Accounts
+                        </button>
+                    </div>
+
+                    <!-- Volunteer Display Cards panel -->
+                    <div id="volPanelCards">
+                        <div class="admin-card">
+                            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;">
+                                <h3><i class="fas fa-address-card" style="color:var(--primary-color);margin-right:8px;"></i>Volunteer Public Display Cards</h3>
+                                <button class="btn btn-primary btn-small" onclick="vcOpenAdd()">
+                                    <i class="fas fa-plus" style="margin-right:6px;"></i>Add Volunteer Card
+                                </button>
                             </div>
-                        </div>
-                        <div class="admin-stat-card">
-                            <div class="stat-icon green"><i class="fas fa-user-check"></i></div>
-                            <div class="stat-details">
-                                <h3 id="volStatActive" style="font-size:1.6rem;">0</h3>
-                                <p>Active</p>
-                            </div>
-                        </div>
-                        <div class="admin-stat-card">
-                            <div class="stat-icon orange"><i class="fas fa-user-slash"></i></div>
-                            <div class="stat-details">
-                                <h3 id="volStatBlocked" style="font-size:1.6rem;">0</h3>
-                                <p>Blocked</p>
+                            <div id="vcStatus" style="display:none;padding:10px 16px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
+                            <div id="vcGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;margin-top:15px;">
+                                <div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">Loading volunteer cards...</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="admin-card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-user-friends" style="color:var(--primary-color);margin-right:8px;"></i>Volunteer Management</h3>
-                            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                                <button class="btn btn-primary btn-small" onclick="loadVolunteers()">
-                                    <i class="fas fa-sync-alt"></i> Refresh
-                                </button>
-                                <button class="btn btn-small" style="background:linear-gradient(135deg,#1D6F42,#2E7D32);color:#fff;" onclick="volExportCSV()">
-                                    <i class="fas fa-download"></i> Export CSV
-                                </button>
+                    <!-- System Accounts panel -->
+                    <div id="volPanelAccounts" style="display:none;">
+                        <!-- Stats strip -->
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;margin-bottom:22px;" id="volStatsStrip">
+                            <div class="admin-stat-card">
+                                <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                                <div class="stat-details">
+                                    <h3 id="volStatTotal" style="font-size:1.6rem;">0</h3>
+                                    <p>Total Volunteers</p>
+                                </div>
+                            </div>
+                            <div class="admin-stat-card">
+                                <div class="stat-icon green"><i class="fas fa-user-check"></i></div>
+                                <div class="stat-details">
+                                    <h3 id="volStatActive" style="font-size:1.6rem;">0</h3>
+                                    <p>Active</p>
+                                </div>
+                            </div>
+                            <div class="admin-stat-card">
+                                <div class="stat-icon orange"><i class="fas fa-user-slash"></i></div>
+                                <div class="stat-details">
+                                    <h3 id="volStatBlocked" style="font-size:1.6rem;">0</h3>
+                                    <p>Blocked</p>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Status message -->
-                        <div id="volStatus" style="display:none;padding:10px 16px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
+                        <div class="admin-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-user-friends" style="color:var(--primary-color);margin-right:8px;"></i>Volunteer Management</h3>
+                                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                                    <button class="btn btn-primary btn-small" onclick="loadVolunteers()">
+                                        <i class="fas fa-sync-alt"></i> Refresh
+                                    </button>
+                                    <button class="btn btn-small" style="background:linear-gradient(135deg,#1D6F42,#2E7D32);color:#fff;" onclick="volExportCSV()">
+                                        <i class="fas fa-download"></i> Export CSV
+                                    </button>
+                                </div>
+                            </div>
 
-                        <!-- Search bar -->
-                        <div style="margin-bottom:14px;">
-                            <input type="text" id="volSearchInput" placeholder="🔍 Search by name or username…"
-                                style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.92rem;box-sizing:border-box;"
-                                oninput="volFilter()">
-                        </div>
+                            <!-- Status message -->
+                            <div id="volStatus" style="display:none;padding:10px 16px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
 
-                        <div style="overflow-x:auto;">
-                            <table class="admin-table" id="volTable">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>User Details</th>
-                                        <th>Role</th>
-                                        <th>Email</th>
-                                        <th>Department</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="volTbody">
-                                    <tr><td colspan="9" style="text-align:center;color:#aaa;padding:30px;">Loading volunteers…</td></tr>
-                                </tbody>
-                            </table>
+                            <!-- Search bar -->
+                            <div style="margin-bottom:14px;">
+                                <input type="text" id="volSearchInput" placeholder="🔍 Search by name or username…"
+                                    style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.92rem;box-sizing:border-box;"
+                                    oninput="volFilter()">
+                            </div>
+
+                            <div style="overflow-x:auto;">
+                                <table class="admin-table" id="volTable">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>User Details</th>
+                                            <th>Role</th>
+                                            <th>Email</th>
+                                            <th>Department</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="volTbody">
+                                        <tr><td colspan="9" style="text-align:center;color:#aaa;padding:30px;">Loading volunteers…</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -4636,7 +4673,7 @@ window._fmtBytesA = function(b) {
         sec.className = 'content-section';
         sec.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px;">
-            <div><h2 style="color:var(--dark-color);margin:0 0 4px;">Committee Members</h2><p style="color:#777;margin:0;">Manage committee — visible to all volunteers</p></div>
+            <div><h2 style="color:var(--dark-color);margin:0 0 4px;">Committee Members</h2><p style="color:#777;margin:0;">Manage committee — visible to all volunteers and on public page</p></div>
             <button onclick="cmOpenAdd()" class="btn btn-primary"><i class="fas fa-plus" style="margin-right:6px;"></i>Add Member</button>
         </div>
         <div id="cmStatus" style="display:none;padding:12px 18px;border-radius:10px;margin-bottom:16px;font-weight:600;"></div>
@@ -4649,23 +4686,30 @@ window._fmtBytesA = function(b) {
     let _cmAll = [];
     async function cmLoad() {
         const grid = document.getElementById('cmGrid'); if(!grid) return;
-        grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">Loading…</div>';
+        grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--primary-color);margin-bottom:8px;"></i><br>Loading…</div>';
         try {
             const r = await fetch('/api/committee-members'); const d = await r.json();
             _cmAll = d.members || [];
             if(!_cmAll.length){grid.innerHTML='<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">No members yet. Click Add Member.</div>';return;}
-            grid.innerHTML = _cmAll.map(m => `<div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;text-align:center;">
-                ${m.photoUrl?
-                    `<img src="${fixUrl(m.photoUrl)}" style="width:100%;height:160px;object-fit:cover;" onclick="openAdminLightbox('${fixUrl(m.photoUrl)}')">`:
-                    `<div style="width:100%;height:160px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="font-size:3rem;color:#fff;opacity:.5;"></i></div>`}
-                <div style="padding:14px 12px 16px;">
-                    <div style="font-weight:700;font-size:1rem;margin-bottom:4px;">${m.name}</div>
-                    <div style="font-size:.82rem;color:var(--primary-color);font-weight:600;margin-bottom:6px;">${m.role||m.department||'Member'}</div>
-                    ${m.phone?'<div style="font-size:.8rem;color:#666;margin-bottom:4px;"><i class="fas fa-phone" style="margin-right:4px;"></i>'+m.phone+'</div>':''}
-                    ${m.memberId?'<div style="font-size:.78rem;color:#aaa;margin-bottom:8px;">ID: '+m.memberId+'</div>':''}
-                    <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">
-                        <button onclick="cmOpenEdit('${m.id}')" style="padding:5px 12px;border:none;border-radius:8px;background:#E3F2FD;color:#1565C0;cursor:pointer;font-size:.8rem;"><i class="fas fa-edit"></i></button>
-                        <button onclick="cmDelete('${m.id}')" style="padding:5px 12px;border:none;border-radius:8px;background:#FFEBEE;color:#c0392b;cursor:pointer;font-size:.8rem;"><i class="fas fa-trash"></i></button>
+            grid.innerHTML = _cmAll.map(m => `<div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;text-align:center;display:flex;flex-direction:column;justify-content:space-between;border:1px solid #eee;">
+                <div>
+                    ${m.photoUrl?
+                        `<img src="${fixUrl(m.photoUrl)}" style="width:100%;height:180px;object-fit:cover;" onclick="openAdminLightbox('${fixUrl(m.photoUrl)}')">`:
+                        `<div style="width:100%;height:180px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="font-size:3rem;color:#fff;opacity:.5;"></i></div>`}
+                    <div style="padding:14px 12px 6px;">
+                        <div style="font-weight:700;font-size:1.05rem;margin-bottom:4px;color:var(--dark-color);">${m.name}</div>
+                        <div style="font-size:.82rem;color:var(--primary-color);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">${m.role||m.department||'Member'}</div>
+                        ${m.memberId?'<div style="font-size:.78rem;color:#999;margin-bottom:8px;">ID: '+m.memberId+'</div>':''}
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:10px;">
+                            ${m.phone?'<div style="font-size:.82rem;color:#555;"><i class="fas fa-phone" style="margin-right:6px;color:var(--primary-color);"></i>'+m.phone+'</div>':''}
+                            ${m.whatsapp?'<div style="font-size:.82rem;color:#2e7d32;"><i class="fab fa-whatsapp" style="margin-right:6px;color:#25d366;font-weight:bold;"></i>'+m.whatsapp+'</div>':''}
+                        </div>
+                    </div>
+                </div>
+                <div style="padding:0 12px 16px 12px;">
+                    <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;border-top:1px solid #f5f5f5;padding-top:12px;">
+                        <button onclick="cmOpenEdit('${m.id}')" class="btn-icon btn-edit" title="Edit Member" style="background:#E3F2FD;color:#1565C0;"><i class="fas fa-edit"></i></button>
+                        <button onclick="cmDelete('${m.id}')" class="btn-icon btn-delete" title="Delete Member" style="background:#FFEBEE;color:#c0392b;"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
             </div>`).join('');
@@ -4692,26 +4736,27 @@ window._fmtBytesA = function(b) {
         modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
         modal.innerHTML = `<div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:480px;width:94%;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-                <h3 style="margin:0;">${isEdit?'Edit':'Add'} Committee Member</h3>
+                <h3 style="margin:0;font-weight:600;font-size:1.25rem;color:var(--dark-color);">${isEdit?'Edit':'Add'} Committee Member</h3>
                 <span onclick="document.getElementById('cmModal').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
             </div>
             <div id="cmModalStatus" style="display:none;padding:10px;border-radius:8px;margin-bottom:12px;font-weight:600;"></div>
-            <div class="form-group"><label>Full Name *</label><input id="cmName" class="form-control" value="${member?member.name:''}"></div>
-            <div class="form-group"><label>Member ID</label><input id="cmMemberId" class="form-control" value="${member?member.memberId:''}"></div>
-            <div class="form-group"><label>Phone Number</label><input id="cmPhone" class="form-control" maxlength="10" value="${member?member.phone:''}"></div>
-            <div class="form-group"><label>Department</label><input id="cmDept" class="form-control" value="${member?member.department:''}"></div>
-            <div class="form-group"><label>Role / Position</label><input id="cmRole" class="form-control" value="${member?member.role:''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Full Name *</label><input id="cmName" class="admin-input" style="width:100%;box-sizing:border-box;" value="${member?member.name:''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Member ID</label><input id="cmMemberId" class="admin-input" style="width:100%;box-sizing:border-box;" value="${member?member.memberId:''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Phone / Contact Number</label><input id="cmPhone" class="admin-input" style="width:100%;box-sizing:border-box;" maxlength="10" value="${member?member.phone||'':''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">WhatsApp Number</label><input id="cmWhatsapp" class="admin-input" style="width:100%;box-sizing:border-box;" maxlength="10" value="${member?member.whatsapp||'':''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Department</label><input id="cmDept" class="admin-input" style="width:100%;box-sizing:border-box;" placeholder="e.g. Executive" value="${member?member.department||'':''}"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Role / Position</label><input id="cmRole" class="admin-input" style="width:100%;box-sizing:border-box;" placeholder="e.g. President" value="${member?member.role||'':''}"></div>
             <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:14px;margin-bottom:16px;">
                 <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:10px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Member Photo</div>
-                ${member&&member.photoUrl?`<img src="${fixUrl(member.photoUrl)}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;margin-bottom:10px;">`:''}
-                <button type="button" onclick="document.getElementById('cmPhotoInput').click()" style="width:100%;padding:10px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Upload Photo</button>
+                ${member&&member.photoUrl?`<div style="text-align:center;"><img src="${fixUrl(member.photoUrl)}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;margin-bottom:10px;"></div>`:''}
+                <button type="button" onclick="document.getElementById('cmPhotoInput').click()" style="width:100%;padding:10px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s;" onmouseover="this.style.borderColor='#E65100'" onmouseout="this.style.borderColor='#ddd'"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Select & Compress Photo</button>
                 <input type="file" id="cmPhotoInput" style="display:none;" accept="image/*">
-                <div id="cmPhotoPreview" style="display:none;margin-top:10px;">
+                <div id="cmPhotoPreview" style="display:none;margin-top:10px;text-align:center;background:#fff;border-radius:8px;padding:10px;border:1px solid #eee;">
                     <img id="cmPhotoThumb" src="" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;">
-                    <span id="cmPhotoName" style="font-size:.8rem;color:#555;margin-left:10px;"></span>
+                    <div id="cmPhotoName" style="font-size:.78rem;color:#555;margin-top:6px;word-break:break-all;"></div>
                 </div>
             </div>
-            <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
                 <button class="btn" style="background:#eee;color:#555;" onclick="document.getElementById('cmModal').remove()">Cancel</button>
                 <button class="btn btn-primary" onclick="cmSave('${member?member.id:''}')"><i class="fas fa-save" style="margin-right:6px;"></i>Save</button>
             </div>
@@ -4720,14 +4765,17 @@ window._fmtBytesA = function(b) {
         modal.addEventListener('click', ev => { if(ev.target===modal) modal.remove(); });
         document.getElementById('cmPhotoInput').onchange = function(ev) {
             const f = ev.target.files[0]; if(!f) return;
-            _cmPhotoFile = f;
-            const r = new FileReader();
-            r.onload = function(re) {
-                document.getElementById('cmPhotoThumb').src = re.target.result;
-                document.getElementById('cmPhotoName').textContent = f.name;
-                document.getElementById('cmPhotoPreview').style.display = '';
-            };
-            r.readAsDataURL(f);
+            window._compressImage(f, 950, function(blob) {
+                if(!blob){ alert('Could not compress image.'); return; }
+                _cmPhotoFile = blob;
+                const r = new FileReader();
+                r.onload = function(re) {
+                    document.getElementById('cmPhotoThumb').src = re.target.result;
+                    document.getElementById('cmPhotoName').innerHTML = `<i class="fas fa-check-circle" style="color:#2e7d32;"></i> Compressed: ${f.name.substring(0,20)}... (${window._fmtBytesA(blob.size)})`;
+                    document.getElementById('cmPhotoPreview').style.display = '';
+                };
+                r.readAsDataURL(blob);
+            });
         };
     }
 
@@ -4735,8 +4783,10 @@ window._fmtBytesA = function(b) {
         const name = document.getElementById('cmName')?.value.trim();
         if(!name){alert('Name is required.');return;}
         const payload = {
-            name, memberId:document.getElementById('cmMemberId')?.value.trim()||'',
+            name, 
+            memberId:document.getElementById('cmMemberId')?.value.trim()||'',
             phone:document.getElementById('cmPhone')?.value.trim()||'',
+            whatsapp:document.getElementById('cmWhatsapp')?.value.trim()||'',
             department:document.getElementById('cmDept')?.value.trim()||'',
             role:document.getElementById('cmRole')?.value.trim()||''
         };
@@ -4752,7 +4802,7 @@ window._fmtBytesA = function(b) {
             const memberId = d.member.id;
             if(_cmPhotoFile){
                 try{
-                    const fd=new FormData();fd.append('photo',_cmPhotoFile,_cmPhotoFile.name);fd.append('memberId',memberId);
+                    const fd=new FormData();fd.append('photo',_cmPhotoFile,'member.jpg');fd.append('memberId',memberId);
                     await fetch('/api/upload-committee-photo',{method:'POST',body:fd});
                 }catch(_px){}
             }
@@ -4772,6 +4822,322 @@ window._fmtBytesA = function(b) {
         }catch(e){alert('Server error.');}
     }
 
+
+    // ── Volunteer Cards public display section ──────────────────────────────
+    let _vcAll = [];
+    async function vcLoad() {
+        const grid = document.getElementById('vcGrid'); if(!grid) return;
+        grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--primary-color);margin-bottom:8px;"></i><br>Loading public volunteer cards...</div>';
+        try {
+            const r = await fetch('/api/volunteer-cards'); const d = await r.json();
+            _vcAll = d.cards || [];
+            if(!_vcAll.length){grid.innerHTML='<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">No volunteer public cards set up yet. Click Add Volunteer Card.</div>';return;}
+            grid.innerHTML = _vcAll.map(v => `<div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;text-align:center;display:flex;flex-direction:column;justify-content:space-between;border:1px solid #eee;">
+                <div>
+                    ${v.photoUrl?
+                        `<img src="${fixUrl(v.photoUrl)}" style="width:100%;height:180px;object-fit:cover;" onclick="openAdminLightbox('${fixUrl(v.photoUrl)}')">`:
+                        `<div style="width:100%;height:180px;background:linear-gradient(135deg,var(--primary-color),var(--accent-color));display:flex;align-items:center;justify-content:center;"><i class="fas fa-user-circle" style="font-size:3rem;color:#fff;opacity:.5;"></i></div>`}
+                    <div style="padding:14px 12px 6px;">
+                        <div style="font-weight:700;font-size:1.05rem;margin-bottom:4px;color:var(--dark-color);">${v.name}</div>
+                        <div style="font-size:.82rem;color:var(--primary-color);font-weight:600;margin-bottom:10px;text-transform:uppercase;">${v.position||'Active Volunteer'}</div>
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:10px;">
+                            ${v.phone?'<div style="font-size:.82rem;color:#555;"><i class="fas fa-phone" style="margin-right:6px;color:var(--primary-color);"></i>'+v.phone+'</div>':''}
+                            ${v.phone?'<div style="font-size:.82rem;color:#2e7d32;"><i class="fab fa-whatsapp" style="margin-right:6px;color:#25d366;font-weight:bold;"></i>wa.me/91'+v.phone+'</div>':''}
+                        </div>
+                    </div>
+                </div>
+                <div style="padding:0 12px 16px 12px;">
+                    <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;border-top:1px solid #f5f5f5;padding-top:12px;">
+                        <button onclick="vcOpenEdit('${v.id}')" class="btn-icon btn-edit" title="Edit Card" style="background:#E3F2FD;color:#1565C0;"><i class="fas fa-edit"></i></button>
+                        <button onclick="vcDelete('${v.id}')" class="btn-icon btn-delete" title="Delete Card" style="background:#FFEBEE;color:#c0392b;"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>`).join('');
+        } catch(e) { grid.innerHTML='<div style="text-align:center;color:#c00;padding:40px;grid-column:1/-1;">⚠ Cannot load volunteer cards.</div>'; }
+    }
+
+    function vcShowStatus(msg,type){
+        const el=document.getElementById('vcStatus');if(!el)return;
+        el.style.display='';el.textContent=msg;
+        el.style.background=type==='success'?'#D5F4E6':'#FFEBEE';
+        el.style.color=type==='success'?'#1a7a45':'#c0392b';
+        el.style.border=type==='success'?'1px solid #a3e6c1':'1px solid #f5b7b1';
+        setTimeout(()=>el.style.display='none',5000);
+    }
+
+    function vcOpenAdd() { vcOpenModal(null); }
+    function vcOpenEdit(id) { vcOpenModal(_vcAll.find(v=>v.id===id)); }
+    let _vcPhotoFile = null;
+    function vcOpenModal(card) {
+        _vcPhotoFile = null;
+        const isEdit = !!card;
+        const modal = document.createElement('div');
+        modal.id = 'vcModal';
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
+        modal.innerHTML = `<div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:480px;width:94%;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;font-weight:600;font-size:1.25rem;color:var(--dark-color);">${isEdit?'Edit':'Add'} Volunteer Card</h3>
+                <span onclick="document.getElementById('vcModal').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <div id="vcModalStatus" style="display:none;padding:10px;border-radius:8px;margin-bottom:12px;font-weight:600;"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Full Name *</label><input id="vcName" class="admin-input" style="width:100%;box-sizing:border-box;" placeholder="e.g. Ramesh Patel" value="${card?card.name:''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Position / Department</label><input id="vcPosition" class="admin-input" style="width:100%;box-sizing:border-box;" placeholder="e.g. Lead Coordinator" value="${card?card.position||'':''}"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Contact / Phone Number</label><input id="vcPhone" class="admin-input" style="width:100%;box-sizing:border-box;" maxlength="10" placeholder="10-digit mobile" value="${card?card.phone||'':''}"></div>
+            <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:14px;margin-bottom:16px;">
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:10px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Volunteer Photo</div>
+                ${card&&card.photoUrl?`<div style="text-align:center;"><img src="${fixUrl(card.photoUrl)}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;margin-bottom:10px;"></div>`:''}
+                <button type="button" onclick="document.getElementById('vcPhotoInput').click()" style="width:100%;padding:10px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s;" onmouseover="this.style.borderColor='#E65100'" onmouseout="this.style.borderColor='#ddd'"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Select & Compress Photo</button>
+                <input type="file" id="vcPhotoInput" style="display:none;" accept="image/*">
+                <div id="vcPhotoPreview" style="display:none;margin-top:10px;text-align:center;background:#fff;border-radius:8px;padding:10px;border:1px solid #eee;">
+                    <img id="vcPhotoThumb" src="" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;">
+                    <div id="vcPhotoName" style="font-size:.78rem;color:#555;margin-top:6px;word-break:break-all;"></div>
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+                <button class="btn" style="background:#eee;color:#555;" onclick="document.getElementById('vcModal').remove()">Cancel</button>
+                <button class="btn btn-primary" onclick="vcSave('${card?card.id:''}')"><i class="fas fa-save" style="margin-right:6px;"></i>Save Card</button>
+            </div>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', ev => { if(ev.target===modal) modal.remove(); });
+        document.getElementById('vcPhotoInput').onchange = function(ev) {
+            const f = ev.target.files[0]; if(!f) return;
+            window._compressImage(f, 950, function(blob) {
+                if(!blob){ alert('Could not compress image.'); return; }
+                _vcPhotoFile = blob;
+                const r = new FileReader();
+                r.onload = function(re) {
+                    document.getElementById('vcPhotoThumb').src = re.target.result;
+                    document.getElementById('vcPhotoName').innerHTML = `<i class="fas fa-check-circle" style="color:#2e7d32;"></i> Compressed: ${f.name.substring(0,20)}... (${window._fmtBytesA(blob.size)})`;
+                    document.getElementById('vcPhotoPreview').style.display = '';
+                };
+                r.readAsDataURL(blob);
+            });
+        };
+    }
+
+    async function vcSave(editId) {
+        const name = document.getElementById('vcName')?.value.trim();
+        if(!name){alert('Name is required.');return;}
+        const payload = {
+            name, 
+            position:document.getElementById('vcPosition')?.value.trim()||'',
+            phone:document.getElementById('vcPhone')?.value.trim()||''
+        };
+        try {
+            let res, d;
+            if(editId){
+                res=await fetch(`/api/volunteer-cards/${encodeURIComponent(editId)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            } else {
+                res=await fetch('/api/volunteer-cards',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            }
+            d=await res.json();
+            if(!res.ok||!d.success){alert(d.message||'Save failed.');return;}
+            const id = d.card.id;
+            if(_vcPhotoFile){
+                try{
+                    const fd=new FormData();fd.append('photo',_vcPhotoFile,'volunteer.jpg');fd.append('volunteerId',id);
+                    await fetch('/api/upload-volunteer-photo',{method:'POST',body:fd});
+                }catch(_px){}
+            }
+            document.getElementById('vcModal').remove();
+            vcShowStatus('✅ Volunteer card saved!','success');
+            await vcLoad();
+        } catch(err){alert('Error: '+err.message);}
+    }
+
+    async function vcDelete(id) {
+        if(!confirm('Delete this volunteer card?')) return;
+        try {
+            const res=await fetch(`/api/volunteer-cards/${encodeURIComponent(id)}`,{method:'DELETE'});
+            const d=await res.json();
+            if(res.ok&&d.success){vcShowStatus('✅ Volunteer card deleted.','success');await vcLoad();}
+            else alert(d.message||'Delete failed.');
+        }catch(e){alert('Server error.');}
+    }
+
+    function switchVolTab(tab) {
+        const tabCards = document.getElementById('volTabCards');
+        const tabAccounts = document.getElementById('volTabAccounts');
+        const panelCards = document.getElementById('volPanelCards');
+        const panelAccounts = document.getElementById('volPanelAccounts');
+        const activeStyle   = `padding:10px 24px;border:none;background:none;font-size:.92rem;font-weight:600;color:var(--primary-color);border-bottom:3px solid var(--primary-color);cursor:pointer;transition:all .2s;`;
+        const inactiveStyle = `padding:10px 24px;border:none;background:none;font-size:.92rem;font-weight:600;color:#999;border-bottom:3px solid transparent;cursor:pointer;transition:all .2s;`;
+        
+        if (tab === 'cards') {
+            if (tabCards) tabCards.style.cssText = activeStyle;
+            if (tabAccounts) tabAccounts.style.cssText = inactiveStyle;
+            if (panelCards) panelCards.style.display = '';
+            if (panelAccounts) panelAccounts.style.display = 'none';
+            vcLoad();
+        } else {
+            if (tabCards) tabCards.style.cssText = inactiveStyle;
+            if (tabAccounts) tabAccounts.style.cssText = activeStyle;
+            if (panelCards) panelCards.style.display = 'none';
+            if (panelAccounts) panelAccounts.style.display = '';
+            loadVolunteers();
+        }
+    }
+
+
+    // ── Contact Cards admin setup section ────────────────────────────────────
+    (function injectContactCardsSection() {
+        const container = document.querySelector('.admin-content');
+        if (!container || document.getElementById('contactCards')) return;
+        const sec = document.createElement('div');
+        sec.id = 'contactCards';
+        sec.className = 'content-section';
+        sec.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px;">
+            <div>
+                <h2 style="color:var(--dark-color);margin:0 0 4px;">Contact Representatives</h2>
+                <p style="color:#777;margin:0;">Configure exactly 5 representative slots to display on the public Contact Us page</p>
+            </div>
+            <button onclick="ccLoad()" class="btn btn-primary btn-small"><i class="fas fa-sync-alt" style="margin-right:6px;"></i>Refresh Live Data</button>
+        </div>
+        <div id="ccStatus" style="display:none;padding:12px 18px;border-radius:10px;margin-bottom:16px;font-weight:600;"></div>
+        <div id="ccGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;margin-top:15px;">
+            <div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">Loading Contact Cards…</div>
+        </div>`;
+        container.appendChild(sec);
+    })();
+
+    let _ccAll = [];
+    async function ccLoad() {
+        const grid = document.getElementById('ccGrid'); if(!grid) return;
+        grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--primary-color);margin-bottom:8px;"></i><br>Loading Contact Slots...</div>';
+        try {
+            const r = await fetch('/api/contact-cards'); const d = await r.json();
+            _ccAll = d.cards || [];
+            if(!_ccAll.length){
+                grid.innerHTML='<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">No contact slots available. Contact Server administrator.</div>';
+                return;
+            }
+            grid.innerHTML = _ccAll.map((c, i) => {
+                const title = c.title || `Representative Slot ${c.slot}`;
+                const subtitle = c.subtitle || (i === 0 ? 'General Inquiries' : i === 1 ? 'Donations Desk' : i === 2 ? 'Cultural Events' : i === 3 ? 'Public Relations' : 'Volunteer Management');
+                
+                return `<div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;border:1px solid #eee;display:flex;flex-direction:column;justify-content:space-between;position:relative;">
+                    <span style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.65);color:#fff;padding:3px 9px;border-radius:30px;font-size:0.75rem;font-weight:600;z-index:2;">Slot ${c.slot}</span>
+                    <div>
+                        ${c.photoUrl?
+                            `<img src="${fixUrl(c.photoUrl)}" style="width:100%;height:180px;object-fit:cover;" onclick="openAdminLightbox('${fixUrl(c.photoUrl)}')">`:
+                            `<div style="width:100%;height:180px;background:linear-gradient(135deg,var(--primary-color),var(--accent-color));display:flex;align-items:center;justify-content:center;"><i class="fas fa-id-card" style="font-size:3rem;color:#fff;opacity:.5;"></i></div>`}
+                        <div style="padding:16px 14px 6px;">
+                            <div style="font-weight:700;font-size:1.1rem;margin-bottom:4px;color:var(--dark-color);">${title}</div>
+                            <div style="font-size:.82rem;color:var(--primary-color);font-weight:600;margin-bottom:10px;text-transform:uppercase;">${subtitle}</div>
+                            <div style="display:flex;flex-direction:column;gap:4px;margin-top:12px;">
+                                ${c.phone?'<div style="font-size:.82rem;color:#555;"><i class="fas fa-phone" style="margin-right:6px;color:var(--primary-color);"></i>'+c.phone+'</div>':`<div style="font-size:.8rem;color:#999;font-style:italic;">No phone number configured</div>`}
+                                ${c.whatsapp?'<div style="font-size:.82rem;color:#2e7d32;"><i class="fab fa-whatsapp" style="margin-right:6px;color:#25d366;font-weight:bold;"></i>+91 '+c.whatsapp+'</div>':''}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="padding:0 14px 16px 14px;">
+                        <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;border-top:1px solid #f5f5f5;padding-top:12px;">
+                            <button onclick="ccOpenEdit(${c.slot})" class="btn btn-primary btn-small" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;"><i class="fas fa-cog"></i> Configure Slot ${c.slot}</button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        } catch(e) { grid.innerHTML='<div style="text-align:center;color:#c00;padding:40px;grid-column:1/-1;">⚠ Cannot load contact slots.</div>'; }
+    }
+
+    function ccShowStatus(msg,type){
+        const el=document.getElementById('ccStatus');if(!el)return;
+        el.style.display='';el.textContent=msg;
+        el.style.background=type==='success'?'#D5F4E6':'#FFEBEE';
+        el.style.color=type==='success'?'#1a7a45':'#c0392b';
+        el.style.border=type==='success'?'1px solid #a3e6c1':'1px solid #f5b7b1';
+        setTimeout(()=>el.style.display='none',5000);
+    }
+
+    let _ccPhotoFile = null;
+    function ccOpenEdit(slotNum) {
+        _ccPhotoFile = null;
+        const card = _ccAll.find(c=>c.slot===slotNum);
+        const modal = document.createElement('div');
+        modal.id = 'ccModal';
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
+        
+        // Slot fallback info to help admin understand the default slots
+        const defaultRole = slotNum === 1 ? 'General Inquiries' : slotNum === 2 ? 'Donations Desk' : slotNum === 3 ? 'Cultural Events' : slotNum === 4 ? 'Public Relations' : 'Volunteer Management';
+        
+        modal.innerHTML = `<div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:480px;width:94%;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;font-weight:600;font-size:1.25rem;color:var(--dark-color);">Configure Slot ${slotNum}</h3>
+                <span onclick="document.getElementById('ccModal').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <p style="color:#777;font-size:0.83rem;margin: -8px 0 16px 0;">Configure custom name, role, and contact for Slot ${slotNum}. Leaving fields blank falls back to system defaults.</p>
+            <div id="ccModalStatus" style="display:none;padding:10px;border-radius:8px;margin-bottom:12px;font-weight:600;"></div>
+            
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Representative Name / Title</label><input id="ccTitle" class="admin-input" style="width:100%;box-sizing:border-box;" placeholder="e.g. Rajesh Shah" value="${card?card.title||'':''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Subtitle / Role Description</label><input id="ccSubtitle" class="admin-input" style="width:100%;box-sizing:border-box;" placeholder="Default: ${defaultRole}" value="${card?card.subtitle||'':''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Phone / Contact Number</label><input id="ccPhone" class="admin-input" style="width:100%;box-sizing:border-box;" maxlength="10" placeholder="10-digit mobile" value="${card?card.phone||'':''}"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">WhatsApp Number</label><input id="ccWhatsapp" class="admin-input" style="width:100%;box-sizing:border-box;" maxlength="10" placeholder="WhatsApp number" value="${card?card.whatsapp||'':''}"></div>
+            
+            <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:14px;margin-bottom:16px;">
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:10px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Representative Photo</div>
+                ${card&&card.photoUrl?`<div style="text-align:center;"><img src="${fixUrl(card.photoUrl)}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;margin-bottom:10px;"></div>`:''}
+                <button type="button" onclick="document.getElementById('ccPhotoInput').click()" style="width:100%;padding:10px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s;" onmouseover="this.style.borderColor='#E65100'" onmouseout="this.style.borderColor='#ddd'"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Select & Compress Photo</button>
+                <input type="file" id="ccPhotoInput" style="display:none;" accept="image/*">
+                <div id="ccPhotoPreview" style="display:none;margin-top:10px;text-align:center;background:#fff;border-radius:8px;padding:10px;border:1px solid #eee;">
+                    <img id="ccPhotoThumb" src="" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;">
+                    <div id="ccPhotoName" style="font-size:.78rem;color:#555;margin-top:6px;word-break:break-all;"></div>
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+                <button class="btn" style="background:#eee;color:#555;" onclick="document.getElementById('ccModal').remove()">Cancel</button>
+                <button class="btn btn-primary" onclick="ccSave(${slotNum})"><i class="fas fa-save" style="margin-right:6px;"></i>Save Slot Config</button>
+            </div>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', ev => { if(ev.target===modal) modal.remove(); });
+        document.getElementById('ccPhotoInput').onchange = function(ev) {
+            const f = ev.target.files[0]; if(!f) return;
+            window._compressImage(f, 950, function(blob) {
+                if(!blob){ alert('Could not compress image.'); return; }
+                _ccPhotoFile = blob;
+                const r = new FileReader();
+                r.onload = function(re) {
+                    document.getElementById('ccPhotoThumb').src = re.target.result;
+                    document.getElementById('ccPhotoName').innerHTML = `<i class="fas fa-check-circle" style="color:#2e7d32;"></i> Compressed: ${f.name.substring(0,20)}... (${window._fmtBytesA(blob.size)})`;
+                    document.getElementById('ccPhotoPreview').style.display = '';
+                };
+                r.readAsDataURL(blob);
+            });
+        };
+    }
+
+    async function ccSave(slotNum) {
+        const payload = {
+            title: document.getElementById('ccTitle')?.value.trim()||'',
+            subtitle: document.getElementById('ccSubtitle')?.value.trim()||'',
+            phone: document.getElementById('ccPhone')?.value.trim()||'',
+            whatsapp: document.getElementById('ccWhatsapp')?.value.trim()||''
+        };
+        try {
+            const res = await fetch(`/api/contact-cards/${slotNum}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const d = await res.json();
+            if (!res.ok || !d.success) { alert(d.message || 'Save failed.'); return; }
+            if (_ccPhotoFile) {
+                try {
+                    const fd = new FormData();
+                    fd.append('photo', _ccPhotoFile, 'contact.jpg');
+                    fd.append('slot', String(slotNum));
+                    await fetch('/api/upload-contact-photo', { method: 'POST', body: fd });
+                } catch (_px) {}
+            }
+            document.getElementById('ccModal').remove();
+            ccShowStatus(`✅ Slot ${slotNum} updated!`, 'success');
+            await ccLoad();
+        } catch (err) { alert('Error: ' + err.message); }
+    }
+
+
     // ── Hook into admin section switcher ────────────────────────────────────
     // Hook into admin section switcher so we auto-load on navigate
     const _origShowAdmin = window.showAdminSection;
@@ -4779,6 +5145,8 @@ window._fmtBytesA = function(b) {
         if (typeof _origShowAdmin === 'function') _origShowAdmin(id);
         if (id === 'donationEntries') adeLoad();
         if (id === 'committeeMembers') { if(typeof cmLoad==='function') cmLoad(); }
+        if (id === 'volunteers') { if(typeof switchVolTab==='function') switchVolTab('cards'); }
+        if (id === 'contactCards') { if(typeof ccLoad==='function') ccLoad(); }
     };
     </script>
 
