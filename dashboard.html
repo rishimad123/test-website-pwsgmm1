@@ -759,6 +759,19 @@ window.fixUrl = function(url) {
     </style>
 </head>
 <body>
+<style id="dashboard-theme-override">
+                :root {
+                    --primary-color: #2563EB;
+                    --accent-color: #F97316;
+                    --dark-color: #1E293B; /* keep dark mode unified */
+                }
+                .admin-menu a:hover, .admin-menu a.active, .dashboard-menu a:hover, .dashboard-menu a.active {
+                    background: rgba(37, 99, 235, 0.08) !important;
+                    color: var(--primary-color) !important;
+                    border-left: 4px solid var(--primary-color) !important;
+                }
+            </style>
+
     <div class="dashboard">
         <!-- Sidebar -->
         <aside class="sidebar">
@@ -2617,7 +2630,7 @@ window.fixUrl = function(url) {
                     <td colspan="${_dsVolCols.length}" class="ds-year-header"
                         style="padding:9px 12px;background:linear-gradient(90deg,#1a237e0a,transparent);border-top:2px solid #e8eaf0;border-bottom:1px solid #e8eaf0;">
                         <span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;">
-                            <span style="background:linear-gradient(135deg,#E86100,#FFB74D);color:#fff;border-radius:16px;padding:2px 12px;font-size:.76rem;font-weight:700;letter-spacing:.04em;">
+                            <span style="background:linear-gradient(135deg, var(--primary-color), var(--accent-color));color:#fff;border-radius:16px;padding:2px 12px;font-size:.76rem;font-weight:700;letter-spacing:.04em;">
                                 ${item.yr}
                             </span>
                             <span style="font-size:.8rem;color:#666;">${item.count.toLocaleString('en-IN')} donors${sumTxt}</span>

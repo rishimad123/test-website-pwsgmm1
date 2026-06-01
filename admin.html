@@ -669,7 +669,7 @@ window._fmtBytesA = function(b) {
             display: inline-block;
             padding: 4px 12px;
             border-radius: 20px;
-            background: linear-gradient(135deg, #E86100, #FFB74D);
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
             color: #fff;
             font-size: .82rem;
             font-weight: 700;
@@ -1099,6 +1099,19 @@ window._fmtBytesA = function(b) {
         </style>
 </head>
 <body>
+<style id="dashboard-theme-override">
+                :root {
+                    --primary-color: #E11D48;
+                    --accent-color: #BE123C;
+                    --dark-color: #1E293B; /* keep dark mode unified */
+                }
+                .admin-menu a:hover, .admin-menu a.active, .dashboard-menu a:hover, .dashboard-menu a.active {
+                    background: rgba(225, 29, 72, 0.08) !important;
+                    color: var(--primary-color) !important;
+                    border-left: 4px solid var(--primary-color) !important;
+                }
+            </style>
+
   <div class="admin-dashboard">
 <button onclick="toggleAdminSidebar()" style="display:none;position:fixed;top:12px;left:12px;z-index:9999;background:var(--primary-color);color:white;border:none;border-radius:8px;padding:8px 12px;font-size:1.2rem;cursor:pointer;" id="mobileMenuBtn">☰</button>
         <!-- Sidebar -->

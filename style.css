@@ -16,6 +16,20 @@
     --danger: #EF4444;
     --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
     --shadow-lg: 0 10px 35px rgba(0, 0, 0, 0.08);
+
+    /* Rich Sectional Colors */
+    --theme-hero-1: #E86100;
+    --theme-hero-2: #FF8C00;
+    --theme-about-1: #1D4ED8;
+    --theme-about-2: #3B82F6;
+    --theme-events-1: #6D28D9;
+    --theme-events-2: #8B5CF6;
+    --theme-volunteers-1: #059669;
+    --theme-volunteers-2: #10B981;
+    --theme-admin-primary: #E11D48;
+    --theme-admin-dark: #1E293B;
+    --theme-vol-primary: #2563EB;
+    --theme-vol-accent: #F97316;
 }
 
 body {
@@ -806,3 +820,15 @@ select, textarea {
 
 
 
+
+
+/* --- Theme Classes --- */
+.theme-hero { --primary-color: var(--theme-hero-1); --accent-color: var(--theme-hero-2); }
+.theme-about { --primary-color: var(--theme-about-1); --accent-color: var(--theme-about-2); }
+.theme-events { --primary-color: var(--theme-events-1); --accent-color: var(--theme-events-2); }
+.theme-volunteers { --primary-color: var(--theme-volunteers-1); --accent-color: var(--theme-volunteers-2); }
+
+.bg-gradient-hero { background: linear-gradient(135deg, var(--theme-hero-1), var(--theme-hero-2)); }
+.bg-gradient-about { background: linear-gradient(135deg, var(--theme-about-1), var(--theme-about-2)); }
+.bg-gradient-events { background: linear-gradient(135deg, var(--theme-events-1), var(--theme-events-2)); }
+.bg-gradient-volunteers { background: linear-gradient(135deg, var(--theme-volunteers-1), var(--theme-volunteers-2)); }
