@@ -31,17 +31,34 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            background: var(--light-color); /* Soft off-white background */
             padding: 20px;
+            position: relative;
+            overflow: hidden;
         }
         
+        /* Subtle glowing background orb */
+        .login-container::before {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(232, 97, 0, 0.1) 0%, rgba(250, 250, 250, 0) 70%);
+            top: -200px;
+            right: -200px;
+            z-index: 0;
+        }
+
         .login-box {
             background: var(--white);
             padding: 50px;
-            border-radius: 20px;
+            border-radius: 16px;
             box-shadow: var(--shadow-lg);
             max-width: 450px;
             width: 100%;
+            position: relative;
+            z-index: 1;
+            border: 1px solid rgba(0,0,0,0.03);
         }
         
         .login-header {
@@ -87,6 +104,7 @@
         .form-group input:focus {
             outline: none;
             border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(232, 97, 0, 0.15);
         }
         
         .form-options {

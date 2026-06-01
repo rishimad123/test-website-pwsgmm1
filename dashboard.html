@@ -35,6 +35,7 @@ window.fixUrl = function(url) {
         .dashboard {
             display: flex;
             min-height: 100vh;
+            background: var(--light-color);
         }
 
         /* ── Mobile hamburger ──────────────────────────────────── */
@@ -120,7 +121,7 @@ window.fixUrl = function(url) {
             align-items: center;
             gap: 15px;
             padding: 15px 20px;
-            color: #BDC3C7;
+            color: #94A3B8;
             transition: all 0.3s ease;
         }
         
@@ -297,7 +298,7 @@ window.fixUrl = function(url) {
         }
         
         .dash-card-icon.orange {
-            background: #FFF3E0;
+            background: #FFF8F1;
             color: #FF9800;
         }
         
@@ -372,7 +373,7 @@ window.fixUrl = function(url) {
         }
         
         .badge-pending {
-            background: #FFF3E0;
+            background: #FFF8F1;
             color: var(--warning);
         }
         
@@ -871,7 +872,7 @@ window.fixUrl = function(url) {
                         </div>
                         
                         <!-- Countdown Card -->
-                        <div style="background:#fff;border-radius:14px;padding:20px;border:1px solid #eee;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,.04);">
+                        <div style="background:var(--white);border-radius:14px;padding:20px;border:1px solid #eee;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,.04);">
                             <h3 id="volEventNameDisplay" style="margin:0;color:#555;font-size:1.1rem;text-transform:uppercase;letter-spacing:1px;">Days to Event</h3>
                             <div id="eventCountdownDisplay" style="font-size:3rem;font-weight:800;color:#E65100;line-height:1.2;margin:10px 0;">--</div>
                             <p id="volEventDescDisplay" style="margin:0;color:#888;font-size:0.85rem;">Automatic countdown based on IST</p>
@@ -882,8 +883,8 @@ window.fixUrl = function(url) {
                     <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:20px;margin-bottom:30px;">
                         
                         <!-- Card 1: Donation Data Entry -->
-                        <div onclick="showSection('donationEntry')" style="background:#fff;border-radius:14px;padding:26px 20px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,.04);transition:all .2s;border:1px solid #eee;display:flex;flex-direction:column;align-items:center;text-align:center;" onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 10px 25px rgba(0,0,0,.1)';this.style.borderColor='#E65100'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 15px rgba(0,0,0,.04)';this.style.borderColor='#eee'">
-                            <div style="width:60px;height:60px;border-radius:14px;background:#FFF3E0;color:#E65100;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:16px;">
+                        <div onclick="showSection('donationEntry')" style="background:var(--white);border-radius:14px;padding:26px 20px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,.04);transition:all .2s;border:1px solid #eee;display:flex;flex-direction:column;align-items:center;text-align:center;" onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 10px 25px rgba(0,0,0,.1)';this.style.borderColor='#E65100'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 15px rgba(0,0,0,.04)';this.style.borderColor='#eee'">
+                            <div style="width:60px;height:60px;border-radius:14px;background:#FFF8F1;color:#E65100;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:16px;">
                                 <i class="fas fa-keyboard"></i>
                             </div>
                             <h3 style="margin:0 0 8px;color:#333;font-size:1.15rem;font-weight:700;">Donation Data Entry</h3>
@@ -891,7 +892,7 @@ window.fixUrl = function(url) {
                         </div>
 
                         <!-- Card 2: My Donations -->
-                        <div onclick="showSection('donations')" style="background:#fff;border-radius:14px;padding:26px 20px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,.04);transition:all .2s;border:1px solid #eee;display:flex;flex-direction:column;align-items:center;text-align:center;" onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 10px 25px rgba(0,0,0,.1)';this.style.borderColor='#3949AB'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 15px rgba(0,0,0,.04)';this.style.borderColor='#eee'">
+                        <div onclick="showSection('donations')" style="background:var(--white);border-radius:14px;padding:26px 20px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,.04);transition:all .2s;border:1px solid #eee;display:flex;flex-direction:column;align-items:center;text-align:center;" onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 10px 25px rgba(0,0,0,.1)';this.style.borderColor='#3949AB'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 15px rgba(0,0,0,.04)';this.style.borderColor='#eee'">
                             <div style="width:60px;height:60px;border-radius:14px;background:#E8EAF6;color:#3949AB;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:16px;">
                                 <i class="fas fa-hand-holding-heart"></i>
                             </div>
@@ -900,7 +901,7 @@ window.fixUrl = function(url) {
                         </div>
 
                         <!-- Card 3: Balance Recovery -->
-                        <div onclick="showSection('balanceRecovery')" style="background:#fff;border-radius:14px;padding:26px 20px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,.04);transition:all .2s;border:1px solid #eee;display:flex;flex-direction:column;align-items:center;text-align:center;" onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 10px 25px rgba(0,0,0,.1)';this.style.borderColor='#43A047'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 15px rgba(0,0,0,.04)';this.style.borderColor='#eee'">
+                        <div onclick="showSection('balanceRecovery')" style="background:var(--white);border-radius:14px;padding:26px 20px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,.04);transition:all .2s;border:1px solid #eee;display:flex;flex-direction:column;align-items:center;text-align:center;" onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 10px 25px rgba(0,0,0,.1)';this.style.borderColor='#43A047'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 15px rgba(0,0,0,.04)';this.style.borderColor='#eee'">
                             <div style="width:60px;height:60px;border-radius:14px;background:#E8F5E9;color:#43A047;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:16px;">
                                 <i class="fas fa-money-check-alt"></i>
                             </div>
@@ -1079,7 +1080,7 @@ window.fixUrl = function(url) {
                         <h1><i class="fas fa-search" style="color:var(--primary-color);margin-right:10px;"></i>Donor Search</h1>
                         <p>Search and filter all donation records</p>
                     </div>
-                    <div style="background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.06);">
+                    <div style="background:var(--white);border-radius:14px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.06);">
                         <!-- Top bar: search + chips + buttons -->
                         <div id="dsTopBar">
                             <div style="font-weight:700;font-size:.95rem;color:#1a237e;display:flex;align-items:center;gap:7px;white-space:nowrap;">
@@ -1091,11 +1092,11 @@ window.fixUrl = function(url) {
                             </div>
                             <span id="dsChipTotal" class="ds-chip" style="background:#E3F2FD;color:#1565C0;">&#x2014; total</span>
                             <span id="dsChipMatch" class="ds-chip" style="background:#E8F5E9;color:#2E7D32;">&#x2014; shown</span>
-                            <span id="dsChipSum"   class="ds-chip" style="background:#FFF3E0;color:#E65100;">&#x20B9;&#x2014;</span>
+                            <span id="dsChipSum"   class="ds-chip" style="background:#FFF8F1;color:#E65100;">&#x20B9;&#x2014;</span>
                             <button id="dsToggleFiltersBtn" onclick="dsToggleFilters()" style="padding:6px 12px;border:1.5px solid #e0e0e0;border-radius:8px;background:#f8f9fa;color:#444;font-size:.81rem;cursor:pointer;display:flex;align-items:center;gap:5px;">
                                 <i class="fas fa-sliders-h"></i><span id="dsToggleBtnLabel">Filters</span>
                             </button>
-                            <button onclick="dsClearFilters()" title="Clear filters" style="padding:6px 10px;border:1.5px solid #ffcdd2;border-radius:8px;background:#fff;color:#c62828;font-size:.81rem;cursor:pointer;">
+                            <button onclick="dsClearFilters()" title="Clear filters" style="padding:6px 10px;border:1.5px solid #ffcdd2;border-radius:8px;background:var(--white);color:#c62828;font-size:.81rem;cursor:pointer;">
                                 <i class="fas fa-times"></i>
                             </button>
                             <button onclick="dsExportCSV()" style="padding:6px 12px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;font-size:.81rem;cursor:pointer;display:flex;align-items:center;gap:5px;">
@@ -1210,10 +1211,10 @@ window.fixUrl = function(url) {
                                 <i class="fas fa-user-circle" style="margin-right:6px;"></i>Donor Type
                             </div>
                             <div class="de-donor-toggle" style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
-                                <label id="deBtnInd" onclick="deSetDonorType('Individual')" style="display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid var(--primary-color);border-radius:20px;cursor:pointer;font-weight:600;font-size:.82rem;background:var(--primary-color);color:#fff;transition:all .2s;">
+                                <label id="deBtnInd" onclick="deSetDonorType('Individual')" style="display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid var(--primary-color);border-radius:16px;cursor:pointer;font-weight:600;font-size:.82rem;background:var(--primary-color);color:#fff;transition:all .2s;">
                                     <i class="fas fa-user" style="font-size:.78rem;"></i> Individual
                                 </label>
-                                <label id="deBtnBiz" onclick="deSetDonorType('Business')" style="display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid #ddd;border-radius:20px;cursor:pointer;font-weight:600;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                                <label id="deBtnBiz" onclick="deSetDonorType('Business')" style="display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid #ddd;border-radius:16px;cursor:pointer;font-weight:600;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;">
                                     <i class="fas fa-building" style="font-size:.78rem;"></i> Business
                                 </label>
                             </div>
@@ -1381,7 +1382,7 @@ window.fixUrl = function(url) {
                     <div class="card" style="margin-top:20px;">
                         <div class="card-header">
                             <h3><i class="fas fa-list" style="color:var(--primary-color);margin-right:8px;"></i>My Submitted Entries</h3>
-                            <button onclick="deLoadMyEntries()" class="btn btn-small" style="background:#f4f4f4;color:#555;font-size:.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+                            <button onclick="deLoadMyEntries()" class="btn btn-small" style="background:var(--light-color);color:#555;font-size:.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
                         </div>
                         <div class="de-entries-table-wrap" id="deMyEntriesWrap" style="overflow-x:auto;">
                             <table class="table">
@@ -1413,7 +1414,7 @@ window.fixUrl = function(url) {
         <div class="admin-card">
                         <div class="card-header">
                             <h3>My Pending Balances</h3>
-                            <button onclick="loadVolBalanceRecovery()" class="btn btn-small" style="background:#f4f4f4;color:#555;font-size:.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+                            <button onclick="loadVolBalanceRecovery()" class="btn btn-small" style="background:var(--light-color);color:#555;font-size:.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
                         </div>
                         <div id="volBalCards" style="padding:10px 0;">
                             <div style="text-align:center;color:#999;padding:24px;">Loading…</div>
@@ -1432,7 +1433,7 @@ window.fixUrl = function(url) {
                     <div class="admin-card">
                         <!-- Application Form + Admin Price Settings -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:28px;">
-            <div style="background:#fff;border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:2px solid #e74c3c;">
+            <div style="background:var(--white);border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:2px solid #e74c3c;">
                 <h3 style="margin:0 0 18px;color:#2c3e50;font-size:1rem;">&#128248; Apply for T-shirt</h3>
                 <form onsubmit="tsSubmitApplication(event)">
                     <div style="margin-bottom:14px;">
@@ -1446,7 +1447,7 @@ window.fixUrl = function(url) {
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
                         <div>
                             <label style="display:block;font-size:.85rem;font-weight:600;color:#555;margin-bottom:5px;">Size *</label>
-                            <select id="tsSize" required style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;background:#fff;">
+                            <select id="tsSize" required style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;background:var(--white);">
                                 <option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="24">24</option><option value="26">26</option><option value="28">28</option><option value="30">30</option><option value="32">32</option><option value="34">34</option><option value="36">36</option><option value="38">38</option><option value="40">40</option><option value="42">42</option><option value="44">44</option><option value="46">46</option>
                             </select>
                         </div>
@@ -1463,7 +1464,7 @@ window.fixUrl = function(url) {
                     <div id="tsFormMsg" style="display:none;margin-top:10px;padding:9px;border-radius:6px;font-size:.85rem;text-align:center;"></div>
                 </form>
             </div>
-            <div style="background:#fff;border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e0e0e0;align-self:start;">
+            <div style="background:var(--white);border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e0e0e0;align-self:start;">
                 <h3 style="margin:0 0 18px;color:#2c3e50;font-size:1rem;">&#128202; Volunteer View</h3>
                 <form onsubmit="return false">
                     <div style="margin-bottom:14px;">
@@ -1478,10 +1479,10 @@ window.fixUrl = function(url) {
                         
                         <div style="margin-top:28px;">
                             <!-- Sizes Overview -->
-        <div id="tsSizesOverview" style="background:#fff;border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e0e0e0;">
+        <div id="tsSizesOverview" style="background:var(--white);border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e0e0e0;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
                 <h3 style="margin:0;color:#2c3e50;font-size:1rem;">&#128202; Sizes Overview</h3>
-                <span id="tsTotalCount" style="background:#FFF3E0;color:#E65100;padding:4px 12px;border-radius:12px;font-weight:700;font-size:.85rem;">Total: 0 shirts</span>
+                <span id="tsTotalCount" style="background:#FFF8F1;color:#E65100;padding:4px 12px;border-radius:12px;font-weight:700;font-size:.85rem;">Total: 0 shirts</span>
             </div>
             <div id="tsSizeBoxes" style="display:flex;flex-wrap:wrap;gap:10px;">
                 <div onclick="tsOpenModal(18)" id="tsBox18" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
@@ -1551,7 +1552,7 @@ window.fixUrl = function(url) {
 
     <!-- ── Volunteer Entry Edit Modal ──────────────────────────────── -->
     <div id="deVolEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
-        <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:560px;width:94%;margin:auto;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+        <div style="background:var(--white);border-radius:16px;padding:28px 24px;max-width:560px;width:94%;margin:auto;box-shadow:0 8px 40px rgba(0,0,0,.3);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
                 <h3 style="margin:0;color:#222;"><i class="fas fa-edit" style="color:var(--primary-color);margin-right:8px;"></i>Edit Entry</h3>
                 <span onclick="deCloseVolEdit()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
@@ -1577,7 +1578,7 @@ window.fixUrl = function(url) {
                     </div>
                     <div class="form-group" style="margin:0;grid-column:1/-1;">
                         <label>Status <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
-                        <select id="deVolEditStatusField" class="form-control" style="background:#FFF3E0;color:#E65100;font-weight:700;">
+                        <select id="deVolEditStatusField" class="form-control" style="background:#FFF8F1;color:#E65100;font-weight:700;">
                             <option value="Balance">Balance</option>
                             <option value="Received">Received</option>
                         </select>
@@ -1931,7 +1932,7 @@ window.fixUrl = function(url) {
                            </div>`;
                            
                     const paymentMode = isReceived ? 'Received' : 'Balance';
-                    const paymentModeColor = isReceived ? 'background:#E8F5E9;color:#2E7D32;' : 'background:#FFF3E0;color:#E65100;';
+                    const paymentModeColor = isReceived ? 'background:#E8F5E9;color:#2E7D32;' : 'background:#FFF8F1;color:#E65100;';
 
                     const safeId = r.receiptId.replace(/'/g, "\\'");
                     const editBtn = r.type === 'donation-entry' && !isReceived
@@ -1941,13 +1942,13 @@ window.fixUrl = function(url) {
                         ? `<button onclick="markBalanceReceived('${safeId}')" style="padding:8px 12px;border:none;border-radius:8px;background:linear-gradient(135deg,#2E7D32,#4CAF50);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;flex-shrink:0;margin-left:4px;" title="Mark as Received"><i class="fas fa-check"></i></button>`
                         : '';
 
-                    return `<div style="border:1px solid #f0e8e0;border-radius:14px;padding:14px;margin:0 0 12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+                    return `<div style="border:1px solid #f0e8e0;border-radius:14px;padding:14px;margin:0 0 12px;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.06);">
                         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
                             <div style="flex:1;min-width:0;">
                                 <div style="font-weight:700;font-size:.97rem;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${donor}</div>
                                 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;">
                                     <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
-                                        <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${r.bookNumber} / #${r.receiptNumber} ${ (r.bookType||'New')==='Old' ? '<span style="background:#FFF3E0;color:#E65100;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">New</span>' }
+                                        <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${r.bookNumber} / #${r.receiptNumber} ${ (r.bookType||'New')==='Old' ? '<span style="background:#FFF8F1;color:#E65100;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">New</span>' }
                                     </span>
                                     ${r.area ? `<span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;"><i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${r.area}</span>` : ''}
                                     <span style="${paymentModeColor}padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">${paymentMode}</span>
@@ -2070,7 +2071,7 @@ window.fixUrl = function(url) {
                                     <button class="btn btn-sm" style="background:#E3F2FD;color:#1565C0;" onclick="openPbEdit('${r.receiptId}',${r.amount ?? 0})">
                                         <i class="fas fa-edit"></i> Edit Amount
                                     </button>
-                                    <button class="btn btn-sm" style="background:#FFF3E0;color:#E65100;" onclick="reUpload('${r.receiptId}')">
+                                    <button class="btn btn-sm" style="background:#FFF8F1;color:#E65100;" onclick="reUpload('${r.receiptId}')">
                                         <i class="fas fa-upload"></i> Re-Upload
                                     </button>
                                 </div>
@@ -2616,7 +2617,7 @@ window.fixUrl = function(url) {
                     <td colspan="${_dsVolCols.length}" class="ds-year-header"
                         style="padding:9px 12px;background:linear-gradient(90deg,#1a237e0a,transparent);border-top:2px solid #e8eaf0;border-bottom:1px solid #e8eaf0;">
                         <span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;">
-                            <span style="background:linear-gradient(135deg,#FF6B35,#FF8C42);color:#fff;border-radius:20px;padding:2px 12px;font-size:.76rem;font-weight:700;letter-spacing:.04em;">
+                            <span style="background:linear-gradient(135deg,#E86100,#FFB74D);color:#fff;border-radius:16px;padding:2px 12px;font-size:.76rem;font-weight:700;letter-spacing:.04em;">
                                 ${item.yr}
                             </span>
                             <span style="font-size:.8rem;color:#666;">${item.count.toLocaleString('en-IN')} donors${sumTxt}</span>
@@ -2736,8 +2737,8 @@ window.fixUrl = function(url) {
     function deSetDonorType(type) {
         document.getElementById('deDonorType').value = type;
         const indActive = type === 'Individual';
-        const activeStyle = 'display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid var(--primary-color);border-radius:20px;cursor:pointer;font-weight:600;font-size:.82rem;background:var(--primary-color);color:#fff;transition:all .2s;';
-        const inactiveStyle = 'display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid #ddd;border-radius:20px;cursor:pointer;font-weight:600;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;';
+        const activeStyle = 'display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid var(--primary-color);border-radius:16px;cursor:pointer;font-weight:600;font-size:.82rem;background:var(--primary-color);color:#fff;transition:all .2s;';
+        const inactiveStyle = 'display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid #ddd;border-radius:16px;cursor:pointer;font-weight:600;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;';
         document.getElementById('deBtnInd').style.cssText = indActive  ? activeStyle : inactiveStyle;
         document.getElementById('deBtnBiz').style.cssText = !indActive ? activeStyle : inactiveStyle;
         document.getElementById('deIndFields').style.display = indActive  ? 'grid' : 'none';
@@ -3065,7 +3066,7 @@ window.fixUrl = function(url) {
                     ? `<img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" alt="Receipt" loading="lazy" decoding="async" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;vertical-align:middle;" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')" title="Click to enlarge">`
                     : '<span style="color:#ccc;font-size:.8rem;">—</span>';
                 return `<tr id="de-vol-row-${e.entryId}">
-                    <td style="font-weight:700;vertical-align:middle;">Bk ${e.bookNumber} ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF3E0;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>' }</td>
+                    <td style="font-weight:700;vertical-align:middle;">Bk ${e.bookNumber} ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF8F1;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>' }</td>
                     <td>#${e.receiptNumber}</td>
                     <td>${donor}</td>
                     <td>
@@ -3105,16 +3106,16 @@ window.fixUrl = function(url) {
                                <i class="fas fa-camera" style="font-size:1.4rem;color:#ddd;display:block;margin-bottom:6px;"></i>
                                <span style="font-size:.75rem;color:#ccc;font-weight:600;">No Receipt Photo</span>
                            </div>`;
-                    return `<div style="border:1px solid #f0e8e0;border-radius:14px;padding:14px;margin:0 0 12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+                    return `<div style="border:1px solid #f0e8e0;border-radius:14px;padding:14px;margin:0 0 12px;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.06);">
                         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
                             <div style="flex:1;min-width:0;">
                                 <div style="font-weight:700;font-size:.97rem;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${donor}</div>
                                 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;">
                                     <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
-                                        <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${e.bookNumber} / #${e.receiptNumber} ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF3E0;color:#E65100;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">New</span>' }
+                                        <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${e.bookNumber} / #${e.receiptNumber} ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF8F1;color:#E65100;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">New</span>' }
                                     </span>
                                     ${(e.area || e.subArea || e.buildingName || e.landmark) ? `<span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;"><i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${[e.area, e.subArea, e.buildingName ? `${e.buildingName}${e.flatNumber ? ` (Flat: ${e.flatNumber})` : ''}` : null, e.landmark].filter(Boolean).join(' &middot; ')}</span>` : ''}
-                                    <span style="background:#FFF3E0;color:#E65100;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">${e.paymentMode}</span>
+                                    <span style="background:#FFF8F1;color:#E65100;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">${e.paymentMode}</span>
                                 </div>
                                 <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
                                     <span style="color:#2E7D32;font-weight:700;font-size:1.05rem;">${amt}</span>
@@ -3151,11 +3152,11 @@ window.fixUrl = function(url) {
             if (statusField) {
                 statusField.value = e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received');
                 // Change style based on status
-                statusField.style.background = statusField.value === 'Received' ? '#E8F5E9' : '#FFF3E0';
+                statusField.style.background = statusField.value === 'Received' ? '#E8F5E9' : '#FFF8F1';
                 statusField.style.color = statusField.value === 'Received' ? '#1B5E20' : '#E65100';
                 
                 statusField.onchange = function() {
-                    this.style.background = this.value === 'Received' ? '#E8F5E9' : '#FFF3E0';
+                    this.style.background = this.value === 'Received' ? '#E8F5E9' : '#FFF8F1';
                     this.style.color = this.value === 'Received' ? '#1B5E20' : '#E65100';
                 };
             }
@@ -3400,7 +3401,7 @@ window.fixUrl = function(url) {
             const members = data.members || [];
             if (!members.length) { sec.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;">No committee members found.</div>'; return; }
             sec.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">' +
-                members.map(m => `<div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;text-align:center;">
+                members.map(m => `<div style="background:var(--white);border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;text-align:center;">
                 ${m.photoUrl?'<img src="${fixUrl(m.photoUrl)}" style="width:100%;height:150px;object-fit:cover;">':'<div style=\"width:100%;height:150px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);display:flex;align-items:center;justify-content:center;\"><i class=\"fas fa-user\" style=\"font-size:3rem;color:#fff;opacity:.5;\"></i></div>'}
                 <div style="padding:12px 10px 14px;">
                     <div style="font-weight:700;">${m.name}</div>
@@ -3683,7 +3684,7 @@ if (originalShowSection) {
                         ? (e.businessName || '—')
                         : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
                     const bookBadge = (e.bookType||'New') === 'Old'
-                        ? '<span style="background:#FFF3E0;color:#E65100;font-size:.68rem;padding:2px 7px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>'
+                        ? '<span style="background:#FFF8F1;color:#E65100;font-size:.68rem;padding:2px 7px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>'
                         : '<span style="background:#E3F2FD;color:#1565C0;font-size:.68rem;padding:2px 7px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>';
                     const time = myDonFmtTime(e.submittedAt);
                     const safeId = (e.entryId||'').replace(/'/g,"\'");
@@ -3706,9 +3707,9 @@ if (originalShowSection) {
                                <span style="font-size:.75rem;color:#ccc;font-weight:600;">No Receipt Photo</span>
                            </div>`;
                     
-                    const paymentModeColor = (e.paymentMode||'').toLowerCase() === 'balance' ? 'background:#FFF3E0;color:#E65100;' : 'background:#E8F5E9;color:#2E7D32;';
+                    const paymentModeColor = (e.paymentMode||'').toLowerCase() === 'balance' ? 'background:#FFF8F1;color:#E65100;' : 'background:#E8F5E9;color:#2E7D32;';
 
-                    return `<div style="border:1px solid #f0e8e0;border-radius:14px;padding:14px;margin:0 0 12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+                    return `<div style="border:1px solid #f0e8e0;border-radius:14px;padding:14px;margin:0 0 12px;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.06);">
                         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
                             <div style="flex:1;min-width:0;">
                                 <div style="font-weight:700;font-size:.97rem;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${donor}</div>
@@ -3730,11 +3731,11 @@ if (originalShowSection) {
                 }).join('');
 
                 return `
-                <div style="background:#fff;border-radius:16px;box-shadow:0 2px 14px rgba(0,0,0,.07);margin-bottom:20px;overflow:hidden;">
+                <div style="background:var(--white);border-radius:16px;box-shadow:0 2px 14px rgba(0,0,0,.07);margin-bottom:20px;overflow:hidden;">
                     <!-- Day header -->
                     <div style="background:${today ? 'linear-gradient(135deg,#E65100,#ff8c42)' : 'linear-gradient(135deg,#f5f5f5,#eeeeee)'};padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
                         <div style="display:flex;align-items:center;gap:10px;">
-                            ${today ? '<span style="background:rgba(255,255,255,.25);color:#fff;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.04em;">TODAY</span>' : ''}
+                            ${today ? '<span style="background:rgba(255,255,255,.25);color:#fff;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:16px;letter-spacing:.04em;">TODAY</span>' : ''}
                             <span style="font-weight:700;font-size:1rem;color:${today ? '#fff' : '#333'};">${day.label}</span>
                         </div>
                         <div style="display:flex;align-items:center;gap:14px;">

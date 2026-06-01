@@ -6,20 +6,20 @@
 }
 
 :root {
-    --primary-color: #FF6B35;
-    --secondary-color: #F7931E;
-    --accent-color: #8B0000;
-    --dark-color: #2C3E50;
-    --light-color: #ECF0F1;
+    --primary-color: #E86100;
+    --secondary-color: #FFB74D;
+    --accent-color: #FB8C00;
+    --dark-color: #1E293B;
+    --light-color: #FAFAFA;
     --white: #FFFFFF;
-    --success: #27AE60;
-    --danger: #E74C3C;
-    --shadow: 0 5px 15px rgba(0,0,0,0.1);
-    --shadow-lg: 0 10px 30px rgba(0,0,0,0.15);
+    --success: #10B981;
+    --danger: #EF4444;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 10px 35px rgba(0, 0, 0, 0.08);
 }
 
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     line-height: 1.6;
     color: var(--dark-color);
     background: var(--white);
@@ -208,7 +208,7 @@ a {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     padding: 20px 30px;
-    border-radius: 15px;
+    border-radius: 16px;
     border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -240,7 +240,7 @@ a {
     align-items: center;
     gap: 10px;
     padding: 15px 35px;
-    border-radius: 50px;
+    border-radius: 12px;
     font-weight: 600;
     transition: all 0.3s ease;
     border: none;
@@ -256,7 +256,7 @@ a {
 .btn-primary:hover {
     background: var(--accent-color);
     transform: translateY(-3px);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-lg); border-radius: 16px;
 }
 
 .btn-secondary {
@@ -285,7 +285,7 @@ a {
 .stat-card {
     background: var(--white);
     padding: 40px;
-    border-radius: 15px;
+    border-radius: 16px;
     text-align: center;
     box-shadow: var(--shadow);
     transition: all 0.3s ease;
@@ -293,7 +293,7 @@ a {
 
 .stat-card:hover {
     transform: translateY(-10px);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-lg); border-radius: 16px;
 }
 
 .stat-card i {
@@ -360,7 +360,7 @@ a {
 .about-image svg {
     width: 100%;
     height: auto;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-lg); border-radius: 16px;
 }
 
 /* ==================== EVENTS SECTION ==================== */
@@ -377,7 +377,7 @@ a {
 
 .event-card {
     background: var(--white);
-    border-radius: 15px;
+    border-radius: 16px;
     padding: 30px;
     box-shadow: var(--shadow);
     display: flex;
@@ -387,7 +387,7 @@ a {
 
 .event-card:hover {
     transform: translateY(-5px);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-lg); border-radius: 16px;
 }
 
 .event-date {
@@ -441,7 +441,7 @@ a {
 .gallery-item {
     position: relative;
     overflow: hidden;
-    border-radius: 15px;
+    border-radius: 16px;
     box-shadow: var(--shadow);
     cursor: pointer;
     aspect-ratio: 1 / 1; /* Force perfect squares */
