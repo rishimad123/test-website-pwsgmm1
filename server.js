@@ -1552,7 +1552,7 @@ const server = http.createServer(async (req, res) => {
                 bookNumber, receiptNumber, donorType, bookType,
                 firstName, middleName, lastName, businessName,
                 whatsappNumber, mobileNumber, mailId,
-                buildingName, flatNumber, area, landmark,
+                buildingName, flatNumber, area, subArea, landmark,
                 amount, paymentMode, referenceNumber,
                 submittedBy, submittedByUserId
             } = body;
@@ -1603,6 +1603,7 @@ const server = http.createServer(async (req, res) => {
                 buildingName     : (buildingName    || '').trim() || null,
                 flatNumber       : (flatNumber      || '').trim() || null,
                 area             : (area            || '').trim() || null,
+                subArea          : (subArea         || '').trim() || null,
                 landmark         : (landmark         || '').trim() || null,
                 amount           : amount != null && !isNaN(Number(amount)) ? Number(amount) : null,
                 paymentMode      : paymentMode,
