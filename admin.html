@@ -3160,8 +3160,16 @@ window._fmtBytesA = function(b) {
                     <div class="form-group" style="margin:0;">
                         <label for="adeAreaSelect">Area</label>
                         <div style="display:flex;gap:8px;">
-                            <select id="adeAreaSelect" class="form-control" style="flex:1;"></select>
-                            <button type="button" onclick="adeAddAreaPrompt()" style="padding:0 14px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;cursor:pointer;font-size:.85rem;white-space:nowrap;">＋ Add</button>
+                            <select id="adeAreaSelect" class="form-control" style="flex:1;" onchange="adeOnAreaChange()"></select>
+                            <button type="button" onclick="adeAreaModal()" style="padding:0 14px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;cursor:pointer;font-size:.85rem;white-space:nowrap;">Manage Areas</button>
+                        </div>
+                    </div>
+                    <div class="form-group" id="adeSubAreaGroup" style="margin:0;display:none;">
+                        <label for="adeSubAreaSelect">Sub-Area</label>
+                        <div style="display:flex;gap:8px;">
+                            <select id="adeSubAreaSelect" class="form-control" style="flex:1;">
+                                <option value="">— Select Sub-Area —</option>
+                            </select>
                         </div>
                     </div>
                     <div class="form-group" style="margin:0;">
@@ -3304,12 +3312,12 @@ window._fmtBytesA = function(b) {
                     <thead>
                         <tr>
                             <th>#</th><th>Book</th><th>Receipt</th><th>Donor</th><th>Type</th>
-                            <th>WhatsApp</th><th>Mobile</th><th>Building</th><th>Area</th>
+                            <th>WhatsApp</th><th>Mobile</th><th>Building</th><th>Area</th><th>Sub-Area</th>
                             <th>Amount</th><th>Mode</th><th>Ref No.</th><th>Landmark</th><th>Image</th><th>Submitted By</th><th>Date</th><th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="adeTbody">
-                        <tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">Loading…</td></tr>
+                        <tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">Loading…</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -3384,7 +3392,7 @@ window._fmtBytesA = function(b) {
                 </div>
                 <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;">
                     <span style="background:#F3E5F5;color:#6A1B9A;font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:20px;vertical-align:middle;"><i class="fas fa-book" style="margin-right:4px;"></i>Bk ${e.bookNumber} / #${e.receiptNumber}</span> ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF3E0;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:2px;vertical-align:middle;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:2px;vertical-align:middle;">New</span>' }
-                    ${e.area ? `<span style="background:#E8F5E9;color:#1B5E20;font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:20px;"><i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>${e.area}</span>` : ''}
+                    ${e.area ? `<span style="background:#E8F5E9;color:#1B5E20;font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:20px;"><i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>${e.area}${e.subArea ? ` - ${e.subArea}` : ''}</span>` : ''}
                     <span style="background:#FFF8E1;color:${modeClr};font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:20px;">${mode}</span>
                 </div>
                 
@@ -3517,7 +3525,46 @@ window._fmtBytesA = function(b) {
                     sel.innerHTML += `<option value="${a.name}" ${a.name === cur ? 'selected' : ''}>${a.name}</option>`;
                 }
             });
+            adeOnAreaChange();
         } catch (e) {}
+    }
+
+    async function adeLoadSubAreas(areaName) {
+        const sel = document.getElementById('adeSubAreaSelect');
+        if (!sel) return;
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">— Select Sub-Area —</option>';
+        if (!areaName) return;
+        
+        try {
+            const r1 = await fetch('/api/areas');
+            const d1 = await r1.json();
+            const areaObj = (d1.areas || []).find(a => a.name === areaName);
+            if (!areaObj) return;
+
+            const r2 = await fetch('/api/sub-areas');
+            const d2 = await r2.json();
+            const subs = (d2.subAreas || []).filter(s => s.areaId === areaObj.id);
+            
+            subs.forEach(s => {
+                sel.innerHTML += `<option value="${s.name}" ${s.name === cur ? 'selected' : ''}>${s.name}</option>`;
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function adeOnAreaChange() {
+        const areaName = document.getElementById('adeAreaSelect')?.value;
+        const group = document.getElementById('adeSubAreaGroup');
+        if (!group) return;
+        
+        if (areaName) {
+            group.style.display = 'block';
+            adeLoadSubAreas(areaName);
+        } else {
+            group.style.display = 'none';
+        }
     }
 
     async function adeLoadLandmarks() {
@@ -3700,6 +3747,7 @@ window._fmtBytesA = function(b) {
                     buildingName    : getVal('adeBuildingNameSelect') || null,
                     flatNumber      : getTrim('adeFlatNumber')        || null,
                     area            : getVal('adeAreaSelect')         || null,
+                    subArea         : getVal('adeSubAreaSelect')      || null,
                     landmark        : getVal('adeLandmarkSelect')     || null,
                     amount          : getVal('adeAmount') !== '' ? Number(getVal('adeAmount')) : null,
                     paymentMode     : getVal('adePaymentMode') || 'Cash',
@@ -3828,7 +3876,7 @@ window._fmtBytesA = function(b) {
     async function adeLoad() {
         const tbody = document.getElementById('adeTbody');
         if (!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">Loading…</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">Loading…</td></tr>';
         try {
             const [entRes, areaRes] = await Promise.all([
                 fetch('/api/donation-entries'),
@@ -3889,7 +3937,7 @@ window._fmtBytesA = function(b) {
             loadDonationTrackingCards();
         }
 
-        if (!_adeFiltered.length) { tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">No entries found.</td></tr>'; return; }
+        if (!_adeFiltered.length) { tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">No entries found.</td></tr>'; return; }
         tbody.innerHTML = _adeFiltered.slice().reverse().map((e, i) => {
             const donor = e.donorType === 'Business'
                 ? (e.businessName || '—')
@@ -3909,6 +3957,7 @@ window._fmtBytesA = function(b) {
                 <td style="color:#555;font-size:.85rem;">${e.mobileNumber||'—'}</td>
                 <td style="font-size:.85rem;">${e.buildingName||'—'}</td>
                 <td style="font-size:.85rem;">${e.area||'—'}</td>
+                <td style="font-size:.85rem;">${e.subArea||'—'}</td>
                 <td style="color:#2E7D32;font-weight:700;">${amt}</td>
                 <td><span style="padding:3px 10px;border-radius:12px;background:#FFF3E0;color:#E65100;font-size:.75rem;font-weight:700;">${e.paymentMode}</span></td>
                 <td style="font-size:.82rem;color:#777;">${e.referenceNumber||'—'}</td>
@@ -4171,47 +4220,109 @@ window._fmtBytesA = function(b) {
     }
 
     async function adeAreaModal() {
-        const res  = await fetch('/api/areas');
-        const data = await res.json();
+        const rA = await fetch('/api/areas');
+        const dA = await rA.json();
+        const rS = await fetch('/api/sub-areas');
+        const dS = await rS.json();
+        
+        const areas = dA.areas || [];
+        const subAreas = dS.subAreas || [];
+        
         const modal = document.createElement('div');
         modal.id = 'adeAreaModalEl';
         modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
-        modal.innerHTML = `
-        <div style="background:#fff;border-radius:16px;padding:28px;max-width:440px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2);">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-                <h3 style="margin:0;"><i class="fas fa-map-marker-alt" style="color:#00796B;margin-right:8px;"></i>Manage Areas</h3>
-                <span onclick="document.getElementById('adeAreaModalEl').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
-            </div>
-            <div style="display:flex;gap:8px;margin-bottom:16px;">
-                <input type="text" id="adeAreaInput" class="form-control" placeholder="New area name" style="flex:1;">
-                <button onclick="adeAddArea()" class="btn btn-primary btn-small">Add</button>
-            </div>
-            <div id="adeAreaList" style="display:flex;flex-direction:column;gap:8px;">
-                ${(data.areas||[]).map(a => `
-                <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8f9fa;border-radius:8px;">
-                    <span style="flex:1;font-weight:600;">${a.name}</span>
-                    <button onclick="adeDeleteArea('${a.id}',this)" style="border:none;background:#FFEBEE;color:#c0392b;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;"><i class="fas fa-trash"></i></button>
-                </div>`).join('')}
-            </div>
-        </div>`;
+        
+        let selectedAreaId = areas.length ? areas[0].id : null;
+        
+        function renderContent() {
+            const subsForArea = subAreas.filter(s => s.areaId === selectedAreaId);
+            
+            return `
+            <div style="background:#fff;border-radius:16px;padding:28px;width:90%;max-width:800px;max-height:85vh;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.2);display:flex;flex-direction:column;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                    <h3 style="margin:0;"><i class="fas fa-map-marker-alt" style="color:#00796B;margin-right:8px;"></i>Manage Areas & Sub-Areas</h3>
+                    <span onclick="document.getElementById('adeAreaModalEl').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+                </div>
+                
+                <div style="display:flex;gap:20px;flex:1;overflow:hidden;min-height:300px;">
+                    <!-- Areas List -->
+                    <div style="flex:1;display:flex;flex-direction:column;border-right:1px solid #eee;padding-right:20px;">
+                        <h4 style="margin:0 0 10px 0;color:#555;">Areas</h4>
+                        <div style="display:flex;gap:8px;margin-bottom:12px;">
+                            <input type="text" id="adeAreaInput" class="form-control" placeholder="New area name" style="flex:1;">
+                            <button onclick="adeAddArea()" class="btn btn-primary btn-small">Add</button>
+                        </div>
+                        <div id="adeAreaList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+                            ${areas.map(a => `
+                            <div onclick="adeSelectArea('${a.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:${selectedAreaId === a.id ? '#E0F2F1' : '#f8f9fa'};border-radius:8px;cursor:pointer;border:${selectedAreaId === a.id ? '1px solid #00796B' : '1px solid transparent'};">
+                                <span style="flex:1;font-weight:600;color:${selectedAreaId === a.id ? '#00796B' : '#333'};">${a.name}</span>
+                                <button onclick="event.stopPropagation(); adeDeleteArea('${a.id}')" style="border:none;background:#FFEBEE;color:#c0392b;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;"><i class="fas fa-trash"></i></button>
+                            </div>`).join('')}
+                            ${!areas.length ? '<div style="color:#888;text-align:center;padding:10px;">No areas found.</div>' : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Sub-Areas List -->
+                    <div style="flex:1;display:flex;flex-direction:column;">
+                        <h4 style="margin:0 0 10px 0;color:#555;">Sub-Areas ${selectedAreaId ? `for <strong>${areas.find(a=>a.id===selectedAreaId)?.name}</strong>` : ''}</h4>
+                        ${selectedAreaId ? `
+                        <div style="display:flex;gap:8px;margin-bottom:12px;">
+                            <input type="text" id="adeSubAreaInput" class="form-control" placeholder="New sub-area name" style="flex:1;">
+                            <button onclick="adeAddSubArea('${selectedAreaId}')" class="btn btn-primary btn-small" style="background:#1565C0;">Add</button>
+                        </div>
+                        <div id="adeSubAreaList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+                            ${subsForArea.map(s => `
+                            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8f9fa;border-radius:8px;">
+                                <span style="flex:1;font-weight:600;">${s.name}</span>
+                                <button onclick="adeDeleteSubArea('${s.id}')" style="border:none;background:#FFEBEE;color:#c0392b;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;"><i class="fas fa-trash"></i></button>
+                            </div>`).join('')}
+                            ${!subsForArea.length ? '<div style="color:#888;text-align:center;padding:10px;">No sub-areas found.</div>' : ''}
+                        </div>
+                        ` : '<div style="color:#888;text-align:center;padding:10px;">Select an area first.</div>'}
+                    </div>
+                </div>
+            </div>`;
+        }
+        
+        modal.innerHTML = renderContent();
+        
+        window.adeSelectArea = (id) => {
+            selectedAreaId = id;
+            modal.innerHTML = renderContent();
+        };
+        
+        window.adeAddArea = async () => {
+            const name = document.getElementById('adeAreaInput')?.value.trim();
+            if (!name) return;
+            const res = await fetch('/api/areas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name }) });
+            if (res.ok) { document.getElementById('adeAreaModalEl')?.remove(); await adeAreaModal(); await adeLoadAreas(); }
+            else { const d = await res.json(); alert(d.message || 'Could not add.'); }
+        };
+        
+        window.adeDeleteArea = async (id) => {
+            if (!confirm('Remove this area and all its sub-areas?')) return;
+            const res = await fetch(`/api/areas/${encodeURIComponent(id)}`, { method:'DELETE' });
+            if (res.ok) { document.getElementById('adeAreaModalEl')?.remove(); await adeAreaModal(); await adeLoadAreas(); }
+            else alert('Could not delete.');
+        };
+        
+        window.adeAddSubArea = async (areaId) => {
+            const name = document.getElementById('adeSubAreaInput')?.value.trim();
+            if (!name) return;
+            const res = await fetch('/api/sub-areas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name, areaId }) });
+            if (res.ok) { document.getElementById('adeAreaModalEl')?.remove(); await adeAreaModal(); await adeLoadAreas(); }
+            else { const d = await res.json(); alert(d.message || 'Could not add.'); }
+        };
+        
+        window.adeDeleteSubArea = async (id) => {
+            if (!confirm('Remove this sub-area?')) return;
+            const res = await fetch(`/api/sub-areas/${encodeURIComponent(id)}`, { method:'DELETE' });
+            if (res.ok) { document.getElementById('adeAreaModalEl')?.remove(); await adeAreaModal(); await adeLoadAreas(); }
+            else alert('Could not delete.');
+        };
+        
         document.body.appendChild(modal);
         modal.addEventListener('click', ev => { if (ev.target === modal) modal.remove(); });
-    }
-
-    async function adeAddArea() {
-        const name = document.getElementById('adeAreaInput')?.value.trim();
-        if (!name) return;
-        const res  = await fetch('/api/areas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name }) });
-        const data = await res.json();
-        if (res.ok && data.success) { document.getElementById('adeAreaModalEl')?.remove(); adeAreaModal(); }
-        else alert(data.message || 'Could not add.');
-    }
-
-    async function adeDeleteArea(id, btn) {
-        if (!confirm('Remove this area?')) return;
-        const res = await fetch(`/api/areas/${encodeURIComponent(id)}`, { method:'DELETE' });
-        if (res.ok) { btn.closest('div').remove(); }
-        else alert('Could not delete.');
     }
 
     function adeShowStatus(msg, type) {

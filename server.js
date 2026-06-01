@@ -40,7 +40,7 @@ let db;
 let colSettings;
 let globalSettings = { eventDate: '2026-09-07T00:00:00.000Z' };
 let colReceipts, colExpenses, colFinancials, colPautiBooks;
-let colDonations, colDonationEntries, colBuildings, colAreas;
+let colDonations, colDonationEntries, colBuildings, colAreas, colSubAreas;
 let colLandmarks, colCommitteeMembers, colGallery, colEvents;
 let colTshirts, colTshirtSettings;
 let colVolunteerCards, colContactCards;
@@ -56,6 +56,7 @@ let donationsStore    = { columns: [], records: [] };
 let donationEntries   = [];
 let buildings         = [];
 let areas             = [];
+let subAreas          = [];
 let landmarks         = [];
 let committeeMembers  = [];
 let financials        = [];
@@ -99,6 +100,11 @@ async function saveBuildings() {
 async function saveAreas() {
     await colAreas.deleteMany({});
     if (areas.length > 0) await colAreas.insertMany(areas.map(a => ({ ...a })));
+}
+
+async function saveSubAreas() {
+    await colSubAreas.deleteMany({});
+    if (subAreas.length > 0) await colSubAreas.insertMany(subAreas.map(s => ({ ...s })));
 }
 
 async function saveLandmarks() {
@@ -174,6 +180,7 @@ async function connectDB() {
     colDonationEntries  = db.collection('donationEntries');
     colBuildings        = db.collection('buildings');
     colAreas            = db.collection('areas');
+    colSubAreas         = db.collection('subAreas');
     colLandmarks        = db.collection('landmarks');
     colCommitteeMembers = db.collection('committeeMembers');
     colGallery          = db.collection('gallery');
@@ -201,6 +208,28 @@ async function connectDB() {
     // ── Load areas ────────────────────────────────────────────────────────────
     areas = (await colAreas.find({}).toArray()).map(stripId);
     console.log(`📂 Loaded ${areas.length} area(s) from MongoDB`);
+
+    // ── Seed fixed areas if absent ────────────────────────────────────────────
+    const FIXED_AREAS = [
+        { id: 'AREA-001', name: 'Patelwadi' },
+        { id: 'AREA-002', name: 'Shindewadi' },
+        { id: 'AREA-003', name: 'Gurkhawadi' }
+    ];
+    let areasDirty = false;
+    for (const fa of FIXED_AREAS) {
+        if (!areas.find(a => a.name.toLowerCase() === fa.name.toLowerCase())) {
+            areas.push(fa);
+            areasDirty = true;
+        }
+    }
+    if (areasDirty) {
+        await saveAreas();
+        console.log('📍 Seeded missing fixed areas into MongoDB');
+    }
+
+    // ── Load sub-areas ────────────────────────────────────────────────────────
+    subAreas = (await colSubAreas.find({}).toArray()).map(stripId);
+    console.log(`📂 Loaded ${subAreas.length} sub-area(s) from MongoDB`);
 
     // ── Load landmarks ────────────────────────────────────────────────────────
     landmarks = (await colLandmarks.find({}).toArray()).map(stripId);
@@ -1665,7 +1694,7 @@ const server = http.createServer(async (req, res) => {
                 // Admin: all editable fields
                 const fields = ['bookNumber','receiptNumber','bookType','donorType','firstName','middleName','lastName',
                                 'businessName','whatsappNumber','mobileNumber','mailId','buildingName',
-                                'flatNumber','area','amount','paymentMode','referenceNumber','status'];
+                                'flatNumber','area','subArea','amount','paymentMode','referenceNumber','status'];
                 fields.forEach(f => {
                     if (body[f] !== undefined) {
                         if (['firstName','middleName','lastName','businessName'].includes(f) && body[f])
@@ -1689,6 +1718,7 @@ const server = http.createServer(async (req, res) => {
                 if (body.bookNumber    !== undefined) e.bookNumber    = Number(body.bookNumber);
                 if (body.receiptNumber !== undefined) e.receiptNumber = Number(body.receiptNumber);
                 if (body.area          !== undefined) e.area          = String(body.area);
+                if (body.subArea       !== undefined) e.subArea       = String(body.subArea);
                 if (body.buildingName  !== undefined) e.buildingName  = String(body.buildingName);
                 if (body.flatNumber    !== undefined) e.flatNumber    = String(body.flatNumber);
                 if (body.referenceNumber !== undefined) e.referenceNumber = String(body.referenceNumber);
@@ -2007,7 +2037,70 @@ const server = http.createServer(async (req, res) => {
         if (idx === -1) return sendJSON(res, 404, { message: 'Area not found.' });
         const [removed] = areas.splice(idx, 1);
         await saveAreas();
+        // Cascade-delete any sub-areas that belong to this area
+        const beforeCount = subAreas.length;
+        subAreas = subAreas.filter(s => s.areaId !== id);
+        if (subAreas.length !== beforeCount) await saveSubAreas();
         console.log(`🗑️  Area removed: ${removed.name}`);
+        return sendJSON(res, 200, { success: true });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // ─── SUB-AREAS API ────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════
+
+    // ── GET /api/sub-areas ───────────────────────────────────────────────────
+    if (req.method === 'GET' && pathname === '/api/sub-areas') {
+        return sendJSON(res, 200, { subAreas });
+    }
+
+    // ── POST /api/sub-areas ──────────────────────────────────────────────────
+    if (req.method === 'POST' && pathname === '/api/sub-areas') {
+        try {
+            const body = await readBody(req);
+            const name   = (body.name   || '').trim();
+            const areaId = (body.areaId || '').trim();
+            if (!name)   return sendJSON(res, 400, { message: 'Sub-area name is required.' });
+            if (!areaId) return sendJSON(res, 400, { message: 'areaId is required.' });
+            if (!areas.find(a => a.id === areaId))
+                return sendJSON(res, 400, { message: 'Parent area not found.' });
+            if (subAreas.find(s => s.areaId === areaId && s.name.toLowerCase() === name.toLowerCase()))
+                return sendJSON(res, 400, { message: `Sub-area "${name}" already exists in this area.` });
+            const subArea = { id: `SA-${Date.now()}`, name, areaId };
+            subAreas.push(subArea);
+            await saveSubAreas();
+            console.log(`📍 Sub-area added: ${name} (area: ${areaId})`);
+            return sendJSON(res, 200, { success: true, subArea });
+        } catch (err) {
+            return sendJSON(res, 400, { message: err.message || 'Bad request.' });
+        }
+    }
+
+    // ── PUT /api/sub-areas/:id ───────────────────────────────────────────────
+    if (req.method === 'PUT' && pathname.startsWith('/api/sub-areas/')) {
+        const id  = decodeURIComponent(pathname.replace('/api/sub-areas/', ''));
+        const idx = subAreas.findIndex(s => s.id === id);
+        if (idx === -1) return sendJSON(res, 404, { message: 'Sub-area not found.' });
+        try {
+            const body = await readBody(req);
+            const name = (body.name || '').trim();
+            if (!name) return sendJSON(res, 400, { message: 'Sub-area name is required.' });
+            subAreas[idx].name = name;
+            await saveSubAreas();
+            return sendJSON(res, 200, { success: true, subArea: subAreas[idx] });
+        } catch (err) {
+            return sendJSON(res, 400, { message: err.message || 'Bad request.' });
+        }
+    }
+
+    // ── DELETE /api/sub-areas/:id ────────────────────────────────────────────
+    if (req.method === 'DELETE' && pathname.startsWith('/api/sub-areas/')) {
+        const id  = decodeURIComponent(pathname.replace('/api/sub-areas/', ''));
+        const idx = subAreas.findIndex(s => s.id === id);
+        if (idx === -1) return sendJSON(res, 404, { message: 'Sub-area not found.' });
+        const [removed] = subAreas.splice(idx, 1);
+        await saveSubAreas();
+        console.log(`🗑️  Sub-area removed: ${removed.name}`);
         return sendJSON(res, 200, { success: true });
     }
 

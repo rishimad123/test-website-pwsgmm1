@@ -1281,14 +1281,19 @@ window.fixUrl = function(url) {
                                 <div class="form-group" style="margin:0;">
                                     <label for="deArea">Area</label>
                                     <div style="display:flex;gap:8px;">
-                                        <select id="deArea" class="form-control" style="flex:1;">
+                                        <select id="deArea" class="form-control" style="flex:1;" onchange="deOnAreaChange()">
                                             <option value="">— Select Area —</option>
                                             <option value="Patelwadi">Patelwadi</option>
                                             <option value="Shindewadi">Shindewadi</option>
                                             <option value="Gurkhawadi">Gurkhawadi</option>
                                         </select>
-                                        <button type="button" id="deAddAreaBtn" onclick="deAddArea()" style="display:none;padding:0 14px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;cursor:pointer;font-size:.85rem;white-space:nowrap;">＋ Add</button>
                                     </div>
+                                </div>
+                                <div class="form-group" id="deSubAreaGroup" style="margin:0;display:none;">
+                                    <label for="deSubArea">Sub-Area</label>
+                                    <select id="deSubArea" class="form-control">
+                                        <option value="">— Select Sub-Area —</option>
+                                    </select>
                                 </div>
                             <div class="form-group" style="margin-top:12px;">
                                 <label for="deLandmark">Common Landmark</label>
@@ -1558,7 +1563,11 @@ window.fixUrl = function(url) {
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
                     <div class="form-group" style="margin:0;">
                         <label>Area <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
-                        <select id="deVolEditArea" class="form-control"></select>
+                        <select id="deVolEditArea" class="form-control" onchange="deOnVolEditAreaChange()"></select>
+                    </div>
+                    <div class="form-group" id="deVolEditSubAreaGroup" style="margin:0;display:none;">
+                        <label>Sub-Area <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                        <select id="deVolEditSubArea" class="form-control"></select>
                     </div>
                     <div class="form-group" style="margin:0;">
                         <label>Payment Mode <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
@@ -2802,7 +2811,46 @@ window.fixUrl = function(url) {
                     sel.innerHTML += `<option value="${a.name}" ${a.name===cur?'selected':''}>${a.name}</option>`;
                 }
             });
+            deOnAreaChange();
         } catch(e) { /* API unreachable — fixed areas still shown */ }
+    }
+
+    async function deLoadSubAreas(areaName) {
+        const sel = document.getElementById('deSubArea');
+        if (!sel) return;
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">— Select Sub-Area —</option>';
+        if (!areaName) return;
+        
+        try {
+            const r1 = await fetch('/api/areas');
+            const d1 = await r1.json();
+            const areaObj = (d1.areas || []).find(a => a.name === areaName);
+            if (!areaObj) return;
+
+            const r2 = await fetch('/api/sub-areas');
+            const d2 = await r2.json();
+            const subs = (d2.subAreas || []).filter(s => s.areaId === areaObj.id);
+            
+            subs.forEach(s => {
+                sel.innerHTML += `<option value="${s.name}" ${s.name === cur ? 'selected' : ''}>${s.name}</option>`;
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function deOnAreaChange() {
+        const areaName = document.getElementById('deArea')?.value;
+        const group = document.getElementById('deSubAreaGroup');
+        if (!group) return;
+        
+        if (areaName) {
+            group.style.display = 'block';
+            deLoadSubAreas(areaName);
+        } else {
+            group.style.display = 'none';
+        }
     }
 
     async function deAddBuilding() {
@@ -2862,6 +2910,7 @@ window.fixUrl = function(url) {
                 buildingName    : getVal('deBuildingName') || null,
                 flatNumber      : getTrim('deFlatNumber') || null,
                 area            : getVal('deArea')         || null,
+                subArea         : getVal('deSubArea')      || null,
                 landmark        : getVal('deLandmark')     || null,
                 amount          : getVal('deAmount') !== '' ? Number(getVal('deAmount')) : null,
                 paymentMode     : getVal('dePaymentMode') || 'Cash',
@@ -3021,7 +3070,7 @@ window.fixUrl = function(url) {
                     <td style="font-weight:700;vertical-align:middle;">Bk ${e.bookNumber} ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF3E0;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>' }</td>
                     <td>#${e.receiptNumber}</td>
                     <td>${donor}</td>
-                    <td>${e.area||'—'}</td>
+                    <td>${e.area||'—'}${e.subArea ? `<br><span style="font-size:0.75rem;color:#777;">${e.subArea}</span>` : ''}</td>
                     <td style="color:#2E7D32;font-weight:600;">${amt}</td>
                     <td><span style="padding:3px 10px;border-radius:12px;background:#E3F2FD;color:#1565C0;font-size:.78rem;font-weight:700;">${e.paymentMode}</span></td>
                     <td style="text-align:center;">${photoCell}</td>
@@ -3135,6 +3184,7 @@ window.fixUrl = function(url) {
                     if (!FIXED.includes(a.name))
                         areaSel.innerHTML += `<option value="${a.name}" ${a.name===e.area?'selected':''}>${a.name}</option>`;
                 });
+                deOnVolEditAreaChange(e.subArea);
             }).catch(()=>{});
             const curDiv = document.getElementById('deVolEditCurrentPhoto');
             const curImg = document.getElementById('deVolEditCurrentImg');
@@ -3187,6 +3237,35 @@ window.fixUrl = function(url) {
     async function deVolEditBookChange() {
         const bn = Number(document.getElementById('deVolEditBook').value);
         await deVolEditPopulateReceipts(bn, null);
+    }
+
+    async function deOnVolEditAreaChange(initialSubArea = null) {
+        const areaName = document.getElementById('deVolEditArea')?.value;
+        const group = document.getElementById('deVolEditSubAreaGroup');
+        const sel = document.getElementById('deVolEditSubArea');
+        if (!group || !sel) return;
+        
+        sel.innerHTML = '<option value="">— Select Sub-Area —</option>';
+        if (areaName) {
+            group.style.display = 'block';
+            try {
+                const r1 = await fetch('/api/areas');
+                const d1 = await r1.json();
+                const areaObj = (d1.areas || []).find(a => a.name === areaName);
+                if (areaObj) {
+                    const r2 = await fetch('/api/sub-areas');
+                    const d2 = await r2.json();
+                    const subs = (d2.subAreas || []).filter(s => s.areaId === areaObj.id);
+                    subs.forEach(s => {
+                        sel.innerHTML += `<option value="${s.name}" ${initialSubArea && s.name === initialSubArea ? 'selected' : ''}>${s.name}</option>`;
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        } else {
+            group.style.display = 'none';
+        }
     }
 
     function deCloseVolEdit() {
@@ -3258,6 +3337,7 @@ window.fixUrl = function(url) {
             bookNumber    : bnVal,
             receiptNumber : rnVal,
             area          : document.getElementById('deVolEditArea').value || undefined,
+            subArea       : document.getElementById('deVolEditSubArea').value || undefined,
         };
         if (amtVal !== '') payload.amount = Number(amtVal);
         
