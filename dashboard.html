@@ -1949,9 +1949,7 @@ window.fixUrl = function(url) {
                                     <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
                                         <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${r.bookNumber} / #${r.receiptNumber} ${ (r.bookType||'New')==='Old' ? '<span style="background:#FFF3E0;color:#E65100;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">New</span>' }
                                     </span>
-                                    <span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
-                                        <i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${r.area||'—'}
-                                    </span>
+                                    ${r.area ? `<span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;"><i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${r.area}</span>` : ''}
                                     <span style="${paymentModeColor}padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">${paymentMode}</span>
                                 </div>
                                 <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
@@ -3071,7 +3069,7 @@ window.fixUrl = function(url) {
                     <td>#${e.receiptNumber}</td>
                     <td>${donor}</td>
                     <td>
-                        <div style="font-weight:600;">${e.area||'—'}${e.subArea ? ` <span style="font-weight:normal;color:#777;">&bull; ${e.subArea}</span>` : ''}</div>
+                        ${e.area ? `<div style="font-weight:600;">${e.area}${e.subArea ? ` <span style="font-weight:normal;color:#777;">&bull; ${e.subArea}</span>` : ''}</div>` : ''}
                         ${e.buildingName ? `<div style="font-size:0.8rem;color:#555;"><i class="fas fa-building" style="margin-right:4px;"></i>${e.buildingName}${e.flatNumber ? ` (Flat: ${e.flatNumber})` : ''}</div>` : ''}
                         ${e.landmark ? `<div style="font-size:0.8rem;color:#777;"><i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>${e.landmark}</div>` : ''}
                     </td>
@@ -3115,9 +3113,7 @@ window.fixUrl = function(url) {
                                     <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
                                         <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${e.bookNumber} / #${e.receiptNumber} ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF3E0;color:#E65100;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">New</span>' }
                                     </span>
-                                    <span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
-                                        <i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${e.area||'—'}
-                                    </span>
+                                    ${e.area ? `<span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;"><i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${e.area}${e.subArea ? ` &bull; ${e.subArea}` : ''}${e.buildingName ? ` &middot; ${e.buildingName}${e.flatNumber ? ` (Flat: ${e.flatNumber})` : ''}` : ''}${e.landmark ? ` &middot; ${e.landmark}` : ''}</span>` : ''}
                                     <span style="background:#FFF3E0;color:#E65100;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">${e.paymentMode}</span>
                                 </div>
                                 <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
@@ -3720,10 +3716,8 @@ if (originalShowSection) {
                                     <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
                                         <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${e.bookNumber} / #${e.receiptNumber} ${bookBadge}
                                     </span>
-                                    <span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
-                                        <i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${e.area||'—'}
-                                    </span>
-                                    <span style="${paymentModeColor}padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">${e.paymentMode||'—'}</span>
+                                    ${e.area ? `<span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;"><i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${e.area}${e.subArea ? ` &bull; ${e.subArea}` : ''}${e.buildingName ? ` &middot; ${e.buildingName}${e.flatNumber ? ` (Flat: ${e.flatNumber})` : ''}` : ''}${e.landmark ? ` &middot; ${e.landmark}` : ''}</span>` : ''}
+                                    ${e.paymentMode ? `<span style="${paymentModeColor}padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">${e.paymentMode}</span>` : ''}
                                 </div>
                                 <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
                                     <span style="color:#2E7D32;font-weight:700;font-size:1.05rem;">${myDonFmtAmt(e.amount)}</span>

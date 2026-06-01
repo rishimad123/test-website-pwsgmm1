@@ -3831,27 +3831,28 @@ window._fmtBytesA = function(b) {
                 } catch (err) {}
             }
             
-            return {
-                'Book Number': e.bookNumber || '',
-                'Receipt Number': e.receiptNumber || '',
-                'Donor Name': donorName || '',
-                'WhatsApp Number': e.whatsappNumber || '',
-                'Mobile Number': e.mobileNumber || '',
-                'Email': e.mailId || '',
-                'Area': e.area || '',
-                'Sub-Area': e.subArea || '',
-                'Common Landmark': e.landmark || '',
-                'Building Name': e.buildingName || '',
-                'Flat Number': e.flatNumber || '',
-                'Amount': e.amount || 0,
-                'Payment Mode': e.paymentMode || '',
-                'Reference Number': e.referenceNumber || '',
-                'Date Submitted': submittedDate,
-                'Time Submitted': submittedTime,
-                'Submitted By': e.submittedBy || '',
-                'Status': e.status || '',
-                'Entry ID': e.entryId || ''
-            };
+            const row = {};
+            if (e.bookNumber) row['Book Number'] = e.bookNumber;
+            if (e.receiptNumber) row['Receipt Number'] = e.receiptNumber;
+            if (donorName) row['Donor Name'] = donorName;
+            if (e.whatsappNumber) row['WhatsApp Number'] = e.whatsappNumber;
+            if (e.mobileNumber) row['Mobile Number'] = e.mobileNumber;
+            if (e.mailId) row['Email'] = e.mailId;
+            if (e.area) row['Area'] = e.area;
+            if (e.subArea) row['Sub-Area'] = e.subArea;
+            if (e.landmark) row['Common Landmark'] = e.landmark;
+            if (e.buildingName) row['Building Name'] = e.buildingName;
+            if (e.flatNumber) row['Flat Number'] = e.flatNumber;
+            if (e.amount != null) row['Amount'] = e.amount;
+            if (e.paymentMode) row['Payment Mode'] = e.paymentMode;
+            if (e.referenceNumber) row['Reference Number'] = e.referenceNumber;
+            if (submittedDate) row['Date Submitted'] = submittedDate;
+            if (submittedTime) row['Time Submitted'] = submittedTime;
+            if (e.submittedBy) row['Submitted By'] = e.submittedBy;
+            if (e.status) row['Status'] = e.status;
+            if (e.entryId) row['Entry ID'] = e.entryId;
+            
+            return row;
         });
         
         const ws = XLSX.utils.json_to_sheet(data);
@@ -3961,17 +3962,17 @@ window._fmtBytesA = function(b) {
                 <td>#${e.receiptNumber}</td>
                 <td style="font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${donor}">${donor}</td>
                 <td><span style="padding:2px 9px;border-radius:10px;font-size:.75rem;font-weight:700;background:${e.donorType==='Business'?'#E3F2FD':'#E8F5E9'};color:${e.donorType==='Business'?'#1565C0':'#1B5E20'};">${e.donorType}</span></td>
-                <td style="color:#555;font-size:.85rem;">${e.whatsappNumber||'—'}</td>
-                <td style="color:#555;font-size:.85rem;">${e.mobileNumber||'—'}</td>
-                <td style="font-size:.85rem;">${e.buildingName||'—'}${e.flatNumber ? `<br><span style="font-size:0.75rem;color:#777;">Flat: ${e.flatNumber}</span>` : ''}</td>
-                <td style="font-size:.85rem;">${e.area||'—'}</td>
-                <td style="font-size:.85rem;">${e.subArea||'—'}</td>
+                <td style="color:#555;font-size:.85rem;">${e.whatsappNumber||''}</td>
+                <td style="color:#555;font-size:.85rem;">${e.mobileNumber||''}</td>
+                <td style="font-size:.85rem;">${e.buildingName||''}${e.flatNumber ? `<br><span style="font-size:0.75rem;color:#777;">Flat: ${e.flatNumber}</span>` : ''}</td>
+                <td style="font-size:.85rem;">${e.area||''}</td>
+                <td style="font-size:.85rem;">${e.subArea||''}</td>
                 <td style="color:#2E7D32;font-weight:700;">${amt}</td>
                 <td><span style="padding:3px 10px;border-radius:12px;background:#FFF3E0;color:#E65100;font-size:.75rem;font-weight:700;">${e.paymentMode}</span></td>
-                <td style="font-size:.82rem;color:#777;">${e.referenceNumber||'—'}</td>
-                <td style="font-size:.82rem;color:#555;">${e.landmark||'—'}</td>
+                <td style="font-size:.82rem;color:#777;">${e.referenceNumber||''}</td>
+                <td style="font-size:.82rem;color:#555;">${e.landmark||''}</td>
                 <td style="text-align:center;">${e.photoUrl ? `<img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" style="width:50px;height:50px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openAdminLightbox(fixUrl('${e.photoUrl}'))" title="View photo">` : '<span style="font-size:.72rem;color:#aaa;font-style:italic;">No Image</span>'}</td>
-                <td style="font-size:.82rem;color:#888;">${e.submittedBy||'—'}</td>
+                <td style="font-size:.82rem;color:#888;">${e.submittedBy||''}</td>
                 <td style="color:#888;font-size:.82rem;">${dt}</td>
                 <td>
                     <div class="action-btns">
