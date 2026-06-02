@@ -3279,6 +3279,7 @@ async function translateUploadedExcel() {
 window.translateExcelData = translateExcelData;
 window.translateUploadedExcel = translateUploadedExcel;
 window.exportAdminDonationEntriesToExcel = exportAdminDonationEntriesToExcel;
+window.saveSiteSettingsForm = saveSiteSettingsForm;
 
 async function exportAdminDonationEntriesToExcel(lang = 'en') {
     if (typeof XLSX === 'undefined') {
@@ -4051,8 +4052,54 @@ async function loadAdminEventDate() {
         } else {
             bannerPreview.style.display = 'none';
         }
+
+        // Footer & Social Settings
+        if (data) {
+            if (data.footerAboutText) document.getElementById('adminFooterAboutText').value = data.footerAboutText;
+            if (data.contactAddress) document.getElementById('adminContactAddress').value = data.contactAddress;
+            if (data.contactPhone) document.getElementById('adminContactPhone').value = data.contactPhone;
+            if (data.contactEmail) document.getElementById('adminContactEmail').value = data.contactEmail;
+            if (data.socialFacebook) document.getElementById('adminSocialFacebook').value = data.socialFacebook;
+            if (data.socialInstagram) document.getElementById('adminSocialInstagram').value = data.socialInstagram;
+            if (data.socialYoutube) document.getElementById('adminSocialYoutube').value = data.socialYoutube;
+            if (data.socialTwitter) document.getElementById('adminSocialTwitter').value = data.socialTwitter;
+        }
     } catch (e) {
         console.warn('Failed to load settings:', e.message);
+    }
+}
+
+// Save Website Settings (Footer & Social)
+async function saveSiteSettingsForm() {
+    const payload = {
+        footerAboutText: document.getElementById('adminFooterAboutText')?.value || '',
+        contactAddress: document.getElementById('adminContactAddress')?.value || '',
+        contactPhone: document.getElementById('adminContactPhone')?.value || '',
+        contactEmail: document.getElementById('adminContactEmail')?.value || '',
+        socialFacebook: document.getElementById('adminSocialFacebook')?.value || '',
+        socialInstagram: document.getElementById('adminSocialInstagram')?.value || '',
+        socialYoutube: document.getElementById('adminSocialYoutube')?.value || '',
+        socialTwitter: document.getElementById('adminSocialTwitter')?.value || ''
+    };
+    
+    try {
+        const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            const status = document.getElementById('adminSiteSettingsStatus');
+            if (status) {
+                status.style.opacity = '1';
+                setTimeout(() => status.style.opacity = '0', 3000);
+            }
+        } else {
+            alert('Failed to save settings: ' + (data.message || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Error: ' + e.message);
     }
 }
 

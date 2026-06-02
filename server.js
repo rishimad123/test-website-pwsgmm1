@@ -2507,6 +2507,16 @@ const server = http.createServer(async (req, res) => {
             if (body.aboutText !== undefined) globalSettings.aboutText = body.aboutText;
             if (body.aboutPageText !== undefined) globalSettings.aboutPageText = body.aboutPageText;
             
+            // Footer & Social Settings
+            if (body.footerAboutText !== undefined) globalSettings.footerAboutText = body.footerAboutText;
+            if (body.contactAddress !== undefined) globalSettings.contactAddress = body.contactAddress;
+            if (body.contactPhone !== undefined) globalSettings.contactPhone = body.contactPhone;
+            if (body.contactEmail !== undefined) globalSettings.contactEmail = body.contactEmail;
+            if (body.socialFacebook !== undefined) globalSettings.socialFacebook = body.socialFacebook;
+            if (body.socialInstagram !== undefined) globalSettings.socialInstagram = body.socialInstagram;
+            if (body.socialYoutube !== undefined) globalSettings.socialYoutube = body.socialYoutube;
+            if (body.socialTwitter !== undefined) globalSettings.socialTwitter = body.socialTwitter;
+            
             if (colSettings) {
                 await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
             }

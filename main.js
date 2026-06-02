@@ -309,6 +309,42 @@ async function loadSiteSettings() {
             if (aboutPageSvg) aboutPageSvg.style.display = 'none';
         }
 
+        // --- Footer Settings ---
+        if (s.footerAboutText) {
+            const el = document.querySelector('.footer-col p');
+            if (el && el.parentElement.querySelector('h3') && el.parentElement.querySelector('h3').textContent.includes('About Us')) {
+                el.textContent = s.footerAboutText;
+            }
+        }
+        if (s.contactAddress) {
+            const el = document.querySelector('.contact-info li i.fa-map-marker-alt');
+            if (el && el.parentElement) el.parentElement.innerHTML = `<i class="fas fa-map-marker-alt"></i> ${s.contactAddress}`;
+        }
+        if (s.contactPhone) {
+            const el = document.querySelector('.contact-info li i.fa-phone');
+            if (el && el.parentElement) el.parentElement.innerHTML = `<i class="fas fa-phone"></i> ${s.contactPhone}`;
+        }
+        if (s.contactEmail) {
+            const el = document.querySelector('.contact-info li i.fa-envelope');
+            if (el && el.parentElement) el.parentElement.innerHTML = `<i class="fas fa-envelope"></i> ${s.contactEmail}`;
+        }
+        if (s.socialFacebook) {
+            const el = document.querySelector('.social-links a i.fa-facebook');
+            if (el && el.parentElement) el.parentElement.href = s.socialFacebook;
+        }
+        if (s.socialInstagram) {
+            const el = document.querySelector('.social-links a i.fa-instagram');
+            if (el && el.parentElement) el.parentElement.href = s.socialInstagram;
+        }
+        if (s.socialYoutube) {
+            const el = document.querySelector('.social-links a i.fa-youtube');
+            if (el && el.parentElement) el.parentElement.href = s.socialYoutube;
+        }
+        if (s.socialTwitter) {
+            const el = document.querySelector('.social-links a i.fa-twitter');
+            if (el && el.parentElement) el.parentElement.href = s.socialTwitter;
+        }
+
     } catch(e) {
         console.warn('Failed to load site settings:', e.message);
     }

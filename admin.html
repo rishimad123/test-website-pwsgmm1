@@ -2429,6 +2429,63 @@ window._fmtBytesA = function(b) {
                             </table>
                         </div>
                     </div>
+                    
+                    <!-- Footer & Social Media Settings -->
+                    <div class="admin-card" style="margin-top:20px; border-left:4px solid #8e44ad;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-cogs" style="color:#8e44ad;margin-right:8px;"></i>Website Settings (Footer & Social)</h3>
+                        </div>
+                        <p style="color:#666;font-size:0.9rem;margin:8px 0 16px;">Update the About text, Contact info, and Social Media links shown in the website footer.</p>
+                        
+                        <div style="display:flex;flex-direction:column;gap:15px;">
+                            <div>
+                                <label for="adminFooterAboutText" style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Footer About Us Text</label>
+                                <textarea id="adminFooterAboutText" class="admin-input" placeholder="Enter short about us text for footer..." style="width:100%;margin:0;resize:vertical;min-height:60px;"></textarea>
+                            </div>
+                            
+                            <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                                <div style="flex:1; min-width:200px;">
+                                    <label for="adminContactAddress" style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Contact Address</label>
+                                    <input type="text" id="adminContactAddress" class="admin-input" placeholder="e.g. Patelwadi, Mumbai - 400001" style="width:100%;margin:0;">
+                                </div>
+                                <div style="flex:1; min-width:150px;">
+                                    <label for="adminContactPhone" style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Contact Phone</label>
+                                    <input type="text" id="adminContactPhone" class="admin-input" placeholder="e.g. +91 98765 43210" style="width:100%;margin:0;">
+                                </div>
+                                <div style="flex:1; min-width:150px;">
+                                    <label for="adminContactEmail" style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Contact Email</label>
+                                    <input type="text" id="adminContactEmail" class="admin-input" placeholder="e.g. info@patelwadiganesh.org" style="width:100%;margin:0;">
+                                </div>
+                            </div>
+                            
+                            <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                                <div style="flex:1; min-width:150px;">
+                                    <label for="adminSocialFacebook" style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;"><i class="fab fa-facebook" style="color:#1877F2;"></i> Facebook URL</label>
+                                    <input type="text" id="adminSocialFacebook" class="admin-input" placeholder="https://facebook.com/..." style="width:100%;margin:0;">
+                                </div>
+                                <div style="flex:1; min-width:150px;">
+                                    <label for="adminSocialInstagram" style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;"><i class="fab fa-instagram" style="color:#E4405F;"></i> Instagram URL</label>
+                                    <input type="text" id="adminSocialInstagram" class="admin-input" placeholder="https://instagram.com/..." style="width:100%;margin:0;">
+                                </div>
+                                <div style="flex:1; min-width:150px;">
+                                    <label for="adminSocialYoutube" style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;"><i class="fab fa-youtube" style="color:#FF0000;"></i> YouTube URL</label>
+                                    <input type="text" id="adminSocialYoutube" class="admin-input" placeholder="https://youtube.com/..." style="width:100%;margin:0;">
+                                </div>
+                                <div style="flex:1; min-width:150px;">
+                                    <label for="adminSocialTwitter" style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;"><i class="fab fa-twitter" style="color:#1DA1F2;"></i> Twitter (X) URL</label>
+                                    <input type="text" id="adminSocialTwitter" class="admin-input" placeholder="https://twitter.com/..." style="width:100%;margin:0;">
+                                </div>
+                            </div>
+
+                            <div>
+                                <button class="btn btn-primary btn-small" onclick="saveSiteSettingsForm()">
+                                    <i class="fas fa-save"></i> Save Site Settings
+                                </button>
+                                <span id="adminSiteSettingsStatus" style="margin-left:10px;font-size:0.85rem;color:#27AE60;font-weight:600;opacity:0;transition:opacity 0.3s;">Settings Saved!</span>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
                 <!-- ══════════ END EVENTS SECTION ══════════ -->
 
