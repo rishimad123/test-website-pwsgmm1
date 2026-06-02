@@ -61,17 +61,17 @@
         min-height: 100vh;
         height: auto;
         background:
-            radial-gradient(ellipse at 50% 15%,  rgba(232,120,0,0.55) 0%, transparent 50%),
-            radial-gradient(ellipse at 20% 80%,  rgba(160,30,0,0.55)  0%, transparent 50%),
-            radial-gradient(ellipse at 80% 70%,  rgba(100,18,0,0.45)  0%, transparent 45%),
-            linear-gradient(170deg, #1C0800 0%, #3B1200 35%, #2A0800 65%, #180600 100%);
+            radial-gradient(ellipse at 50% 10%,  rgba(210,100,0,0.6)  0%, transparent 55%),
+            radial-gradient(ellipse at 15% 85%,  rgba(150,25,0,0.55)  0%, transparent 50%),
+            radial-gradient(ellipse at 85% 75%,  rgba(90,15,0,0.4)    0%, transparent 45%),
+            linear-gradient(175deg, #1A0700 0%, #371000 35%, #280800 65%, #160500 100%);
         display: flex;
         align-items: center;
         justify-content: center;
         text-align: center;
         color: var(--white);
         overflow: hidden;
-        padding: 80px 20px 60px;
+        padding: 70px 20px 40px;
     }
 
     /* Remove the generic overlay */
@@ -158,15 +158,15 @@
     /* ── Main Title ── */
     .hero-title {
         font-family: 'Cinzel', serif !important;
-        font-size: clamp(2.6rem, 7.5vw, 5.5rem) !important;
+        font-size: clamp(2.2rem, 6vw, 4.8rem) !important;
         font-weight: 700 !important;
         line-height: 1.1 !important;
         letter-spacing: 2px !important;
-        color: #D4870A !important;
-        -webkit-text-fill-color: #D4870A !important;
+        color: #CF7E08 !important;
+        -webkit-text-fill-color: #CF7E08 !important;
         background: none !important;
-        text-shadow: 0 2px 20px rgba(180,90,0,0.4), 0 0 60px rgba(212,135,10,0.15) !important;
-        margin-bottom: 18px !important;
+        text-shadow: 0 2px 16px rgba(160,80,0,0.35) !important;
+        margin-bottom: 10px !important;
         animation: fadeInUp 1s ease 0.1s both !important;
         padding: 0 16px;
         text-transform: capitalize !important;
@@ -175,24 +175,24 @@
     /* ── Subtitle ── */
     .hero-subtitle {
         font-family: 'Inter', sans-serif !important;
-        font-size: clamp(0.85rem, 2.2vw, 1.1rem) !important;
+        font-size: clamp(0.72rem, 1.8vw, 0.95rem) !important;
         font-weight: 500 !important;
-        color: rgba(255,240,210,0.88) !important;
-        letter-spacing: 3.5px !important;
+        color: rgba(255,240,210,0.85) !important;
+        letter-spacing: 3px !important;
         text-transform: uppercase !important;
-        margin-bottom: 8px !important;
+        margin-bottom: 5px !important;
         animation: fadeInUp 1s ease 0.2s both !important;
     }
 
     /* ── Tagline ── */
     .hero-tagline {
         display: block;
-        font-size: clamp(0.82rem, 2vw, 1rem);
+        font-size: clamp(0.72rem, 1.8vw, 0.9rem);
         font-weight: 600;
-        color: rgba(255,220,130,0.9);
+        color: rgba(255,215,120,0.9);
         letter-spacing: 3px;
         text-transform: uppercase;
-        margin-bottom: 30px;
+        margin-bottom: 16px;
         animation: fadeInUp 1s ease 0.3s both;
     }
 
@@ -201,67 +201,66 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 12px;
-        margin: 0 auto 40px;
+        gap: 10px;
+        margin: 0 auto 18px;
         animation: fadeInUp 1s ease 0.35s both;
     }
     .hero-divider-line {
         height: 1px;
-        width: 80px;
-        background: linear-gradient(90deg, transparent, rgba(252,211,77,0.5));
+        width: 60px;
+        background: linear-gradient(90deg, transparent, rgba(252,211,77,0.45));
     }
     .hero-divider-line:last-child { transform: scaleX(-1); }
     .hero-divider-dot {
-        width: 6px; height: 6px;
+        width: 5px; height: 5px;
         border-radius: 50%;
         background: var(--gold-lt);
-        box-shadow: 0 0 8px var(--gold-lt);
+        box-shadow: 0 0 6px var(--gold-lt);
     }
 
     /* ── Countdown ── */
     .countdown {
-        gap: 14px !important;
-        margin: 0 auto 44px !important;
+        gap: 12px !important;
+        margin: 0 auto 22px !important;
         animation: fadeInUp 1s ease 0.45s both !important;
         flex-wrap: wrap;
         justify-content: center;
     }
     .countdown-item {
-        background: rgba(20,8,0,0.55) !important;
+        background: rgba(18,6,0,0.6) !important;
         backdrop-filter: blur(20px) !important;
         -webkit-backdrop-filter: blur(20px) !important;
-        border: 1px solid rgba(200,120,0,0.2) !important;
-        border-radius: 12px !important;
-        padding: 18px 26px !important;
-        min-width: 88px;
+        border: 1px solid rgba(180,100,0,0.18) !important;
+        border-radius: 10px !important;
+        padding: 14px 20px !important;
+        min-width: 76px;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,200,80,0.06) !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,190,60,0.05) !important;
     }
     .countdown-item::before {
         content: '';
         position: absolute;
         inset: 0;
-        background: linear-gradient(160deg, rgba(200,100,0,0.07), transparent 60%);
+        background: linear-gradient(160deg, rgba(180,80,0,0.07), transparent 60%);
         pointer-events: none;
     }
     .countdown-value {
         font-family: 'Cinzel', serif !important;
-        font-size: clamp(2rem, 4.5vw, 3rem) !important;
+        font-size: clamp(1.7rem, 4vw, 2.5rem) !important;
         font-weight: 700 !important;
         color: #fff !important;
         -webkit-text-fill-color: #fff !important;
         background: none !important;
         line-height: 1.1 !important;
         display: block !important;
-        text-shadow: 0 0 20px rgba(255,200,80,0.2);
     }
     .countdown-label {
-        font-size: 0.62rem !important;
-        letter-spacing: 2.5px !important;
+        font-size: 0.58rem !important;
+        letter-spacing: 2px !important;
         text-transform: uppercase !important;
-        color: rgba(255,200,130,0.65) !important;
-        margin-top: 5px !important;
+        color: rgba(255,190,110,0.6) !important;
+        margin-top: 4px !important;
         display: block !important;
     }
 
@@ -506,27 +505,25 @@
        HERO LOGO CIRCLE
     =================================================== */
     .hero-logo-wrap {
-        width: 380px;
-        height: 380px;
-        margin: 0 auto 24px;
+        width: 260px;
+        height: 260px;
+        margin: 0 auto 16px;
         animation: fadeInUp 0.7s ease both;
         filter:
-            drop-shadow(0 0 30px rgba(185,28,28,0.7))
-            drop-shadow(0 0 80px rgba(217,119,6,0.35))
-            drop-shadow(0 0 120px rgba(232,97,0,0.15));
+            drop-shadow(0 0 28px rgba(185,28,28,0.75))
+            drop-shadow(0 0 70px rgba(217,119,6,0.4));
     }
     .hero-logo-svg { width: 100%; height: 100%; display: block; }
-    /* Override the text-transform uppercase set later */
     .hero-title { text-transform: capitalize !important; }
 
     @media (max-width: 768px) {
-        .hero-logo-wrap { width: 300px; height: 300px; margin-bottom: 18px; }
+        .hero-logo-wrap { width: 230px; height: 230px; margin-bottom: 14px; }
     }
     @media (max-width: 576px) {
-        .hero-logo-wrap { width: 260px; height: 260px; margin-bottom: 14px; }
+        .hero-logo-wrap { width: 200px; height: 200px; margin-bottom: 10px; }
     }
     @media (max-width: 380px) {
-        .hero-logo-wrap { width: 220px; height: 220px; }
+        .hero-logo-wrap { width: 180px; height: 180px; }
     }
     </style>
 </head>
