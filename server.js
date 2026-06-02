@@ -2618,32 +2618,27 @@ const server = http.createServer(async (req, res) => {
     // ── Translation Proxy API ──────────────────────────────────────────
     if (req.method === 'POST' && pathname === '/api/translate') {
         try {
-            const body = await readJSON(req);
+            const body = await readBody(req);
             if (!body || !Array.isArray(body.strings)) {
                 return sendJSON(res, 400, { message: 'Payload must contain a strings array' });
             }
             // Filter out empty strings to avoid translation API errors
             // And chunk the array if it's too large? translate-google handles arrays but let's be safe.
-            const result = [];
-            
-            // Chunking into groups of 50 to avoid URI too long errors from google translate
-            const chunkSize = 50;
-            for (let i = 0; i < body.strings.length; i += chunkSize) {
-                const chunk = body.strings.slice(i, i + chunkSize);
-                try {
-                    const translatedChunk = await translate(chunk, { to: 'mr' });
-                    // translate returns an array if given an array, but sometimes a string if array size is 1.
-                    if (Array.isArray(translatedChunk)) {
-                        result.push(...translatedChunk);
-                    } else if (typeof translatedChunk === 'string') {
-                        result.push(translatedChunk);
-                    }
-                } catch (trErr) {
-                    console.error("Translation Chunk Error:", trErr);
-                    // Fallback to original if translation fails
-                    result.push(...chunk); 
+            let result = [];
+            try {
+                const translated = await translate(body.strings, { to: 'mr' });
+                if (Array.isArray(translated)) {
+                    result = translated;
+                } else if (typeof translated === 'string') {
+                    result = [translated];
+                } else {
+                    result = body.strings;
                 }
+            } catch (trErr) {
+                console.error("Translation Error:", trErr);
+                result = body.strings;
             }
+            
             return sendJSON(res, 200, { success: true, translated: result });
         } catch (err) {
             console.error('Translation error:', err);
