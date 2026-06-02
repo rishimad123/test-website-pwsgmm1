@@ -191,6 +191,12 @@ async function connectDB() {
     colVolunteerCards   = db.collection('volunteerCards');
     colContactCards     = db.collection('contactCards');
 
+    const settingsDoc = await colSettings.findOne({});
+    if (settingsDoc) {
+        globalSettings = { ...globalSettings, ...stripId(settingsDoc) };
+        console.log(`✅ Loaded global settings from MongoDB`);
+    }
+
     // ── Load donations store ──────────────────────────────────────────────────
     const donDoc = await colDonations.findOne({ _storeKey: 'donationsStore' });
     if (donDoc) {
