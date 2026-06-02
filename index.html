@@ -502,28 +502,34 @@
     }
 
     /* ===================================================
-       HERO LOGO CIRCLE
+       HERO LOGO IMAGE
     =================================================== */
     .hero-logo-wrap {
-        width: 260px;
-        height: 260px;
+        width: 280px;
+        height: 280px;
         margin: 0 auto 16px;
         animation: fadeInUp 0.7s ease both;
         filter:
             drop-shadow(0 0 28px rgba(185,28,28,0.75))
             drop-shadow(0 0 70px rgba(217,119,6,0.4));
     }
-    .hero-logo-svg { width: 100%; height: 100%; display: block; }
+    .hero-logo-img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        /* No rotation, no animation – exactly as the image */
+    }
     .hero-title { text-transform: capitalize !important; }
 
     @media (max-width: 768px) {
-        .hero-logo-wrap { width: 230px; height: 230px; margin-bottom: 14px; }
+        .hero-logo-wrap { width: 240px; height: 240px; margin-bottom: 14px; }
     }
     @media (max-width: 576px) {
-        .hero-logo-wrap { width: 200px; height: 200px; margin-bottom: 10px; }
+        .hero-logo-wrap { width: 210px; height: 210px; margin-bottom: 10px; }
     }
     @media (max-width: 380px) {
-        .hero-logo-wrap { width: 180px; height: 180px; }
+        .hero-logo-wrap { width: 185px; height: 185px; }
     }
     </style>
 </head>
@@ -623,96 +629,7 @@
                  with white abstract Ganesha silhouette
             ═══════════════════════════════════════ -->
             <div class="hero-logo-wrap">
-              <svg class="hero-logo-svg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <radialGradient id="bgOrg" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stop-color="#FF9A00"/>
-                    <stop offset="100%" stop-color="#CC5A00"/>
-                  </radialGradient>
-                  
-                  <!-- Curved paths for text -->
-                  <path id="tTop" d="M 88,200 A 112,112 0 0,1 312,200" fill="none"/>
-                  <path id="tBot" d="M 80,200 A 120,120 0 0,0 320,200" fill="none"/>
-                  
-                  <!-- Base Petal Shape: 16 wide, overlapping teardrops -->
-                  <path id="petal" fill="#D31010" d="M 188,52 C 180,42 184,20 200,20 C 216,20 220,42 212,52 C 205,60 195,60 188,52 Z"/>
-                </defs>
-
-                <!-- ══ ROTATING 16 PETALS ══ -->
-                <g>
-                  <animateTransform attributeName="transform" type="rotate" from="0 200 200" to="360 200 200" dur="20s" repeatCount="indefinite"/>
-                  <use href="#petal" transform="rotate(0,200,200)"/>
-                  <use href="#petal" transform="rotate(22.5,200,200)"/>
-                  <use href="#petal" transform="rotate(45,200,200)"/>
-                  <use href="#petal" transform="rotate(67.5,200,200)"/>
-                  <use href="#petal" transform="rotate(90,200,200)"/>
-                  <use href="#petal" transform="rotate(112.5,200,200)"/>
-                  <use href="#petal" transform="rotate(135,200,200)"/>
-                  <use href="#petal" transform="rotate(157.5,200,200)"/>
-                  <use href="#petal" transform="rotate(180,200,200)"/>
-                  <use href="#petal" transform="rotate(202.5,200,200)"/>
-                  <use href="#petal" transform="rotate(225,200,200)"/>
-                  <use href="#petal" transform="rotate(247.5,200,200)"/>
-                  <use href="#petal" transform="rotate(270,200,200)"/>
-                  <use href="#petal" transform="rotate(292.5,200,200)"/>
-                  <use href="#petal" transform="rotate(315,200,200)"/>
-                  <use href="#petal" transform="rotate(337.5,200,200)"/>
-                </g>
-
-                <!-- ══ RED BAND FOR TEXT ══ -->
-                <circle cx="200" cy="200" r="143" fill="#B91C1C"/>
-                <circle cx="200" cy="200" r="140" fill="none" stroke="white" stroke-width="2"/>
-                
-                <!-- ══ INNER ORANGE CIRCLE ══ -->
-                <circle cx="200" cy="200" r="115" fill="url(#bgOrg)"/>
-                <circle cx="200" cy="200" r="117" fill="none" stroke="white" stroke-width="2"/>
-
-                <!-- ══ MARATHI TEXT ══ -->
-                <text fill="white" font-size="14" font-weight="bold" font-family="'Mukta', 'Hind', sans-serif" text-anchor="middle" letter-spacing="0.5">
-                  <textPath href="#tTop" startOffset="50%">॥ श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ ॥</textPath>
-                </text>
-                <text fill="white" font-size="15" font-weight="bold" font-family="'Mukta', 'Hind', sans-serif" text-anchor="middle" letter-spacing="0.5">
-                  <textPath href="#tBot" startOffset="50%">॥ पटेलवाडीचा सुखकर्ता ॥</textPath>
-                </text>
-
-                <!-- ══ FLAT VECTOR GANESHA (Exactly matched) ══ -->
-                <g transform="translate(200,200) scale(0.92) translate(-200,-200)">
-                  
-                  <!-- Left Ear (thick C-curve) -->
-                  <path d="M 176,145 C 142,142 148,205 186,183" fill="none" stroke="white" stroke-width="15" stroke-linecap="round"/>
-                  
-                  <!-- Head Dome -->
-                  <circle cx="196" cy="158" r="25" fill="white"/>
-                  
-                  <!-- Crown (Yellow dome) -->
-                  <path d="M 186,138 C 186,122 206,122 206,138 Z" fill="#FBBF24"/>
-                  <circle cx="196" cy="120" r="4.5" fill="#FBBF24"/>
-
-                  <!-- Bindi (Red bar + dot) -->
-                  <rect x="191" y="150" width="10" height="3.5" rx="1" fill="#DC2626"/>
-                  <circle cx="196" cy="158" r="2.5" fill="#DC2626"/>
-
-                  <!-- Thick Trunk Coil -->
-                  <path d="M 196,180 C 248,180 248,245 200,250 C 150,255 162,190 200,205 C 224,215 218,235 200,235 C 185,235 185,215 200,215" fill="none" stroke="white" stroke-width="16" stroke-linecap="round"/>
-
-                  <!-- Golden Tusk (left of trunk base) -->
-                  <path d="M 158,198 Q 170,180 186,184 Z" fill="#FBBF24"/>
-
-                  <!-- Flower (5 round petals + center) -->
-                  <g transform="translate(225,142)">
-                    <!-- Back petals -->
-                    <circle cx="0" cy="-14" r="9" fill="white"/>
-                    <circle cx="13" cy="-5" r="9" fill="white"/>
-                    <circle cx="9" cy="10" r="9" fill="white"/>
-                    <circle cx="-9" cy="10" r="9" fill="white"/>
-                    <circle cx="-13" cy="-5" r="9" fill="white"/>
-                    <!-- Main white center to smooth out -->
-                    <circle cx="0" cy="0" r="12" fill="white"/>
-                    <!-- Yellow center -->
-                    <circle cx="0" cy="0" r="4" fill="#FBBF24"/>
-                  </g>
-                </g>
-              </svg>
+              <img src="logo.png" alt="Patelwadi Sarvajanik Ganesh Mitramandal Logo" class="hero-logo-img">
             </div><!-- /hero-logo-wrap -->
 
             <h1 class="hero-title">Ganpati Bappa Morya</h1>
