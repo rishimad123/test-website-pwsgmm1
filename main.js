@@ -330,19 +330,31 @@ async function loadSiteSettings() {
         }
         if (s.socialFacebook) {
             const el = document.querySelector('.social-links a i.fa-facebook');
-            if (el && el.parentElement) el.parentElement.href = s.socialFacebook;
+            if (el && el.parentElement) {
+                el.parentElement.href = s.socialFacebook;
+                el.parentElement.target = '_blank';
+            }
         }
         if (s.socialInstagram) {
             const el = document.querySelector('.social-links a i.fa-instagram');
-            if (el && el.parentElement) el.parentElement.href = s.socialInstagram;
+            if (el && el.parentElement) {
+                el.parentElement.href = s.socialInstagram;
+                el.parentElement.target = '_blank';
+            }
         }
         if (s.socialYoutube) {
             const el = document.querySelector('.social-links a i.fa-youtube');
-            if (el && el.parentElement) el.parentElement.href = s.socialYoutube;
+            if (el && el.parentElement) {
+                el.parentElement.href = s.socialYoutube;
+                el.parentElement.target = '_blank';
+            }
         }
         if (s.socialTwitter) {
             const el = document.querySelector('.social-links a i.fa-twitter');
-            if (el && el.parentElement) el.parentElement.href = s.socialTwitter;
+            if (el && el.parentElement) {
+                el.parentElement.href = s.socialTwitter;
+                el.parentElement.target = '_blank';
+            }
         }
 
     } catch(e) {
