@@ -61,17 +61,17 @@
         min-height: 100vh;
         height: auto;
         background:
-            radial-gradient(ellipse at 50% 0%,   rgba(217,119,6,0.35) 0%, transparent 60%),
-            radial-gradient(ellipse at 0% 100%,  rgba(185,28,28,0.4) 0%, transparent 55%),
-            radial-gradient(ellipse at 100% 80%, rgba(29,58,110,0.35) 0%, transparent 55%),
-            linear-gradient(160deg, #1A0A00 0%, #2D0F00 40%, #1A0511 70%, #0D1A3A 100%);
+            radial-gradient(ellipse at 50% 15%,  rgba(232,120,0,0.55) 0%, transparent 50%),
+            radial-gradient(ellipse at 20% 80%,  rgba(160,30,0,0.55)  0%, transparent 50%),
+            radial-gradient(ellipse at 80% 70%,  rgba(100,18,0,0.45)  0%, transparent 45%),
+            linear-gradient(170deg, #1C0800 0%, #3B1200 35%, #2A0800 65%, #180600 100%);
         display: flex;
         align-items: center;
         justify-content: center;
         text-align: center;
         color: var(--white);
         overflow: hidden;
-        padding: 100px 20px 60px;
+        padding: 80px 20px 60px;
     }
 
     /* Remove the generic overlay */
@@ -158,41 +158,41 @@
     /* ── Main Title ── */
     .hero-title {
         font-family: 'Cinzel', serif !important;
-        font-size: clamp(2.2rem, 6vw, 4.5rem) !important;
+        font-size: clamp(2.6rem, 7.5vw, 5.5rem) !important;
         font-weight: 700 !important;
-        line-height: 1.15 !important;
-        letter-spacing: 1.5px !important;
-        background: linear-gradient(135deg, #FFFFFF 0%, #FCD34D 50%, #FFE8A0 100%);
-        -webkit-background-clip: text !important;
-        -webkit-text-fill-color: transparent !important;
-        background-clip: text !important;
-        text-shadow: none !important;
-        margin-bottom: 16px !important;
+        line-height: 1.1 !important;
+        letter-spacing: 2px !important;
+        color: #D4870A !important;
+        -webkit-text-fill-color: #D4870A !important;
+        background: none !important;
+        text-shadow: 0 2px 20px rgba(180,90,0,0.4), 0 0 60px rgba(212,135,10,0.15) !important;
+        margin-bottom: 18px !important;
         animation: fadeInUp 1s ease 0.1s both !important;
         padding: 0 16px;
+        text-transform: capitalize !important;
     }
 
     /* ── Subtitle ── */
     .hero-subtitle {
         font-family: 'Inter', sans-serif !important;
-        font-size: clamp(0.9rem, 2.5vw, 1.25rem) !important;
-        font-weight: 400 !important;
-        color: rgba(255,248,238,0.8) !important;
-        letter-spacing: 3px !important;
+        font-size: clamp(0.85rem, 2.2vw, 1.1rem) !important;
+        font-weight: 500 !important;
+        color: rgba(255,240,210,0.88) !important;
+        letter-spacing: 3.5px !important;
         text-transform: uppercase !important;
-        margin-bottom: 10px !important;
+        margin-bottom: 8px !important;
         animation: fadeInUp 1s ease 0.2s both !important;
     }
 
     /* ── Tagline ── */
     .hero-tagline {
         display: block;
-        font-size: clamp(0.8rem, 2vw, 1rem);
-        font-weight: 500;
-        color: var(--gold-lt);
-        letter-spacing: 2px;
+        font-size: clamp(0.82rem, 2vw, 1rem);
+        font-weight: 600;
+        color: rgba(255,220,130,0.9);
+        letter-spacing: 3px;
         text-transform: uppercase;
-        margin-bottom: 36px;
+        margin-bottom: 30px;
         animation: fadeInUp 1s ease 0.3s both;
     }
 
@@ -220,96 +220,98 @@
 
     /* ── Countdown ── */
     .countdown {
-        gap: 16px !important;
+        gap: 14px !important;
         margin: 0 auto 44px !important;
         animation: fadeInUp 1s ease 0.45s both !important;
         flex-wrap: wrap;
         justify-content: center;
     }
     .countdown-item {
-        background: rgba(255,255,255,0.07) !important;
-        backdrop-filter: blur(16px) !important;
-        -webkit-backdrop-filter: blur(16px) !important;
-        border: 1px solid rgba(252,211,77,0.25) !important;
-        border-radius: 16px !important;
-        padding: 20px 28px !important;
-        min-width: 90px;
+        background: rgba(20,8,0,0.55) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(200,120,0,0.2) !important;
+        border-radius: 12px !important;
+        padding: 18px 26px !important;
+        min-width: 88px;
         position: relative;
         overflow: hidden;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,200,80,0.06) !important;
     }
     .countdown-item::before {
         content: '';
         position: absolute;
         inset: 0;
-        background: linear-gradient(135deg, rgba(217,119,6,0.08), transparent);
+        background: linear-gradient(160deg, rgba(200,100,0,0.07), transparent 60%);
         pointer-events: none;
     }
     .countdown-value {
         font-family: 'Cinzel', serif !important;
-        font-size: clamp(1.8rem, 4vw, 2.8rem) !important;
+        font-size: clamp(2rem, 4.5vw, 3rem) !important;
         font-weight: 700 !important;
-        background: linear-gradient(135deg, #fff 0%, #FCD34D 100%);
-        -webkit-background-clip: text !important;
-        -webkit-text-fill-color: transparent !important;
-        background-clip: text !important;
+        color: #fff !important;
+        -webkit-text-fill-color: #fff !important;
+        background: none !important;
         line-height: 1.1 !important;
         display: block !important;
+        text-shadow: 0 0 20px rgba(255,200,80,0.2);
     }
     .countdown-label {
-        font-size: 0.65rem !important;
-        letter-spacing: 2px !important;
+        font-size: 0.62rem !important;
+        letter-spacing: 2.5px !important;
         text-transform: uppercase !important;
-        color: rgba(252,211,77,0.75) !important;
-        margin-top: 4px !important;
+        color: rgba(255,200,130,0.65) !important;
+        margin-top: 5px !important;
         display: block !important;
     }
 
     /* ── Hero Buttons ── */
     .hero-buttons {
         animation: fadeInUp 1s ease 0.55s both !important;
-        gap: 16px !important;
+        gap: 14px !important;
     }
     .hero-btn-primary {
         display: inline-flex;
         align-items: center;
         gap: 10px;
-        padding: 14px 32px;
-        background: linear-gradient(135deg, var(--saffron) 0%, var(--crimson) 100%);
+        padding: 14px 30px;
+        background: linear-gradient(135deg, #E07010 0%, #C03008 100%);
         color: #fff !important;
         font-weight: 600;
         font-size: 0.95rem;
         letter-spacing: 0.5px;
         border-radius: 50px;
-        border: 1px solid rgba(217,119,6,0.4);
+        border: none;
         text-decoration: none;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 20px rgba(185,28,28,0.35);
+        box-shadow: 0 4px 22px rgba(180,50,8,0.5);
     }
     .hero-btn-primary:hover {
         transform: translateY(-3px);
-        box-shadow: 0 8px 30px rgba(185,28,28,0.5);
+        box-shadow: 0 10px 32px rgba(180,50,8,0.65);
         color: #fff;
     }
     .hero-btn-secondary {
         display: inline-flex;
         align-items: center;
         gap: 10px;
-        padding: 14px 32px;
-        background: transparent;
-        color: rgba(255,248,238,0.9) !important;
+        padding: 13px 28px;
+        background: rgba(30,10,0,0.6);
+        color: rgba(255,240,210,0.92) !important;
         font-weight: 600;
         font-size: 0.95rem;
         letter-spacing: 0.5px;
         border-radius: 50px;
-        border: 1px solid rgba(252,211,77,0.4);
+        border: 1.5px solid rgba(200,120,50,0.45);
         text-decoration: none;
         transition: all 0.3s ease;
+        backdrop-filter: blur(8px);
     }
     .hero-btn-secondary:hover {
-        background: rgba(252,211,77,0.1);
-        border-color: rgba(252,211,77,0.7);
+        background: rgba(200,100,20,0.2);
+        border-color: rgba(220,160,60,0.7);
         transform: translateY(-2px);
-        color: var(--gold-lt);
+        color: #FFD88A !important;
     }
 
     /* ── Scroll indicator ── */
@@ -489,9 +491,9 @@
        MOBILE POLISH
     =================================================== */
     @media (max-width: 576px) {
-        .hero { padding: 90px 16px 70px !important; }
-        .hero-title { font-size: 2rem !important; }
-        .countdown-item { padding: 14px 16px !important; min-width: 70px; }
+        .hero { padding: 80px 16px 60px !important; }
+        .hero-title { font-size: 2.4rem !important; }
+        .countdown-item { padding: 14px 16px !important; min-width: 72px; }
         .hero-btn-primary, .hero-btn-secondary { width: 100%; max-width: 260px; justify-content: center; }
     }
 
@@ -501,25 +503,30 @@
     }
 
     /* ===================================================
-       HERO LOGO CIRCLE  (replaces Om symbol)
+       HERO LOGO CIRCLE
     =================================================== */
     .hero-logo-wrap {
-        width: 320px;
-        height: 320px;
-        margin: 0 auto 20px;
+        width: 380px;
+        height: 380px;
+        margin: 0 auto 24px;
         animation: fadeInUp 0.7s ease both;
         filter:
-            drop-shadow(0 0 24px rgba(185,28,28,0.55))
-            drop-shadow(0 0 60px rgba(217,119,6,0.25));
+            drop-shadow(0 0 30px rgba(185,28,28,0.7))
+            drop-shadow(0 0 80px rgba(217,119,6,0.35))
+            drop-shadow(0 0 120px rgba(232,97,0,0.15));
     }
     .hero-logo-svg { width: 100%; height: 100%; display: block; }
-    .hero-title { text-transform: uppercase !important; }
+    /* Override the text-transform uppercase set later */
+    .hero-title { text-transform: capitalize !important; }
 
+    @media (max-width: 768px) {
+        .hero-logo-wrap { width: 300px; height: 300px; margin-bottom: 18px; }
+    }
     @media (max-width: 576px) {
-        .hero-logo-wrap { width: 240px; height: 240px; margin-bottom: 14px; }
+        .hero-logo-wrap { width: 260px; height: 260px; margin-bottom: 14px; }
     }
     @media (max-width: 380px) {
-        .hero-logo-wrap { width: 200px; height: 200px; }
+        .hero-logo-wrap { width: 220px; height: 220px; }
     }
     </style>
 </head>
@@ -621,126 +628,97 @@
             <div class="hero-logo-wrap">
               <svg class="hero-logo-svg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
                 <defs>
-                  <radialGradient id="hloOg" cx="38%" cy="32%" r="72%">
-                    <stop offset="0%"   stop-color="#FF9500"/>
-                    <stop offset="55%"  stop-color="#E86100"/>
-                    <stop offset="100%" stop-color="#BF4800"/>
+                  <radialGradient id="bgOrg" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#FF9A00"/>
+                    <stop offset="100%" stop-color="#CC5A00"/>
                   </radialGradient>
-
-                  <!-- Paths for curved Marathi text -->
-                  <path id="textPathTop" d="M 84,200 A 116,116 0 0,1 316,200" fill="none" />
-                  <path id="textPathBottom" d="M 73,200 A 127,127 0 0,0 327,200" fill="none" />
+                  
+                  <!-- Curved paths for text -->
+                  <path id="tTop" d="M 88,200 A 112,112 0 0,1 312,200" fill="none"/>
+                  <path id="tBot" d="M 80,200 A 120,120 0 0,0 320,200" fill="none"/>
+                  
+                  <!-- Base Petal Shape: 16 wide, overlapping teardrops -->
+                  <path id="petal" fill="#D31010" d="M 188,52 C 180,42 184,20 200,20 C 216,20 220,42 212,52 C 205,60 195,60 188,52 Z"/>
                 </defs>
 
-                <!-- ══ ROTATING OUTER PETAL BORDER ══ -->
+                <!-- ══ ROTATING 16 PETALS ══ -->
                 <g>
-                  <animateTransform attributeName="transform" type="rotate"
-                    from="0 200 200" to="360 200 200" dur="22s" repeatCount="indefinite"/>
-
-                  <!-- BASE PETAL SHAPE (12 main petals + cross-flowers) -->
-                  <path fill="#CC1010" d="M 200,57 C 191,54 184,44 184,31 C 184,17 191,10 200,10 C 209,10 216,17 216,31 C 216,44 209,54 200,57 Z"/>
-                  <path fill="#CC1010" d="M 200,57 C 191,54 184,44 184,31 C 184,17 191,10 200,10 C 209,10 216,17 216,31 C 216,44 209,54 200,57 Z" transform="rotate(30,200,200)"/>
-                  <path fill="#CC1010" d="M 200,57 C 191,54 184,44 184,31 C 184,17 191,10 200,10 C 209,10 216,17 216,31 C 216,44 209,54 200,57 Z" transform="rotate(60,200,200)"/>
-                  <path fill="#CC1010" d="M 200,57 C 191,54 184,44 184,31 C 184,17 191,10 200,10 C 209,10 216,17 216,31 C 216,44 209,54 200,57 Z" transform="rotate(90,200,200)"/>
-                  <path fill="#CC1010" d="M 200,57 C 191,54 184,44 184,31 C 184,17 191,10 200,10 C 209,10 216,17 216,31 C 216,44 209,54 200,57 Z" transform="rotate(120,200,200)"/>
-                  <path fill="#CC1010" d="M 200,57 C 191,54 184,44 184,31 C 184,17 191,10 200,10 C 209,10 216,17 216,31 C 216,44 209,54 200,57 Z" transform="rotate(150,200,200)"/>
-                  <path fill="#CC1010" d="M 200,57 C 191,54 184,44 184,31 C 184,17 191,10 200,10 C 209,10 216,17 216,31 C 216,44 209,54 200,57 Z" transform="rotate(180,200,200)"/>
-                  <path fill="#CC1010" d="M 200,57 C 191,54 184,44 184,31 C 184,17 191,10 200,10 C 209,10 216,17 216,31 C 216,44 209,54 200,57 Z" transform="rotate(210,200,200)"/>
-                  <path fill="#CC1010" d="M 200,57 C 191,54 184,44 184,31 C 184,17 191,10 200,10 C 209,10 216,17 216,31 C 216,44 209,54 200,57 Z" transform="rotate(240,200,200)"/>
-                  <path fill="#CC1010" d="M 200,57 C 191,54 184,44 184,31 C 184,17 191,10 200,10 C 209,10 216,17 216,31 C 216,44 209,54 200,57 Z" transform="rotate(270,200,200)"/>
-                  <path fill="#CC1010" d="M 200,57 C 191,54 184,44 184,31 C 184,17 191,10 200,10 C 209,10 216,17 216,31 C 216,44 209,54 200,57 Z" transform="rotate(300,200,200)"/>
-                  <path fill="#CC1010" d="M 200,57 C 191,54 184,44 184,31 C 184,17 191,10 200,10 C 209,10 216,17 216,31 C 216,44 209,54 200,57 Z" transform="rotate(330,200,200)"/>
-
-                  <!-- Small 4-petal cross flowers -->
-                  <g transform="rotate(15,200,200)"><ellipse cx="200" cy="46" rx="6" ry="10" fill="#AA0000"/><ellipse cx="200" cy="54" rx="6" ry="10" fill="#AA0000"/><ellipse cx="196" cy="50" rx="10" ry="6" fill="#AA0000"/><ellipse cx="204" cy="50" rx="10" ry="6" fill="#AA0000"/></g>
-                  <g transform="rotate(45,200,200)"><ellipse cx="200" cy="46" rx="6" ry="10" fill="#AA0000"/><ellipse cx="200" cy="54" rx="6" ry="10" fill="#AA0000"/><ellipse cx="196" cy="50" rx="10" ry="6" fill="#AA0000"/><ellipse cx="204" cy="50" rx="10" ry="6" fill="#AA0000"/></g>
-                  <g transform="rotate(75,200,200)"><ellipse cx="200" cy="46" rx="6" ry="10" fill="#AA0000"/><ellipse cx="200" cy="54" rx="6" ry="10" fill="#AA0000"/><ellipse cx="196" cy="50" rx="10" ry="6" fill="#AA0000"/><ellipse cx="204" cy="50" rx="10" ry="6" fill="#AA0000"/></g>
-                  <g transform="rotate(105,200,200)"><ellipse cx="200" cy="46" rx="6" ry="10" fill="#AA0000"/><ellipse cx="200" cy="54" rx="6" ry="10" fill="#AA0000"/><ellipse cx="196" cy="50" rx="10" ry="6" fill="#AA0000"/><ellipse cx="204" cy="50" rx="10" ry="6" fill="#AA0000"/></g>
-                  <g transform="rotate(135,200,200)"><ellipse cx="200" cy="46" rx="6" ry="10" fill="#AA0000"/><ellipse cx="200" cy="54" rx="6" ry="10" fill="#AA0000"/><ellipse cx="196" cy="50" rx="10" ry="6" fill="#AA0000"/><ellipse cx="204" cy="50" rx="10" ry="6" fill="#AA0000"/></g>
-                  <g transform="rotate(165,200,200)"><ellipse cx="200" cy="46" rx="6" ry="10" fill="#AA0000"/><ellipse cx="200" cy="54" rx="6" ry="10" fill="#AA0000"/><ellipse cx="196" cy="50" rx="10" ry="6" fill="#AA0000"/><ellipse cx="204" cy="50" rx="10" ry="6" fill="#AA0000"/></g>
-                  <g transform="rotate(195,200,200)"><ellipse cx="200" cy="46" rx="6" ry="10" fill="#AA0000"/><ellipse cx="200" cy="54" rx="6" ry="10" fill="#AA0000"/><ellipse cx="196" cy="50" rx="10" ry="6" fill="#AA0000"/><ellipse cx="204" cy="50" rx="10" ry="6" fill="#AA0000"/></g>
-                  <g transform="rotate(225,200,200)"><ellipse cx="200" cy="46" rx="6" ry="10" fill="#AA0000"/><ellipse cx="200" cy="54" rx="6" ry="10" fill="#AA0000"/><ellipse cx="196" cy="50" rx="10" ry="6" fill="#AA0000"/><ellipse cx="204" cy="50" rx="10" ry="6" fill="#AA0000"/></g>
-                  <g transform="rotate(255,200,200)"><ellipse cx="200" cy="46" rx="6" ry="10" fill="#AA0000"/><ellipse cx="200" cy="54" rx="6" ry="10" fill="#AA0000"/><ellipse cx="196" cy="50" rx="10" ry="6" fill="#AA0000"/><ellipse cx="204" cy="50" rx="10" ry="6" fill="#AA0000"/></g>
-                  <g transform="rotate(285,200,200)"><ellipse cx="200" cy="46" rx="6" ry="10" fill="#AA0000"/><ellipse cx="200" cy="54" rx="6" ry="10" fill="#AA0000"/><ellipse cx="196" cy="50" rx="10" ry="6" fill="#AA0000"/><ellipse cx="204" cy="50" rx="10" ry="6" fill="#AA0000"/></g>
-                  <g transform="rotate(315,200,200)"><ellipse cx="200" cy="46" rx="6" ry="10" fill="#AA0000"/><ellipse cx="200" cy="54" rx="6" ry="10" fill="#AA0000"/><ellipse cx="196" cy="50" rx="10" ry="6" fill="#AA0000"/><ellipse cx="204" cy="50" rx="10" ry="6" fill="#AA0000"/></g>
-                  <g transform="rotate(345,200,200)"><ellipse cx="200" cy="46" rx="6" ry="10" fill="#AA0000"/><ellipse cx="200" cy="54" rx="6" ry="10" fill="#AA0000"/><ellipse cx="196" cy="50" rx="10" ry="6" fill="#AA0000"/><ellipse cx="204" cy="50" rx="10" ry="6" fill="#AA0000"/></g>
+                  <animateTransform attributeName="transform" type="rotate" from="0 200 200" to="360 200 200" dur="20s" repeatCount="indefinite"/>
+                  <use href="#petal" transform="rotate(0,200,200)"/>
+                  <use href="#petal" transform="rotate(22.5,200,200)"/>
+                  <use href="#petal" transform="rotate(45,200,200)"/>
+                  <use href="#petal" transform="rotate(67.5,200,200)"/>
+                  <use href="#petal" transform="rotate(90,200,200)"/>
+                  <use href="#petal" transform="rotate(112.5,200,200)"/>
+                  <use href="#petal" transform="rotate(135,200,200)"/>
+                  <use href="#petal" transform="rotate(157.5,200,200)"/>
+                  <use href="#petal" transform="rotate(180,200,200)"/>
+                  <use href="#petal" transform="rotate(202.5,200,200)"/>
+                  <use href="#petal" transform="rotate(225,200,200)"/>
+                  <use href="#petal" transform="rotate(247.5,200,200)"/>
+                  <use href="#petal" transform="rotate(270,200,200)"/>
+                  <use href="#petal" transform="rotate(292.5,200,200)"/>
+                  <use href="#petal" transform="rotate(315,200,200)"/>
+                  <use href="#petal" transform="rotate(337.5,200,200)"/>
                 </g>
 
-                <!-- ══ STATIC INNER ELEMENTS ══ -->
-
-                <!-- Red ring background for text -->
+                <!-- ══ RED BAND FOR TEXT ══ -->
                 <circle cx="200" cy="200" r="143" fill="#B91C1C"/>
-
-                <!-- White separator lines for the red band -->
-                <circle cx="200" cy="200" r="140" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
-                <circle cx="200" cy="200" r="136" fill="none" stroke="white" stroke-width="1.5"/>
-
-                <!-- Inner orange circle for Ganesha -->
-                <circle cx="200" cy="200" r="102" fill="url(#hloOg)"/>
+                <circle cx="200" cy="200" r="140" fill="none" stroke="white" stroke-width="2"/>
                 
-                <!-- Inner white separators -->
-                <circle cx="200" cy="200" r="105" fill="none" stroke="white" stroke-width="1.5"/>
-                <circle cx="200" cy="200" r="101" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+                <!-- ══ INNER ORANGE CIRCLE ══ -->
+                <circle cx="200" cy="200" r="115" fill="url(#bgOrg)"/>
+                <circle cx="200" cy="200" r="117" fill="none" stroke="white" stroke-width="2"/>
 
-                <!-- Marathi Text (curved) -->
-                <text fill="white" font-size="14.5" font-weight="bold" font-family="'Mukta', 'Hind', sans-serif" text-anchor="middle" letter-spacing="0.5">
-                  <textPath href="#textPathTop" startOffset="50%">॥ श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ ॥</textPath>
+                <!-- ══ MARATHI TEXT ══ -->
+                <text fill="white" font-size="14" font-weight="bold" font-family="'Mukta', 'Hind', sans-serif" text-anchor="middle" letter-spacing="0.5">
+                  <textPath href="#tTop" startOffset="50%">॥ श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ ॥</textPath>
                 </text>
-                <text fill="white" font-size="16" font-weight="bold" font-family="'Mukta', 'Hind', sans-serif" text-anchor="middle" letter-spacing="0.5">
-                  <textPath href="#textPathBottom" startOffset="50%">॥ पटेलवाडीचा सुखकर्ता ॥</textPath>
+                <text fill="white" font-size="15" font-weight="bold" font-family="'Mukta', 'Hind', sans-serif" text-anchor="middle" letter-spacing="0.5">
+                  <textPath href="#tBot" startOffset="50%">॥ पटेलवाडीचा सुखकर्ता ॥</textPath>
                 </text>
 
-                <!-- ══ GANESHA SILHOUETTE (white) scaled to fit ══ -->
-                <g transform="translate(200,200) scale(0.78) translate(-200,-200)">
-                  <!-- EAR — left side, drawn behind head -->
-                  <ellipse cx="172" cy="170" rx="18" ry="22" fill="white" transform="rotate(-10,172,170)"/>
-                  <ellipse cx="174" cy="170" rx="11" ry="14" fill="#C84F00" transform="rotate(-10,174,170)"/>
+                <!-- ══ FLAT VECTOR GANESHA (Exactly matched) ══ -->
+                <g transform="translate(200,200) scale(0.92) translate(-200,-200)">
+                  
+                  <!-- Left Ear (thick C-curve) -->
+                  <path d="M 176,145 C 142,142 148,205 186,183" fill="none" stroke="white" stroke-width="15" stroke-linecap="round"/>
+                  
+                  <!-- Head Dome -->
+                  <circle cx="196" cy="158" r="25" fill="white"/>
+                  
+                  <!-- Crown (Yellow dome) -->
+                  <path d="M 186,138 C 186,122 206,122 206,138 Z" fill="#FBBF24"/>
+                  <circle cx="196" cy="120" r="4.5" fill="#FBBF24"/>
 
-                  <!-- HEAD DOME -->
-                  <ellipse cx="200" cy="158" rx="30" ry="27" fill="white"/>
-                  <path d="M 183,155 L 183,178 C 183,188 191,194 200,194 C 209,194 217,188 217,178 L 217,155 Z" fill="white"/>
+                  <!-- Bindi (Red bar + dot) -->
+                  <rect x="191" y="150" width="10" height="3.5" rx="1" fill="#DC2626"/>
+                  <circle cx="196" cy="158" r="2.5" fill="#DC2626"/>
 
-                  <!-- CROWN / PAGDI top (saffron-gold) -->
-                  <path d="M 190,135 C 189,127 194,121 200,120 C 206,119 211,125 211,133 L 211,140 L 189,140 Z" fill="#D97706"/>
-                  <ellipse cx="200" cy="120" rx="5.5" ry="4.5" fill="#FCD34D"/>
-                  <line x1="189" y1="140" x2="211" y2="140" stroke="#92400E" stroke-width="1.5"/>
+                  <!-- Thick Trunk Coil -->
+                  <path d="M 196,180 C 248,180 248,245 200,250 C 150,255 162,190 200,205 C 224,215 218,235 200,235 C 185,235 185,215 200,215" fill="none" stroke="white" stroke-width="16" stroke-linecap="round"/>
 
-                  <!-- BINDI on forehead -->
-                  <circle cx="200" cy="153" r="3.5" fill="#CC1010"/>
-                  <line x1="196" y1="147" x2="204" y2="147" stroke="#CC1010" stroke-width="2.2" stroke-linecap="round"/>
+                  <!-- Golden Tusk (left of trunk base) -->
+                  <path d="M 158,198 Q 170,180 186,184 Z" fill="#FBBF24"/>
 
-                  <!-- TUSK — right side (golden yellow) -->
-                  <path d="M 220,185 C 229,176 240,180 238,191 C 236,201 226,202 221,195 C 218,190 218,186 220,185 Z" fill="#FCD34D"/>
-
-                  <!-- TRUNK — signature curling scroll element -->
-                  <path d="M 218,187
-                           C 238,193 248,213 241,231
-                           C 234,249 213,254 197,247
-                           C 181,240 176,222 185,210
-                           C 194,198 211,200 217,212
-                           C 222,224 215,234 206,231"
-                        fill="none" stroke="white" stroke-width="19"
-                        stroke-linecap="round" stroke-linejoin="round"/>
-                  <circle cx="208" cy="232" r="6" fill="white"/>
-
-                  <!-- CHIN/LOWER FACE -->
-                  <ellipse cx="200" cy="188" rx="14" ry="8" fill="white"/>
-
-                  <!-- ══ HIBISCUS FLOWER — upper right area ══ -->
-                  <g transform="translate(222,143)">
-                    <ellipse cx="0" cy="-16" rx="7.5" ry="14" fill="white" opacity="0.95"/>
-                    <ellipse cx="0" cy="-16" rx="7.5" ry="14" fill="white" opacity="0.95" transform="rotate(72,0,0)"/>
-                    <ellipse cx="0" cy="-16" rx="7.5" ry="14" fill="white" opacity="0.95" transform="rotate(144,0,0)"/>
-                    <ellipse cx="0" cy="-16" rx="7.5" ry="14" fill="white" opacity="0.95" transform="rotate(216,0,0)"/>
-                    <ellipse cx="0" cy="-16" rx="7.5" ry="14" fill="white" opacity="0.95" transform="rotate(288,0,0)"/>
-                    <circle cx="0" cy="0" r="5.5" fill="white"/>
-                    <line x1="0" y1="-6" x2="0" y2="-12" stroke="rgba(217,119,6,0.5)" stroke-width="2" stroke-linecap="round"/>
+                  <!-- Flower (5 round petals + center) -->
+                  <g transform="translate(225,142)">
+                    <!-- Back petals -->
+                    <circle cx="0" cy="-14" r="9" fill="white"/>
+                    <circle cx="13" cy="-5" r="9" fill="white"/>
+                    <circle cx="9" cy="10" r="9" fill="white"/>
+                    <circle cx="-9" cy="10" r="9" fill="white"/>
+                    <circle cx="-13" cy="-5" r="9" fill="white"/>
+                    <!-- Main white center to smooth out -->
+                    <circle cx="0" cy="0" r="12" fill="white"/>
+                    <!-- Yellow center -->
+                    <circle cx="0" cy="0" r="4" fill="#FBBF24"/>
                   </g>
                 </g>
               </svg>
             </div><!-- /hero-logo-wrap -->
 
-            <h1 class="hero-title">GANPATI BAPPA MORYA</h1>
+            <h1 class="hero-title">Ganpati Bappa Morya</h1>
             <p class="hero-subtitle">Patelwadi Sarvajanik Ganesh Mitramandal</p>
             <span class="hero-tagline">॥ Patelwadichi Sukhkarta ॥</span>
 
