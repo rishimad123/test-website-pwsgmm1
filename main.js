@@ -118,10 +118,11 @@ document.addEventListener('DOMContentLoaded', () => {
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         const href = this.getAttribute('href');
-        if (href !== '#' && href.length > 1) {
-            e.preventDefault();
+        // Only intercept real in-page anchor links, never external or social links
+        if (href && href !== '#' && href.length > 1 && !this.getAttribute('target')) {
             const target = document.querySelector(href);
             if (target) {
+                e.preventDefault();
                 target.scrollIntoView({
                     behavior: 'smooth',
                     block: 'start'
@@ -329,7 +330,7 @@ async function loadSiteSettings() {
             if (el && el.parentElement) el.parentElement.innerHTML = `<i class="fas fa-envelope"></i> ${s.contactEmail}`;
         }
         const formatUrl = (url) => {
-            if (!url) return '#';
+            if (!url) return null;
             url = url.trim();
             if (!url.startsWith('http://') && !url.startsWith('https://')) {
                 return 'https://' + url;
@@ -337,34 +338,34 @@ async function loadSiteSettings() {
             return url;
         };
 
-        if (s.socialFacebook) {
-            const el = document.querySelector('.social-links a i.fa-facebook');
-            if (el && el.parentElement) {
-                el.parentElement.href = formatUrl(s.socialFacebook);
-                el.parentElement.target = '_blank';
+        // Helper: apply URL to a social link anchor by ID, with full cross-platform safety
+        const applySocialLink = (id, url) => {
+            const formattedUrl = formatUrl(url);
+            if (!formattedUrl) return;
+            // Try by ID first (fastest, most reliable)
+            let el = document.getElementById(id);
+            if (!el) {
+                // Fallback: find by icon class inside .social-links
+                const iconClass = {
+                    socialFacebookLink: 'fa-facebook',
+                    socialInstagramLink: 'fa-instagram',
+                    socialYoutubeLink: 'fa-youtube',
+                    socialTwitterLink: 'fa-twitter'
+                }[id];
+                const icon = document.querySelector(`.social-links a i.${iconClass}`);
+                el = icon ? icon.parentElement : null;
             }
-        }
-        if (s.socialInstagram) {
-            const el = document.querySelector('.social-links a i.fa-instagram');
-            if (el && el.parentElement) {
-                el.parentElement.href = formatUrl(s.socialInstagram);
-                el.parentElement.target = '_blank';
+            if (el) {
+                el.href = formattedUrl;
+                el.target = '_blank';
+                el.rel = 'noopener noreferrer';
             }
-        }
-        if (s.socialYoutube) {
-            const el = document.querySelector('.social-links a i.fa-youtube');
-            if (el && el.parentElement) {
-                el.parentElement.href = formatUrl(s.socialYoutube);
-                el.parentElement.target = '_blank';
-            }
-        }
-        if (s.socialTwitter) {
-            const el = document.querySelector('.social-links a i.fa-twitter');
-            if (el && el.parentElement) {
-                el.parentElement.href = formatUrl(s.socialTwitter);
-                el.parentElement.target = '_blank';
-            }
-        }
+        };
+
+        if (s.socialFacebook)  applySocialLink('socialFacebookLink',  s.socialFacebook);
+        if (s.socialInstagram) applySocialLink('socialInstagramLink', s.socialInstagram);
+        if (s.socialYoutube)   applySocialLink('socialYoutubeLink',   s.socialYoutube);
+        if (s.socialTwitter)   applySocialLink('socialTwitterLink',   s.socialTwitter);
 
     } catch(e) {
         console.warn('Failed to load site settings:', e.message);
