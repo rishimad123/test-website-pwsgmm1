@@ -4,9 +4,502 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patelwadi Sarvajanik Ganesh Mitramandal</title>
+    <meta name="description" content="Patelwadi Sarvajanik Ganesh Mitramandal - Celebrating Lord Ganesha's blessings with devotion, community, and grandeur. Patelwadichi Sukhkarta.">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+    /* ===================================================
+       LANDING PAGE – DIVINE FESTIVAL THEME
+       Inspired by the Ganesh idol photos & mandala logo
+    =================================================== */
+
+    :root {
+        --saffron:   #E86100;
+        --deep-saffron: #C45000;
+        --crimson:   #B91C1C;
+        --gold:      #D97706;
+        --gold-lt:   #FCD34D;
+        --cream:     #FFF8EE;
+        --midnight:  #1A0A00;
+        --royal-blue:#1D3A6E;
+        --white:     #FFFFFF;
+    }
+
+    /* ---- NAVBAR ---- */
+    .navbar {
+        background: rgba(26, 10, 0, 0.95);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 2px 20px rgba(185,28,28,0.25);
+        border-bottom: 1px solid rgba(217,119,6,0.3);
+    }
+    .logo { color: var(--gold-lt) !important; letter-spacing: 0.3px; }
+    .logo i { color: var(--gold-lt) !important; }
+
+    .nav-menu a { color: rgba(255,248,238,0.85) !important; font-size: 0.92rem; letter-spacing: 0.3px; }
+    .nav-menu a:hover, .nav-menu a.active { color: var(--gold-lt) !important; }
+    .nav-menu a::after { background: var(--gold-lt) !important; }
+    .mobile-toggle span { background: var(--gold-lt) !important; }
+    @media (max-width: 968px) {
+        .nav-menu { background: rgba(26,10,0,0.98) !important; border-bottom: 2px solid var(--crimson); }
+    }
+    .btn-login {
+        background: linear-gradient(135deg, var(--saffron), var(--crimson)) !important;
+        border: 1px solid var(--gold) !important;
+        border-radius: 20px !important;
+        color: #fff !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.3px;
+    }
+    .btn-login:hover { opacity: 0.9; transform: translateY(-1px) !important; }
+
+    /* ---- HERO ---- */
+    .hero {
+        position: relative;
+        min-height: 100vh;
+        height: auto;
+        background:
+            radial-gradient(ellipse at 50% 0%,   rgba(217,119,6,0.35) 0%, transparent 60%),
+            radial-gradient(ellipse at 0% 100%,  rgba(185,28,28,0.4) 0%, transparent 55%),
+            radial-gradient(ellipse at 100% 80%, rgba(29,58,110,0.35) 0%, transparent 55%),
+            linear-gradient(160deg, #1A0A00 0%, #2D0F00 40%, #1A0511 70%, #0D1A3A 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: var(--white);
+        overflow: hidden;
+        padding: 100px 20px 60px;
+    }
+
+    /* Remove the generic overlay */
+    .hero-overlay { display: none; }
+
+    /* ── Decorative rings / halo behind content ── */
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: min(700px, 90vw);
+        height: min(700px, 90vw);
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(217,119,6,0.18) 0%, rgba(232,97,0,0.1) 30%, transparent 65%);
+        animation: divineGlow 6s ease-in-out infinite alternate;
+        pointer-events: none;
+    }
+    .hero::after {
+        content: '';
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: min(850px, 110vw);
+        height: min(850px, 110vw);
+        border-radius: 50%;
+        border: 1px solid rgba(217,119,6,0.12);
+        pointer-events: none;
+        animation: rotateSlow 40s linear infinite;
+    }
+    @keyframes divineGlow {
+        from { opacity: 0.6; transform: translate(-50%,-50%) scale(0.95); }
+        to   { opacity: 1;   transform: translate(-50%,-50%) scale(1.05); }
+    }
+    @keyframes rotateSlow { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+    /* ── SVG Mandala decoration ── */
+    .hero-mandala {
+        position: absolute;
+        pointer-events: none;
+        opacity: 0.07;
+    }
+    .hero-mandala-tl { top: -60px; left: -60px; width: 380px; animation: rotateSlow 60s linear infinite; }
+    .hero-mandala-br { bottom: -60px; right: -60px; width: 380px; animation: rotateSlow 50s linear infinite reverse; }
+    @media (max-width: 576px) {
+        .hero-mandala-tl, .hero-mandala-br { width: 200px; }
+    }
+
+    /* ── Floating particles ── */
+    .hero-particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    .particle {
+        position: absolute;
+        border-radius: 50%;
+        animation: floatUp linear infinite;
+    }
+    @keyframes floatUp {
+        0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+        10%  { opacity: 0.7; }
+        90%  { opacity: 0.4; }
+        100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+    }
+
+    /* ── OM Symbol ── */
+    .hero-om {
+        font-size: clamp(2.5rem, 6vw, 4rem);
+        font-weight: 300;
+        color: var(--gold-lt);
+        letter-spacing: 2px;
+        text-shadow: 0 0 30px rgba(252,211,77,0.8), 0 0 60px rgba(217,119,6,0.4);
+        animation: fadeInUp 0.8s ease both;
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    /* ── Thin decorative rule ── */
+    .hero-rule {
+        width: 120px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--gold-lt), transparent);
+        margin: 0 auto 20px;
+        animation: fadeInUp 0.9s ease both;
+    }
+
+    /* ── Main Title ── */
+    .hero-title {
+        font-family: 'Cinzel', serif !important;
+        font-size: clamp(2.2rem, 6vw, 4.5rem) !important;
+        font-weight: 700 !important;
+        line-height: 1.15 !important;
+        letter-spacing: 1.5px !important;
+        background: linear-gradient(135deg, #FFFFFF 0%, #FCD34D 50%, #FFE8A0 100%);
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        text-shadow: none !important;
+        margin-bottom: 16px !important;
+        animation: fadeInUp 1s ease 0.1s both !important;
+        padding: 0 16px;
+    }
+
+    /* ── Subtitle ── */
+    .hero-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: clamp(0.9rem, 2.5vw, 1.25rem) !important;
+        font-weight: 400 !important;
+        color: rgba(255,248,238,0.8) !important;
+        letter-spacing: 3px !important;
+        text-transform: uppercase !important;
+        margin-bottom: 10px !important;
+        animation: fadeInUp 1s ease 0.2s both !important;
+    }
+
+    /* ── Tagline ── */
+    .hero-tagline {
+        display: block;
+        font-size: clamp(0.8rem, 2vw, 1rem);
+        font-weight: 500;
+        color: var(--gold-lt);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 36px;
+        animation: fadeInUp 1s ease 0.3s both;
+    }
+
+    /* ── Divider ── */
+    .hero-divider {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin: 0 auto 40px;
+        animation: fadeInUp 1s ease 0.35s both;
+    }
+    .hero-divider-line {
+        height: 1px;
+        width: 80px;
+        background: linear-gradient(90deg, transparent, rgba(252,211,77,0.5));
+    }
+    .hero-divider-line:last-child { transform: scaleX(-1); }
+    .hero-divider-dot {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--gold-lt);
+        box-shadow: 0 0 8px var(--gold-lt);
+    }
+
+    /* ── Countdown ── */
+    .countdown {
+        gap: 16px !important;
+        margin: 0 auto 44px !important;
+        animation: fadeInUp 1s ease 0.45s both !important;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .countdown-item {
+        background: rgba(255,255,255,0.07) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1px solid rgba(252,211,77,0.25) !important;
+        border-radius: 16px !important;
+        padding: 20px 28px !important;
+        min-width: 90px;
+        position: relative;
+        overflow: hidden;
+    }
+    .countdown-item::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(217,119,6,0.08), transparent);
+        pointer-events: none;
+    }
+    .countdown-value {
+        font-family: 'Cinzel', serif !important;
+        font-size: clamp(1.8rem, 4vw, 2.8rem) !important;
+        font-weight: 700 !important;
+        background: linear-gradient(135deg, #fff 0%, #FCD34D 100%);
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        background-clip: text !important;
+        line-height: 1.1 !important;
+        display: block !important;
+    }
+    .countdown-label {
+        font-size: 0.65rem !important;
+        letter-spacing: 2px !important;
+        text-transform: uppercase !important;
+        color: rgba(252,211,77,0.75) !important;
+        margin-top: 4px !important;
+        display: block !important;
+    }
+
+    /* ── Hero Buttons ── */
+    .hero-buttons {
+        animation: fadeInUp 1s ease 0.55s both !important;
+        gap: 16px !important;
+    }
+    .hero-btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 32px;
+        background: linear-gradient(135deg, var(--saffron) 0%, var(--crimson) 100%);
+        color: #fff !important;
+        font-weight: 600;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+        border-radius: 50px;
+        border: 1px solid rgba(217,119,6,0.4);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(185,28,28,0.35);
+    }
+    .hero-btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(185,28,28,0.5);
+        color: #fff;
+    }
+    .hero-btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 32px;
+        background: transparent;
+        color: rgba(255,248,238,0.9) !important;
+        font-weight: 600;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+        border-radius: 50px;
+        border: 1px solid rgba(252,211,77,0.4);
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    .hero-btn-secondary:hover {
+        background: rgba(252,211,77,0.1);
+        border-color: rgba(252,211,77,0.7);
+        transform: translateY(-2px);
+        color: var(--gold-lt);
+    }
+
+    /* ── Scroll indicator ── */
+    .hero-scroll {
+        position: absolute;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        color: rgba(252,211,77,0.5);
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        animation: fadeInUp 1s ease 0.8s both;
+    }
+    .hero-scroll-bar {
+        width: 1px;
+        height: 40px;
+        background: linear-gradient(to bottom, rgba(252,211,77,0.5), transparent);
+        animation: scrollPulse 2s ease-in-out infinite;
+    }
+    @keyframes scrollPulse {
+        0%, 100% { transform: scaleY(1); opacity: 0.5; }
+        50%       { transform: scaleY(0.6); opacity: 0.9; }
+    }
+
+    /* ===================================================
+       STATS SECTION
+    =================================================== */
+    .stats.theme-about {
+        background: linear-gradient(135deg, #0D1A3A 0%, #1a2a5a 100%) !important;
+        padding: 70px 0 !important;
+    }
+    .stats.theme-about .stat-card {
+        background: rgba(255,255,255,0.05) !important;
+        border: 1px solid rgba(252,211,77,0.15) !important;
+        border-radius: 16px !important;
+        color: #fff !important;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .stats.theme-about .stat-card:hover {
+        transform: translateY(-8px) !important;
+        box-shadow: 0 16px 40px rgba(0,0,0,0.3) !important;
+    }
+    .stats.theme-about .stat-card i { color: var(--gold-lt) !important; }
+    .stats.theme-about .stat-number { color: #fff !important; }
+    .stats.theme-about .stat-label  { color: rgba(252,211,77,0.7) !important; }
+    .stats.theme-about .section-header h2 { color: #fff !important; }
+
+    /* ===================================================
+       ABOUT SECTION
+    =================================================== */
+    .about-preview {
+        background: var(--cream) !important;
+        position: relative;
+        overflow: hidden;
+    }
+    .about-preview::before {
+        content: '';
+        position: absolute;
+        top: 0; right: 0;
+        width: 300px; height: 300px;
+        background: radial-gradient(circle, rgba(232,97,0,0.06) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .about-preview .section-header h2 {
+        color: #1A0A00 !important;
+        font-family: 'Cinzel', serif;
+    }
+    .about-preview .divider {
+        background: linear-gradient(90deg, var(--saffron), var(--crimson)) !important;
+        height: 3px !important;
+        border-radius: 2px;
+    }
+    .about-preview .about-text p { color: #4A3728 !important; line-height: 1.9; }
+    .about-preview .btn-primary {
+        background: linear-gradient(135deg, var(--saffron), var(--crimson)) !important;
+        color: #fff !important;
+        border-radius: 50px !important;
+        box-shadow: 0 4px 16px rgba(185,28,28,0.25);
+    }
+    .about-preview .btn-primary:hover {
+        box-shadow: 0 8px 24px rgba(185,28,28,0.4) !important;
+        transform: translateY(-2px) !important;
+    }
+
+    /* ===================================================
+       EVENTS SECTION
+    =================================================== */
+    .events.theme-events {
+        background: linear-gradient(135deg, #1C0730 0%, #2D1050 50%, #1A0730 100%) !important;
+    }
+    .events.theme-events .section-header h2 { color: #fff !important; font-family: 'Cinzel', serif; }
+    .events.theme-events .divider { background: linear-gradient(90deg, #8B5CF6, #C084FC) !important; }
+    .events.theme-events .event-card {
+        background: rgba(255,255,255,0.05) !important;
+        border: 1px solid rgba(139,92,246,0.25) !important;
+        border-radius: 16px !important;
+        color: #fff !important;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .events.theme-events .event-card:hover {
+        transform: translateY(-6px) !important;
+        box-shadow: 0 12px 40px rgba(109,40,217,0.3) !important;
+        border-color: rgba(139,92,246,0.5) !important;
+    }
+    .events.theme-events .event-date { background: linear-gradient(135deg, #6D28D9, #8B5CF6) !important; }
+    .events.theme-events .event-content h3 { color: #fff !important; }
+    .events.theme-events .event-content p  { color: rgba(255,255,255,0.6) !important; }
+    .events.theme-events .event-content i  { color: #C084FC !important; }
+
+    /* ===================================================
+       GALLERY SECTION
+    =================================================== */
+    .gallery-preview {
+        background: #FFF8EE !important;
+    }
+    .gallery-preview .section-header h2 {
+        color: #1A0A00 !important;
+        font-family: 'Cinzel', serif;
+    }
+    .gallery-preview .divider {
+        background: linear-gradient(90deg, var(--saffron), var(--gold)) !important;
+    }
+    .gallery-preview .btn-primary {
+        background: linear-gradient(135deg, var(--saffron), var(--crimson)) !important;
+        color: #fff !important;
+        border-radius: 50px !important;
+        box-shadow: 0 4px 16px rgba(185,28,28,0.2);
+    }
+    .gallery-preview .btn-primary:hover {
+        box-shadow: 0 8px 28px rgba(185,28,28,0.35) !important;
+        transform: translateY(-2px) !important;
+    }
+    .gallery-item { border-radius: 12px !important; overflow: hidden; }
+    .gallery-item:hover { transform: scale(1.03); }
+
+    /* ===================================================
+       FOOTER
+    =================================================== */
+    .footer {
+        background: linear-gradient(160deg, #0D0500 0%, #1A0A00 60%, #0D0E1A 100%) !important;
+        border-top: 1px solid rgba(217,119,6,0.2) !important;
+    }
+    .footer-col h3 { color: var(--gold-lt) !important; font-family: 'Cinzel', serif; font-size: 0.95rem; }
+    .footer-col p, .footer-col ul li a, .contact-info li { color: rgba(255,248,238,0.55) !important; }
+    .footer-col ul li a:hover { color: var(--gold-lt) !important; }
+    .contact-info i { color: var(--saffron) !important; }
+    .social-links a {
+        background: rgba(255,255,255,0.05) !important;
+        border: 1px solid rgba(217,119,6,0.2) !important;
+        color: rgba(255,248,238,0.6) !important;
+        transition: all 0.3s;
+    }
+    .social-links a:hover {
+        background: linear-gradient(135deg, var(--saffron), var(--crimson)) !important;
+        border-color: transparent !important;
+        color: #fff !important;
+        transform: translateY(-3px);
+    }
+    .footer-bottom { border-color: rgba(217,119,6,0.1) !important; color: rgba(255,248,238,0.3) !important; }
+    .newsletter-form input {
+        background: rgba(255,255,255,0.06) !important;
+        border: 1px solid rgba(217,119,6,0.2) !important;
+        color: #fff !important;
+        border-radius: 8px 0 0 8px !important;
+    }
+    .newsletter-form button {
+        background: linear-gradient(135deg, var(--saffron), var(--crimson)) !important;
+        border-radius: 0 8px 8px 0 !important;
+    }
+
+    /* ===================================================
+       MOBILE POLISH
+    =================================================== */
+    @media (max-width: 576px) {
+        .hero { padding: 90px 16px 70px !important; }
+        .hero-title { font-size: 2rem !important; }
+        .countdown-item { padding: 14px 16px !important; min-width: 70px; }
+        .hero-btn-primary, .hero-btn-secondary { width: 100%; max-width: 260px; justify-content: center; }
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(24px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -38,13 +531,84 @@
 
     <!-- Hero Section -->
     <section class="hero">
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
+        <!-- Floating particles -->
+        <div class="hero-particles" id="heroParticles"></div>
+
+        <!-- Mandala decoration top-left -->
+        <svg class="hero-mandala hero-mandala-tl" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="200" cy="200" r="195" stroke="#D97706" stroke-width="1.5"/>
+            <circle cx="200" cy="200" r="170" stroke="#D97706" stroke-width="0.5" stroke-dasharray="6 4"/>
+            <circle cx="200" cy="200" r="140" stroke="#D97706" stroke-width="1"/>
+            <circle cx="200" cy="200" r="110" stroke="#D97706" stroke-width="0.5" stroke-dasharray="4 6"/>
+            <circle cx="200" cy="200" r="80"  stroke="#D97706" stroke-width="1"/>
+            <circle cx="200" cy="200" r="50"  stroke="#D97706" stroke-width="0.5"/>
+            <!-- 16-petal lotus -->
+            <g stroke="#D97706" stroke-width="1">
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(22.5 200 200)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(45 200 200)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(67.5 200 200)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(90 200 200)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(112.5 200 200)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(135 200 200)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(157.5 200 200)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(180 200 200)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(202.5 200 200)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(225 200 200)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(247.5 200 200)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(270 200 200)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(292.5 200 200)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(315 200 200)"/>
+                <ellipse cx="200" cy="140" rx="14" ry="55" fill="rgba(217,119,6,0.08)" transform="rotate(337.5 200 200)"/>
+            </g>
+            <!-- Radial lines -->
+            <g stroke="#D97706" stroke-width="0.5" opacity="0.7">
+                <line x1="200" y1="5"   x2="200" y2="395"/>
+                <line x1="5"   y1="200" x2="395" y2="200"/>
+                <line x1="200" y1="5"   x2="200" y2="395" transform="rotate(45 200 200)"/>
+                <line x1="200" y1="5"   x2="200" y2="395" transform="rotate(22.5 200 200)"/>
+                <line x1="200" y1="5"   x2="200" y2="395" transform="rotate(67.5 200 200)"/>
+                <line x1="200" y1="5"   x2="200" y2="395" transform="rotate(112.5 200 200)"/>
+                <line x1="200" y1="5"   x2="200" y2="395" transform="rotate(157.5 200 200)"/>
+            </g>
+        </svg>
+
+        <!-- Mandala bottom-right -->
+        <svg class="hero-mandala hero-mandala-br" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="200" cy="200" r="195" stroke="#B91C1C" stroke-width="1.5"/>
+            <circle cx="200" cy="200" r="170" stroke="#B91C1C" stroke-width="0.5" stroke-dasharray="6 4"/>
+            <circle cx="200" cy="200" r="140" stroke="#B91C1C" stroke-width="1"/>
+            <circle cx="200" cy="200" r="110" stroke="#B91C1C" stroke-width="0.5" stroke-dasharray="4 6"/>
+            <circle cx="200" cy="200" r="80"  stroke="#B91C1C" stroke-width="1"/>
+            <g stroke="#B91C1C" stroke-width="0.5" opacity="0.7">
+                <line x1="200" y1="5"   x2="200" y2="395"/>
+                <line x1="5"   y1="200" x2="395" y2="200"/>
+                <line x1="200" y1="5"   x2="200" y2="395" transform="rotate(45 200 200)"/>
+                <line x1="200" y1="5"   x2="200" y2="395" transform="rotate(22.5 200 200)"/>
+                <line x1="200" y1="5"   x2="200" y2="395" transform="rotate(67.5 200 200)"/>
+            </g>
+        </svg>
+
+        <!-- Content -->
+        <div class="hero-content" style="position:relative;z-index:2;max-width:860px;width:100%;">
+            <span class="hero-om">ॐ</span>
+            <div class="hero-rule"></div>
+
             <h1 class="hero-title">Ganpati Bappa Morya</h1>
             <p class="hero-subtitle">Patelwadi Sarvajanik Ganesh Mitramandal</p>
+            <span class="hero-tagline">॥ Patelwadichi Sukhkarta ॥</span>
+
+            <div class="hero-divider">
+                <div class="hero-divider-line"></div>
+                <div class="hero-divider-dot"></div>
+                <div class="hero-divider-dot" style="width:8px;height:8px;background:linear-gradient(135deg,#E86100,#B91C1C);box-shadow:0 0 10px rgba(232,97,0,0.6);"></div>
+                <div class="hero-divider-dot"></div>
+                <div class="hero-divider-line"></div>
+            </div>
+
             <div class="countdown" id="countdown">
                 <div class="countdown-item">
-                    <span class="countdown-value" id="days">10</span>
+                    <span class="countdown-value" id="days">00</span>
                     <span class="countdown-label">Days</span>
                 </div>
                 <div class="countdown-item">
@@ -61,6 +625,20 @@
                 </div>
             </div>
 
+            <div class="hero-buttons">
+                <a href="gallery.html" class="hero-btn-primary">
+                    <i class="fas fa-images"></i> View Gallery
+                </a>
+                <a href="about.html" class="hero-btn-secondary">
+                    <i class="fas fa-info-circle"></i> About Us
+                </a>
+            </div>
+        </div>
+
+        <!-- Scroll indicator -->
+        <div class="hero-scroll">
+            <span>Scroll</span>
+            <div class="hero-scroll-bar"></div>
         </div>
     </section>
 
@@ -78,7 +656,6 @@
                     <h3 class="stat-number" id="statActiveVolunteers" data-target="150">0</h3>
                     <p class="stat-label">Active Volunteers</p>
                 </div>
-
             </div>
         </div>
     </section>
@@ -101,15 +678,43 @@
                 <div class="about-image" id="aboutSectionImgContainer">
                     <img id="aboutSectionImg" src="" alt="About Our Mandal" style="width:100%;height:100%;object-fit:cover;border-radius:15px;display:none;">
                     <!-- SVG shown as fallback until a photo is uploaded -->
-                    <svg id="aboutSectionSvg" viewBox="0 0 400 400" style="border-radius: 15px;">
+                    <svg id="aboutSectionSvg" viewBox="0 0 400 400" style="border-radius: 16px; width:100%; height:auto;">
                         <defs>
                             <linearGradient id="ganeshGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:#E86100;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#FB8C00;stop-opacity:1" />
+                                <stop offset="0%"   style="stop-color:#1A0A00;stop-opacity:1" />
+                                <stop offset="40%"  style="stop-color:#2D1000;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#0D0E1A;stop-opacity:1" />
                             </linearGradient>
+                            <radialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%"   stop-color="#D97706" stop-opacity="0.4"/>
+                                <stop offset="100%" stop-color="#D97706" stop-opacity="0"/>
+                            </radialGradient>
                         </defs>
                         <rect width="400" height="400" fill="url(#ganeshGrad)"/>
-                        <text x="50%" y="50%" text-anchor="middle" fill="white" font-size="100" font-family="Arial">ॐ</text>
+                        <circle cx="200" cy="200" r="160" fill="url(#glowGrad)"/>
+                        <!-- decorative rings -->
+                        <circle cx="200" cy="200" r="155" stroke="#D97706" stroke-width="1" fill="none" stroke-dasharray="8 5"/>
+                        <circle cx="200" cy="200" r="130" stroke="#D97706" stroke-width="0.5" fill="none"/>
+                        <circle cx="200" cy="200" r="100" stroke="#B91C1C" stroke-width="0.5" fill="none" stroke-dasharray="4 6"/>
+                        <!-- OM symbol -->
+                        <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle"
+                              fill="#FCD34D" font-size="120" font-family="Arial, sans-serif"
+                              opacity="0.9" filter="url(#glow)">ॐ</text>
+                        <!-- Petal tops -->
+                        <g fill="none" stroke="#D97706" stroke-width="0.7" opacity="0.4">
+                            <ellipse cx="200" cy="60"  rx="10" ry="38" />
+                            <ellipse cx="200" cy="60"  rx="10" ry="38" transform="rotate(30 200 200)"/>
+                            <ellipse cx="200" cy="60"  rx="10" ry="38" transform="rotate(60 200 200)"/>
+                            <ellipse cx="200" cy="60"  rx="10" ry="38" transform="rotate(90 200 200)"/>
+                            <ellipse cx="200" cy="60"  rx="10" ry="38" transform="rotate(120 200 200)"/>
+                            <ellipse cx="200" cy="60"  rx="10" ry="38" transform="rotate(150 200 200)"/>
+                            <ellipse cx="200" cy="60"  rx="10" ry="38" transform="rotate(180 200 200)"/>
+                            <ellipse cx="200" cy="60"  rx="10" ry="38" transform="rotate(210 200 200)"/>
+                            <ellipse cx="200" cy="60"  rx="10" ry="38" transform="rotate(240 200 200)"/>
+                            <ellipse cx="200" cy="60"  rx="10" ry="38" transform="rotate(270 200 200)"/>
+                            <ellipse cx="200" cy="60"  rx="10" ry="38" transform="rotate(300 200 200)"/>
+                            <ellipse cx="200" cy="60"  rx="10" ry="38" transform="rotate(330 200 200)"/>
+                        </g>
                     </svg>
                 </div>
             </div>
@@ -194,5 +799,33 @@
     </footer>
 
     <script src="main.js"></script>
+    <script>
+    // ── Floating particles ──
+    (function() {
+        const container = document.getElementById('heroParticles');
+        if (!container) return;
+        const colors = [
+            'rgba(252,211,77,0.5)',
+            'rgba(232,97,0,0.4)',
+            'rgba(185,28,28,0.3)',
+            'rgba(255,255,255,0.25)'
+        ];
+        for (let i = 0; i < 28; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const size = Math.random() * 5 + 2;
+            p.style.cssText = `
+                width: ${size}px;
+                height: ${size}px;
+                background: ${colors[Math.floor(Math.random() * colors.length)]};
+                left: ${Math.random() * 100}%;
+                animation-duration: ${Math.random() * 12 + 8}s;
+                animation-delay: ${Math.random() * -15}s;
+                filter: blur(${Math.random() > 0.6 ? 1 : 0}px);
+            `;
+            container.appendChild(p);
+        }
+    })();
+    </script>
 </body>
 </html>
