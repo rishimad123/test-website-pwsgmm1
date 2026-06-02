@@ -2033,11 +2033,11 @@ function bsAutoCalc() {
     // E) Cash in Bank (Auto-calculated: C_result + Cash Transfer to Bank)
     si('bs_eBank', c_result + g('bs_eTransfer'));
 
-    // E) Main Closing Balance Formula: A + B - C_result - D
+    // E) Main Closing Balance Formula: A + B - D
     const aTotal = g('bs_aCash') + g('bs_aBank');
     const bTotal = g('bs_bCash') + g('bs_bBank') + g('bs_bBox');
     const dExp   = g('bs_dExp');
-    const mainBal = aTotal + bTotal - c_result - dExp;
+    const mainBal = aTotal + bTotal - dExp;
     si('bs_mainClosingBalance', mainBal);
 
     const cyYearVal = gs('bs_cyYear');
@@ -2198,6 +2198,7 @@ function exportBalanceSheetExcel() {
     } : parseBsData(record);
 
     const totalColl = Number(bs.bCashReceived) + Number(bs.bBankReceived) + Number(bs.bCashBox);
+    const mainBal   = Number(bs.aCashBalance) + Number(bs.aBankBalance) + totalColl - Number(bs.dExpenses);
     const rupee = n => Number(n || 0) !== 0 ? Number(n).toLocaleString('en-IN') : '';
     const esc   = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const orgName  = 'Patelwadi Sarvajnik Ganesh Mitra Mandal';
@@ -2241,7 +2242,7 @@ td{border:1px solid #d4c9a8;padding:6px 14px;}
 <tr class="tot"><td></td><td style="text-align:right;font-style:italic;">Total Collections for C.Y. ${esc(bs.cyYear)}</td><td class="amts ul">${rupee(totalColl)}</td><td></td></tr>
 <tr class="tot"><td class="sec">C)</td><td class="sec">${esc(bs.cWithdrawnParticulars)} ${esc(bs.cyYear)}</td><td style="text-align:center;font-style:italic;color:#555;">(i+ii-iii)</td><td class="amt">${rupee(bs.cWithdrawn)}</td></tr>
 <tr class="tot"><td class="sec">D)</td><td class="sec" colspan="2">Expenses for the Current Year ${esc(bs.cyYear)}</td><td class="amt ul">${rupee(bs.dExpenses)}</td></tr>
-<tr class="tot"><td class="sec">E)</td><td class="sec" colspan="2">Balance for the Current Year ${esc(bs.cyYear)}</td><td></td></tr>
+<tr class="tot"><td class="sec">E)</td><td class="sec" colspan="2">Balance for the Current Year ${esc(bs.cyYear)}</td><td class="amt ul">${rupee(mainBal)}</td></tr>
 <tr><td></td><td class="part">${esc(bs.eCashInHandParticulars)}</td><td class="amts">${rupee(bs.eCashInHand)}</td><td></td></tr>
 <tr><td></td><td class="part">${esc(bs.eCashTransferParticulars)}</td><td class="amts">(+) ${rupee(bs.eCashTransfer)}</td><td></td></tr>
 <tr><td></td><td class="part">${esc(bs.eCashInBankParticulars)}</td><td class="amts ul">${rupee(bs.eCashInBank)}</td><td></td></tr>
