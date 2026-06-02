@@ -328,31 +328,40 @@ async function loadSiteSettings() {
             const el = document.querySelector('.contact-info li i.fa-envelope');
             if (el && el.parentElement) el.parentElement.innerHTML = `<i class="fas fa-envelope"></i> ${s.contactEmail}`;
         }
+        const formatUrl = (url) => {
+            if (!url) return '#';
+            url = url.trim();
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                return 'https://' + url;
+            }
+            return url;
+        };
+
         if (s.socialFacebook) {
             const el = document.querySelector('.social-links a i.fa-facebook');
             if (el && el.parentElement) {
-                el.parentElement.href = s.socialFacebook;
+                el.parentElement.href = formatUrl(s.socialFacebook);
                 el.parentElement.target = '_blank';
             }
         }
         if (s.socialInstagram) {
             const el = document.querySelector('.social-links a i.fa-instagram');
             if (el && el.parentElement) {
-                el.parentElement.href = s.socialInstagram;
+                el.parentElement.href = formatUrl(s.socialInstagram);
                 el.parentElement.target = '_blank';
             }
         }
         if (s.socialYoutube) {
             const el = document.querySelector('.social-links a i.fa-youtube');
             if (el && el.parentElement) {
-                el.parentElement.href = s.socialYoutube;
+                el.parentElement.href = formatUrl(s.socialYoutube);
                 el.parentElement.target = '_blank';
             }
         }
         if (s.socialTwitter) {
             const el = document.querySelector('.social-links a i.fa-twitter');
             if (el && el.parentElement) {
-                el.parentElement.href = s.socialTwitter;
+                el.parentElement.href = formatUrl(s.socialTwitter);
                 el.parentElement.target = '_blank';
             }
         }
