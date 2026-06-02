@@ -1803,7 +1803,7 @@ function parseBsData(record) {
 }
 
 // ─── Render the ledger table for one year ────────────────────────────────────
-function renderBsLedger(fid) {
+async function renderBsLedger(fid) {
     _activeBsId = fid;
     renderBsTabs();
 
@@ -1814,6 +1814,35 @@ function renderBsLedger(fid) {
     const safe   = fid.replace(/'/g, "\\'");
     const lyYear = bs.lyYear || record.year || '';
     const cyYear = bs.cyYear || '';
+
+    // Auto-fetch expenses if not loaded
+    if (typeof _expensesList === 'undefined' || _expensesList.length === 0) {
+        try { await loadExpenses(); } catch(e) {}
+    }
+
+    // Calculate expenses for the current year
+    let autoExpenses = 0;
+    if (_expensesList && _expensesList.length > 0) {
+        let startYr = 0, endYr = 0;
+        const yrMatch = cyYear.match(/(\d{4})-(\d{4})/);
+        if (yrMatch) {
+            startYr = Number(yrMatch[1]);
+            endYr   = Number(yrMatch[2]);
+            const startDt = new Date(`${startYr}-04-01`);
+            const endDt   = new Date(`${endYr}-03-31T23:59:59`);
+            autoExpenses = _expensesList.reduce((sum, exp) => {
+                const d = new Date(exp.date);
+                if (d >= startDt && d <= endDt) return sum + Number(exp.amount || 0);
+                return sum;
+            }, 0);
+        } else {
+            // Fallback: sum all expenses if year format isn't standard
+            autoExpenses = _expensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+        }
+    }
+    
+    // Pre-fill expenses if no saved value
+    let dExpVal = bs.dExpenses !== undefined && bs.dExpenses !== null && bs.dExpenses !== '' ? bs.dExpenses : autoExpenses;
 
     const body = document.getElementById('bsLedgerBody');
     if (!body) return;
@@ -1923,7 +1952,9 @@ function renderBsLedger(fid) {
       placeholder="Particulars" style="font-style:normal;font-weight:700;">
     &nbsp;<span id="bs_cCyLabel" style="font-size:.88rem;color:#555;">${escHtml(cyYear)}</span>
   </td>
-  <td class="bs-amts" style="color:#555;font-style:italic;font-size:.88rem;">(i+ii-iii)</td>
+  <td class="bs-amts" style="color:#555;font-style:italic;font-size:.88rem;">
+    (i+ii-iii) &nbsp; <span id="bs_cResultDisplay" style="font-weight:bold;color:#1a1a7a;"></span>
+  </td>
   <td class="bs-amt">
     <input class="bs-input" id="bs_cWithdrawn" type="number" value="${bs.cWithdrawn||''}" placeholder="0" oninput="bsAutoCalc()">
   </td>
@@ -1935,7 +1966,7 @@ function renderBsLedger(fid) {
     Expenses for the Current Year&nbsp;<span id="bs_dCyLabel">${escHtml(cyYear)}</span>
   </td>
   <td class="bs-amt">
-    <input class="bs-input" id="bs_dExp" type="number" value="${bs.dExpenses||''}" placeholder="0" oninput="bsAutoCalc()" style="text-decoration:underline;">
+    <input class="bs-input" id="bs_dExp" type="number" value="${dExpVal||''}" placeholder="0" oninput="bsAutoCalc()" style="text-decoration:underline;">
   </td>
 </tr>
 <!-- E) Closing Balance -->
@@ -1944,7 +1975,7 @@ function renderBsLedger(fid) {
   <td class="bs-section-lbl" colspan="2">
     Balance for the Current Year&nbsp;<span id="bs_eCyLabel">${escHtml(cyYear)}</span>
   </td>
-  <td class="bs-amt"></td>
+  <td class="bs-amt" id="bs_mainClosingBalance"></td>
 </tr>
 <tr>
   <td></td>
@@ -1972,7 +2003,7 @@ function renderBsLedger(fid) {
     <input class="bs-particulars-input" id="bs_eBankPart" value="${escAttr(bs.eCashInBankParticulars)}" placeholder="Particulars">
   </td>
   <td class="bs-amts">
-    <input class="bs-input" id="bs_eBank" type="number" value="${bs.eCashInBank||''}" placeholder="0" oninput="bsAutoCalc()" style="text-decoration:underline;">
+    <input class="bs-input" id="bs_eBank" type="number" value="${bs.eCashInBank||''}" placeholder="0" style="text-decoration:underline;background:#f5f5f5;cursor:not-allowed;" readonly>
   </td>
   <td class="bs-amt"></td>
 </tr>
@@ -1988,7 +2019,23 @@ function bsAutoCalc() {
     const gs = id => (document.getElementById(id)?.value || '');
     const s  = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ? finFmt(v) : ''; };
 
+    // B) Total Collections
     s('bs_totalColl', g('bs_bCash') + g('bs_bBank') + g('bs_bBox'));
+
+    // C) Cash Withdrawn Result (i + ii - iii)
+    const c_result = g('bs_aBank') + g('bs_bBank') - g('bs_cWithdrawn');
+    s('bs_cResultDisplay', c_result);
+
+    // E) Cash in Bank (Auto-calculated: C_result + Cash Transfer to Bank)
+    const eBankInput = document.getElementById('bs_eBank');
+    if (eBankInput) eBankInput.value = c_result + g('bs_eTransfer');
+
+    // E) Main Closing Balance Formula: A + B - C_result - D
+    const aTotal = g('bs_aCash') + g('bs_aBank');
+    const bTotal = g('bs_bCash') + g('bs_bBank') + g('bs_bBox');
+    const dExp   = g('bs_dExp');
+    const mainBal = aTotal + bTotal - c_result - dExp;
+    s('bs_mainClosingBalance', mainBal);
 
     const cyYearVal = gs('bs_cyYear');
     ['bs_cyYearLabel','bs_cCyLabel','bs_dCyLabel','bs_eCyLabel'].forEach(id => {
