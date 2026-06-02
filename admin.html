@@ -625,46 +625,102 @@ window._fmtBytesA = function(b) {
             border-bottom: 1px dashed #F0C0A0;
         }
 
-        /* ── Financial Statement styles ───────────────────────────────── */
-        .fin-table {
+        /* ── Balance Sheet styles ─────────────────────────────────────── */
+        .bs-year-tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 22px;
+        }
+        .bs-year-tab {
+            padding: 8px 22px;
+            border-radius: 25px;
+            background: #f0f0f0;
+            color: #555;
+            font-weight: 600;
+            font-size: .9rem;
+            cursor: pointer;
+            border: none;
+            transition: all .25s;
+        }
+        .bs-year-tab.active, .bs-year-tab:hover {
+            background: linear-gradient(135deg, var(--primary-color), #FF8C42);
+            color: #fff;
+            box-shadow: 0 3px 12px rgba(232,97,0,.3);
+        }
+        .bs-ledger {
             width: 100%;
             border-collapse: collapse;
+            font-family: 'Courier New', monospace;
+            font-size: .97rem;
+            background: #fffdf5;
+            border: 1px solid #d4c9a8;
+        }
+        .bs-ledger th {
+            border: 1px solid #d4c9a8;
+            padding: 10px 16px;
+            text-align: center;
+            background: #faf3e0;
+            font-family: 'Courier New', monospace;
             font-size: .95rem;
+            color: #2c2c6e;
+            font-weight: 700;
+            letter-spacing: .04em;
         }
-        .fin-table thead tr {
-            background: linear-gradient(135deg, #2C3E50, #34495E);
-            color: #fff;
+        .bs-ledger td {
+            border: 1px solid #d4c9a8;
+            padding: 8px 16px;
+            color: #2c2c6e;
+            vertical-align: middle;
         }
-        .fin-table th {
-            padding: 13px 15px;
+        .bs-ledger td.bs-section-lbl {
+            font-weight: 700;
+            background: #fff8e8;
+            font-size: 1rem;
+        }
+        .bs-ledger td.bs-particulars {
+            padding-left: 40px;
+            font-style: italic;
+        }
+        .bs-ledger td.bs-amts, .bs-ledger td.bs-amt {
             text-align: right;
-            font-weight: 600;
-            font-size: .88rem;
+            min-width: 100px;
             white-space: nowrap;
         }
-        .fin-table th:first-child { text-align: left; }
-        .fin-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #F0F0F0;
-            color: #444;
+        .bs-ledger td.bs-amts { color: #333; }
+        .bs-ledger td.bs-amt  { font-weight: 700; color: #1a1a7a; }
+        .bs-ledger tr.bs-total-row td {
+            background: #fdf0d5;
+            font-weight: 700;
+            border-top: 2px solid #c8a84b;
+        }
+        .bs-ledger tr.bs-section-sep td {
+            border-top: 2px solid #e8d8b0;
+            background: transparent;
+        }
+        .bs-input {
+            width: 110px;
+            padding: 4px 8px;
+            border: 1.5px solid #d4c9a8;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: .92rem;
+            background: #fffef8;
+            color: #1a1a7a;
             text-align: right;
         }
-        .fin-table td:first-child { text-align: left; font-weight: 600; }
-        .fin-table tr:hover { background: #FAFAFA; }
-        .fin-table .fin-total-row td {
-            background: #FFF8F0;
-            font-weight: 700;
-            color: var(--primary-color);
-            border-top: 2px solid var(--primary-color);
-            font-size: 1rem;
+        .bs-input:focus { outline: none; border-color: var(--primary-color); background: #fff; }
+        .bs-particulars-input {
+            width: 100%;
+            padding: 4px 8px;
+            border: 1.5px solid #d4c9a8;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: .92rem;
+            background: #fffef8;
+            color: #2c2c6e;
         }
-        .fin-table .fin-balance-row td {
-            background: #F0FFF4;
-            font-weight: 700;
-            color: #1E7E34;
-            border-top: 2px solid #27AE60;
-            font-size: 1rem;
-        }
+        .bs-particulars-input:focus { outline: none; border-color: var(--primary-color); background: #fff; }
         .fin-year-badge {
             display: inline-block;
             padding: 4px 12px;
@@ -680,14 +736,6 @@ window._fmtBytesA = function(b) {
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 18px;
             margin-bottom: 24px;
-        }
-        .fin-modal-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
-        @media (max-width: 600px) {
-            .fin-modal-grid { grid-template-columns: 1fr; }
         }
         /* ── Admin hamburger: hidden on desktop, shown on mobile ── */
         #adminHamburger { display: none; }
@@ -1845,95 +1893,41 @@ window._fmtBytesA = function(b) {
                 <!-- Reports & Analytics Section -->
                 <div id="reports" class="content-section">
 
-                    <!-- Summary strip -->
-                    <div class="fin-summary-strip">
-                        <div class="admin-stat-card">
-                            <div class="stat-icon blue"><i class="fas fa-history"></i></div>
-                            <div class="stat-details">
-                                <h3 id="finSumLastBal" style="font-size:1.4rem;">&#8377;0</h3>
-                                <p>Last Year Balance</p>
-                            </div>
-                        </div>
-                        <div class="admin-stat-card">
-                            <div class="stat-icon green"><i class="fas fa-hand-holding-usd"></i></div>
-                            <div class="stat-details">
-                                <h3 id="finSumDonations" style="font-size:1.4rem;">&#8377;0</h3>
-                                <p>Total Donations</p>
-                            </div>
-                        </div>
-                        <div class="admin-stat-card">
-                            <div class="stat-icon orange"><i class="fas fa-coins"></i></div>
-                            <div class="stat-details">
-                                <h3 id="finSumCollection" style="font-size:1.4rem;">&#8377;0</h3>
-                                <p>Total Collection</p>
-                            </div>
-                        </div>
-                        <div class="admin-stat-card">
-                            <div class="stat-icon purple"><i class="fas fa-file-invoice-dollar"></i></div>
-                            <div class="stat-details">
-                                <h3 id="finSumExpenses" style="font-size:1.4rem;">&#8377;0</h3>
-                                <p>Total Expenses</p>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="admin-card">
                         <div class="card-header">
-                            <h3><i class="fas fa-balance-scale" style="color:var(--primary-color);margin-right:8px;"></i>Financial Statements</h3>
+                            <h3><i class="fas fa-book-open" style="color:var(--primary-color);margin-right:8px;"></i>Balance Sheet</h3>
                             <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                                <button class="btn btn-primary btn-small" onclick="loadFinancials()">
+                                <button class="btn btn-primary btn-small" onclick="loadBalanceSheets()">
                                     <i class="fas fa-sync-alt"></i> Refresh
                                 </button>
-                                <button class="btn btn-primary btn-small" onclick="openFinancialModal()">
+                                <button class="btn btn-primary btn-small" onclick="openBalanceSheetModal()">
                                     <i class="fas fa-plus"></i> Add Year
                                 </button>
-                                <button class="btn btn-small" style="background:linear-gradient(135deg,#27AE60,#2ECC71);color:#fff;" onclick="exportFinancialsExcel()">
+                                <button class="btn btn-small" style="background:linear-gradient(135deg,#27AE60,#2ECC71);color:#fff;" onclick="exportBalanceSheetExcel()">
                                     <i class="fas fa-file-excel"></i> Export Excel
                                 </button>
                             </div>
                         </div>
 
-                        <div style="overflow-x:auto;">
-                            <table class="fin-table" id="financialsTable">
+                        <!-- Year tabs -->
+                        <div class="bs-year-tabs" id="bsYearTabs">
+                            <span style="color:#aaa;font-size:.9rem;">Loading&hellip;</span>
+                        </div>
+
+                        <!-- Ledger view -->
+                        <div style="overflow-x:auto;" id="bsLedgerWrap">
+                            <table class="bs-ledger" id="bsLedgerTable">
                                 <thead>
                                     <tr>
-                                        <th>Year</th>
-                                        <th>Last Year Balance (&#8377;)</th>
-                                        <th>Donations (&#8377;)</th>
-                                        <th>Donation Growth</th>
-                                        <th>Cash in Hand (&#8377;)</th>
-                                        <th>Cash at Bank (&#8377;)</th>
-                                        <th>Withdrawn from Bank (&#8377;)</th>
-                                        <th>Total Collection (&#8377;)</th>
-                                        <th>Collection Growth</th>
-                                        <th>Expenses (&#8377;)</th>
-                                        <th>Expense Growth</th>
-                                        <th>Balance (&#8377;)</th>
-                                        <th>Balance Growth</th>
-                                        <th>Actions</th>
+                                        <th style="width:50px;"></th>
+                                        <th style="text-align:left;min-width:280px;">Particulars</th>
+                                        <th style="min-width:120px;">Amts</th>
+                                        <th style="min-width:120px;">Amt</th>
                                     </tr>
                                 </thead>
-                                <tbody id="financialsTbody">
-                                    <tr><td colspan="14" style="text-align:center;color:#aaa;padding:30px;">Loading financial records&hellip;</td></tr>
+                                <tbody id="bsLedgerBody">
+                                    <tr><td colspan="4" style="text-align:center;color:#aaa;padding:30px;">Select or add a year to view the balance sheet.</td></tr>
                                 </tbody>
-                                <tfoot>
-                                    <tr class="fin-total-row" id="finTotalsRow" style="display:none;">
-                                        <td>Grand Total</td>
-                                        <td id="finTotLastBal"></td>
-                                        <td id="finTotDonations"></td>
-                                        <td></td>
-                                        <td id="finTotCashHand"></td>
-                                        <td id="finTotCashBank"></td>
-                                        <td id="finTotWithdrawn"></td>
-                                        <td id="finTotCollection"></td>
-                                        <td></td>
-                                        <td id="finTotExpenses"></td>
-                                        <td></td>
-                                        <td id="finTotBalance"></td>
-                                        <td></td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
                             </table>
                         </div>
                     </div>
@@ -2806,76 +2800,27 @@ window._fmtBytesA = function(b) {
             </form>
         </div>
     </div>
-    <!-- ── Financial Statement Add / Edit Modal ────────────────────────── -->
+    <!-- ── Balance Sheet Add Year Modal ──────────────────────────────── -->
     <div id="financialModal" class="modal">
-        <div class="modal-content" style="max-width:720px;">
+        <div class="modal-content" style="max-width:500px;">
             <div class="modal-header">
-                <h3 id="finModalTitle"><i class="fas fa-plus-circle" style="color:var(--primary-color);margin-right:8px;"></i>Add Financial Record</h3>
+                <h3 id="finModalTitle"><i class="fas fa-plus-circle" style="color:var(--primary-color);margin-right:8px;"></i>Add Balance Sheet Year</h3>
                 <span class="modal-close" onclick="closeFinancialModal()">&times;</span>
             </div>
-            <form id="financialForm" onsubmit="saveFinancialRecord(event)">
+            <form id="financialForm" onsubmit="saveBalanceSheetYear(event)">
                 <div class="form-group">
-                    <label>Financial Year <span style="color:red;">*</span></label>
-                    <input type="text" id="finYear" placeholder="e.g. 2024-25" required style="font-size:1.1rem;font-weight:600;">
-                </div>
-                <p class="exp-section-label">Receipts &amp; Income</p>
-                <div class="fin-modal-grid">
-                    <div class="form-group">
-                        <label>Last Year Balance (&#8377;)</label>
-                        <input type="number" id="finLastBal" placeholder="0.00" min="0" step="0.01" oninput="finAutoCalc()">
-                    </div>
-                    <div class="form-group">
-                        <label>Current Year Donations (&#8377;)</label>
-                        <input type="number" id="finDonations" placeholder="0.00" min="0" step="0.01" oninput="finAutoCalc()">
-                    </div>
-                    <div class="form-group">
-                        <label>Cash in Hand (&#8377;)</label>
-                        <input type="number" id="finCashHand" placeholder="0.00" min="0" step="0.01" oninput="finAutoCalc()">
-                    </div>
-                    <div class="form-group">
-                        <label>Cash at Bank (&#8377;)</label>
-                        <input type="number" id="finCashBank" placeholder="0.00" min="0" step="0.01" oninput="finAutoCalc()">
-                    </div>
-                    <div class="form-group">
-                        <label>Cash Withdrawn from Bank (&#8377;)</label>
-                        <input type="number" id="finWithdrawn" placeholder="0.00" min="0" step="0.01" oninput="finAutoCalc()">
-                    </div>
-                    <div class="form-group">
-                        <label style="display:flex;align-items:center;gap:6px;">Total Collection (&#8377;) <span style="font-size:.75rem;color:#888;font-weight:400;">(auto)</span></label>
-                        <input type="number" id="finTotalColl" placeholder="Auto-calculated" min="0" step="0.01" oninput="finAutoCalc()" style="background:#f8fff8;border-color:#27AE60;">
-                    </div>
-                </div>
-                <p class="exp-section-label">Expenditure</p>
-                <div class="form-group">
-                    <label>Expenses for Current Year (&#8377;) <span style="color:red;">*</span></label>
-                    <input type="number" id="finExpenses" placeholder="0.00" min="0" step="0.01" required oninput="finAutoCalc()">
-                </div>
-                <!-- Live preview panel -->
-                <div id="finCalcPreview" style="display:none;background:linear-gradient(135deg,#f8f9ff,#f0fff4);border:1.5px solid #dce8f5;border-radius:10px;padding:14px 18px;margin:10px 0 14px;">
-                    <p style="font-size:.75rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">&#9889; Live Calculation Preview</p>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-                        <div style="text-align:center;">
-                            <div style="font-size:.78rem;color:#888;margin-bottom:3px;">Total Collection</div>
-                            <div id="finPrevCollection" style="font-size:1.15rem;font-weight:700;color:#2980B9;">&#8377;0</div>
-                        </div>
-                        <div style="text-align:center;">
-                            <div style="font-size:.78rem;color:#888;margin-bottom:3px;">Total Expenses</div>
-                            <div id="finPrevExpenses" style="font-size:1.15rem;font-weight:700;color:#E74C3C;">&#8377;0</div>
-                        </div>
-                        <div style="text-align:center;">
-                            <div style="font-size:.78rem;color:#888;margin-bottom:3px;">Net Balance</div>
-                            <div id="finPrevBalance" style="font-size:1.15rem;font-weight:700;color:#27AE60;">&#8377;0</div>
-                        </div>
-                    </div>
+                    <label>Financial Year Label <span style="color:red;">*</span></label>
+                    <input type="text" id="finYear" placeholder="e.g. 2025-2026" required style="font-size:1.1rem;font-weight:600;">
+                    <small style="color:#888;display:block;margin-top:4px;">This will appear as the heading (e.g. &ldquo;Balance for the year (L.Y) 2025-2026&rdquo;)</small>
                 </div>
                 <div class="form-group">
-                    <label>Notes / Remarks</label>
-                    <textarea id="finNotes" rows="2" placeholder="Optional remarks or comments..."
-                              style="width:100%;padding:10px 14px;border:2px solid #E0E0E0;border-radius:8px;font-family:inherit;font-size:1rem;resize:vertical;box-sizing:border-box;"></textarea>
+                    <label>Current Year Label <span style="color:red;">*</span></label>
+                    <input type="text" id="finCYLabel" placeholder="e.g. 2026-2027" required style="font-size:1.1rem;font-weight:600;">
+                    <small style="color:#888;display:block;margin-top:4px;">This will appear as the current year heading (e.g. &ldquo;Income for the Current Year 2026-2027&rdquo;)</small>
                 </div>
-                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px;">
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
                     <button type="button" class="btn" style="background:#eee;color:#555;" onclick="closeFinancialModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="finSaveBtn">Save Record</button>
+                    <button type="submit" class="btn btn-primary" id="finSaveBtn">Create Balance Sheet</button>
                 </div>
             </form>
         </div>

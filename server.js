@@ -1134,6 +1134,7 @@ const server = http.createServer(async (req, res) => {
                 totalCollection      : Number(totalCollection      || 0),
                 currentYearExpenses  : Number(currentYearExpenses  || 0),
                 notes                : (notes || '').trim(),
+                _bsData              : body._bsData || null,
                 createdAt            : new Date().toISOString(),
                 updatedAt            : null,
             };
@@ -1156,8 +1157,9 @@ const server = http.createServer(async (req, res) => {
             const numFields = ['lastYearBalance','currentYearDonations','cashInHand',
                                'cashAtBank','cashWithdrawnFromBank','totalCollection','currentYearExpenses'];
             numFields.forEach(f => { if (body[f] !== undefined) financials[idx][f] = Number(body[f]); });
-            if (body.year  !== undefined) financials[idx].year  = String(body.year);
-            if (body.notes !== undefined) financials[idx].notes = String(body.notes).trim();
+            if (body.year    !== undefined) financials[idx].year    = String(body.year);
+            if (body.notes   !== undefined) financials[idx].notes   = String(body.notes).trim();
+            if (body._bsData !== undefined) financials[idx]._bsData = body._bsData || null;
             financials[idx].updatedAt = new Date().toISOString();
             await saveFinancials();
             console.log(`✏️  Financial record updated: ${financials[idx].financialId}`);

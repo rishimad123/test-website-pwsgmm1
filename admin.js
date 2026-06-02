@@ -1694,18 +1694,18 @@ function exportExpensesExcel() {
 
 
 // =====================================================================
-// FINANCIAL STATEMENTS â€” Reports & Analytics  (enhanced)
+// BALANCE SHEET – Reports  (replaces old Financial Statements table)
 // =====================================================================
 
 let _financialsList  = [];
 let _editFinancialId = null;
+let _activeBsId      = null;
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 const finFmt = n => '\u20b9' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 });
 function finBalance(r) {
     return Number(r.totalCollection || 0) - Number(r.currentYearExpenses || 0);
 }
-// Auto-computed Total Collection formula
 function finComputeCollection(r) {
     return Number(r.lastYearBalance      || 0) +
            Number(r.currentYearDonations || 0) +
@@ -1713,427 +1713,501 @@ function finComputeCollection(r) {
            Number(r.cashAtBank           || 0) +
            Number(r.cashWithdrawnFromBank|| 0);
 }
-// YoY growth badge HTML
 function growthBadge(curr, prev) {
-    if (prev === null || prev === undefined || prev === 0) return '<span style="color:#aaa;font-size:.8rem;">â€”</span>';
+    if (prev === null || prev === undefined || prev === 0) return '<span style="color:#aaa;font-size:.8rem;">\u2014</span>';
     const pct   = ((curr - prev) / Math.abs(prev)) * 100;
     const sign  = pct >= 0 ? '+' : '';
     const color = pct >= 0 ? '#27AE60' : '#E74C3C';
-    const arrow = pct >= 0 ? 'â–²' : 'â–¼';
+    const arrow = pct >= 0 ? '\u25b2' : '\u25bc';
     return `<span style="display:inline-block;padding:2px 8px;border-radius:12px;background:${pct>=0?'#D5F4E6':'#FFEBEE'};color:${color};font-size:.8rem;font-weight:700;white-space:nowrap;">${arrow} ${sign}${pct.toFixed(1)}%</span>`;
 }
 
-// â”€â”€â”€ Live Auto-Calc in modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function finAutoCalc() {
-    const lb  = Number(document.getElementById('finLastBal')?.value   || 0);
-    const don = Number(document.getElementById('finDonations')?.value  || 0);
-    const cih = Number(document.getElementById('finCashHand')?.value   || 0);
-    const cab = Number(document.getElementById('finCashBank')?.value   || 0);
-    const wit = Number(document.getElementById('finWithdrawn')?.value  || 0);
-    const exp = Number(document.getElementById('finExpenses')?.value   || 0);
+// Stub so any oninput="finAutoCalc()" calls don't error
+function finAutoCalc() {}
 
-    // Auto-fill Total Collection if user hasn't typed in it themselves
-    const collInput = document.getElementById('finTotalColl');
-    const autoCol   = lb + don + cih + cab + wit;
-    if (collInput && (collInput.value === '' || collInput.dataset.autoFilled === 'yes')) {
-        collInput.value = autoCol || '';
-        collInput.dataset.autoFilled = 'yes';
-    }
-    const col = Number(collInput?.value || autoCol);
-    const bal = col - exp;
-
-    // Show preview panel
-    const preview = document.getElementById('finCalcPreview');
-    if (preview) preview.style.display = '';
-    const setP = (id, val, color) => {
-        const el = document.getElementById(id);
-        if (el) { el.textContent = finFmt(val); el.style.color = color; }
-    };
-    setP('finPrevCollection', col, '#2980B9');
-    setP('finPrevExpenses',   exp, '#E74C3C');
-    setP('finPrevBalance',    bal, bal >= 0 ? '#27AE60' : '#E74C3C');
+// ─── escAttr: escape values for HTML attributes ───────────────────────────────
+function escAttr(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
-// Allow user to override Total Collection (clear auto-fill flag)
-document.addEventListener('DOMContentLoaded', function() {
-    const tc = document.getElementById('finTotalColl');
-    if (tc) tc.addEventListener('keydown', () => { tc.dataset.autoFilled = 'no'; });
-});
 
-// â”€â”€â”€ Load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-async function loadFinancials() {
-    const tbody = document.getElementById('financialsTbody');
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:#aaa;padding:24px;">Loading\u2026</td></tr>';
+// ─── Load (called when Reports tab opens) ────────────────────────────────────
+async function loadFinancials() { await loadBalanceSheets(); }
+
+async function loadBalanceSheets() {
+    const tabsEl = document.getElementById('bsYearTabs');
+    if (!tabsEl) return;
+    tabsEl.innerHTML = '<span style="color:#aaa;font-size:.9rem;">Loading\u2026</span>';
     try {
         const res  = await fetch('/api/financials');
         const data = await res.json();
         _financialsList = (data.financials || []).sort((a, b) => String(a.year).localeCompare(String(b.year)));
-        renderFinancials();
-    } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:#c0392b;padding:24px;">\u26a0 Could not load records. Is server.js running on port 3000?</td></tr>';
-    }
-}
-
-// â”€â”€â”€ Render table with YoY growth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function renderFinancials() {
-    const tbody = document.getElementById('financialsTbody');
-    if (!tbody) return;
-
-    const list = _financialsList;
-
-    // Summary cards
-    const sumLastBal    = list.reduce((s, r) => s + Number(r.lastYearBalance      || 0), 0);
-    const sumDonations  = list.reduce((s, r) => s + Number(r.currentYearDonations || 0), 0);
-    const sumCollection = list.reduce((s, r) => s + Number(r.totalCollection      || 0), 0);
-    const sumExpenses   = list.reduce((s, r) => s + Number(r.currentYearExpenses  || 0), 0);
-    const sumBalance    = list.reduce((s, r) => s + finBalance(r), 0);
-    const sumCashHand   = list.reduce((s, r) => s + Number(r.cashInHand           || 0), 0);
-    const sumCashBank   = list.reduce((s, r) => s + Number(r.cashAtBank           || 0), 0);
-    const sumWithdrawn  = list.reduce((s, r) => s + Number(r.cashWithdrawnFromBank|| 0), 0);
-
-    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    setEl('finSumLastBal',    finFmt(sumLastBal));
-    setEl('finSumDonations',  finFmt(sumDonations));
-    setEl('finSumCollection', finFmt(sumCollection));
-    setEl('finSumExpenses',   finFmt(sumExpenses));
-
-    if (list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:#aaa;padding:30px;">No financial records found. Click <strong>Add Year</strong> to get started.</td></tr>';
-        const totRow = document.getElementById('finTotalsRow');
-        if (totRow) totRow.style.display = 'none';
-        return;
-    }
-
-    tbody.innerHTML = list.map((r, idx) => {
-        const prev       = idx > 0 ? list[idx - 1] : null;
-        const balance    = finBalance(r);
-        const balStyle   = balance >= 0 ? 'color:#27AE60;font-weight:700;' : 'color:#E74C3C;font-weight:700;';
-        const safeId     = r.financialId.replace(/'/g, "\\'");
-        const notesHtml  = r.notes ? `<br><small style="color:#999;font-style:italic;">${escHtml(r.notes)}</small>` : '';
-        const gDonation  = prev ? growthBadge(r.currentYearDonations, prev.currentYearDonations)  : '<span style="color:#aaa;font-size:.8rem;">First year</span>';
-        const gCollect   = prev ? growthBadge(r.totalCollection,      prev.totalCollection)        : '<span style="color:#aaa;font-size:.8rem;">First year</span>';
-        const gExpenses  = prev ? growthBadge(r.currentYearExpenses,  prev.currentYearExpenses)    : '<span style="color:#aaa;font-size:.8rem;">First year</span>';
-        const gBalance   = prev ? growthBadge(finBalance(r),          finBalance(prev))             : '<span style="color:#aaa;font-size:.8rem;">First year</span>';
-        return `
-        <tr>
-            <td><span class="fin-year-badge">${escHtml(r.year)}</span>${notesHtml}</td>
-            <td>${finFmt(r.lastYearBalance)}</td>
-            <td>${finFmt(r.currentYearDonations)}</td>
-            <td style="text-align:center;">${gDonation}</td>
-            <td>${finFmt(r.cashInHand)}</td>
-            <td>${finFmt(r.cashAtBank)}</td>
-            <td>${finFmt(r.cashWithdrawnFromBank)}</td>
-            <td>${finFmt(r.totalCollection)}</td>
-            <td style="text-align:center;">${gCollect}</td>
-            <td>${finFmt(r.currentYearExpenses)}</td>
-            <td style="text-align:center;">${gExpenses}</td>
-            <td style="${balStyle}">${finFmt(balance)}</td>
-            <td style="text-align:center;">${gBalance}</td>
-            <td>
-                <div class="action-btns">
-                    <button class="btn-icon btn-edit" title="Edit" onclick="editFinancial('${safeId}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-icon btn-delete" title="Delete" onclick="deleteFinancial('${safeId}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td>
-        </tr>`;
-    }).join('');
-
-    // Grand totals footer
-    setEl('finTotLastBal',    finFmt(sumLastBal));
-    setEl('finTotDonations',  finFmt(sumDonations));
-    setEl('finTotCashHand',   finFmt(sumCashHand));
-    setEl('finTotCashBank',   finFmt(sumCashBank));
-    setEl('finTotWithdrawn',  finFmt(sumWithdrawn));
-    setEl('finTotCollection', finFmt(sumCollection));
-    setEl('finTotExpenses',   finFmt(sumExpenses));
-    setEl('finTotBalance',    finFmt(sumBalance));
-    const totRow = document.getElementById('finTotalsRow');
-    if (totRow) totRow.style.display = '';
-}
-
-// â”€â”€â”€ Modal open / close â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function openFinancialModal(record) {
-    _editFinancialId = record ? record.financialId : null;
-    const title = document.getElementById('finModalTitle');
-    if (title) title.innerHTML = _editFinancialId
-        ? '<i class="fas fa-edit" style="color:var(--primary-color);margin-right:8px;"></i>Edit Financial Record'
-        : '<i class="fas fa-plus-circle" style="color:var(--primary-color);margin-right:8px;"></i>Add Financial Record';
-
-    document.getElementById('finYear').value       = record ? record.year                  : '';
-    document.getElementById('finLastBal').value    = record ? record.lastYearBalance       : '';
-    document.getElementById('finDonations').value  = record ? record.currentYearDonations  : '';
-    document.getElementById('finCashHand').value   = record ? record.cashInHand            : '';
-    document.getElementById('finCashBank').value   = record ? record.cashAtBank            : '';
-    document.getElementById('finWithdrawn').value  = record ? record.cashWithdrawnFromBank : '';
-    document.getElementById('finExpenses').value   = record ? record.currentYearExpenses   : '';
-    document.getElementById('finNotes').value      = record ? record.notes                 : '';
-
-    // Set Total Collection and mark as user-supplied so auto-calc doesn't overwrite it
-    const tc = document.getElementById('finTotalColl');
-    if (tc) {
-        tc.value = record ? record.totalCollection : '';
-        tc.dataset.autoFilled = record ? 'no' : 'yes';
-    }
-
-    // Year field: read-only when editing
-    document.getElementById('finYear').readOnly = !!_editFinancialId;
-
-    // Reset and run preview
-    const preview = document.getElementById('finCalcPreview');
-    if (preview) preview.style.display = 'none';
-    finAutoCalc();
-
-    document.getElementById('financialModal').classList.add('active');
-}
-
-function closeFinancialModal() {
-    _editFinancialId = null;
-    document.getElementById('financialModal').classList.remove('active');
-    document.getElementById('financialForm').reset();
-    document.getElementById('finYear').readOnly = false;
-    const preview = document.getElementById('finCalcPreview');
-    if (preview) preview.style.display = 'none';
-    const tc = document.getElementById('finTotalColl');
-    if (tc) tc.dataset.autoFilled = 'yes';
-}
-
-// Close on backdrop click
-document.addEventListener('DOMContentLoaded', function() {
-    const fm = document.getElementById('financialModal');
-    if (fm) fm.addEventListener('click', function(e) {
-        if (e.target === this) closeFinancialModal();
-    });
-});
-
-// â”€â”€â”€ Edit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function editFinancial(id) {
-    const record = _financialsList.find(r => r.financialId === id);
-    if (!record) return;
-    openFinancialModal(record);
-}
-
-// â”€â”€â”€ Delete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-async function deleteFinancial(id) {
-    const record = _financialsList.find(r => r.financialId === id);
-    const label  = record ? `Year ${record.year}` : id;
-    if (!confirm(`Delete the financial record for ${label}?\n\nThis cannot be undone.`)) return;
-    try {
-        const res  = await fetch(`/api/financials/${encodeURIComponent(id)}`, { method: 'DELETE' });
-        const data = await res.json();
-        if (res.ok && data.success) {
-            showNotification(`Financial record for ${label} deleted.`, 'success');
-            loadFinancials();
+        renderBsTabs();
+        if (_financialsList.length > 0) {
+            renderBsLedger(_financialsList[_financialsList.length - 1].financialId);
         } else {
-            showNotification('Error: ' + (data.message || 'Could not delete.'), 'error');
+            const body = document.getElementById('bsLedgerBody');
+            if (body) body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:30px;">No records found. Click <strong>Add Year</strong> to get started.</td></tr>';
         }
     } catch (e) {
-        showNotification('Cannot reach server. Is server.js running?', 'error');
+        tabsEl.innerHTML = '<span style="color:#c0392b;">\u26a0 Could not load records. Is server.js running?</span>';
     }
 }
 
-// â”€â”€â”€ Save (add / edit) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-async function saveFinancialRecord(ev) {
-    ev.preventDefault();
-    const tc = document.getElementById('finTotalColl');
-    // If Total Collection is empty, use the auto-computed value
-    const lb  = Number(document.getElementById('finLastBal').value   || 0);
-    const don = Number(document.getElementById('finDonations').value  || 0);
-    const cih = Number(document.getElementById('finCashHand').value   || 0);
-    const cab = Number(document.getElementById('finCashBank').value   || 0);
-    const wit = Number(document.getElementById('finWithdrawn').value  || 0);
-    const col = tc && tc.value !== '' ? Number(tc.value) : (lb + don + cih + cab + wit);
-
-    const payload = {
-        year                 : document.getElementById('finYear').value.trim(),
-        lastYearBalance      : lb,
-        currentYearDonations : don,
-        cashInHand           : cih,
-        cashAtBank           : cab,
-        cashWithdrawnFromBank: wit,
-        totalCollection      : col,
-        currentYearExpenses  : Number(document.getElementById('finExpenses').value  || 0),
-        notes                : document.getElementById('finNotes').value.trim(),
-    };
-    if (!payload.year) {
-        showNotification('Financial Year is required.', 'error'); return;
+// ─── Render year selector tabs ────────────────────────────────────────────────
+function renderBsTabs() {
+    const tabsEl = document.getElementById('bsYearTabs');
+    if (!tabsEl) return;
+    if (_financialsList.length === 0) {
+        tabsEl.innerHTML = '<span style="color:#aaa;font-size:.9rem;">No years added yet.</span>';
+        return;
     }
-    const btn = document.getElementById('finSaveBtn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Saving\u2026'; }
+    tabsEl.innerHTML = _financialsList.map(r => {
+        const isActive = r.financialId === _activeBsId;
+        const safe = r.financialId.replace(/'/g, "\\'");
+        return `<button class="bs-year-tab${isActive ? ' active' : ''}" onclick="renderBsLedger('${safe}')">${escHtml(r.year)}</button>`;
+    }).join('');
+}
+
+// ─── Parse balance sheet structured data from record ─────────────────────────
+function parseBsData(record) {
+    let bsData = null;
+    try { bsData = record._bsData ? JSON.parse(record._bsData) : null; } catch(e) {}
+    if (!bsData) {
+        // Migrate from old flat format
+        bsData = {
+            lyYear: record.year || '',
+            cyYear: record.notes || '',
+            aCashBalanceParticulars: 'Cash Balance',
+            aCashBalance: Number(record.cashInHand || 0),
+            aBankBalanceParticulars: 'Bank Balance  (i)',
+            aBankBalance: Number(record.cashAtBank || 0),
+            bCashReceivedParticulars: 'Amount Received Cash  (i)',
+            bCashReceived: Number(record.currentYearDonations || 0),
+            bBankReceivedParticulars: 'Amount Received in Bank  (ii) (+)',
+            bBankReceived: 0,
+            bCashBoxParticulars: 'Amount Received in Cash Box  (+)',
+            bCashBox: 0,
+            cWithdrawnParticulars: '(iii) Cash withdrawn from Bank for C.Y.',
+            cWithdrawn: Number(record.cashWithdrawnFromBank || 0),
+            dExpenses: Number(record.currentYearExpenses || 0),
+            eCashInHandParticulars: 'Cash in Hand',
+            eCashInHand: 0,
+            eCashTransferParticulars: 'Cash transfer to Bank',
+            eCashTransfer: 0,
+            eCashInBankParticulars: 'Cash in Bank',
+            eCashInBank: 0,
+        };
+    }
+    return bsData;
+}
+
+// ─── Render the ledger table for one year ────────────────────────────────────
+function renderBsLedger(fid) {
+    _activeBsId = fid;
+    renderBsTabs();
+
+    const record = _financialsList.find(r => r.financialId === fid);
+    if (!record) return;
+
+    const bs     = parseBsData(record);
+    const safe   = fid.replace(/'/g, "\\'");
+    const lyYear = bs.lyYear || record.year || '';
+    const cyYear = bs.cyYear || '';
+
+    const body = document.getElementById('bsLedgerBody');
+    if (!body) return;
+
+    body.innerHTML = `
+<tr>
+  <td colspan="3" style="background:#fff8e8;padding:10px 16px;">
+    <span style="font-weight:700;font-size:1.05rem;color:var(--primary-color);">
+      Balance Sheet &mdash; L.Y:&nbsp;<span id="bsLyYearDisp">${escHtml(lyYear)}</span>
+      &nbsp;/&nbsp; C.Y:&nbsp;<span id="bsCyYearDisp">${escHtml(cyYear)}</span>
+    </span>
+  </td>
+  <td style="background:#fff8e8;text-align:right;">
+    <div style="display:flex;gap:6px;justify-content:flex-end;">
+      <button class="btn btn-primary btn-small" onclick="saveBsLedger('${safe}')" style="padding:6px 14px;font-size:.82rem;">
+        <i class="fas fa-save"></i> Save
+      </button>
+      <button class="btn-icon btn-delete" title="Delete this year" onclick="deleteBsYear('${safe}')">
+        <i class="fas fa-trash"></i>
+      </button>
+    </div>
+  </td>
+</tr>
+<!-- A) Balance for Last Year -->
+<tr class="bs-section-sep">
+  <td class="bs-section-lbl">A)</td>
+  <td class="bs-section-lbl" colspan="2">
+    Balance for the year (L.Y)&nbsp;
+    <input class="bs-particulars-input" id="bs_lyYear" value="${escAttr(lyYear)}"
+      placeholder="e.g. 2025-2026" style="width:140px;display:inline-block;" oninput="bsAutoCalc()">
+  </td>
+  <td class="bs-amt"></td>
+</tr>
+<tr>
+  <td></td>
+  <td class="bs-particulars">
+    <input class="bs-particulars-input" id="bs_aCashPart" value="${escAttr(bs.aCashBalanceParticulars)}" placeholder="Particulars">
+  </td>
+  <td class="bs-amts">
+    <input class="bs-input" id="bs_aCash" type="number" value="${bs.aCashBalance||''}" placeholder="0" oninput="bsAutoCalc()">
+  </td>
+  <td class="bs-amt"></td>
+</tr>
+<tr>
+  <td></td>
+  <td class="bs-particulars">
+    <input class="bs-particulars-input" id="bs_aBankPart" value="${escAttr(bs.aBankBalanceParticulars)}" placeholder="Particulars">
+  </td>
+  <td class="bs-amts">
+    <input class="bs-input" id="bs_aBank" type="number" value="${bs.aBankBalance||''}" placeholder="0" oninput="bsAutoCalc()" style="text-decoration:underline;">
+  </td>
+  <td class="bs-amt"></td>
+</tr>
+<!-- B) Income for Current Year -->
+<tr class="bs-section-sep">
+  <td class="bs-section-lbl">B)</td>
+  <td class="bs-section-lbl" colspan="2">
+    Income for the Current Year&nbsp;
+    <input class="bs-particulars-input" id="bs_cyYear" value="${escAttr(cyYear)}"
+      placeholder="e.g. 2026-2027" style="width:140px;display:inline-block;" oninput="bsAutoCalc()">
+  </td>
+  <td class="bs-amt"></td>
+</tr>
+<tr>
+  <td></td>
+  <td class="bs-particulars">
+    <input class="bs-particulars-input" id="bs_bCashPart" value="${escAttr(bs.bCashReceivedParticulars)}" placeholder="Particulars">
+  </td>
+  <td class="bs-amts">
+    <input class="bs-input" id="bs_bCash" type="number" value="${bs.bCashReceived||''}" placeholder="0" oninput="bsAutoCalc()">
+  </td>
+  <td class="bs-amt"></td>
+</tr>
+<tr>
+  <td></td>
+  <td class="bs-particulars">
+    <input class="bs-particulars-input" id="bs_bBankPart" value="${escAttr(bs.bBankReceivedParticulars)}" placeholder="Particulars">
+  </td>
+  <td class="bs-amts">
+    <input class="bs-input" id="bs_bBank" type="number" value="${bs.bBankReceived||''}" placeholder="0" oninput="bsAutoCalc()">
+  </td>
+  <td class="bs-amt"></td>
+</tr>
+<tr>
+  <td></td>
+  <td class="bs-particulars">
+    <input class="bs-particulars-input" id="bs_bBoxPart" value="${escAttr(bs.bCashBoxParticulars)}" placeholder="Particulars">
+  </td>
+  <td class="bs-amts">
+    <input class="bs-input" id="bs_bBox" type="number" value="${bs.bCashBox||''}" placeholder="0" oninput="bsAutoCalc()" style="text-decoration:underline;">
+  </td>
+  <td class="bs-amt"></td>
+</tr>
+<tr class="bs-total-row">
+  <td></td>
+  <td style="text-align:right;font-style:italic;">
+    Total Collections for C.Y.&nbsp;<span id="bs_cyYearLabel">${escHtml(cyYear)}</span>
+  </td>
+  <td class="bs-amts" id="bs_totalColl" style="text-decoration:underline;"></td>
+  <td class="bs-amt"></td>
+</tr>
+<!-- C) Cash Withdrawn -->
+<tr class="bs-section-sep">
+  <td class="bs-section-lbl">C)</td>
+  <td class="bs-particulars" style="font-weight:700;font-style:normal;">
+    <input class="bs-particulars-input" id="bs_cPart" value="${escAttr(bs.cWithdrawnParticulars)}"
+      placeholder="Particulars" style="font-style:normal;font-weight:700;">
+    &nbsp;<span id="bs_cCyLabel" style="font-size:.88rem;color:#555;">${escHtml(cyYear)}</span>
+  </td>
+  <td class="bs-amts" style="color:#555;font-style:italic;font-size:.88rem;">(i+ii-iii)</td>
+  <td class="bs-amt">
+    <input class="bs-input" id="bs_cWithdrawn" type="number" value="${bs.cWithdrawn||''}" placeholder="0" oninput="bsAutoCalc()">
+  </td>
+</tr>
+<!-- D) Expenses -->
+<tr class="bs-section-sep">
+  <td class="bs-section-lbl">D)</td>
+  <td class="bs-section-lbl" colspan="2">
+    Expenses for the Current Year&nbsp;<span id="bs_dCyLabel">${escHtml(cyYear)}</span>
+  </td>
+  <td class="bs-amt">
+    <input class="bs-input" id="bs_dExp" type="number" value="${bs.dExpenses||''}" placeholder="0" oninput="bsAutoCalc()" style="text-decoration:underline;">
+  </td>
+</tr>
+<!-- E) Closing Balance -->
+<tr class="bs-section-sep">
+  <td class="bs-section-lbl">E)</td>
+  <td class="bs-section-lbl" colspan="2">
+    Balance for the Current Year&nbsp;<span id="bs_eCyLabel">${escHtml(cyYear)}</span>
+  </td>
+  <td class="bs-amt"></td>
+</tr>
+<tr>
+  <td></td>
+  <td class="bs-particulars">
+    <input class="bs-particulars-input" id="bs_eCashPart" value="${escAttr(bs.eCashInHandParticulars)}" placeholder="Particulars">
+  </td>
+  <td class="bs-amts">
+    <input class="bs-input" id="bs_eCash" type="number" value="${bs.eCashInHand||''}" placeholder="0" oninput="bsAutoCalc()">
+  </td>
+  <td class="bs-amt"></td>
+</tr>
+<tr>
+  <td></td>
+  <td class="bs-particulars">
+    <input class="bs-particulars-input" id="bs_eTransferPart" value="${escAttr(bs.eCashTransferParticulars)}" placeholder="Particulars">
+  </td>
+  <td class="bs-amts" style="font-style:italic;">
+    (+)&nbsp;<input class="bs-input" id="bs_eTransfer" type="number" value="${bs.eCashTransfer||''}" placeholder="0" oninput="bsAutoCalc()" style="width:85px;">
+  </td>
+  <td class="bs-amt"></td>
+</tr>
+<tr>
+  <td></td>
+  <td class="bs-particulars">
+    <input class="bs-particulars-input" id="bs_eBankPart" value="${escAttr(bs.eCashInBankParticulars)}" placeholder="Particulars">
+  </td>
+  <td class="bs-amts">
+    <input class="bs-input" id="bs_eBank" type="number" value="${bs.eCashInBank||''}" placeholder="0" oninput="bsAutoCalc()" style="text-decoration:underline;">
+  </td>
+  <td class="bs-amt"></td>
+</tr>
+<tr><td colspan="4" style="height:20px;background:#fffdf5;border:none;"></td></tr>
+`;
+
+    bsAutoCalc();
+}
+
+// ─── Auto-calculate totals ────────────────────────────────────────────────────
+function bsAutoCalc() {
+    const g  = id => Number(document.getElementById(id)?.value || 0);
+    const gs = id => (document.getElementById(id)?.value || '');
+    const s  = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ? finFmt(v) : ''; };
+
+    s('bs_totalColl', g('bs_bCash') + g('bs_bBank') + g('bs_bBox'));
+
+    const cyYearVal = gs('bs_cyYear');
+    ['bs_cyYearLabel','bs_cCyLabel','bs_dCyLabel','bs_eCyLabel'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = cyYearVal;
+    });
+}
+
+// ─── Save ledger inline edits to server ──────────────────────────────────────
+async function saveBsLedger(fid) {
+    const record = _financialsList.find(r => r.financialId === fid);
+    if (!record) return;
+    const g  = id => Number(document.getElementById(id)?.value || 0);
+    const gs = id => (document.getElementById(id)?.value || '').trim();
+    const bsData = {
+        lyYear: gs('bs_lyYear'), cyYear: gs('bs_cyYear'),
+        aCashBalanceParticulars: gs('bs_aCashPart'), aCashBalance: g('bs_aCash'),
+        aBankBalanceParticulars: gs('bs_aBankPart'), aBankBalance: g('bs_aBank'),
+        bCashReceivedParticulars: gs('bs_bCashPart'), bCashReceived: g('bs_bCash'),
+        bBankReceivedParticulars: gs('bs_bBankPart'), bBankReceived: g('bs_bBank'),
+        bCashBoxParticulars: gs('bs_bBoxPart'), bCashBox: g('bs_bBox'),
+        cWithdrawnParticulars: gs('bs_cPart'), cWithdrawn: g('bs_cWithdrawn'),
+        dExpenses: g('bs_dExp'),
+        eCashInHandParticulars: gs('bs_eCashPart'), eCashInHand: g('bs_eCash'),
+        eCashTransferParticulars: gs('bs_eTransferPart'), eCashTransfer: g('bs_eTransfer'),
+        eCashInBankParticulars: gs('bs_eBankPart'), eCashInBank: g('bs_eBank'),
+    };
+    const totalColl = bsData.bCashReceived + bsData.bBankReceived + bsData.bCashBox;
+    const lyBalance = bsData.aCashBalance  + bsData.aBankBalance;
+    const payload = {
+        year: record.year, lastYearBalance: lyBalance,
+        currentYearDonations: bsData.bCashReceived, cashInHand: bsData.aCashBalance,
+        cashAtBank: bsData.aBankBalance, cashWithdrawnFromBank: bsData.cWithdrawn,
+        totalCollection: totalColl, currentYearExpenses: bsData.dExpenses,
+        notes: bsData.cyYear, _bsData: JSON.stringify(bsData),
+    };
     try {
-        const url    = _editFinancialId
-            ? `/api/financials/${encodeURIComponent(_editFinancialId)}`
-            : '/api/financials';
-        const method = _editFinancialId ? 'PUT' : 'POST';
-        const res    = await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body   : JSON.stringify(payload)
+        const res  = await fetch(`/api/financials/${encodeURIComponent(fid)}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            const idx = _financialsList.findIndex(r => r.financialId === fid);
+            if (idx >= 0) _financialsList[idx] = { ..._financialsList[idx], ...payload };
+            showNotification('Balance sheet saved!', 'success');
+        } else { showNotification('Error: ' + (data.message || 'Could not save.'), 'error'); }
+    } catch (e) { showNotification('Cannot reach server. Is server.js running?', 'error'); }
+}
+
+// ─── Modal open / close ───────────────────────────────────────────────────────
+function openBalanceSheetModal() {
+    const t = document.getElementById('finModalTitle');
+    if (t) t.innerHTML = '<i class="fas fa-plus-circle" style="color:var(--primary-color);margin-right:8px;"></i>Add Balance Sheet Year';
+    document.getElementById('financialModal').classList.add('active');
+}
+function openFinancialModal(record) { openBalanceSheetModal(); }
+
+function closeFinancialModal() {
+    document.getElementById('financialModal').classList.remove('active');
+    const f = document.getElementById('financialForm'); if (f) f.reset();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const fm = document.getElementById('financialModal');
+    if (fm) fm.addEventListener('click', function(e) { if (e.target === this) closeFinancialModal(); });
+});
+
+// ─── Create a new year ────────────────────────────────────────────────────────
+async function saveBalanceSheetYear(ev) {
+    ev.preventDefault();
+    const lyYear = (document.getElementById('finYear')?.value || '').trim();
+    const cyYear = (document.getElementById('finCYLabel')?.value || '').trim();
+    if (!lyYear || !cyYear) { showNotification('Both year labels are required.', 'error'); return; }
+    if (_financialsList.find(r => r.year === lyYear)) {
+        showNotification(`A record for "${lyYear}" already exists.`, 'error'); return;
+    }
+    const bsData = {
+        lyYear, cyYear,
+        aCashBalanceParticulars: 'Cash Balance',          aCashBalance: 0,
+        aBankBalanceParticulars: 'Bank Balance  (i)',      aBankBalance: 0,
+        bCashReceivedParticulars: 'Amount Received Cash  (i)',         bCashReceived: 0,
+        bBankReceivedParticulars: 'Amount Received in Bank  (ii) (+)', bBankReceived: 0,
+        bCashBoxParticulars: 'Amount Received in Cash Box  (+)',       bCashBox: 0,
+        cWithdrawnParticulars: '(iii) Cash withdrawn from Bank for C.Y.', cWithdrawn: 0,
+        dExpenses: 0,
+        eCashInHandParticulars: 'Cash in Hand',           eCashInHand: 0,
+        eCashTransferParticulars: 'Cash transfer to Bank', eCashTransfer: 0,
+        eCashInBankParticulars: 'Cash in Bank',           eCashInBank: 0,
+    };
+    const payload = {
+        year: lyYear, lastYearBalance: 0, currentYearDonations: 0,
+        cashInHand: 0, cashAtBank: 0, cashWithdrawnFromBank: 0,
+        totalCollection: 0, currentYearExpenses: 0,
+        notes: cyYear, _bsData: JSON.stringify(bsData)
+    };
+    const btn = document.getElementById('finSaveBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Creating\u2026'; }
+    try {
+        const res  = await fetch('/api/financials', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (res.ok && data.success) {
             closeFinancialModal();
-            showNotification(
-                _editFinancialId ? 'Financial record updated!' : 'Financial record added!',
-                'success'
-            );
-            loadFinancials();
-        } else {
-            showNotification('Error: ' + (data.message || 'Could not save.'), 'error');
-        }
-    } catch (e) {
-        showNotification('Cannot reach server. Is server.js running?', 'error');
-    } finally {
-        if (btn) { btn.disabled = false; btn.textContent = 'Save Record'; }
-    }
+            showNotification(`Balance sheet for ${lyYear} created!`, 'success');
+            await loadBalanceSheets();
+            const newRec = _financialsList.find(r => r.year === lyYear);
+            if (newRec) renderBsLedger(newRec.financialId);
+        } else { showNotification('Error: ' + (data.message || 'Could not create.'), 'error'); }
+    } catch (e) { showNotification('Cannot reach server. Is server.js running?', 'error');
+    } finally { if (btn) { btn.disabled = false; btn.textContent = 'Create Balance Sheet'; } }
 }
+async function saveFinancialRecord(ev) { return saveBalanceSheetYear(ev); }
 
-// â”€â”€â”€ Excel Export (pure JS, no external library) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function exportFinancialsExcel() {
-    const list = _financialsList;
-    if (list.length === 0) {
-        showNotification('No financial records to export.', 'error');
-        return;
+// ─── Delete a year ────────────────────────────────────────────────────────────
+async function deleteBsYear(fid) {
+    const record = _financialsList.find(r => r.financialId === fid);
+    const label  = record ? `Year ${record.year}` : fid;
+    if (!confirm(`Delete the balance sheet for ${label}?\n\nThis cannot be undone.`)) return;
+    try {
+        const res  = await fetch(`/api/financials/${encodeURIComponent(fid)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            showNotification(`Balance sheet for ${label} deleted.`, 'success');
+            _activeBsId = null; loadBalanceSheets();
+        } else { showNotification('Error: ' + (data.message || 'Could not delete.'), 'error'); }
+    } catch (e) { showNotification('Cannot reach server.', 'error'); }
+}
+async function deleteFinancial(id) { return deleteBsYear(id); }
+function renderFinancials() { /* replaced by renderBsLedger */ }
+
+// ─── Excel Export — replicates the ledger format exactly ─────────────────────
+function exportBalanceSheetExcel() {
+    if (_financialsList.length === 0) {
+        showNotification('No balance sheet records to export.', 'error'); return;
     }
+    const activeFid = _activeBsId || _financialsList[_financialsList.length - 1].financialId;
+    const record = _financialsList.find(r => r.financialId === activeFid);
+    if (!record) { showNotification('Please select a year first.', 'error'); return; }
 
-    const pctStr = (curr, prev) => {
-        if (!prev || prev === 0) return 'N/A';
-        return (((curr - prev) / Math.abs(prev)) * 100).toFixed(1) + '%';
-    };
-    const rupee = n => Number(n || 0).toFixed(2);
+    const lv = id => document.getElementById(id);
+    const g  = id => lv(id) ? Number(lv(id).value || 0) : 0;
+    const gs = id => lv(id) ? (lv(id).value || '').trim() : '';
+    const usingLive = !!document.getElementById('bs_lyYear');
 
-    // Build HTML table (Excel opens .xls HTML tables natively)
+    let bs = usingLive ? {
+        lyYear: gs('bs_lyYear'), cyYear: gs('bs_cyYear'),
+        aCashBalanceParticulars: gs('bs_aCashPart'), aCashBalance: g('bs_aCash'),
+        aBankBalanceParticulars: gs('bs_aBankPart'), aBankBalance: g('bs_aBank'),
+        bCashReceivedParticulars: gs('bs_bCashPart'), bCashReceived: g('bs_bCash'),
+        bBankReceivedParticulars: gs('bs_bBankPart'), bBankReceived: g('bs_bBank'),
+        bCashBoxParticulars: gs('bs_bBoxPart'), bCashBox: g('bs_bBox'),
+        cWithdrawnParticulars: gs('bs_cPart'), cWithdrawn: g('bs_cWithdrawn'),
+        dExpenses: g('bs_dExp'),
+        eCashInHandParticulars: gs('bs_eCashPart'), eCashInHand: g('bs_eCash'),
+        eCashTransferParticulars: gs('bs_eTransferPart'), eCashTransfer: g('bs_eTransfer'),
+        eCashInBankParticulars: gs('bs_eBankPart'), eCashInBank: g('bs_eBank'),
+    } : parseBsData(record);
+
+    const totalColl = Number(bs.bCashReceived) + Number(bs.bBankReceived) + Number(bs.bCashBox);
+    const rupee = n => Number(n || 0) !== 0 ? Number(n).toLocaleString('en-IN') : '';
+    const esc   = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const orgName  = 'Patelwadi Sarvajnik Ganesh Mitra Mandal';
     const exportDt = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
 
-    let html = `
-<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
 <head><meta charset="UTF-8">
 <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
-<x:Name>Financial Statements</x:Name>
+<x:Name>Balance Sheet</x:Name>
 <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
 </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
 <style>
-  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; }
-  .title  { font-size:16pt; font-weight:bold; color:#2C3E50; }
-  .sub    { font-size:10pt; color:#7F8C8D; }
-  th { background:#2C3E50; color:#fff; font-weight:bold; text-align:center; border:1px solid #ccc; padding:6px 10px; }
-  td { border:1px solid #ddd; padding:5px 8px; }
-  .num { text-align:right; mso-number-format:"#,##0.00"; }
-  .pct { text-align:center; }
-  .pos { color:#27AE60; font-weight:bold; }
-  .neg { color:#E74C3C; font-weight:bold; }
-  .year { background:#FF6B35; color:#fff; font-weight:bold; text-align:center; }
-  .total-row { background:#FFF3CD; font-weight:bold; }
-  .first { color:#888; text-align:center; }
+body{font-family:'Courier New',Courier,monospace;font-size:11pt;color:#1a1a7a;}
+.org{font-size:14pt;font-weight:bold;color:#2C3E50;}.sub{font-size:9pt;color:#7F8C8D;}
+table{border-collapse:collapse;width:100%;}
+th{border:1px solid #d4c9a8;padding:8px 14px;background:#faf3e0;font-weight:bold;text-align:center;}
+td{border:1px solid #d4c9a8;padding:6px 14px;}
+.sec{font-weight:bold;background:#fff8e8;}.part{padding-left:36px;font-style:italic;}
+.amts{text-align:right;}.amt{text-align:right;font-weight:bold;}
+.tot{background:#fdf0d5;font-weight:bold;border-top:2px solid #c8a84b;}.ul{text-decoration:underline;}
 </style>
 </head><body>
-<p class="title">${orgName}</p>
-<p class="sub">Financial Statements &mdash; Exported on ${exportDt}</p>
-<br>
+<p class="org">${esc(orgName)}</p>
+<p class="sub">Balance Sheet &mdash; L.Y: ${esc(bs.lyYear)} &nbsp;/&nbsp; C.Y: ${esc(bs.cyYear)}</p>
+<p class="sub">Exported on ${exportDt}</p><br>
 <table>
-<thead>
-<tr>
-  <th>Year</th>
-  <th>Last Year Balance (â‚¹)</th>
-  <th>Donations (â‚¹)</th>
-  <th>Donation Growth</th>
-  <th>Cash in Hand (â‚¹)</th>
-  <th>Cash at Bank (â‚¹)</th>
-  <th>Withdrawn from Bank (â‚¹)</th>
-  <th>Total Collection (â‚¹)</th>
-  <th>Collection Growth</th>
-  <th>Expenses (â‚¹)</th>
-  <th>Expense Growth</th>
-  <th>Balance (â‚¹)</th>
-  <th>Balance Growth</th>
-  <th>Notes</th>
-</tr>
-</thead>
-<tbody>`;
-
-    let totLB=0, totDon=0, totCIH=0, totCAB=0, totWIT=0, totCOL=0, totEXP=0, totBAL=0;
-
-    list.forEach((r, idx) => {
-        const prev    = idx > 0 ? list[idx - 1] : null;
-        const bal     = finBalance(r);
-        const balCls  = bal >= 0 ? 'pos' : 'neg';
-        totLB  += Number(r.lastYearBalance      || 0);
-        totDon += Number(r.currentYearDonations || 0);
-        totCIH += Number(r.cashInHand           || 0);
-        totCAB += Number(r.cashAtBank           || 0);
-        totWIT += Number(r.cashWithdrawnFromBank|| 0);
-        totCOL += Number(r.totalCollection      || 0);
-        totEXP += Number(r.currentYearExpenses  || 0);
-        totBAL += bal;
-
-        const gDon  = prev ? pctStr(r.currentYearDonations, prev.currentYearDonations) : 'First Year';
-        const gCol  = prev ? pctStr(r.totalCollection,      prev.totalCollection)       : 'First Year';
-        const gExp  = prev ? pctStr(r.currentYearExpenses,  prev.currentYearExpenses)   : 'First Year';
-        const gBal  = prev ? pctStr(finBalance(r),          finBalance(prev))            : 'First Year';
-        const donCls = prev ? (r.currentYearDonations >= prev.currentYearDonations ? 'pos' : 'neg') : 'first';
-        const colCls = prev ? (r.totalCollection      >= prev.totalCollection      ? 'pos' : 'neg') : 'first';
-        const expCls = prev ? (r.currentYearExpenses  <= prev.currentYearExpenses  ? 'pos' : 'neg') : 'first';
-        const balCls2= prev ? (finBalance(r)           >= finBalance(prev)          ? 'pos' : 'neg') : 'first';
-
-        html += `
-<tr>
-  <td class="year">${escHtml(r.year)}</td>
-  <td class="num">${rupee(r.lastYearBalance)}</td>
-  <td class="num">${rupee(r.currentYearDonations)}</td>
-  <td class="pct ${donCls}">${gDon}</td>
-  <td class="num">${rupee(r.cashInHand)}</td>
-  <td class="num">${rupee(r.cashAtBank)}</td>
-  <td class="num">${rupee(r.cashWithdrawnFromBank)}</td>
-  <td class="num">${rupee(r.totalCollection)}</td>
-  <td class="pct ${colCls}">${gCol}</td>
-  <td class="num">${rupee(r.currentYearExpenses)}</td>
-  <td class="pct ${expCls}">${gExp}</td>
-  <td class="num ${balCls}">${rupee(bal)}</td>
-  <td class="pct ${balCls2}">${gBal}</td>
-  <td>${escHtml(r.notes || '')}</td>
-</tr>`;
-    });
-
-    const grandBal = totBAL;
-    html += `
-<tr class="total-row">
-  <td><strong>GRAND TOTAL</strong></td>
-  <td class="num"><strong>${rupee(totLB)}</strong></td>
-  <td class="num"><strong>${rupee(totDon)}</strong></td>
-  <td class="pct">â€”</td>
-  <td class="num"><strong>${rupee(totCIH)}</strong></td>
-  <td class="num"><strong>${rupee(totCAB)}</strong></td>
-  <td class="num"><strong>${rupee(totWIT)}</strong></td>
-  <td class="num"><strong>${rupee(totCOL)}</strong></td>
-  <td class="pct">â€”</td>
-  <td class="num"><strong>${rupee(totEXP)}</strong></td>
-  <td class="pct">â€”</td>
-  <td class="num ${grandBal>=0?'pos':'neg'}"><strong>${rupee(grandBal)}</strong></td>
-  <td class="pct">â€”</td>
-  <td></td>
-</tr>
-</tbody>
-</table>
-<br>
-<p class="sub">Formula: Total Collection = Last Year Balance + Donations + Cash in Hand + Cash at Bank + Withdrawn from Bank</p>
-<p class="sub">Balance = Total Collection &minus; Expenses | Growth = % change vs previous year</p>
+<thead><tr>
+  <th style="width:40px;"></th>
+  <th style="text-align:left;min-width:280px;">Particulars</th>
+  <th style="min-width:130px;">Amts</th>
+  <th style="min-width:130px;">Amt</th>
+</tr></thead>
+<tbody>
+<tr class="tot"><td class="sec">A)</td><td class="sec" colspan="2">Balance for the year (L.Y) ${esc(bs.lyYear)}</td><td></td></tr>
+<tr><td></td><td class="part">${esc(bs.aCashBalanceParticulars)}</td><td class="amts">${rupee(bs.aCashBalance)}</td><td></td></tr>
+<tr><td></td><td class="part">${esc(bs.aBankBalanceParticulars)}</td><td class="amts ul">${rupee(bs.aBankBalance)}</td><td></td></tr>
+<tr class="tot"><td class="sec">B)</td><td class="sec" colspan="2">Income for the Current Year ${esc(bs.cyYear)}</td><td></td></tr>
+<tr><td></td><td class="part">${esc(bs.bCashReceivedParticulars)}</td><td class="amts">${rupee(bs.bCashReceived)}</td><td></td></tr>
+<tr><td></td><td class="part">${esc(bs.bBankReceivedParticulars)}</td><td class="amts">${rupee(bs.bBankReceived)}</td><td></td></tr>
+<tr><td></td><td class="part">${esc(bs.bCashBoxParticulars)}</td><td class="amts ul">${rupee(bs.bCashBox)}</td><td></td></tr>
+<tr class="tot"><td></td><td style="text-align:right;font-style:italic;">Total Collections for C.Y. ${esc(bs.cyYear)}</td><td class="amts ul">${rupee(totalColl)}</td><td></td></tr>
+<tr class="tot"><td class="sec">C)</td><td class="sec">${esc(bs.cWithdrawnParticulars)} ${esc(bs.cyYear)}</td><td style="text-align:center;font-style:italic;color:#555;">(i+ii-iii)</td><td class="amt">${rupee(bs.cWithdrawn)}</td></tr>
+<tr class="tot"><td class="sec">D)</td><td class="sec" colspan="2">Expenses for the Current Year ${esc(bs.cyYear)}</td><td class="amt ul">${rupee(bs.dExpenses)}</td></tr>
+<tr class="tot"><td class="sec">E)</td><td class="sec" colspan="2">Balance for the Current Year ${esc(bs.cyYear)}</td><td></td></tr>
+<tr><td></td><td class="part">${esc(bs.eCashInHandParticulars)}</td><td class="amts">${rupee(bs.eCashInHand)}</td><td></td></tr>
+<tr><td></td><td class="part">${esc(bs.eCashTransferParticulars)}</td><td class="amts">(+) ${rupee(bs.eCashTransfer)}</td><td></td></tr>
+<tr><td></td><td class="part">${esc(bs.eCashInBankParticulars)}</td><td class="amts ul">${rupee(bs.eCashInBank)}</td><td></td></tr>
+</tbody></table>
+<br><p class="sub">Total Collections = Amount Received Cash + Amount Received in Bank + Amount Received in Cash Box</p>
 </body></html>`;
 
     const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `Financial_Statements_${new Date().getFullYear()}.xls`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showNotification('Excel file downloaded successfully!', 'success');
+    a.href = url; a.download = `Balance_Sheet_${bs.lyYear || 'export'}.xls`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    showNotification('Balance Sheet Excel downloaded!', 'success');
 }
+function exportFinancialsExcel() { exportBalanceSheetExcel(); }
 
 // =====================================================================
 // SOFT DELETE RECEIPT
