@@ -1970,6 +1970,21 @@ window._fmtBytesA = function(b) {
                             <h3><i class="fas fa-file-excel" style="color:#1D6F42;margin-right:8px;"></i>Upload Excel — Donation Records
                                 <span id="donExplorerRecordBadge" style="display:none;margin-left:10px;background:#E8F5E9;color:#1B5E20;font-size:.72rem;padding:3px 10px;border-radius:16px;font-weight:700;"></span>
                             </h3>
+                            
+                            <!-- Excel Translator Tool -->
+                            <div style="background:#fdfdfd;border:1px solid #e0e0e0;border-radius:12px;padding:20px;margin-bottom:30px;margin-top:20px;">
+                                <h4 style="margin-top:0;color:var(--primary-color);font-size:1.1rem;"><i class="fas fa-language" style="margin-right:6px;"></i>Excel Translator (English to Marathi)</h4>
+                                <p style="font-size:0.9rem;color:#555;margin-bottom:15px;">Upload any Excel file here. The system will automatically translate the entire content into Marathi and generate a new translated file for you to download. This will not import records into the database.</p>
+                                <input type="file" id="translatorFile" accept=".xls,.xlsx" style="margin-bottom:15px;">
+                                <div>
+                                    <button class="btn btn-primary btn-small" id="btnTranslateExcel" onclick="translateUploadedExcel()" style="background:#27ae60;">
+                                        <i class="fas fa-language"></i> Translate & Download
+                                    </button>
+                                    <span id="translatorStatus" style="display:none;margin-left:10px;font-size:0.9rem;font-weight:600;"></span>
+                                </div>
+                            </div>
+                            
+                            <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
                             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
                                 <label style="font-size:.85rem;color:#555;display:flex;align-items:center;gap:6px;">
                                     <input type="radio" name="uploadMode" value="append" checked id="modeAppend"> Append to existing
@@ -2166,9 +2181,14 @@ window._fmtBytesA = function(b) {
                                 <button class="btn btn-primary btn-small" onclick="loadAdminDonationEntries()">
                                     <i class="fas fa-sync-alt"></i> Refresh
                                 </button>
-                                <button class="btn btn-small" style="background:#1D6F42;color:#fff;" onclick="exportAdminDonationEntriesToExcel()">
-                                    <i class="fas fa-file-excel"></i> Export Excel
-                                </button>
+                                <div style="display:inline-flex;gap:10px;">
+                                    <button class="btn btn-small" style="background:#1D6F42;color:#fff;" onclick="exportAdminDonationEntriesToExcel('en')">
+                                        <i class="fas fa-file-excel"></i> Export (EN)
+                                    </button>
+                                    <button class="btn btn-small" style="background:#27ae60;color:#fff;" onclick="exportAdminDonationEntriesToExcel('mr')">
+                                        <i class="fas fa-language"></i> Export (MR)
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -2995,7 +3015,10 @@ window._fmtBytesA = function(b) {
                 <button onclick="adeAreaModal()" class="btn btn-small" style="background:#F59E0B;color:#fff;"><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Manage Areas</button>
                 <button onclick="adeLandmarkModal()" class="btn btn-small" style="background:#6A1B9A;color:#fff;"><i class="fas fa-flag" style="margin-right:6px;"></i>Manage Landmarks</button>
                 <button onclick="adeToggleForm()" class="btn btn-small" style="background:var(--primary-color);color:#fff;"><i class="fas fa-plus" style="margin-right:6px;"></i>Record Donation</button>
-                <button onclick="adeExportExcel()" class="btn btn-small" style="background:#1D6F42;color:#fff;"><i class="fas fa-file-excel" style="margin-right:6px;"></i>Export Excel</button>
+                <div style="display:inline-flex;gap:10px;">
+                    <button onclick="adeExportExcel('en')" class="btn btn-small" style="background:#1D6F42;color:#fff;"><i class="fas fa-file-excel" style="margin-right:6px;"></i>Export (EN)</button>
+                    <button onclick="adeExportExcel('mr')" class="btn btn-small" style="background:#27ae60;color:#fff;"><i class="fas fa-language" style="margin-right:6px;"></i>Export (MR)</button>
+                </div>
                 <button onclick="adeLoad()" class="btn btn-small" style="background:var(--light-color);color:#555;"><i class="fas fa-sync-alt"></i></button>
             </div>
         </div>
@@ -3762,7 +3785,7 @@ window._fmtBytesA = function(b) {
         document.getElementById('apbDocCameraCapture')?.addEventListener('change', handleApbFileSelect);
     });
 
-    function adeExportExcel() {
+    async function adeExportExcel(lang = 'en') {
         if (typeof XLSX === 'undefined') {
             const status = document.getElementById('adeStatus');
             if(status) { status.style.display='block'; status.style.background='#FFEBEE'; status.style.color='#c0392b'; status.textContent='Excel export library is not loaded.'; }
@@ -3813,7 +3836,12 @@ window._fmtBytesA = function(b) {
             return row;
         });
         
-        const ws = XLSX.utils.json_to_sheet(data);
+        let finalData = data;
+        if (lang === 'mr' && typeof translateExcelData === 'function') {
+            finalData = await translateExcelData(data);
+        }
+        
+        const ws = XLSX.utils.json_to_sheet(finalData);
         
         for (const cellAddress in ws) {
             if (cellAddress[0] === '!') continue;

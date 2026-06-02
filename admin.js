@@ -3177,7 +3177,105 @@ async function deAdmDelete(entryId) {
     }
 }
 
-function exportAdminDonationEntriesToExcel() {
+// ==================== EXCEL TRANSLATOR & EXPORT ====================
+async function translateExcelData(data) {
+    showNotification('Translating to Marathi, please wait... (This may take a minute)', 'info');
+    let allStrings = new Set();
+    data.forEach(row => {
+        Object.keys(row).forEach(k => allStrings.add(String(k).trim()));
+        Object.values(row).forEach(v => {
+            if (v != null && String(v).trim() !== '') allStrings.add(String(v).trim());
+        });
+    });
+    
+    let stringArray = Array.from(allStrings);
+    if(stringArray.length === 0) return data;
+    
+    try {
+        const res = await fetch('/api/translate', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ strings: stringArray })
+        });
+        const d = await res.json();
+        if (d.success && d.translated) {
+            let map = {};
+            stringArray.forEach((s, i) => map[s] = d.translated[i] || s);
+            
+            return data.map(row => {
+                let newRow = {};
+                Object.entries(row).forEach(([k, v]) => {
+                    let newK = map[String(k).trim()] || k;
+                    let newV = (v != null && String(v).trim() !== '') ? (map[String(v).trim()] || v) : v;
+                    newRow[newK] = newV;
+                });
+                return newRow;
+            });
+        }
+    } catch(e) {
+        console.error(e);
+        showNotification('Translation API error. Downloading in English.', 'error');
+    }
+    return data;
+}
+
+async function translateUploadedExcel() {
+    if (typeof XLSX === 'undefined') {
+        showNotification('Excel library not loaded.', 'error');
+        return;
+    }
+    const fileInput = document.getElementById('translatorFile');
+    const status = document.getElementById('translatorStatus');
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        showNotification('Please select an Excel file first.', 'error');
+        return;
+    }
+    const file = fileInput.files[0];
+    status.style.display = 'inline';
+    status.style.color = '#e67e22';
+    status.textContent = 'Reading & translating...';
+    
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            
+            let jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+            
+            if(jsonData.length === 0) {
+                status.style.color = '#c0392b';
+                status.textContent = 'Excel file is empty.';
+                return;
+            }
+            
+            let translatedData = await translateExcelData(jsonData);
+            
+            const newWs = XLSX.utils.json_to_sheet(translatedData);
+            const newWb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(newWb, newWs, "Translated");
+            
+            const newFilename = "Translated_Marathi_" + file.name;
+            XLSX.writeFile(newWb, newFilename);
+            
+            status.style.color = '#27ae60';
+            status.textContent = 'Translation complete! Downloaded.';
+            setTimeout(() => { status.style.display = 'none'; }, 5000);
+            fileInput.value = ''; // clear
+            
+        } catch(err) {
+            console.error(err);
+            status.style.color = '#c0392b';
+            status.textContent = 'Error processing file.';
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+async function exportAdminDonationEntriesToExcel(lang = 'en') {
     if (typeof XLSX === 'undefined') {
         showNotification('Excel export library is not loaded.', 'error');
         return;
@@ -3221,7 +3319,12 @@ function exportAdminDonationEntriesToExcel() {
         };
     });
     
-    const ws = XLSX.utils.json_to_sheet(data);
+    let finalData = data;
+    if (lang === 'mr') {
+        finalData = await translateExcelData(data);
+    }
+    
+    const ws = XLSX.utils.json_to_sheet(finalData);
     
     const colWidths = [
         { wch: 12 }, { wch: 15 }, { wch: 25 }, { wch: 20 },

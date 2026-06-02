@@ -17,6 +17,7 @@ const path    = require('path');
 const url     = require('url');
 const os      = require('os');
 const { MongoClient } = require('mongodb');
+const translate = require('translate-google');
 
 /** Return the first non-loopback IPv4 address (LAN IP). */
 function getLocalIP() {
@@ -2612,6 +2613,42 @@ const server = http.createServer(async (req, res) => {
             if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
             return sendJSON(res, 200, { success: true, url: globalSettings.aboutPagePhoto });
         } catch(err) { return sendJSON(res, 500, { message: 'Upload error: ' + err.message }); }
+    }
+
+    // ── Translation Proxy API ──────────────────────────────────────────
+    if (req.method === 'POST' && pathname === '/api/translate') {
+        try {
+            const body = await readJSON(req);
+            if (!body || !Array.isArray(body.strings)) {
+                return sendJSON(res, 400, { message: 'Payload must contain a strings array' });
+            }
+            // Filter out empty strings to avoid translation API errors
+            // And chunk the array if it's too large? translate-google handles arrays but let's be safe.
+            const result = [];
+            
+            // Chunking into groups of 50 to avoid URI too long errors from google translate
+            const chunkSize = 50;
+            for (let i = 0; i < body.strings.length; i += chunkSize) {
+                const chunk = body.strings.slice(i, i + chunkSize);
+                try {
+                    const translatedChunk = await translate(chunk, { to: 'mr' });
+                    // translate returns an array if given an array, but sometimes a string if array size is 1.
+                    if (Array.isArray(translatedChunk)) {
+                        result.push(...translatedChunk);
+                    } else if (typeof translatedChunk === 'string') {
+                        result.push(translatedChunk);
+                    }
+                } catch (trErr) {
+                    console.error("Translation Chunk Error:", trErr);
+                    // Fallback to original if translation fails
+                    result.push(...chunk); 
+                }
+            }
+            return sendJSON(res, 200, { success: true, translated: result });
+        } catch (err) {
+            console.error('Translation error:', err);
+            return sendJSON(res, 500, { message: 'Translation failed', error: err.message });
+        }
     }
 
     // ── Static file serving ───────────────────────────────────────────────
