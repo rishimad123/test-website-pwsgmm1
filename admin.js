@@ -1941,7 +1941,9 @@ async function renderBsLedger(fid) {
   <td style="text-align:right;font-style:italic;">
     Total Collections for C.Y.&nbsp;<span id="bs_cyYearLabel">${escHtml(cyYear)}</span>
   </td>
-  <td class="bs-amts" id="bs_totalColl" style="text-decoration:underline;"></td>
+  <td class="bs-amts" style="text-decoration:underline;">
+    <input class="bs-input" id="bs_totalColl" type="number" readonly style="background:#f5f5f5;cursor:not-allowed;font-weight:bold;color:#1a1a7a;">
+  </td>
   <td class="bs-amt"></td>
 </tr>
 <!-- C) Cash Withdrawn -->
@@ -1952,8 +1954,8 @@ async function renderBsLedger(fid) {
       placeholder="Particulars" style="font-style:normal;font-weight:700;">
     &nbsp;<span id="bs_cCyLabel" style="font-size:.88rem;color:#555;">${escHtml(cyYear)}</span>
   </td>
-  <td class="bs-amts" style="color:#555;font-style:italic;font-size:.88rem;">
-    (i+ii-iii) &nbsp; <span id="bs_cResultDisplay" style="font-weight:bold;color:#1a1a7a;"></span>
+  <td class="bs-amts" style="color:#555;font-style:italic;font-size:.88rem;display:flex;align-items:center;gap:4px;">
+    (i+ii-iii) <input class="bs-input" id="bs_cResultDisplay" type="number" readonly style="background:#f5f5f5;cursor:not-allowed;font-weight:bold;color:#1a1a7a;width:90px;padding:2px 4px;">
   </td>
   <td class="bs-amt">
     <input class="bs-input" id="bs_cWithdrawn" type="number" value="${bs.cWithdrawn||''}" placeholder="0" oninput="bsAutoCalc()">
@@ -1975,7 +1977,9 @@ async function renderBsLedger(fid) {
   <td class="bs-section-lbl" colspan="2">
     Balance for the Current Year&nbsp;<span id="bs_eCyLabel">${escHtml(cyYear)}</span>
   </td>
-  <td class="bs-amt" id="bs_mainClosingBalance"></td>
+  <td class="bs-amt">
+    <input class="bs-input" id="bs_mainClosingBalance" type="number" readonly style="background:#e8f4fd;cursor:not-allowed;font-weight:bold;color:#1a1a7a;border:1px solid #b3d4fc;">
+  </td>
 </tr>
 <tr>
   <td></td>
@@ -2017,25 +2021,24 @@ async function renderBsLedger(fid) {
 function bsAutoCalc() {
     const g  = id => Number(document.getElementById(id)?.value || 0);
     const gs = id => (document.getElementById(id)?.value || '');
-    const s  = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ? finFmt(v) : ''; };
+    const si = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
 
     // B) Total Collections
-    s('bs_totalColl', g('bs_bCash') + g('bs_bBank') + g('bs_bBox'));
+    si('bs_totalColl', g('bs_bCash') + g('bs_bBank') + g('bs_bBox'));
 
     // C) Cash Withdrawn Result (i + ii - iii)
     const c_result = g('bs_aBank') + g('bs_bBank') - g('bs_cWithdrawn');
-    s('bs_cResultDisplay', c_result);
+    si('bs_cResultDisplay', c_result);
 
     // E) Cash in Bank (Auto-calculated: C_result + Cash Transfer to Bank)
-    const eBankInput = document.getElementById('bs_eBank');
-    if (eBankInput) eBankInput.value = c_result + g('bs_eTransfer');
+    si('bs_eBank', c_result + g('bs_eTransfer'));
 
     // E) Main Closing Balance Formula: A + B - C_result - D
     const aTotal = g('bs_aCash') + g('bs_aBank');
     const bTotal = g('bs_bCash') + g('bs_bBank') + g('bs_bBox');
     const dExp   = g('bs_dExp');
     const mainBal = aTotal + bTotal - c_result - dExp;
-    s('bs_mainClosingBalance', mainBal);
+    si('bs_mainClosingBalance', mainBal);
 
     const cyYearVal = gs('bs_cyYear');
     ['bs_cyYearLabel','bs_cCyLabel','bs_dCyLabel','bs_eCyLabel'].forEach(id => {
