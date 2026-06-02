@@ -3275,6 +3275,11 @@ async function translateUploadedExcel() {
     reader.readAsArrayBuffer(file);
 }
 
+// Expose translator functions globally for HTML onclick handlers
+window.translateExcelData = translateExcelData;
+window.translateUploadedExcel = translateUploadedExcel;
+window.exportAdminDonationEntriesToExcel = exportAdminDonationEntriesToExcel;
+
 async function exportAdminDonationEntriesToExcel(lang = 'en') {
     if (typeof XLSX === 'undefined') {
         showNotification('Excel export library is not loaded.', 'error');

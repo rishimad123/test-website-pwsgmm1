@@ -2624,19 +2624,34 @@ const server = http.createServer(async (req, res) => {
             }
             // Filter out empty strings to avoid translation API errors
             // And chunk the array if it's too large? translate-google handles arrays but let's be safe.
-            let result = [];
-            try {
-                const translated = await translate(body.strings, { to: 'mr' });
-                if (Array.isArray(translated)) {
-                    result = translated;
-                } else if (typeof translated === 'string') {
-                    result = [translated];
-                } else {
-                    result = body.strings;
+            const result = [];
+            const delay = ms => new Promise(r => setTimeout(r, ms));
+            const chunkSize = 100;
+
+            for (let i = 0; i < body.strings.length; i += chunkSize) {
+                const chunk = body.strings.slice(i, i + chunkSize);
+                try {
+                    const translated = await translate(chunk, { to: 'mr' });
+                    if (Array.isArray(translated)) {
+                        result.push(...translated);
+                    } else {
+                        // Unlikely edge case where it returns a string for a multiple element array
+                        result.push(...chunk);
+                    }
+                } catch (trErr) {
+                    console.error("Translation Chunk Error:", trErr);
+                    // Fallback to original if translation fails
+                    result.push(...chunk);
                 }
-            } catch (trErr) {
-                console.error("Translation Error:", trErr);
-                result = body.strings;
+                // Sleep to avoid rate limiting
+                if (i + chunkSize < body.strings.length) {
+                    await delay(1000);
+                }
+            }
+            
+            // Ensure exact length match
+            while (result.length < body.strings.length) {
+                result.push(body.strings[result.length]);
             }
             
             return sendJSON(res, 200, { success: true, translated: result });
