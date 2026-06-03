@@ -448,6 +448,11 @@ const server = http.createServer(async (req, res) => {
         return res.end();
     }
 
+    // ── Request logger (POST only, for debugging) ──────────────────
+    if (req.method === 'POST') {
+        console.log(`[REQ] POST ${pathname}`);
+    }
+
     // ── POST /api/submit-passbook ──────────────────────────────────────────
     if (req.method === 'POST' && pathname === '/api/submit-passbook') {
         try {
@@ -2419,6 +2424,7 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 200, { photos: galleryPhotos });
     }
     if (req.method === 'POST' && pathname === '/api/gallery') {
+        console.log(`[GALLERY] POST /api/gallery hit — Content-Type: ${req.headers['content-type']}`);
         try {
             const ct = req.headers['content-type'] || '';
             const bm = ct.match(/boundary=([^;]+)/i);
