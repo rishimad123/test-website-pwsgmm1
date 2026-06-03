@@ -1,3 +1,4 @@
+// NOTIFICATION_BUILD_v3 — 2026-06-04
 /**
  * server.js — Local development server for Patelwadi Ganesh Mitramandal
  *
@@ -738,13 +739,18 @@ const server = http.createServer(async (req, res) => {
             
             try {
                 if (colNotifications) {
+                    const notifMsg = `${existing.name || existing.username} (${existing.role || 'volunteer'}) logged in.`;
+                    console.log('[login] Inserting notification:', notifMsg);
                     await colNotifications.insertOne({
-                        message: `${existing.name || existing.username} (${existing.role || 'volunteer'}) logged in.`,
+                        message: notifMsg,
                         timestamp: new Date().toISOString(),
                         type: 'login'
                     });
+                    console.log('[login] Notification inserted OK');
+                } else {
+                    console.warn('[login] colNotifications is null - skipping insert');
                 }
-            } catch(e) { console.warn('Notification error', e); }
+            } catch(e) { console.warn('Notification insert error:', e.message); }
             
             return sendJSON(res, 200, { success: true, user: {
                 id        : existing.id || existing._id?.toString(),
@@ -3021,7 +3027,23 @@ const server = http.createServer(async (req, res) => {
         try {
             if (!colNotifications) return sendJSON(res, 503, { message: 'DB not ready' });
             const notifs = await colNotifications.find({}).sort({timestamp: -1}).limit(50).toArray();
+            console.log(`[notifications] GET - found ${notifs.length} notifications`);
             return sendJSON(res, 200, { notifications: notifs.map(stripId) });
+        } catch (err) {
+            return sendJSON(res, 500, { message: err.message });
+        }
+    }
+
+    // ── POST /api/notifications/test — write a test notification directly ──────
+    if (req.method === 'POST' && pathname === '/api/notifications/test') {
+        try {
+            if (!colNotifications) return sendJSON(res, 503, { message: 'DB not ready' });
+            await colNotifications.insertOne({
+                message: 'Test notification inserted successfully.',
+                timestamp: new Date().toISOString(),
+                type: 'test'
+            });
+            return sendJSON(res, 200, { success: true, message: 'Test notification written to DB.' });
         } catch (err) {
             return sendJSON(res, 500, { message: err.message });
         }
