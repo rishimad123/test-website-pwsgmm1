@@ -121,6 +121,7 @@ function showAdminSection(sectionId) {
     if (sectionId === 'events')           loadAdminEvents();
     if (sectionId === 'donorSearch')      loadDonorSearch();
     if (sectionId === 'tshirtSection' && typeof renderTshirtSection === 'function') renderTshirtSection();
+    if (sectionId === 'tshirtSection' && typeof adminTsInit === 'function') adminTsInit();
 }
 
 // ── Quick Upload (from Admin Dashboard home) ──────────────────────────────────
@@ -4374,4 +4375,179 @@ async function deleteAdminBanner() {
 // Call loadAdminEventDate on init
 document.addEventListener('DOMContentLoaded', () => {
     loadAdminEventDate();
+    // Init coordinator list if we're on the admin T-shirt section
+    if (document.getElementById('adminCoordinatorList')) {
+        adminTsInit();
+    }
 });
+
+// ═══════════════════════════════════════════════════════
+// ADMIN — T-SHIRT COORDINATOR MANAGEMENT
+// ═══════════════════════════════════════════════════════
+
+// Render the coordinator list in the admin panel
+function adminTsRenderCoordinators() {
+    const list = document.getElementById('adminCoordinatorList');
+    if (!list) return;
+
+    if (!window.tsCoordinators || window.tsCoordinators.length === 0) {
+        list.innerHTML = `<div style="text-align:center;color:#bbb;padding:20px;font-size:0.9rem;">No coordinators added yet. Click <strong>+ Add Coordinator</strong> to begin.</div>`;
+        return;
+    }
+
+    list.innerHTML = window.tsCoordinators.map((c, i) => `
+    <div style="background:#f9fafb;border-radius:10px;border:1px solid #e8eaf6;padding:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <img src="${c.photo || ''}" alt="${c.name}"
+            style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #e8eaf6;flex-shrink:0;"
+            onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=3949AB&color=fff&size=54'">
+        <div style="flex:1;min-width:180px;">
+            <div style="font-weight:700;font-size:0.95rem;color:#1a237e;">${c.name}</div>
+            <div style="font-size:0.82rem;color:#666;margin:2px 0;">${c.position}</div>
+            <div style="font-size:0.82rem;color:#888;">📱 ${c.phone}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+            <button onclick="adminTsEditCoordinator(${i})"
+                style="padding:7px 14px;background:#e8eaf6;color:#3949AB;border:none;border-radius:8px;font-size:0.82rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            <button onclick="adminTsDeleteCoordinator(${i})"
+                style="padding:7px 12px;background:#ffcdd2;color:#c62828;border:none;border-radius:8px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>`).join('');
+}
+
+// Open modal for adding or editing a coordinator
+function adminTsOpenModal(idx) {
+    const isEdit = idx !== null && idx !== undefined;
+    const c = isEdit ? window.tsCoordinators[idx] : { name: '', position: '', phone: '', photo: '' };
+
+    let modal = document.getElementById('adminCoordModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'adminCoordModal';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+    <div onclick="if(event.target===this)this.style.display='none'" style="display:flex;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;box-shadow:0 12px 40px rgba(0,0,0,.22);overflow:hidden;">
+            <div style="padding:18px 22px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#3949AB,#5c6bc0);">
+                <h3 style="margin:0;color:#fff;font-size:1rem;"><i class="fas fa-user-edit" style="margin-right:8px;"></i>${isEdit ? 'Edit' : 'Add'} Coordinator</h3>
+                <span onclick="document.getElementById('adminCoordModal').style.display='none'" style="color:#fff;font-size:1.5rem;cursor:pointer;line-height:1;opacity:.8;">&times;</span>
+            </div>
+            <div style="padding:22px;display:flex;flex-direction:column;gap:14px;">
+                <div>
+                    <label style="display:block;font-size:.82rem;font-weight:600;color:#555;margin-bottom:5px;">Full Name *</label>
+                    <input id="acdName" type="text" value="${c.name}" placeholder="e.g. Ravi Sharma"
+                        style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;outline:none;"
+                        onfocus="this.style.borderColor='#3949AB'" onblur="this.style.borderColor='#ddd'">
+                </div>
+                <div>
+                    <label style="display:block;font-size:.82rem;font-weight:600;color:#555;margin-bottom:5px;">Position / Role *</label>
+                    <input id="acdPosition" type="text" value="${c.position}" placeholder="e.g. Lead Coordinator"
+                        style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;outline:none;"
+                        onfocus="this.style.borderColor='#3949AB'" onblur="this.style.borderColor='#ddd'">
+                </div>
+                <div>
+                    <label style="display:block;font-size:.82rem;font-weight:600;color:#555;margin-bottom:5px;">WhatsApp Number (with country code) *</label>
+                    <input id="acdPhone" type="text" value="${c.phone}" placeholder="e.g. 919876543210"
+                        style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;outline:none;"
+                        onfocus="this.style.borderColor='#3949AB'" onblur="this.style.borderColor='#ddd'">
+                    <div style="font-size:.76rem;color:#888;margin-top:4px;">Include country code without + (e.g. 91 for India)</div>
+                </div>
+                <div>
+                    <label style="display:block;font-size:.82rem;font-weight:600;color:#555;margin-bottom:5px;">Photo URL <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+                    <input id="acdPhoto" type="text" value="${c.photo || ''}" placeholder="https://example.com/photo.jpg"
+                        style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;outline:none;"
+                        onfocus="this.style.borderColor='#3949AB'" onblur="this.style.borderColor='#ddd'">
+                    <div style="font-size:.76rem;color:#888;margin-top:4px;">Leave blank to auto-generate an avatar</div>
+                </div>
+                <div id="acdError" style="display:none;padding:8px 12px;background:#FFEBEE;color:#c62828;border-radius:8px;font-size:.85rem;"></div>
+            </div>
+            <div style="padding:16px 22px;border-top:1px solid #eee;display:flex;gap:10px;justify-content:flex-end;">
+                <button onclick="document.getElementById('adminCoordModal').style.display='none'"
+                    style="padding:9px 20px;background:#f5f5f5;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;color:#555;">Cancel</button>
+                <button onclick="adminTsSaveCoordinator(${isEdit ? idx : 'null'})"
+                    style="padding:9px 22px;background:#3949AB;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:700;">
+                    <i class="fas fa-save" style="margin-right:6px;"></i>${isEdit ? 'Save Changes' : 'Add Coordinator'}
+                </button>
+            </div>
+        </div>
+    </div>`;
+    modal.style.display = 'block';
+}
+
+function adminTsAddCoordinator() { adminTsOpenModal(null); }
+function adminTsEditCoordinator(idx) { adminTsOpenModal(idx); }
+
+async function adminTsSaveCoordinator(idx) {
+    const name     = document.getElementById('acdName')?.value.trim();
+    const position = document.getElementById('acdPosition')?.value.trim();
+    const phone    = (document.getElementById('acdPhone')?.value || '').replace(/\D/g, '');
+    const photo    = document.getElementById('acdPhoto')?.value.trim();
+    const errEl    = document.getElementById('acdError');
+
+    if (!name || !position || !phone) {
+        errEl.style.display = 'block';
+        errEl.textContent = 'Name, Position, and Phone are required.';
+        return;
+    }
+
+    const entry = {
+        name, position, phone,
+        photo: photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3949AB&color=fff&size=80`
+    };
+
+    if (idx === null || idx === undefined || idx === 'null') {
+        window.tsCoordinators.push(entry);
+    } else {
+        window.tsCoordinators[idx] = entry;
+    }
+
+    try {
+        const res = await fetch('/api/tshirts/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ price: window.tsPrice || 350, coordinators: window.tsCoordinators })
+        });
+        if (res.ok) {
+            document.getElementById('adminCoordModal').style.display = 'none';
+            adminTsRenderCoordinators();
+        } else {
+            errEl.style.display = 'block';
+            errEl.textContent = 'Failed to save. Please try again.';
+        }
+    } catch (e) {
+        errEl.style.display = 'block';
+        errEl.textContent = 'Network error: ' + e.message;
+    }
+}
+
+async function adminTsDeleteCoordinator(idx) {
+    const name = window.tsCoordinators[idx]?.name || 'this coordinator';
+    if (!confirm(`Delete "${name}"? This will update the public T-shirt page.`)) return;
+    window.tsCoordinators.splice(idx, 1);
+    try {
+        await fetch('/api/tshirts/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ price: window.tsPrice || 350, coordinators: window.tsCoordinators })
+        });
+    } catch(e) { console.error(e); }
+    adminTsRenderCoordinators();
+}
+
+// Load coordinators from server and render
+async function adminTsInit() {
+    if (!window.tsCoordinators) window.tsCoordinators = [];
+    if (!window.tsPrice) window.tsPrice = 350;
+    try {
+        const res = await fetch('/api/tshirts/settings');
+        const d = await res.json();
+        if (d && Array.isArray(d.coordinators)) window.tsCoordinators = d.coordinators;
+        if (d && d.price) window.tsPrice = d.price;
+    } catch(e) {}
+    adminTsRenderCoordinators();
+}
