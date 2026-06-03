@@ -2036,11 +2036,9 @@ function bsAutoCalc() {
     // E) Cash in Bank (Auto-calculated: C_result + Cash Transfer to Bank)
     si('bs_eBank', c_result + transferVal);
 
-    // E) Main Closing Balance Formula: A + B - D
-    const aTotal = g('bs_aCash') + g('bs_aBank');
-    const bTotal = g('bs_bCash') + g('bs_bBank') + g('bs_bBox');
-    const dExp   = g('bs_dExp');
-    const mainBal = aTotal + bTotal - dExp;
+    // E) Main Closing Balance = Last Year Bank Balance + Bank Received (CY) + Cash Transfer to Bank
+    //    i.e.  Section A (bank)  +  Section B (bank)  +  Section E (transfer)
+    const mainBal = g('bs_aBank') + g('bs_bBank') + transferVal;
     si('bs_mainClosingBalance', mainBal);
 
     const cyYearVal = gs('bs_cyYear');
@@ -2201,7 +2199,7 @@ function exportBalanceSheetExcel() {
     } : parseBsData(record);
 
     const totalColl = Number(bs.bCashReceived) + Number(bs.bBankReceived) + Number(bs.bCashBox);
-    const mainBal   = Number(bs.aCashBalance) + Number(bs.aBankBalance) + totalColl - Number(bs.dExpenses);
+    const mainBal   = Number(bs.aBankBalance) + Number(bs.bBankReceived) + Number(bs.eCashTransfer);
     const rupee = n => Number(n || 0) !== 0 ? Number(n).toLocaleString('en-IN') : '';
     const esc   = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const orgName  = 'Patelwadi Sarvajnik Ganesh Mitra Mandal';
