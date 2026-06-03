@@ -869,7 +869,8 @@ select, textarea {
 .footer-dev-profile {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    text-align: center;
     gap: 12px;
     background: rgba(255, 255, 255, 0.03);
     padding: 14px;
@@ -893,6 +894,8 @@ select, textarea {
 .footer-dev-info {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    text-align: center;
     gap: 2px;
 }
 .footer-dev-name {
