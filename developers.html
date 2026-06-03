@@ -471,13 +471,13 @@
                     // Escape HTML carefully
                     const safeMsg = devMsg.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     htmlStr += `
-                    <div class="developer-card" style="grid-column: 1 / -1; animation-delay: ${(i+1) * 0.1}s; background: linear-gradient(135deg, #1A0800, #0D0E1A); border: 1px solid rgba(217,119,6,0.3); border-radius: 20px;">
-                        <div style="padding: 40px; text-align: center; position: relative;">
+                    <div class="developer-card" style="grid-column: 1 / -1; animation-delay: ${(i+1) * 0.1}s; background: rgba(255,255,255,0.7); box-shadow: 0 10px 30px rgba(26,10,0,0.06); border: 1px solid rgba(217,119,6,0.15); border-radius: 20px; backdrop-filter: blur(8px);">
+                        <div style="padding: clamp(24px, 5vw, 48px); text-align: center; position: relative;">
                             <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--saffron), var(--crimson)); border-radius: 20px 20px 0 0;"></div>
-                            <h3 style="font-family: 'Cinzel', serif; color: var(--gold-lt); margin-bottom: 20px; font-size: 1.6rem;">
-                                <i class="fas fa-quote-left" style="opacity: 0.5; margin-right: 10px; font-size: 1.2rem;"></i>Message from Developer<i class="fas fa-quote-right" style="opacity: 0.5; margin-left: 10px; font-size: 1.2rem;"></i>
+                            <h3 style="font-family: 'Cinzel', serif; color: var(--midnight); margin-bottom: 20px; font-size: clamp(1.4rem, 4vw, 1.8rem); font-weight: 700;">
+                                <i class="fas fa-quote-left" style="color: var(--saffron); opacity: 0.7; margin-right: 10px; font-size: 1.2rem;"></i>Message from Developer<i class="fas fa-quote-right" style="color: var(--saffron); opacity: 0.7; margin-left: 10px; font-size: 1.2rem;"></i>
                             </h3>
-                            <p style="font-size: 1.1rem; line-height: 1.8; color: rgba(255,248,238,0.85); max-width: 800px; margin: 0 auto; white-space: pre-wrap;">${safeMsg}</p>
+                            <p style="font-size: clamp(1rem, 3vw, 1.15rem); line-height: 1.8; color: #3A2A1A; max-width: 800px; margin: 0 auto; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; text-align: justify; text-align-last: center;">${safeMsg}</p>
                         </div>
                     </div>`;
                 }
