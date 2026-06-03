@@ -997,14 +997,21 @@ const server = http.createServer(async (req, res) => {
 
             // Sanitise filename and make it unique
             const safeName   = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-            const uniqueName = `${Date.now()}_${safeName}`;
-            const savePath   = path.join(UPLOADS_DIR, uniqueName);
+            const uniqueName = `passbook_${Date.now()}_${safeName}`;
 
-            try {
-                fs.writeFileSync(savePath, filePart.data);
-                console.log(`📎 File saved: uploads/${uniqueName} (${(filePart.data.length / 1024).toFixed(1)} KB)`);
-            } catch (fsErr) {
-                console.warn('⚠️  Could not write file to disk (read-only FS — expected on Render):', fsErr.message);
+            // Try Cloudinary first, fall back to local disk
+            let fileUrl = null;
+            const cloudUrl = await uploadToCloudinary(filePart.data, uniqueName);
+            if (cloudUrl) {
+                fileUrl = cloudUrl;
+            } else {
+                try {
+                    fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
+                    fileUrl = `/uploads/${uniqueName}`;
+                    console.log(`📎 File saved locally: uploads/${uniqueName} (${(filePart.data.length / 1024).toFixed(1)} KB)`);
+                } catch (fsErr) {
+                    console.warn('⚠️  Could not write file to disk:', fsErr.message);
+                }
             }
 
             // Link to receipt if receiptId was supplied as a form field
@@ -1015,7 +1022,7 @@ const server = http.createServer(async (req, res) => {
                 const idx = receipts.findIndex(r => r.receiptId === receiptId);
                 if (idx !== -1) {
                     receipts[idx].passbookFile = uniqueName;
-                    receipts[idx].passbookUrl  = `/uploads/${uniqueName}`;
+                    receipts[idx].passbookUrl  = fileUrl;
                     receipts[idx].updatedAt    = new Date().toISOString();
                     await saveReceipts();
                     linkedReceiptId = receiptId;
@@ -1031,7 +1038,7 @@ const server = http.createServer(async (req, res) => {
                 const eidx = donationEntries.findIndex(e => e.entryId === entryId);
                 if (eidx !== -1) {
                     donationEntries[eidx].photoFile = uniqueName;
-                    donationEntries[eidx].photoUrl  = `/uploads/${uniqueName}`;
+                    donationEntries[eidx].photoUrl  = fileUrl;
                     donationEntries[eidx].updatedAt = new Date().toISOString();
                     await saveDonationEntries();
                     linkedEntryId = entryId;
@@ -1050,7 +1057,7 @@ const server = http.createServer(async (req, res) => {
                     const sidx = pautiBooks[bidx].slips.findIndex(s => s.slipNumber === slipNum);
                     if (sidx !== -1) {
                         pautiBooks[bidx].slips[sidx].photoFile = uniqueName;
-                        pautiBooks[bidx].slips[sidx].photoUrl  = `/uploads/${uniqueName}`;
+                        pautiBooks[bidx].slips[sidx].photoUrl  = fileUrl;
                         await savePautiBooks();
                         console.log(`🖼  Photo linked to pauti book slip: Book ${bookId}, Slip #${slipNum}`);
                     }
