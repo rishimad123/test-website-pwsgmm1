@@ -830,23 +830,18 @@ window.fixUrl = function(url) {
                         <span id="langEng" class="active">ENG</span>
                         <span id="langMar">MAR</span>
                     </div>
-                    <div style="margin-right:18px;color:#555;font-size:1.2rem;position:relative;cursor:pointer;">
-                        
-                    <div class="notification-container" id="dashNotifContainer" onclick="toggleNotifDropdown(event)">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-badge-dynamic" id="dashNotifBadge">0</span>
+                    <div class="notification-container" id="dashNotifContainer" onclick="toggleNotifDropdown(event)" style="position:relative;cursor:pointer;margin-right:18px;">
+                        <i class="fas fa-bell" style="font-size:1.2rem;color:#555;"></i>
+                        <span class="notification-badge-dynamic" id="dashNotifBadge" style="display:none;position:absolute;top:-5px;right:-8px;background:#E53935;color:#fff;font-size:.7rem;font-weight:bold;padding:2px 6px;border-radius:10px;">0</span>
                         <div class="notification-dropdown" id="dashNotifDropdown" onclick="event.stopPropagation()">
                             <div class="notification-header">
-                                Notifications
-                                <i class="fas fa-times" style="cursor:pointer;color:#888;" onclick="toggleNotifDropdown(event)"></i>
+                                <span><i class="fas fa-bell" style="margin-right:6px;color:#ff8c42;"></i>Notifications</span>
+                                <i class="fas fa-times" style="cursor:pointer;color:#888;" onclick="document.getElementById('dashNotifDropdown').classList.remove('show')"></i>
                             </div>
                             <ul class="notification-list" id="dashNotifList">
                                 <li class="notification-empty">Loading...</li>
                             </ul>
                         </div>
-                    </div>
-
-                        <span style="position:absolute;top:-4px;right:-8px;background:#e74c3c;color:#fff;font-size:.65rem;font-weight:700;padding:2px 5px;border-radius:10px;">2</span>
                     </div>
                     <div class="user-profile">
                         <div class="user-avatar" id="userAvatar">V</div>
@@ -3925,7 +3920,11 @@ async function fetchNotifications() {
             updateNotifBadge();
             renderNotifList();
         }
-    } catch(e) { console.error('Failed to fetch notifications', e); }
+    } catch(e) { 
+        const errList = document.getElementById('dashNotifList');
+        if (errList) errList.innerHTML = '<li class="notification-empty">Could not load notifications.</li>';
+        console.error('Failed to fetch notifications', e); 
+    }
 }
 
 function updateNotifBadge() {
@@ -3936,7 +3935,7 @@ function updateNotifBadge() {
         unreadCount = currentNotifications.length;
     }
     
-    const badge = document.querySelector('.notification-badge-dynamic');
+    const badge = document.getElementById('dashNotifBadge');
     if (badge) {
         if (unreadCount > 0) {
             badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
@@ -3948,7 +3947,7 @@ function updateNotifBadge() {
 }
 
 function renderNotifList() {
-    const list = document.querySelector('.notification-list');
+    const list = document.getElementById('dashNotifList');
     if (!list) return;
     
     if (currentNotifications.length === 0) {

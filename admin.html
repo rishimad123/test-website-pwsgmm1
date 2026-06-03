@@ -5628,7 +5628,11 @@ async function fetchNotifications() {
             updateNotifBadge();
             renderNotifList();
         }
-    } catch(e) { console.error('Failed to fetch notifications', e); }
+    } catch(e) { 
+        const errList = document.getElementById('adminNotifList');
+        if (errList) errList.innerHTML = '<li class="notification-empty">Could not load notifications.</li>';
+        console.error('Failed to fetch notifications', e); 
+    }
 }
 
 function updateNotifBadge() {
@@ -5639,7 +5643,7 @@ function updateNotifBadge() {
         unreadCount = currentNotifications.length;
     }
     
-    const badge = document.querySelector('.notification-badge-dynamic');
+    const badge = document.getElementById('adminNotifBadge');
     if (badge) {
         if (unreadCount > 0) {
             badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
@@ -5651,11 +5655,10 @@ function updateNotifBadge() {
 }
 
 function renderNotifList() {
-    const list = document.querySelector('.notification-list');
+    const list = document.getElementById('adminNotifList');
     if (!list) return;
-    
     if (currentNotifications.length === 0) {
-        list.innerHTML = '<li class="notification-empty">No new notifications.</li>';
+        list.innerHTML = '<li class="notification-empty">No notifications yet.</li>';
         return;
     }
     
@@ -5674,33 +5677,31 @@ function renderNotifList() {
 
 window.toggleNotifDropdown = function(e) {
     if (e) e.stopPropagation();
-    const dropdown = document.querySelector('.notification-dropdown');
-    if (dropdown) {
-        dropdown.classList.toggle('show');
-        if (dropdown.classList.contains('show')) {
-            // Update last seen
-            if (currentNotifications.length > 0) {
-                lastSeenNotifTime = currentNotifications[0].timestamp;
-                localStorage.setItem('lastSeenNotifTime', lastSeenNotifTime);
-                updateNotifBadge();
-            }
+    const dropdown = document.getElementById('adminNotifDropdown');
+    if (!dropdown) return;
+    dropdown.classList.toggle('show');
+    if (dropdown.classList.contains('show')) {
+        if (currentNotifications.length > 0) {
+            lastSeenNotifTime = currentNotifications[0].timestamp;
+            localStorage.setItem('lastSeenNotifTime', lastSeenNotifTime);
+            updateNotifBadge();
         }
     }
 };
 
 // Close dropdown when clicking outside
 document.addEventListener('click', function(e) {
-    const dropdown = document.querySelector('.notification-dropdown');
-    const container = document.querySelector('.notification-container');
+    const dropdown = document.getElementById('adminNotifDropdown');
+    const container = document.getElementById('adminNotifContainer');
     if (dropdown && dropdown.classList.contains('show') && container && !container.contains(e.target)) {
         dropdown.classList.remove('show');
     }
 });
 
-// Start polling
+// Poll every 15 seconds
 setInterval(fetchNotifications, 15000);
-// Initial fetch
-document.addEventListener('DOMContentLoaded', fetchNotifications);
+// Fetch immediately
+fetchNotifications();
 </script>
 
 </body>
