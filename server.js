@@ -2261,18 +2261,19 @@ const server = http.createServer(async (req, res) => {
             if (filePart.data.length > 5 * 1024 * 1024) return sendJSON(res, 400, { message: 'File exceeds 5 MB.' });
             const safeName   = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
             const uniqueName = `cm_${Date.now()}_${safeName}`;
-            try {
-                fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
-            } catch (fsErr) {
-                console.warn('⚠️  Could not write committee photo to disk:', fsErr.message);
-            }
+            const ext  = path.extname(safeName).toLowerCase();
+            const mime = ext === '.png' ? 'image/png' : (ext === '.gif' ? 'image/gif' : 'image/jpeg');
+            // Store as base64 data URL — survives server restarts & ephemeral filesystems
+            const dataUrl = `data:${mime};base64,${filePart.data.toString('base64')}`;
+            // Also attempt disk write for fast local serving (silently ignore errors)
+            try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); } catch (_) {}
             const memberIdPart = parts.find(p => p.name === 'memberId' && !p.filename);
             const memberId = memberIdPart ? memberIdPart.data.toString('utf8').trim() : null;
             if (memberId) {
                 const midx = committeeMembers.findIndex(m => m.id === memberId);
                 if (midx !== -1) {
                     committeeMembers[midx].photoFile = uniqueName;
-                    committeeMembers[midx].photoUrl  = `/uploads/${uniqueName}`;
+                    committeeMembers[midx].photoUrl  = dataUrl;
                     committeeMembers[midx].updatedAt = new Date().toISOString();
                     await saveCommitteeMembers();
                 }
@@ -2345,18 +2346,19 @@ const server = http.createServer(async (req, res) => {
             if (filePart.data.length > 5 * 1024 * 1024) return sendJSON(res, 400, { message: 'File exceeds 5 MB.' });
             const safeName   = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
             const uniqueName = `vc_${Date.now()}_${safeName}`;
-            try {
-                fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
-            } catch (fsErr) {
-                console.warn('⚠️  Could not write volunteer photo to disk:', fsErr.message);
-            }
+            const ext  = path.extname(safeName).toLowerCase();
+            const mime = ext === '.png' ? 'image/png' : (ext === '.gif' ? 'image/gif' : 'image/jpeg');
+            // Store as base64 data URL — survives server restarts & ephemeral filesystems
+            const dataUrl = `data:${mime};base64,${filePart.data.toString('base64')}`;
+            // Also attempt disk write for fast local serving (silently ignore errors)
+            try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); } catch (_) {}
             const cardIdPart = parts.find(p => p.name === 'volunteerId' && !p.filename);
             const cardId = cardIdPart ? cardIdPart.data.toString('utf8').trim() : null;
             if (cardId) {
                 const vidx = volunteerCards.findIndex(v => v.id === cardId);
                 if (vidx !== -1) {
                     volunteerCards[vidx].photoFile = uniqueName;
-                    volunteerCards[vidx].photoUrl  = `/uploads/${uniqueName}`;
+                    volunteerCards[vidx].photoUrl  = dataUrl;
                     volunteerCards[vidx].updatedAt = new Date().toISOString();
                     await saveVolunteerCards();
                 }
