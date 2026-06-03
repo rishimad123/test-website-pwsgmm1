@@ -24,24 +24,35 @@ const cloudinary = require('cloudinary').v2;
 // ── Cloudinary Upload Helper ─────────────────────────────
 async function uploadToCloudinary(buffer, filename) {
     const config = globalSettings.cloudinaryConfig || {};
-    cloudinary.config({
-      cloud_name: config.cloudName || process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: config.apiKey || process.env.CLOUDINARY_API_KEY,
-      api_secret: config.apiSecret || process.env.CLOUDINARY_API_SECRET,
-      secure: true
-    });
+    const cloudName = config.cloudName || process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey    = config.apiKey    || process.env.CLOUDINARY_API_KEY;
+    const apiSecret = config.apiSecret || process.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret) {
+        console.error('[Cloudinary] Upload skipped — missing credentials (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, or CLOUDINARY_API_SECRET).');
+        return null;
+    }
+
+    cloudinary.config({ cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret, secure: true });
+
+    console.log(`[Cloudinary] Uploading "${filename}" to folder "website-uploads"...`);
+
     return new Promise((resolve) => {
         const uploadStream = cloudinary.uploader.upload_stream(
-            { 
-                public_id: filename, 
+            {
+                public_id: filename,
                 resource_type: 'auto',
                 folder: 'website-uploads'
             },
             (error, result) => {
                 if (error) {
-                    console.error('Cloudinary upload error:', error);
+                    console.error(`[Cloudinary] Upload FAILED for "${filename}"`);
+                    console.error(`[Cloudinary] Error message : ${error.message}`);
+                    console.error(`[Cloudinary] Error HTTP status: ${error.http_code}`);
+                    console.error(`[Cloudinary] Full error:`, JSON.stringify(error, null, 2));
                     return resolve(null);
                 }
+                console.log(`[Cloudinary] Upload SUCCESS — URL: ${result.secure_url}`);
                 resolve(result.secure_url);
             }
         );
