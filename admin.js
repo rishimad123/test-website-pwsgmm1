@@ -4622,3 +4622,134 @@ async function adminTsInit() {
     } catch(e) {}
     adminTsRenderCoordinators();
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// DEVELOPERS SECTION  (Master-only admin management)
+// ═══════════════════════════════════════════════════════════════════
+
+// Show the Developers tab only for the master user
+function initDevelopersSection() {
+    const cuStr = sessionStorage.getItem('currentUser');
+    if (!cuStr) return;
+    const cu = JSON.parse(cuStr);
+    const isMaster = cu.isMaster === true || cu.id === '__master__';
+    
+    // Unhide the sidebar menu item if master
+    const navItem = document.getElementById('navDevelopersItem');
+    if (navItem) {
+        navItem.style.display = isMaster ? 'block' : 'none';
+    }
+    
+    if (isMaster) {
+        adminLoadDevelopers();
+    }
+}
+
+// Load and render the developers list
+async function adminLoadDevelopers() {
+    const list = document.getElementById('adminDevelopersList');
+    if (!list) return;
+    try {
+        const res = await fetch('/api/developers');
+        const data = await res.json();
+        const devs = data.developers || [];
+
+        if (devs.length === 0) {
+            list.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;font-size:0.9rem;">No developers added yet.</div>';
+            return;
+        }
+
+        list.innerHTML = devs.map(dev => `
+        <div style="background:#fff;border-radius:10px;border:1px solid #E0D5FF;padding:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <img src="${dev.photoUrl || ''}" alt="${dev.name}"
+                style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #6C3DE8;flex-shrink:0;"
+                onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(dev.name)}&background=6C3DE8&color=fff&size=52'">
+            <div style="flex:1;min-width:180px;">
+                <div style="font-weight:700;font-size:0.95rem;color:#3D1F8C;">${dev.name}</div>
+                <div style="font-size:0.82rem;color:#666;margin:2px 0;">${(dev.bio||'').substring(0,80)}${(dev.bio||'').length>80?'...':''}</div>
+                ${dev.whatsapp ? `<div style="font-size:0.78rem;color:#25D366;"><i class="fab fa-whatsapp"></i> ${dev.whatsapp}</div>` : ''}
+            </div>
+            <button onclick="adminDeleteDeveloper('${dev.id}')"
+                style="padding:7px 12px;background:#ffcdd2;color:#c62828;border:none;border-radius:8px;font-size:0.82rem;font-weight:600;cursor:pointer;flex-shrink:0;">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>`).join('');
+    } catch(e) {
+        list.innerHTML = '<div style="color:#e74c3c;padding:12px;font-size:0.9rem;">Failed to load developers.</div>';
+    }
+}
+
+// Add a new developer
+async function adminAddDeveloper() {
+    const name = (document.getElementById('devName')?.value || '').trim();
+    const bio  = (document.getElementById('devBio')?.value || '').trim();
+    const whatsapp = (document.getElementById('devWhatsapp')?.value || '').trim();
+    const photoInput = document.getElementById('devPhoto');
+    const statusEl = document.getElementById('devAddStatus');
+
+    if (!name) { alert('Please enter the developer name.'); return; }
+
+    const fd = new FormData();
+    fd.append('name', name);
+    fd.append('bio', bio);
+    fd.append('whatsapp', whatsapp);
+    if (photoInput && photoInput.files[0]) fd.append('photo', photoInput.files[0]);
+
+    const btn = document.querySelector('[onclick="adminAddDeveloper()"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'; }
+
+    try {
+        const res = await fetch('/api/developers', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success) {
+            // Clear form
+            document.getElementById('devName').value = '';
+            document.getElementById('devBio').value = '';
+            document.getElementById('devWhatsapp').value = '';
+            if (photoInput) photoInput.value = '';
+            document.getElementById('devPhotoPreviewWrap').style.display = 'none';
+
+            if (statusEl) { statusEl.textContent = 'Developer added!'; statusEl.style.opacity = '1'; setTimeout(() => statusEl.style.opacity = '0', 3000); }
+            await adminLoadDevelopers();
+        } else {
+            alert('Error: ' + (data.message || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Failed: ' + e.message);
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus"></i> Add Developer'; }
+}
+
+// Delete a developer
+async function adminDeleteDeveloper(id) {
+    if (!confirm('Remove this developer from the public page?')) return;
+    try {
+        const res = await fetch('/api/developers/' + encodeURIComponent(id), { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) await adminLoadDevelopers();
+        else alert('Error: ' + (data.message || 'Unknown error'));
+    } catch(e) {
+        alert('Failed: ' + e.message);
+    }
+}
+
+// Preview photo before upload
+document.addEventListener('DOMContentLoaded', () => {
+    const photoInput = document.getElementById('devPhoto');
+    if (photoInput) {
+        photoInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.getElementById('devPhotoPreview');
+                const wrap = document.getElementById('devPhotoPreviewWrap');
+                if (preview && wrap) { preview.src = e.target.result; wrap.style.display = 'block'; }
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Trigger Developers card visibility
+    initDevelopersSection();
+});
