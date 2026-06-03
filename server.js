@@ -2999,7 +2999,19 @@ const server = http.createServer(async (req, res) => {
     // been handled by an API route above.  If we reach here with POST/PUT/DELETE
     // it means no route matched → return 404 JSON immediately instead of hanging.
     if (req.method !== 'GET' && req.method !== 'HEAD') {
-        return sendJSON(res, 404, { message: `No API route for ${req.method} ${pathname}` });
+        
+    // ── GET /api/notifications ────────────────────────────────────────────────
+    if (req.method === 'GET' && pathname === '/api/notifications') {
+        try {
+            if (!colNotifications) return sendJSON(res, 503, { message: 'DB not ready' });
+            const notifs = await colNotifications.find({}).sort({timestamp: -1}).limit(50).toArray();
+            return sendJSON(res, 200, { notifications: notifs.map(stripId) });
+        } catch (err) {
+            return sendJSON(res, 500, { message: err.message });
+        }
+    }
+
+    return sendJSON(res, 404, { message: `No API route for ${req.method} ${pathname}` });
     }
 
     let filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);
