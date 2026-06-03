@@ -37,27 +37,23 @@ async function uploadToCloudinary(buffer, filename) {
 
     console.log(`[Cloudinary] Uploading "${filename}" to folder "website-uploads"...`);
 
-    return new Promise((resolve) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-            {
-                public_id: filename,
-                resource_type: 'auto',
-                folder: 'website-uploads'
-            },
-            (error, result) => {
-                if (error) {
-                    console.error(`[Cloudinary] Upload FAILED for "${filename}"`);
-                    console.error(`[Cloudinary] Error message : ${error.message}`);
-                    console.error(`[Cloudinary] Error HTTP status: ${error.http_code}`);
-                    console.error(`[Cloudinary] Full error:`, JSON.stringify(error, null, 2));
-                    return resolve(null);
-                }
-                console.log(`[Cloudinary] Upload SUCCESS — URL: ${result.secure_url}`);
-                resolve(result.secure_url);
-            }
-        );
-        uploadStream.end(buffer);
-    });
+    try {
+        // Use data URI upload — more reliable than upload_stream for arbitrary buffers
+        const dataUri = `data:application/octet-stream;base64,${buffer.toString('base64')}`;
+        const result = await cloudinary.uploader.upload(dataUri, {
+            public_id: filename,
+            resource_type: 'auto',
+            folder: 'website-uploads'
+        });
+        console.log(`[Cloudinary] Upload SUCCESS — URL: ${result.secure_url}`);
+        return result.secure_url;
+    } catch (error) {
+        console.error(`[Cloudinary] Upload FAILED for "${filename}"`);
+        console.error(`[Cloudinary] Error message : ${error.message}`);
+        console.error(`[Cloudinary] Error HTTP status: ${error.http_code}`);
+        console.error(`[Cloudinary] Full error:`, JSON.stringify(error, null, 2));
+        return null;
+    }
 }
 
 /** Return the first non-loopback IPv4 address (LAN IP). */
