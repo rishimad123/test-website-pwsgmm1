@@ -18,6 +18,40 @@ const url     = require('url');
 const os      = require('os');
 const { MongoClient } = require('mongodb');
 const translate = require('translate-google');
+const { Storage } = require('@google-cloud/storage');
+
+// ── Google Cloud Storage Upload Helper ─────────────────────────────
+async function uploadToGCS(buffer, filename) {
+    if (!globalSettings || !globalSettings.gcsConfig || !globalSettings.gcsConfig.projectId) {
+        return null; // Not configured
+    }
+    const { projectId, clientEmail, privateKey, bucketName } = globalSettings.gcsConfig;
+    if (!projectId || !clientEmail || !privateKey || !bucketName) return null;
+
+    // Properly format the private key (handle escaping if any)
+    const formattedKey = privateKey.replace(/\\n/g, '\n');
+
+    const storage = new Storage({
+        projectId: projectId,
+        credentials: {
+            client_email: clientEmail,
+            private_key: formattedKey
+        }
+    });
+
+    const bucket = storage.bucket(bucketName);
+    const file = bucket.file(filename);
+
+    await file.save(buffer, {
+        resumable: false,
+        metadata: {
+            cacheControl: 'public, max-age=31536000'
+        }
+    });
+
+    // We assume the bucket is configured for public read access.
+    return `https://storage.googleapis.com/${bucketName}/${filename}`;
+}
 
 /** Return the first non-loopback IPv4 address (LAN IP). */
 function getLocalIP() {
@@ -2512,6 +2546,7 @@ const server = http.createServer(async (req, res) => {
             if (body.activeVolunteers !== undefined) globalSettings.activeVolunteers = body.activeVolunteers;
             if (body.aboutText !== undefined) globalSettings.aboutText = body.aboutText;
             if (body.aboutPageText !== undefined) globalSettings.aboutPageText = body.aboutPageText;
+            if (body.gcsConfig !== undefined) globalSettings.gcsConfig = body.gcsConfig;
             
             // Footer & Social Settings
             if (body.footerAboutText !== undefined) globalSettings.footerAboutText = body.footerAboutText;

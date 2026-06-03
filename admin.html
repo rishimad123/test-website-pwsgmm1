@@ -2239,6 +2239,45 @@ window._fmtBytesA = function(b) {
                 <!-- ═══════════ Events Section (Admin) ═══════════ -->
                 <div id="events" class="content-section">
 
+                    <!-- Google Cloud Storage Setup -->
+                    <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #F4B400;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-cloud-upload-alt" style="color:#F4B400;margin-right:8px;"></i>Google Cloud Storage Setup</h3>
+                        </div>
+                        <p style="color:#666;font-size:0.9rem;margin:8px 0 16px;">Configure your GCS credentials. Once set, all image and document uploads will automatically be saved securely in the cloud to prevent data loss on server restarts.</p>
+                        
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;">
+                            <div>
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Project ID</label>
+                                <input type="text" id="gcsProjectId" class="admin-input" placeholder="e.g. my-cloud-project-123" style="width:100%;margin:0;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Bucket Name</label>
+                                <input type="text" id="gcsBucketName" class="admin-input" placeholder="e.g. pwsgmm-storage-bucket" style="width:100%;margin:0;">
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom:15px;">
+                            <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Service Account Client Email</label>
+                            <input type="text" id="gcsClientEmail" class="admin-input" placeholder="e.g. my-service-account@my-cloud-project.iam.gserviceaccount.com" style="width:100%;margin:0;">
+                        </div>
+
+                        <div style="margin-bottom:15px;">
+                            <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Service Account Private Key</label>
+                            <textarea id="gcsPrivateKey" class="admin-input" rows="4" placeholder="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASC...\n-----END PRIVATE KEY-----" style="width:100%;margin:0;resize:vertical;font-family:monospace;font-size:0.8rem;"></textarea>
+                            <div style="font-size:0.75rem;color:#999;margin-top:4px;">Include the exact contents of the private key starting with BEGIN PRIVATE KEY and ending with END PRIVATE KEY.</div>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <button class="btn btn-primary btn-small" onclick="saveGCSConfig()" style="background:#F4B400;border-color:#F4B400;color:#333;font-weight:bold;">
+                                    <i class="fas fa-save"></i> Save GCS Settings
+                                </button>
+                                <span id="gcsConfigStatus" style="margin-left:10px;font-size:0.85rem;color:#27AE60;font-weight:600;opacity:0;transition:opacity 0.3s;">Saved successfully!</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Quick Stats Editor -->
                     <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #3498db;">
                         <div class="card-header">

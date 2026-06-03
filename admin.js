@@ -3990,6 +3990,19 @@ async function loadAdminEventDate() {
         if (data && data.eventName) document.getElementById('adminEventName').value = data.eventName;
         if (data && data.eventDesc) document.getElementById('adminEventDesc').value = data.eventDesc;
 
+        // GCS Config
+        if (data && data.gcsConfig) {
+            const gcs = data.gcsConfig;
+            if (document.getElementById('gcsProjectId')) document.getElementById('gcsProjectId').value = gcs.projectId || '';
+            if (document.getElementById('gcsBucketName')) document.getElementById('gcsBucketName').value = gcs.bucketName || '';
+            if (document.getElementById('gcsClientEmail')) document.getElementById('gcsClientEmail').value = gcs.clientEmail || '';
+            if (document.getElementById('gcsPrivateKey') && gcs.privateKey) {
+                // To avoid leaking the full key on screen if it's already set, we can show it masked or just leave it.
+                // We'll just populate it.
+                document.getElementById('gcsPrivateKey').value = gcs.privateKey || '';
+            }
+        }
+
         // Quick Stats
         if (data && data.yearsOfService !== undefined) {
             const el = document.getElementById('adminYearsOfService');
@@ -4115,6 +4128,30 @@ async function saveSiteSettingsForm() {
     } catch(e) {
         alert('Error: ' + e.message);
     }
+}
+
+async function saveGCSConfig() {
+    const projectId = document.getElementById('gcsProjectId')?.value.trim();
+    const bucketName = document.getElementById('gcsBucketName')?.value.trim();
+    const clientEmail = document.getElementById('gcsClientEmail')?.value.trim();
+    const privateKey = document.getElementById('gcsPrivateKey')?.value.trim();
+
+    try {
+        const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                gcsConfig: { projectId, bucketName, clientEmail, privateKey }
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const s = document.getElementById('gcsConfigStatus');
+            if (s) { s.style.opacity = '1'; setTimeout(() => s.style.opacity = '0', 3000); }
+        } else {
+            alert('Failed to save GCS config: ' + (data.message || 'Unknown error'));
+        }
+    } catch(e) { alert('Error: ' + e.message); }
 }
 
 // Save Quick Stats (Years of Service + Active Volunteers)
