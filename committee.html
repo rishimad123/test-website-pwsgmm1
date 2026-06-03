@@ -154,7 +154,7 @@
                         if (res.ok && data.members && data.members.length > 0) {
                             grid.innerHTML = data.members.map(m => {
                                 const photoHTML = m.photoUrl
-                                    ? `<img src="${m.photoUrl}" alt="${m.name}" style="width:100%;height:100%;object-fit:cover;">`
+                                    ? `<img src="${m.photoUrl}" alt="${m.name}" style="width:100%;height:100%;object-fit:contain;background:#f8f9fa;">`
                                     : `<i class="fas fa-user"></i>`;
                                 return `
                                     <div class="committee-card">
