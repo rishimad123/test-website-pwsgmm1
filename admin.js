@@ -1923,9 +1923,11 @@ async function renderBsLedger(fid) {
     <input class="bs-particulars-input" id="bs_bBankPart" value="${escAttr(bs.bBankReceivedParticulars)}" placeholder="Particulars">
   </td>
   <td class="bs-amts">
-    <input class="bs-input" id="bs_bBank" type="number" value="${bs.bBankReceived||''}" placeholder="0" oninput="bsAutoCalc()">
+    <input class="bs-input" id="bs_bBank" type="number" value="${bs.bBankReceived||''}" placeholder="0" readonly
+      title="Auto-filled from Cash Transfer to Bank (Section E)"
+      style="background:#e8f4fd;cursor:not-allowed;color:#1a1a7a;border:1px solid #b3d4fc;">
   </td>
-  <td class="bs-amt"></td>
+  <td class="bs-amt"><span style="font-size:.75rem;color:#2980b9;font-style:italic;">← from E</span></td>
 </tr>
 <tr>
   <td></td>
@@ -2025,7 +2027,12 @@ function bsAutoCalc() {
     const gs = id => (document.getElementById(id)?.value || '');
     const si = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
 
-    // B) Total Collections
+    // E→B link: Cash Transfer to Bank feeds directly into Amount Received in Bank
+    // (typing in bs_eTransfer instantly updates bs_bBank so Section B stays accurate)
+    const transferVal = g('bs_eTransfer');
+    si('bs_bBank', transferVal);
+
+    // B) Total Collections (now includes the updated bs_bBank from the transfer)
     si('bs_totalColl', g('bs_bCash') + g('bs_bBank') + g('bs_bBox'));
 
     // C) Cash Withdrawn Result (i + ii - iii)
@@ -2033,7 +2040,7 @@ function bsAutoCalc() {
     si('bs_cResultDisplay', c_result);
 
     // E) Cash in Bank (Auto-calculated: C_result + Cash Transfer to Bank)
-    si('bs_eBank', c_result + g('bs_eTransfer'));
+    si('bs_eBank', c_result + transferVal);
 
     // E) Main Closing Balance Formula: A + B - D
     const aTotal = g('bs_aCash') + g('bs_aBank');
