@@ -4659,6 +4659,18 @@ async function adminLoadDevelopers() {
         const msgInput = document.getElementById('devMessageInput');
         if (msgInput) msgInput.value = devMsg;
 
+        // Load footer developer
+        const footerDev = data.footerDeveloper || {};
+        const fDevName = document.getElementById('footerDevName');
+        const fDevPos = document.getElementById('footerDevPosition');
+        const fDevPreview = document.getElementById('footerDevPhotoPreview');
+        if (fDevName) fDevName.value = footerDev.name || '';
+        if (fDevPos) fDevPos.value = footerDev.position || '';
+        if (fDevPreview && footerDev.photoUrl) {
+            fDevPreview.src = footerDev.photoUrl;
+            fDevPreview.style.display = 'block';
+        }
+
         if (devs.length === 0) {
             list.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;font-size:0.9rem;">No developers added yet.</div>';
             return;
@@ -4754,6 +4766,43 @@ async function adminSaveDeveloperMessage() {
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Message'; }
 }
 
+// Save footer developer profile
+async function adminSaveFooterDeveloper() {
+    const name = (document.getElementById('footerDevName')?.value || '').trim();
+    const position = (document.getElementById('footerDevPosition')?.value || '').trim();
+    const photoInput = document.getElementById('footerDevPhoto');
+    const statusEl = document.getElementById('footerDevStatus');
+
+    if (!name) { alert('Please enter the footer developer name.'); return; }
+
+    const fd = new FormData();
+    fd.append('name', name);
+    fd.append('position', position);
+    if (photoInput && photoInput.files[0]) fd.append('photo', photoInput.files[0]);
+
+    const btn = document.querySelector('[onclick="adminSaveFooterDeveloper()"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'; }
+
+    try {
+        const res = await fetch('/api/developers/footer', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success) {
+            if (photoInput) photoInput.value = '';
+            if (statusEl) { 
+                statusEl.textContent = 'Footer profile saved successfully!'; 
+                statusEl.style.opacity = '1'; 
+                setTimeout(() => statusEl.style.opacity = '0', 3000); 
+            }
+            await adminLoadDevelopers();
+        } else {
+            alert('Error: ' + (data.message || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Failed: ' + e.message);
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Footer Profile'; }
+}
+
 // Delete a developer
 async function adminDeleteDeveloper(id) {
     if (!confirm('Remove this developer from the public page?')) return;
@@ -4779,6 +4828,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const preview = document.getElementById('devPhotoPreview');
                 const wrap = document.getElementById('devPhotoPreviewWrap');
                 if (preview && wrap) { preview.src = e.target.result; wrap.style.display = 'block'; }
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    const fPhotoInput = document.getElementById('footerDevPhoto');
+    if (fPhotoInput) {
+        fPhotoInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.getElementById('footerDevPhotoPreview');
+                if (preview) { preview.src = e.target.result; preview.style.display = 'block'; }
             };
             reader.readAsDataURL(file);
         });

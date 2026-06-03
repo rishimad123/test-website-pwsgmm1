@@ -2785,8 +2785,48 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/developers') {
         return sendJSON(res, 200, { 
             developers: globalSettings.developers || [],
-            developerMessage: globalSettings.developerMessage || ''
+            developerMessage: globalSettings.developerMessage || '',
+            footerDeveloper: globalSettings.footerDeveloper || null
         });
+    }
+
+    // POST /api/developers/footer — master-only: update the footer developer profile
+    if (req.method === 'POST' && pathname === '/api/developers/footer') {
+        try {
+            const ct = req.headers['content-type'] || '';
+            let fDev = globalSettings.footerDeveloper || {};
+            
+            if (ct.includes('multipart/form-data')) {
+                const bm = ct.match(/boundary=([^;]+)/i);
+                if (!bm) return sendJSON(res, 400, { message: 'Missing boundary.' });
+                const rawBody = await readRawBody(req);
+                const parts = parseMultipart(rawBody, bm[1].trim());
+
+                for (const part of parts) {
+                    if (!part.filename && part.name) {
+                        fDev[part.name] = part.data.toString('utf8').trim();
+                    }
+                }
+
+                const photoPart = parts.find(p => p.filename && p.name === 'photo');
+                if (photoPart) {
+                    const safeName = photoPart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+                    const uniqueName = `footer_dev_${Date.now()}_${safeName}`;
+                    const gcsUrl = await uploadToGCS(photoPart.data, uniqueName);
+                    if (gcsUrl) {
+                        fDev.photoUrl = gcsUrl;
+                    }
+                }
+            } else {
+                return sendJSON(res, 400, { message: 'Invalid content type' });
+            }
+
+            globalSettings.footerDeveloper = fDev;
+            if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
+            return sendJSON(res, 200, { success: true, footerDeveloper: fDev });
+        } catch (err) {
+            return sendJSON(res, 500, { message: err.message });
+        }
     }
 
     // POST /api/developers/message — master-only: update the developer message

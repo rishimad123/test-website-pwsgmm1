@@ -865,3 +865,43 @@ select, textarea {
 .tshirt-photo-placeholder { font-size: 4rem; color: #ccc; font-weight: 300; }
 @media (max-width: 992px) { .tshirt-photo-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 576px) { .tshirt-photo-grid { grid-template-columns: 1fr; max-width: 300px; margin: 40px auto 0; } }
+/* ---- FOOTER DEVELOPER PROFILE ---- */
+.footer-dev-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 12px;
+    border-radius: 12px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(217, 119, 6, 0.15);
+    transition: all 0.3s ease;
+}
+.footer-dev-profile:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(217, 119, 6, 0.3);
+}
+.footer-dev-photo {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary-color);
+}
+.footer-dev-info {
+    flex: 1;
+}
+.footer-dev-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 3px;
+    font-family: 'Cinzel', serif;
+}
+.footer-dev-position {
+    font-size: 0.75rem;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}

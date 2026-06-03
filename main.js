@@ -254,6 +254,35 @@ window.openPublicLightbox = function(url, desc) {
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', loadPublicData);
 
+// ==================== LOAD FOOTER DEVELOPER ====================
+async function loadFooterDeveloperProfile() {
+    try {
+        const res = await fetch('/api/developers');
+        if (!res.ok) return;
+        const data = await res.json();
+        const fd = data.footerDeveloper;
+        if (!fd || (!fd.name && !fd.photoUrl)) return; // nothing to show
+
+        const fName = document.getElementById('footerDevProfileName');
+        const fPos = document.getElementById('footerDevProfilePosition');
+        const fPhoto = document.getElementById('footerDevProfilePhoto');
+        const fContainer = document.getElementById('footerDevProfileContainer');
+
+        if (fName && fd.name) fName.textContent = fd.name;
+        if (fPos && fd.position) fPos.textContent = fd.position;
+        if (fPhoto && fd.photoUrl) {
+            fPhoto.src = fd.photoUrl;
+            fPhoto.style.display = 'block';
+        }
+        if (fContainer) {
+            fContainer.style.display = 'flex';
+        }
+    } catch(err) {
+        console.error('Failed to load footer developer:', err);
+    }
+}
+document.addEventListener('DOMContentLoaded', loadFooterDeveloperProfile);
+
 // ==================== LOAD ADMIN-CONTROLLED SITE SETTINGS ====================
 async function loadSiteSettings() {
     try {
