@@ -4653,6 +4653,11 @@ async function adminLoadDevelopers() {
         const res = await fetch('/api/developers');
         const data = await res.json();
         const devs = data.developers || [];
+        
+        // Load the message from the API
+        const devMsg = data.developerMessage || '';
+        const msgInput = document.getElementById('devMessageInput');
+        if (msgInput) msgInput.value = devMsg;
 
         if (devs.length === 0) {
             list.innerHTML = '<div style="text-align:center;color:#aaa;padding:16px;font-size:0.9rem;">No developers added yet.</div>';
@@ -4718,6 +4723,35 @@ async function adminAddDeveloper() {
         alert('Failed: ' + e.message);
     }
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus"></i> Add Developer'; }
+}
+
+// Save the developer message
+async function adminSaveDeveloperMessage() {
+    const message = (document.getElementById('devMessageInput')?.value || '').trim();
+    const btn = document.querySelector('[onclick="adminSaveDeveloperMessage()"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'; }
+
+    try {
+        const res = await fetch('/api/developers/message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const statusEl = document.getElementById('devMessageStatus');
+            if (statusEl) { 
+                statusEl.textContent = 'Message saved successfully!'; 
+                statusEl.style.opacity = '1'; 
+                setTimeout(() => statusEl.style.opacity = '0', 3000); 
+            }
+        } else {
+            alert('Error: ' + (data.message || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Failed: ' + e.message);
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Message'; }
 }
 
 // Delete a developer

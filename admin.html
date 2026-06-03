@@ -2769,6 +2769,21 @@ window._fmtBytesA = function(b) {
                             </div>
                         </div>
 
+                        <!-- Message from Developer -->
+                        <div style="background:#F8F4FF;border-radius:12px;border:1px solid #E0D5FF;padding:20px;margin-bottom:20px;">
+                            <h4 style="margin:0 0 14px;color:#3D1F8C;font-size:0.95rem;"><i class="fas fa-comment-alt" style="margin-right:6px;"></i>Message from Developer</h4>
+                            <p style="font-size:0.82rem;color:#666;margin-top:0;margin-bottom:12px;">This message will be displayed prominently right after the first developer profile.</p>
+                            <div style="margin-bottom:14px;">
+                                <textarea id="devMessageInput" class="admin-input" rows="5" placeholder="Write a message to be displayed after the first developer profile..." style="width:100%;margin:0;resize:vertical;"></textarea>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                                <button class="btn btn-primary btn-small" onclick="adminSaveDeveloperMessage()" style="background:#3D1F8C;border-color:#3D1F8C;">
+                                    <i class="fas fa-save"></i> Save Message
+                                </button>
+                                <span id="devMessageStatus" style="font-size:0.85rem;color:#27AE60;font-weight:600;opacity:0;transition:opacity 0.4s;"></span>
+                            </div>
+                        </div>
+
                         <!-- Current Developers List -->
                         <div>
                             <h4 style="margin:0 0 12px;color:#3D1F8C;font-size:0.9rem;"><i class="fas fa-list" style="margin-right:6px;"></i>Current Developers</h4>

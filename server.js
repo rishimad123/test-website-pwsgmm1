@@ -2781,9 +2781,25 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ── Developers API ────────────────────────────────────────────────────────
-    // GET /api/developers — public: list all developers
+    // GET /api/developers — public: list all developers and message
     if (req.method === 'GET' && pathname === '/api/developers') {
-        return sendJSON(res, 200, { developers: globalSettings.developers || [] });
+        return sendJSON(res, 200, { 
+            developers: globalSettings.developers || [],
+            developerMessage: globalSettings.developerMessage || ''
+        });
+    }
+
+    // POST /api/developers/message — master-only: update the developer message
+    if (req.method === 'POST' && pathname === '/api/developers/message') {
+        try {
+            const bodyStr = await readRawBody(req);
+            const { message } = JSON.parse(bodyStr);
+            globalSettings.developerMessage = message || '';
+            if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
+            return sendJSON(res, 200, { success: true });
+        } catch (err) {
+            return sendJSON(res, 500, { message: err.message });
+        }
     }
 
     // POST /api/developers — master-only: add or update a developer
