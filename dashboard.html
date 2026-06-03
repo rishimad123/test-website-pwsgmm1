@@ -3138,7 +3138,7 @@ window.fixUrl = function(url) {
                     <td><span style="padding:3px 10px;border-radius:12px;background:#E3F2FD;color:#1565C0;font-size:.78rem;font-weight:700;">${e.paymentMode}</span></td>
                     <td style="text-align:center;">${photoCell}</td>
                     <td style="color:#888;font-size:.78rem;">${dt}</td>
-                    <td><button onclick="deOpenVolEdit('${e.entryId}')" style="padding:6px 12px;border:none;border-radius:7px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;"><i class="fas fa-edit"></i></button></td>
+                    <td>${(typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'volunteer_view') ? '' : `<button onclick="deOpenVolEdit('${e.entryId}')" style="padding:6px 12px;border:none;border-radius:7px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;"><i class="fas fa-edit"></i></button>`}</td>
                 </tr>`;
             }).join('');
         // ── Also populate mobile cards ─────────────────────────────────────────
@@ -3182,7 +3182,7 @@ window.fixUrl = function(url) {
                                     <span style="font-size:.72rem;color:#aaa;text-align:right;">${dtParts[0]}<br><span style="color:#bbb;">${dtParts[1]}</span></span>
                                 </div>
                             </div>
-                            <button onclick="deOpenVolEdit('${e.entryId}')" style="padding:8px 12px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;flex-shrink:0;margin-left:4px;"><i class="fas fa-edit"></i></button>
+                            ${(typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'volunteer_view') ? '' : `<button onclick="deOpenVolEdit('${e.entryId}')" style="padding:8px 12px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;flex-shrink:0;margin-left:4px;"><i class="fas fa-edit"></i></button>`}
                         </div>
                         ${photoSection}
                     </div>`;
@@ -3859,5 +3859,50 @@ if (originalShowSection) {
     })();
     </script>
     <!-- ============================================================ -->
+
+<script>
+// VOLUNTEER VIEW ONLY RESTRICTIONS
+document.addEventListener('DOMContentLoaded', () => {
+    // We need to wait for currentUser to be populated
+    const checkUserInterval = setInterval(() => {
+        if (typeof currentUser !== 'undefined' && currentUser !== null) {
+            clearInterval(checkUserInterval);
+            if (currentUser.role === 'volunteer_view') {
+                console.log('Applying View-Only restrictions...');
+                
+                // Hide sidebar links except Donor Search and Logout
+                const sidebarLinks = document.querySelectorAll('.sidebar-nav ul li a');
+                sidebarLinks.forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href !== '#donorSearch' && href !== '#logout' && !link.onclick?.toString().includes('logout')) {
+                        link.parentElement.style.display = 'none';
+                    }
+                });
+
+                // Hide dashboard overview cards
+                const tShirtCard = document.querySelector('[onclick*="tshirtSection"]');
+                if(tShirtCard) tShirtCard.style.display = 'none';
+                
+                const donationEntryCard = document.querySelector('[onclick*="donationEntry"]');
+                if(donationEntryCard) donationEntryCard.style.display = 'none';
+                
+                const myDonationsCard = document.querySelector('[onclick*="donations"]');
+                if(myDonationsCard) myDonationsCard.style.display = 'none';
+                
+                const balanceRecoveryCard = document.querySelector('[onclick*="balanceRecovery"]');
+                if(balanceRecoveryCard) balanceRecoveryCard.style.display = 'none';
+
+                // Force view to Donor Search
+                if (typeof showSection === 'function') {
+                    showSection('donorSearch');
+                } else if (window.showSection) {
+                    window.showSection('donorSearch');
+                }
+            }
+        }
+    }, 100);
+});
+</script>
 </body>
+
 </html>
