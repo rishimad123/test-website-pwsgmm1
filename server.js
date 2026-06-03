@@ -706,6 +706,15 @@ const server = http.createServer(async (req, res) => {
             
             if (username === MASTER_USER && password === MASTER_PASS) {
                 const masterProfile = await colUsers.findOne({ username: MASTER_USER });
+                try {
+                    if (colNotifications) {
+                        await colNotifications.insertOne({
+                            message: `${masterProfile?.name || 'Master Control'} (admin) logged in.`,
+                            timestamp: new Date().toISOString(),
+                            type: 'login'
+                        });
+                    }
+                } catch(e) { console.warn('Notification error', e); }
                 return sendJSON(res, 200, { success: true, isMaster: true, user: {
                     id        : '__master__',
                     username  : MASTER_USER,
@@ -726,6 +735,17 @@ const server = http.createServer(async (req, res) => {
             if (existing.blocked === true) return sendJSON(res, 401, { success: false, message: 'Account is blocked.' });
             // Check password
             if (existing.password !== password) return sendJSON(res, 401, { success: false, message: 'Invalid password.' });
+            
+            try {
+                if (colNotifications) {
+                    await colNotifications.insertOne({
+                        message: `${existing.name || existing.username} (${existing.role || 'volunteer'}) logged in.`,
+                        timestamp: new Date().toISOString(),
+                        type: 'login'
+                    });
+                }
+            } catch(e) { console.warn('Notification error', e); }
+            
             return sendJSON(res, 200, { success: true, user: {
                 id        : existing.id || existing._id?.toString(),
                 username  : existing.username,
