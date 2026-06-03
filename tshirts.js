@@ -127,8 +127,22 @@ function renderTshirtSection() {
             </div>
         </div>`;
         
+        html += `
+        <div style="margin-top: 40px; text-align: center;">
+            <h3 style="font-size: 1.5rem; color: #e74c3c; margin-bottom: 20px;">T-shirt Showcase</h3>
+            <div class="tshirt-photo-grid" id="tshirtShowcaseGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; text-align: center;">
+                <!-- Populated by main.js -->
+            </div>
+        </div>`;
+
         publicContainer.innerHTML = html;
         tsUpdateTotal();
+        
+        // Re-run settings loader to populate the grid we just added
+        if (typeof loadSiteSettings === 'function') {
+            loadSiteSettings();
+        }
+
     } else {
         // Admin or Volunteer Dashboard - Update Hardcoded DOM Elements
         const adminContainer = document.getElementById('tshirtSection');
