@@ -2868,20 +2868,13 @@ const server = http.createServer(async (req, res) => {
                 if (photoPart) {
                     const safeName = photoPart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
                     const uniqueName = `footer_dev_${Date.now()}_${safeName}`;
-                    const cloudUrl = await uploadToCloudinary(photoPart.data, uniqueName);
-                    if (cloudUrl) {
-                        fDev.photoUrl = cloudUrl;
-                    } else {
-                        try {
-                            const fs = require('fs');
-                            const path = require('path');
-                            const UPLOADS_DIR = path.join(__dirname, 'uploads');
-                            if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-                            fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), photoPart.data);
-                            fDev.photoUrl = '/uploads/' + uniqueName;
-                        } catch(e) {
-                            console.error('Local photo save failed:', e);
-                        }
+                    // Convert image to Base64 for permanent MongoDB storage on Render
+                    try {
+                        const mime = photoPart.filename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+                        const b64 = photoPart.data.toString('base64');
+                        fDev.photoUrl = `data:${mime};base64,${b64}`;
+                    } catch(e) {
+                        console.error('Base64 photo save failed:', e);
                     }
                 }
             } else {
