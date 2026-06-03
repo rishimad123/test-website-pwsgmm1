@@ -3880,17 +3880,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 // Hide dashboard overview cards
-                const tShirtCard = document.querySelector('[onclick*="tshirtSection"]');
-                if(tShirtCard) tShirtCard.style.display = 'none';
-                
-                const donationEntryCard = document.querySelector('[onclick*="donationEntry"]');
-                if(donationEntryCard) donationEntryCard.style.display = 'none';
-                
-                const myDonationsCard = document.querySelector('[onclick*="donations"]');
-                if(myDonationsCard) myDonationsCard.style.display = 'none';
-                
-                const balanceRecoveryCard = document.querySelector('[onclick*="balanceRecovery"]');
-                if(balanceRecoveryCard) balanceRecoveryCard.style.display = 'none';
+                document.querySelectorAll('[onclick*="tshirtSection"]').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('[onclick*="donationEntry"]').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('[onclick*="donations"]').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('[onclick*="balanceRecovery"]').forEach(el => el.style.display = 'none');
 
                 // Force view to Donor Search
                 if (typeof showSection === 'function') {
