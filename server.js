@@ -34,7 +34,8 @@ async function uploadToCloudinary(buffer, filename) {
         const uploadStream = cloudinary.uploader.upload_stream(
             { 
                 public_id: filename, 
-                resource_type: 'auto'
+                resource_type: 'auto',
+                folder: 'website-uploads'
             },
             (error, result) => {
                 if (error) {
