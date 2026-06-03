@@ -18,39 +18,34 @@ const url     = require('url');
 const os      = require('os');
 const { MongoClient } = require('mongodb');
 const translate = require('translate-google');
-const { Storage } = require('@google-cloud/storage');
+require('dotenv').config();
+const cloudinary = require('cloudinary').v2;
 
-// ── Google Cloud Storage Upload Helper ─────────────────────────────
-async function uploadToGCS(buffer, filename) {
-    if (!globalSettings || !globalSettings.gcsConfig || !globalSettings.gcsConfig.projectId) {
-        return null; // Not configured
-    }
-    const { projectId, clientEmail, privateKey, bucketName } = globalSettings.gcsConfig;
-    if (!projectId || !clientEmail || !privateKey || !bucketName) return null;
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true
+});
 
-    // Properly format the private key (handle escaping if any)
-    const formattedKey = privateKey.replace(/\\n/g, '\n');
-
-    const storage = new Storage({
-        projectId: projectId,
-        credentials: {
-            client_email: clientEmail,
-            private_key: formattedKey
-        }
+// ── Cloudinary Upload Helper ─────────────────────────────
+async function uploadToCloudinary(buffer, filename) {
+    return new Promise((resolve) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+            { 
+                public_id: filename, 
+                resource_type: 'auto'
+            },
+            (error, result) => {
+                if (error) {
+                    console.error('Cloudinary upload error:', error);
+                    return resolve(null);
+                }
+                resolve(result.secure_url);
+            }
+        );
+        uploadStream.end(buffer);
     });
-
-    const bucket = storage.bucket(bucketName);
-    const file = bucket.file(filename);
-
-    await file.save(buffer, {
-        resumable: false,
-        metadata: {
-            cacheControl: 'public, max-age=31536000'
-        }
-    });
-
-    // We assume the bucket is configured for public read access.
-    return `https://storage.googleapis.com/${bucketName}/${filename}`;
 }
 
 /** Return the first non-loopback IPv4 address (LAN IP). */
@@ -2812,9 +2807,9 @@ const server = http.createServer(async (req, res) => {
                 if (photoPart) {
                     const safeName = photoPart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
                     const uniqueName = `footer_dev_${Date.now()}_${safeName}`;
-                    const gcsUrl = await uploadToGCS(photoPart.data, uniqueName);
-                    if (gcsUrl) {
-                        fDev.photoUrl = gcsUrl;
+                    const cloudUrl = await uploadToCloudinary(photoPart.data, uniqueName);
+                    if (cloudUrl) {
+                        fDev.photoUrl = cloudUrl;
                     } else {
                         try {
                             const fs = require('fs');
@@ -2879,8 +2874,8 @@ const server = http.createServer(async (req, res) => {
                     const safeName = photoPart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
                     const uniqueName = `dev_${Date.now()}_${safeName}`;
                     let finalUrl = '/uploads/' + uniqueName;
-                    const gcsUrl = await uploadToGCS(photoPart.data, uniqueName);
-                    if (gcsUrl) finalUrl = gcsUrl;
+                    const cloudUrl = await uploadToCloudinary(photoPart.data, uniqueName);
+                    if (cloudUrl) finalUrl = cloudUrl;
                     else { try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), photoPart.data); } catch(e){} }
                     photoUrl = finalUrl;
                 }
