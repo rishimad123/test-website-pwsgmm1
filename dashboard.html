@@ -3993,10 +3993,10 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Start polling
+// Poll every 15 seconds
 setInterval(fetchNotifications, 15000);
-// Initial fetch
-document.addEventListener('DOMContentLoaded', fetchNotifications);
+// Fetch immediately (script is at bottom of body, DOM is already ready)
+fetchNotifications();
 </script>
 
 </body>
