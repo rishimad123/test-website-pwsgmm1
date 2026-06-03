@@ -2550,6 +2550,39 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/settings') {
         return sendJSON(res, 200, globalSettings);
     }
+
+    // ── Cloudinary Diagnostic Endpoint ─────────────────────────────
+    if (req.method === 'GET' && pathname === '/api/cloudinary-test') {
+        const config = globalSettings.cloudinaryConfig || {};
+        const cloudName = config.cloudName || process.env.CLOUDINARY_CLOUD_NAME;
+        const apiKey    = config.apiKey    || process.env.CLOUDINARY_API_KEY;
+        const apiSecret = config.apiSecret || process.env.CLOUDINARY_API_SECRET;
+
+        const diag = {
+            env_CLOUDINARY_CLOUD_NAME:   process.env.CLOUDINARY_CLOUD_NAME ? '✅ set' : '❌ missing',
+            env_CLOUDINARY_API_KEY:      process.env.CLOUDINARY_API_KEY    ? '✅ set' : '❌ missing',
+            env_CLOUDINARY_API_SECRET:   process.env.CLOUDINARY_API_SECRET ? '✅ set' : '❌ missing',
+            db_cloudName:  config.cloudName  ? '✅ set' : '❌ missing',
+            db_apiKey:     config.apiKey     ? '✅ set' : '❌ missing',
+            db_apiSecret:  config.apiSecret  ? '✅ set' : '❌ missing',
+            resolved_cloudName: cloudName || '❌ MISSING',
+            resolved_apiKey:    apiKey    ? '✅ present' : '❌ MISSING',
+            resolved_apiSecret: apiSecret ? '✅ present' : '❌ MISSING',
+        };
+
+        if (!cloudName || !apiKey || !apiSecret) {
+            return sendJSON(res, 200, { ok: false, message: 'Missing Cloudinary credentials', diag });
+        }
+
+        // Ping Cloudinary by fetching account info
+        try {
+            cloudinary.config({ cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret, secure: true });
+            const pingResult = await cloudinary.api.ping();
+            return sendJSON(res, 200, { ok: true, message: 'Cloudinary connected successfully!', ping: pingResult, diag });
+        } catch (err) {
+            return sendJSON(res, 200, { ok: false, message: 'Cloudinary ping failed: ' + err.message, error: err, diag });
+        }
+    }
     
     if (req.method === 'POST' && pathname === '/api/settings') {
         try {
