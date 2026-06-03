@@ -21,15 +21,15 @@ const translate = require('translate-google');
 require('dotenv').config();
 const cloudinary = require('cloudinary').v2;
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true
-});
-
 // ── Cloudinary Upload Helper ─────────────────────────────
 async function uploadToCloudinary(buffer, filename) {
+    const config = globalSettings.cloudinaryConfig || {};
+    cloudinary.config({
+      cloud_name: config.cloudName || process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: config.apiKey || process.env.CLOUDINARY_API_KEY,
+      api_secret: config.apiSecret || process.env.CLOUDINARY_API_SECRET,
+      secure: true
+    });
     return new Promise((resolve) => {
         const uploadStream = cloudinary.uploader.upload_stream(
             { 
@@ -2541,7 +2541,7 @@ const server = http.createServer(async (req, res) => {
             if (body.activeVolunteers !== undefined) globalSettings.activeVolunteers = body.activeVolunteers;
             if (body.aboutText !== undefined) globalSettings.aboutText = body.aboutText;
             if (body.aboutPageText !== undefined) globalSettings.aboutPageText = body.aboutPageText;
-            if (body.gcsConfig !== undefined) globalSettings.gcsConfig = body.gcsConfig;
+            if (body.cloudinaryConfig !== undefined) globalSettings.cloudinaryConfig = body.cloudinaryConfig;
             
             // Footer & Social Settings
             if (body.footerAboutText !== undefined) globalSettings.footerAboutText = body.footerAboutText;

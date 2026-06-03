@@ -3990,17 +3990,12 @@ async function loadAdminEventDate() {
         if (data && data.eventName) document.getElementById('adminEventName').value = data.eventName;
         if (data && data.eventDesc) document.getElementById('adminEventDesc').value = data.eventDesc;
 
-        // GCS Config
-        if (data && data.gcsConfig) {
-            const gcs = data.gcsConfig;
-            if (document.getElementById('gcsProjectId')) document.getElementById('gcsProjectId').value = gcs.projectId || '';
-            if (document.getElementById('gcsBucketName')) document.getElementById('gcsBucketName').value = gcs.bucketName || '';
-            if (document.getElementById('gcsClientEmail')) document.getElementById('gcsClientEmail').value = gcs.clientEmail || '';
-            if (document.getElementById('gcsPrivateKey') && gcs.privateKey) {
-                // To avoid leaking the full key on screen if it's already set, we can show it masked or just leave it.
-                // We'll just populate it.
-                document.getElementById('gcsPrivateKey').value = gcs.privateKey || '';
-            }
+        // Cloudinary Config
+        if (data && data.cloudinaryConfig) {
+            const cloudinary = data.cloudinaryConfig;
+            if (document.getElementById('cloudinaryCloudName')) document.getElementById('cloudinaryCloudName').value = cloudinary.cloudName || '';
+            if (document.getElementById('cloudinaryApiKey')) document.getElementById('cloudinaryApiKey').value = cloudinary.apiKey || '';
+            if (document.getElementById('cloudinaryApiSecret')) document.getElementById('cloudinaryApiSecret').value = cloudinary.apiSecret || '';
         }
 
         // Quick Stats
@@ -4130,26 +4125,25 @@ async function saveSiteSettingsForm() {
     }
 }
 
-async function saveGCSConfig() {
-    const projectId = document.getElementById('gcsProjectId')?.value.trim();
-    const bucketName = document.getElementById('gcsBucketName')?.value.trim();
-    const clientEmail = document.getElementById('gcsClientEmail')?.value.trim();
-    const privateKey = document.getElementById('gcsPrivateKey')?.value.trim();
+async function saveCloudinaryConfig() {
+    const cloudName = document.getElementById('cloudinaryCloudName')?.value.trim();
+    const apiKey = document.getElementById('cloudinaryApiKey')?.value.trim();
+    const apiSecret = document.getElementById('cloudinaryApiSecret')?.value.trim();
 
     try {
         const res = await fetch('/api/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                gcsConfig: { projectId, bucketName, clientEmail, privateKey }
+                cloudinaryConfig: { cloudName, apiKey, apiSecret }
             })
         });
         const data = await res.json();
         if (data.success) {
-            const s = document.getElementById('gcsConfigStatus');
+            const s = document.getElementById('cloudinaryConfigStatus');
             if (s) { s.style.opacity = '1'; setTimeout(() => s.style.opacity = '0', 3000); }
         } else {
-            alert('Failed to save GCS config: ' + (data.message || 'Unknown error'));
+            alert('Failed to save Cloudinary config: ' + (data.message || 'Unknown error'));
         }
     } catch(e) { alert('Error: ' + e.message); }
 }

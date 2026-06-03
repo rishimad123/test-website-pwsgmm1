@@ -2245,41 +2245,35 @@ window._fmtBytesA = function(b) {
                 <!-- ═══════════ Events Section (Admin) ═══════════ -->
                 <div id="events" class="content-section">
 
-                    <!-- Google Cloud Storage Setup -->
-                    <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #F4B400;">
+                    <!-- Cloudinary Setup -->
+                    <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #3448C5;">
                         <div class="card-header">
-                            <h3><i class="fas fa-cloud-upload-alt" style="color:#F4B400;margin-right:8px;"></i>Google Cloud Storage Setup</h3>
+                            <h3><i class="fas fa-cloud-upload-alt" style="color:#3448C5;margin-right:8px;"></i>Cloudinary Setup</h3>
                         </div>
-                        <p style="color:#666;font-size:0.9rem;margin:8px 0 16px;">Configure your GCS credentials. Once set, all image and document uploads will automatically be saved securely in the cloud to prevent data loss on server restarts.</p>
+                        <p style="color:#666;font-size:0.9rem;margin:8px 0 16px;">Configure your Cloudinary credentials. Once set, all image and document uploads will automatically be saved securely in the cloud to prevent data loss on server restarts. These settings override the .env file.</p>
                         
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;">
                             <div>
-                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Project ID</label>
-                                <input type="text" id="gcsProjectId" class="admin-input" placeholder="e.g. my-cloud-project-123" style="width:100%;margin:0;">
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Cloud Name</label>
+                                <input type="text" id="cloudinaryCloudName" class="admin-input" placeholder="e.g. my-cloud" style="width:100%;margin:0;">
                             </div>
                             <div>
-                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Bucket Name</label>
-                                <input type="text" id="gcsBucketName" class="admin-input" placeholder="e.g. pwsgmm-storage-bucket" style="width:100%;margin:0;">
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">API Key</label>
+                                <input type="text" id="cloudinaryApiKey" class="admin-input" placeholder="e.g. 123456789012345" style="width:100%;margin:0;">
                             </div>
-                        </div>
-                        
-                        <div style="margin-bottom:15px;">
-                            <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Service Account Client Email</label>
-                            <input type="text" id="gcsClientEmail" class="admin-input" placeholder="e.g. my-service-account@my-cloud-project.iam.gserviceaccount.com" style="width:100%;margin:0;">
                         </div>
 
                         <div style="margin-bottom:15px;">
-                            <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Service Account Private Key</label>
-                            <textarea id="gcsPrivateKey" class="admin-input" rows="4" placeholder="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASC...\n-----END PRIVATE KEY-----" style="width:100%;margin:0;resize:vertical;font-family:monospace;font-size:0.8rem;"></textarea>
-                            <div style="font-size:0.75rem;color:#999;margin-top:4px;">Include the exact contents of the private key starting with BEGIN PRIVATE KEY and ending with END PRIVATE KEY.</div>
+                            <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">API Secret</label>
+                            <input type="password" id="cloudinaryApiSecret" class="admin-input" placeholder="e.g. aBcDeFgHiJkLmNoPqRsTuVwXyZ" style="width:100%;margin:0;">
                         </div>
 
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div>
-                                <button class="btn btn-primary btn-small" onclick="saveGCSConfig()" style="background:#F4B400;border-color:#F4B400;color:#333;font-weight:bold;">
-                                    <i class="fas fa-save"></i> Save GCS Settings
+                                <button class="btn btn-primary btn-small" onclick="saveCloudinaryConfig()" style="background:#3448C5;border-color:#3448C5;color:#fff;font-weight:bold;">
+                                    <i class="fas fa-save"></i> Save Cloudinary Settings
                                 </button>
-                                <span id="gcsConfigStatus" style="margin-left:10px;font-size:0.85rem;color:#27AE60;font-weight:600;opacity:0;transition:opacity 0.3s;">Saved successfully!</span>
+                                <span id="cloudinaryConfigStatus" style="margin-left:10px;font-size:0.85rem;color:#27AE60;font-weight:600;opacity:0;transition:opacity 0.3s;">Saved successfully!</span>
                             </div>
                         </div>
                     </div>
