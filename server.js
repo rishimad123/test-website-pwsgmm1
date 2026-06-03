@@ -305,12 +305,7 @@ async function connectDB() {
     const vcArr = (await colVolunteerCards.find({}).toArray()).map(stripId);
     if (vcArr.length > 0) volunteerCards = vcArr;
 
-    // ── Load contact cards ────────────────────────────────────────────────────
-    const ccArr = (await colContactCards.find({}).toArray()).map(stripId);
-    if (ccArr.length === 5) contactCards = ccArr;
-    else if (ccArr.length > 0) {
-        ccArr.forEach(c => { const idx = contactCards.findIndex(x => x.slot === c.slot); if (idx !== -1) contactCards[idx] = c; });
-    }
+
 
     console.log('✅ MongoDB connected:', MONGODB_URI);
 }
