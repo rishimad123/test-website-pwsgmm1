@@ -81,7 +81,7 @@ let colReceipts, colExpenses, colFinancials, colPautiBooks;
 let colDonations, colDonationEntries, colBuildings, colAreas, colSubAreas;
 let colLandmarks, colCommitteeMembers, colGallery, colEvents;
 let colTshirts, colTshirtSettings;
-let colVolunteerCards;
+let colVolunteerCards, colNotifications;
 
 // ─── In-memory stores (populated from MongoDB at startup) ───────────────────
 const SLIPS_PER_BOOK_DE = 50;
