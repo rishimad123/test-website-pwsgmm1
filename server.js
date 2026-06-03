@@ -220,6 +220,7 @@ async function connectDB() {
     colGallery          = db.collection('gallery');
     colEvents           = db.collection('events');
     colTshirts          = db.collection('tshirts');
+    colNotifications = db.collection('notifications');
     colTshirtSettings   = db.collection('tshirtSettings');
     colVolunteerCards   = db.collection('volunteerCards');
     
