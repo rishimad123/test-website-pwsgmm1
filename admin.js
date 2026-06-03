@@ -4458,11 +4458,16 @@ function adminTsOpenModal(idx) {
                     <div style="font-size:.76rem;color:#888;margin-top:4px;">Include country code without + (e.g. 91 for India)</div>
                 </div>
                 <div>
-                    <label style="display:block;font-size:.82rem;font-weight:600;color:#555;margin-bottom:5px;">Photo URL <span style="font-weight:400;color:#aaa;">(optional)</span></label>
-                    <input id="acdPhoto" type="text" value="${c.photo || ''}" placeholder="https://example.com/photo.jpg"
-                        style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;outline:none;"
-                        onfocus="this.style.borderColor='#3949AB'" onblur="this.style.borderColor='#ddd'">
-                    <div style="font-size:.76rem;color:#888;margin-top:4px;">Leave blank to auto-generate an avatar</div>
+                    <label style="display:block;font-size:.82rem;font-weight:600;color:#555;margin-bottom:5px;">Photo <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input id="acdPhotoFile" type="file" accept="image/*"
+                            style="flex:1; padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;outline:none;"
+                            onfocus="this.style.borderColor='#3949AB'" onblur="this.style.borderColor='#ddd'"
+                            onchange="if(this.files[0]) document.getElementById('acdPhotoPreview').src = URL.createObjectURL(this.files[0])">
+                        <input type="hidden" id="acdPhoto" value="${c.photo || ''}">
+                        <img id="acdPhotoPreview" src="${c.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || 'C')}&background=3949AB&color=fff&size=54`}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid #ddd;">
+                    </div>
+                    <div style="font-size:.76rem;color:#888;margin-top:4px;">Select an image from your device. Leave blank to auto-generate an avatar.</div>
                 </div>
                 <div id="acdError" style="display:none;padding:8px 12px;background:#FFEBEE;color:#c62828;border-radius:8px;font-size:.85rem;"></div>
             </div>
@@ -4486,13 +4491,42 @@ async function adminTsSaveCoordinator(idx) {
     const name     = document.getElementById('acdName')?.value.trim();
     const position = document.getElementById('acdPosition')?.value.trim();
     const phone    = (document.getElementById('acdPhone')?.value || '').replace(/\D/g, '');
-    const photo    = document.getElementById('acdPhoto')?.value.trim();
+    let photo      = document.getElementById('acdPhoto')?.value.trim();
     const errEl    = document.getElementById('acdError');
 
     if (!name || !position || !phone) {
         errEl.style.display = 'block';
         errEl.textContent = 'Name, Position, and Phone are required.';
         return;
+    }
+
+    const fileInput = document.getElementById('acdPhotoFile');
+    if (fileInput && fileInput.files.length > 0) {
+        const formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+        const btn = event.currentTarget;
+        const oldText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        btn.disabled = true;
+        try {
+            const upRes = await fetch('/api/upload-image', { method: 'POST', body: formData });
+            const upData = await upRes.json();
+            if (upData.success) {
+                photo = upData.url;
+            } else {
+                errEl.style.display = 'block';
+                errEl.textContent = 'Photo upload failed: ' + (upData.message || 'Unknown error');
+                btn.innerHTML = oldText;
+                btn.disabled = false;
+                return;
+            }
+        } catch (e) {
+            errEl.style.display = 'block';
+            errEl.textContent = 'Upload error: ' + e.message;
+            btn.innerHTML = oldText;
+            btn.disabled = false;
+            return;
+        }
     }
 
     const entry = {

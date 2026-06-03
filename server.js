@@ -2671,12 +2671,35 @@ const server = http.createServer(async (req, res) => {
         globalSettings.tshirtPhotos[slot] = null;
         
         if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
+            if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
         
         broadcastLiveEvent('settings_updated', { timestamp: Date.now() });
         return sendJSON(res, 200, { success: true, slot: slot });
     }
 
-    // ── Translation Proxy API ──────────────────────────────────────────
+    // 📸 Generic Image Upload API (for coordinators, etc)
+    if (req.method === 'POST' && pathname === '/api/upload-image') {
+        try {
+            const ct = req.headers['content-type'] || '';
+            const bm = ct.match(/boundary=([^;]+)/i);
+            if (!bm) return sendJSON(res, 400, { message: 'Missing boundary.' });
+            const rawBody = await readRawBody(req);
+            const parts = parseMultipart(rawBody, bm[1]);
+            const filePart = parts.find(p => p.filename && p.data);
+            if (!filePart) return sendJSON(res, 400, { message: 'No file uploaded.' });
+            
+            const safeName = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const uniqueName = `img_${Date.now()}_${safeName}`;
+            try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); }
+            catch (fsErr) { return sendJSON(res, 500, { message: 'Failed to save file: ' + fsErr.message }); }
+            
+            return sendJSON(res, 200, { success: true, url: '/uploads/' + uniqueName });
+        } catch (err) {
+            return sendJSON(res, 500, { message: 'Internal error: ' + err.message });
+        }
+    }
+
+    // 🌐 Translation Proxy API 🌐──────────────────────────────────────────
     if (req.method === 'POST' && pathname === '/api/translate') {
         try {
             const body = await readBody(req);
