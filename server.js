@@ -2995,12 +2995,7 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
-    // ── Static file serving ───────────────────────────────────────────────
-    // Only serve static files for GET/HEAD — all other methods should have
-    // been handled by an API route above.  If we reach here with POST/PUT/DELETE
-    // it means no route matched → return 404 JSON immediately instead of hanging.
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-        
+    
     // ── GET /api/notifications ────────────────────────────────────────────────
     if (req.method === 'GET' && pathname === '/api/notifications') {
         try {
@@ -3012,6 +3007,12 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
+    // ── Static file serving ───────────────────────────────────────────────
+    // Only serve static files for GET/HEAD — all other methods should have
+    // been handled by an API route above.  If we reach here with POST/PUT/DELETE
+    // it means no route matched → return 404 JSON immediately instead of hanging.
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+        
     return sendJSON(res, 404, { message: `No API route for ${req.method} ${pathname}` });
     }
 
