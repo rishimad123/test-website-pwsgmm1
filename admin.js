@@ -1922,10 +1922,10 @@ async function renderBsLedger(fid) {
   <td class="bs-particulars">
     <input class="bs-particulars-input" id="bs_bBankPart" value="${escAttr(bs.bBankReceivedParticulars)}" placeholder="Particulars">
   </td>
-  <td class="bs-amts"></td>
-  <td class="bs-amt">
+  <td class="bs-amts">
     <input class="bs-input" id="bs_bBank" type="number" value="${bs.bBankReceived||''}" placeholder="0" oninput="bsAutoCalc()">
   </td>
+  <td class="bs-amt"></td>
 </tr>
 <tr>
   <td></td>
