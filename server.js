@@ -2431,29 +2431,38 @@ const server = http.createServer(async (req, res) => {
             const parts   = parseMultipart(rawBody, bm[1].trim());
             const filePart = parts.find(p => p.name === 'photo' && p.filename);
             if (!filePart) return sendJSON(res, 400, { message: 'No photo received.' });
-            
+
             const descPart = parts.find(p => p.name === 'description' && !p.filename);
             const description = descPart ? descPart.data.toString('utf8').trim() : '';
 
             const safeName   = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
             const uniqueName = `gallery_${Date.now()}_${safeName}`;
-            try {
-                fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
-            } catch (fsErr) {
-                console.warn('⚠️  Could not write gallery photo to disk:', fsErr.message);
-                return sendJSON(res, 500, { message: 'Failed to save photo to disk.' });
+
+            // Try Cloudinary first, fall back to local disk
+            let photoUrl = null;
+            const cloudUrl = await uploadToCloudinary(filePart.data, uniqueName);
+            if (cloudUrl) {
+                photoUrl = cloudUrl;
+            } else {
+                try {
+                    fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
+                    photoUrl = '/uploads/' + uniqueName;
+                } catch (fsErr) {
+                    console.warn('⚠️  Could not write gallery photo to disk:', fsErr.message);
+                    return sendJSON(res, 500, { message: 'Failed to save photo.' });
+                }
             }
-            
+
             const photo = {
                 id: `GAL-${Date.now()}`,
                 description: description,
                 photoFile: uniqueName,
-                photoUrl: `/uploads/${uniqueName}`,
+                photoUrl: photoUrl,
                 createdAt: new Date().toISOString()
             };
             galleryPhotos.push(photo);
             await saveGallery();
-            
+
             return sendJSON(res, 200, { success: true, photo });
         } catch(err) { return sendJSON(res, 500, { message: 'Upload error: ' + err.message }); }
     }
@@ -2607,19 +2616,28 @@ const server = http.createServer(async (req, res) => {
 
             const safeName   = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
             const uniqueName = `banner_${Date.now()}_${safeName}`;
-            try {
-                fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
-            } catch (fsErr) {
-                console.warn('⚠️ Could not write banner to disk:', fsErr.message);
-                return sendJSON(res, 500, { message: 'Failed to save banner to disk.' });
+
+            // Try Cloudinary first, fall back to local disk
+            let bannerUrl = null;
+            const cloudUrl = await uploadToCloudinary(filePart.data, uniqueName);
+            if (cloudUrl) {
+                bannerUrl = cloudUrl;
+            } else {
+                try {
+                    fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
+                    bannerUrl = '/uploads/' + uniqueName;
+                } catch (fsErr) {
+                    console.warn('⚠️ Could not write banner to disk:', fsErr.message);
+                    return sendJSON(res, 500, { message: 'Failed to save banner.' });
+                }
             }
-            
-            globalSettings.dashboardBanner = '/uploads/' + uniqueName;
+
+            globalSettings.dashboardBanner = bannerUrl;
             if (colSettings) {
                 await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
             }
             broadcastLiveEvent('events_updated', { timestamp: Date.now() });
-            
+
             return sendJSON(res, 200, { success: true, url: globalSettings.dashboardBanner });
         } catch(err) { return sendJSON(res, 500, { message: 'Upload error: ' + err.message }); }
     }
@@ -2645,9 +2663,15 @@ const server = http.createServer(async (req, res) => {
             if (!filePart) return sendJSON(res, 400, { message: 'No file uploaded.' });
             const safeName = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
             const uniqueName = `about_${Date.now()}_${safeName}`;
-            try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); }
-            catch (fsErr) { return sendJSON(res, 500, { message: 'Failed to save file: ' + fsErr.message }); }
-            globalSettings.aboutPhoto = '/uploads/' + uniqueName;
+            let aboutUrl = null;
+            const cloudUrl = await uploadToCloudinary(filePart.data, uniqueName);
+            if (cloudUrl) {
+                aboutUrl = cloudUrl;
+            } else {
+                try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); aboutUrl = '/uploads/' + uniqueName; }
+                catch (fsErr) { return sendJSON(res, 500, { message: 'Failed to save file: ' + fsErr.message }); }
+            }
+            globalSettings.aboutPhoto = aboutUrl;
             if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
             return sendJSON(res, 200, { success: true, url: globalSettings.aboutPhoto });
         } catch(err) { return sendJSON(res, 500, { message: 'Upload error: ' + err.message }); }
@@ -2665,9 +2689,15 @@ const server = http.createServer(async (req, res) => {
             if (!filePart) return sendJSON(res, 400, { message: 'No file uploaded.' });
             const safeName = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
             const uniqueName = `aboutpage_${Date.now()}_${safeName}`;
-            try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); }
-            catch (fsErr) { return sendJSON(res, 500, { message: 'Failed to save file: ' + fsErr.message }); }
-            globalSettings.aboutPagePhoto = '/uploads/' + uniqueName;
+            let aboutPageUrl = null;
+            const cloudUrl = await uploadToCloudinary(filePart.data, uniqueName);
+            if (cloudUrl) {
+                aboutPageUrl = cloudUrl;
+            } else {
+                try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); aboutPageUrl = '/uploads/' + uniqueName; }
+                catch (fsErr) { return sendJSON(res, 500, { message: 'Failed to save file: ' + fsErr.message }); }
+            }
+            globalSettings.aboutPagePhoto = aboutPageUrl;
             if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
             return sendJSON(res, 200, { success: true, url: globalSettings.aboutPagePhoto });
         } catch(err) { return sendJSON(res, 500, { message: 'Upload error: ' + err.message }); }
@@ -2683,21 +2713,29 @@ const server = http.createServer(async (req, res) => {
             const parts = parseMultipart(rawBody, bm[1]);
             const filePart = parts.find(p => p.filename && p.data);
             if (!filePart) return sendJSON(res, 400, { message: 'No file uploaded.' });
-            
+
             const slotPart = parts.find(p => p.name === 'slot' && !p.filename);
             const slot = slotPart ? parseInt(slotPart.data.toString('utf8').trim(), 10) : 0;
             if (slot < 0 || slot > 3) return sendJSON(res, 400, { message: 'Invalid slot (must be 0-3).' });
 
             const safeName = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
             const uniqueName = `tshirt_${slot}_${Date.now()}_${safeName}`;
-            try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); }
-            catch (fsErr) { return sendJSON(res, 500, { message: 'Failed to save file: ' + fsErr.message }); }
-            
+
+            // Try Cloudinary first, fall back to local disk
+            let tshirtUrl = null;
+            const cloudUrl = await uploadToCloudinary(filePart.data, uniqueName);
+            if (cloudUrl) {
+                tshirtUrl = cloudUrl;
+            } else {
+                try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); tshirtUrl = '/uploads/' + uniqueName; }
+                catch (fsErr) { return sendJSON(res, 500, { message: 'Failed to save file: ' + fsErr.message }); }
+            }
+
             if (!globalSettings.tshirtPhotos) globalSettings.tshirtPhotos = [null, null, null, null];
-            globalSettings.tshirtPhotos[slot] = '/uploads/' + uniqueName;
-            
+            globalSettings.tshirtPhotos[slot] = tshirtUrl;
+
             if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
-            
+
             broadcastLiveEvent('settings_updated', { timestamp: Date.now() });
             return sendJSON(res, 200, { success: true, url: globalSettings.tshirtPhotos[slot], slot: slot });
         } catch(err) { return sendJSON(res, 500, { message: 'Upload error: ' + err.message }); }
@@ -2729,13 +2767,21 @@ const server = http.createServer(async (req, res) => {
             const parts = parseMultipart(rawBody, bm[1]);
             const filePart = parts.find(p => p.filename && p.data);
             if (!filePart) return sendJSON(res, 400, { message: 'No file uploaded.' });
-            
+
             const safeName = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
             const uniqueName = `img_${Date.now()}_${safeName}`;
-            try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); }
-            catch (fsErr) { return sendJSON(res, 500, { message: 'Failed to save file: ' + fsErr.message }); }
-            
-            return sendJSON(res, 200, { success: true, url: '/uploads/' + uniqueName });
+
+            // Try Cloudinary first, fall back to local disk
+            let imgUrl = null;
+            const cloudUrl = await uploadToCloudinary(filePart.data, uniqueName);
+            if (cloudUrl) {
+                imgUrl = cloudUrl;
+            } else {
+                try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); imgUrl = '/uploads/' + uniqueName; }
+                catch (fsErr) { return sendJSON(res, 500, { message: 'Failed to save file: ' + fsErr.message }); }
+            }
+
+            return sendJSON(res, 200, { success: true, url: imgUrl });
         } catch (err) {
             return sendJSON(res, 500, { message: 'Internal error: ' + err.message });
         }
