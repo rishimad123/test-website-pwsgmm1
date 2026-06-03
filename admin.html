@@ -2278,6 +2278,56 @@ window._fmtBytesA = function(b) {
                         </div>
                     </div>
 
+                    <!-- ══════════════════════════════════════════
+                         DEVELOPERS SECTION  (Master Only)
+                    ════════════════════════════════════════════ -->
+                    <div class="admin-card" id="adminDevelopersCard" style="margin-bottom:20px;border-left:4px solid #6C3DE8;display:none;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-code" style="color:#6C3DE8;margin-right:8px;"></i>Manage Developers <span style="font-size:0.7rem;background:#6C3DE8;color:#fff;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle;">MASTER ONLY</span></h3>
+                        </div>
+                        <p style="color:#666;font-size:0.9rem;margin:8px 0 16px;">Add or remove developer profiles shown on the public <a href="developers.html" target="_blank" style="color:#6C3DE8;font-weight:600;">Developers page</a>. Only the master account can manage this section.</p>
+
+                        <!-- Add/Edit Form -->
+                        <div style="background:#F8F4FF;border-radius:12px;border:1px solid #E0D5FF;padding:20px;margin-bottom:20px;">
+                            <h4 style="margin:0 0 14px;color:#3D1F8C;font-size:0.95rem;"><i class="fas fa-plus-circle" style="margin-right:6px;"></i>Add New Developer</h4>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                                <div>
+                                    <label style="display:block;font-size:0.82rem;color:#555;margin-bottom:5px;font-weight:600;">Full Name *</label>
+                                    <input type="text" id="devName" class="admin-input" placeholder="e.g. Rishi Madhav" style="width:100%;margin:0;">
+                                </div>
+                                <div>
+                                    <label style="display:block;font-size:0.82rem;color:#555;margin-bottom:5px;font-weight:600;">WhatsApp Number (with country code)</label>
+                                    <input type="tel" id="devWhatsapp" class="admin-input" placeholder="e.g. 919876543210" style="width:100%;margin:0;">
+                                </div>
+                            </div>
+                            <div style="margin-bottom:14px;">
+                                <label style="display:block;font-size:0.82rem;color:#555;margin-bottom:5px;font-weight:600;">Bio / Description</label>
+                                <textarea id="devBio" class="admin-input" rows="3" placeholder="Short introduction about the developer..." style="width:100%;margin:0;resize:vertical;"></textarea>
+                            </div>
+                            <div style="margin-bottom:16px;">
+                                <label style="display:block;font-size:0.82rem;color:#555;margin-bottom:5px;font-weight:600;">Profile Photo</label>
+                                <input type="file" id="devPhoto" accept="image/*" class="admin-input" style="width:100%;margin:0;padding:6px;">
+                                <div id="devPhotoPreviewWrap" style="display:none;margin-top:10px;">
+                                    <img id="devPhotoPreview" src="" alt="Preview" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #6C3DE8;">
+                                </div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                                <button class="btn btn-primary btn-small" onclick="adminAddDeveloper()" style="background:#6C3DE8;border-color:#6C3DE8;">
+                                    <i class="fas fa-plus"></i> Add Developer
+                                </button>
+                                <span id="devAddStatus" style="font-size:0.85rem;color:#27AE60;font-weight:600;opacity:0;transition:opacity 0.4s;"></span>
+                            </div>
+                        </div>
+
+                        <!-- Current Developers List -->
+                        <div>
+                            <h4 style="margin:0 0 12px;color:#3D1F8C;font-size:0.9rem;"><i class="fas fa-list" style="margin-right:6px;"></i>Current Developers</h4>
+                            <div id="adminDevelopersList" style="display:flex;flex-direction:column;gap:12px;">
+                                <div style="text-align:center;color:#aaa;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Quick Stats Editor -->
                     <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #3498db;">
                         <div class="card-header">

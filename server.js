@@ -2780,6 +2780,104 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
+    // ── Developers API ────────────────────────────────────────────────────────
+    // GET /api/developers — public: list all developers
+    if (req.method === 'GET' && pathname === '/api/developers') {
+        return sendJSON(res, 200, { developers: globalSettings.developers || [] });
+    }
+
+    // POST /api/developers — master-only: add or update a developer
+    if (req.method === 'POST' && pathname === '/api/developers') {
+        try {
+            const ct = req.headers['content-type'] || '';
+            let devData = {};
+            let photoUrl = null;
+
+            if (ct.includes('multipart/form-data')) {
+                const bm = ct.match(/boundary=([^;]+)/i);
+                if (!bm) return sendJSON(res, 400, { message: 'Missing boundary.' });
+                const rawBody = await readRawBody(req);
+                const parts = parseMultipart(rawBody, bm[1].trim());
+
+                // Extract text fields
+                for (const part of parts) {
+                    if (!part.filename && part.name) {
+                        devData[part.name] = part.data.toString('utf8').trim();
+                    }
+                }
+
+                // Extract photo
+                const photoPart = parts.find(p => p.filename && (p.name === 'photo' || p.name === 'devPhoto'));
+                if (photoPart) {
+                    const safeName = photoPart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+                    const uniqueName = `dev_${Date.now()}_${safeName}`;
+                    let finalUrl = '/uploads/' + uniqueName;
+                    const gcsUrl = await uploadToGCS(photoPart.data, uniqueName);
+                    if (gcsUrl) finalUrl = gcsUrl;
+                    else { try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), photoPart.data); } catch(e){} }
+                    photoUrl = finalUrl;
+                }
+            } else {
+                devData = await readBody(req);
+            }
+
+            const { name, bio, whatsapp, id } = devData;
+            if (!name) return sendJSON(res, 400, { message: 'Developer name is required.' });
+
+            if (!globalSettings.developers) globalSettings.developers = [];
+
+            if (id) {
+                // Update existing
+                const idx = globalSettings.developers.findIndex(d => d.id === id);
+                if (idx >= 0) {
+                    globalSettings.developers[idx] = {
+                        ...globalSettings.developers[idx],
+                        name: name || globalSettings.developers[idx].name,
+                        bio: bio !== undefined ? bio : globalSettings.developers[idx].bio,
+                        whatsapp: whatsapp !== undefined ? whatsapp : globalSettings.developers[idx].whatsapp,
+                        ...(photoUrl ? { photoUrl } : {}),
+                        updatedAt: new Date().toISOString()
+                    };
+                } else {
+                    return sendJSON(res, 404, { message: 'Developer not found.' });
+                }
+            } else {
+                // Add new
+                const newDev = {
+                    id: `DEV-${Date.now()}`,
+                    name,
+                    bio: bio || '',
+                    whatsapp: whatsapp || '',
+                    photoUrl: photoUrl || '',
+                    createdAt: new Date().toISOString()
+                };
+                globalSettings.developers.push(newDev);
+            }
+
+            if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
+            return sendJSON(res, 200, { success: true, developers: globalSettings.developers });
+        } catch (err) {
+            console.error('POST /api/developers error:', err.message);
+            return sendJSON(res, 500, { message: err.message });
+        }
+    }
+
+    // DELETE /api/developers/:id — master-only: remove a developer
+    if (req.method === 'DELETE' && pathname.startsWith('/api/developers/')) {
+        try {
+            const devId = decodeURIComponent(pathname.split('/api/developers/')[1]);
+            if (!devId) return sendJSON(res, 400, { message: 'Developer ID required.' });
+            if (!globalSettings.developers) globalSettings.developers = [];
+            const prevLen = globalSettings.developers.length;
+            globalSettings.developers = globalSettings.developers.filter(d => d.id !== devId);
+            if (globalSettings.developers.length === prevLen) return sendJSON(res, 404, { message: 'Developer not found.' });
+            if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
+            return sendJSON(res, 200, { success: true, developers: globalSettings.developers });
+        } catch (err) {
+            return sendJSON(res, 500, { message: err.message });
+        }
+    }
+
     // ── Static file serving ───────────────────────────────────────────────
     // Only serve static files for GET/HEAD — all other methods should have
     // been handled by an API route above.  If we reach here with POST/PUT/DELETE
