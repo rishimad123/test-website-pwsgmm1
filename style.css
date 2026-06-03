@@ -885,8 +885,8 @@ select, textarea {
     border-color: rgba(217, 119, 6, 0.3);
 }
 .footer-dev-photo {
-    width: 96px;
-    height: 96px;
+    width: 112px;
+    height: 112px;
     border-radius: 12px;
     object-fit: cover;
     border: 2px solid var(--primary-color);
@@ -896,13 +896,14 @@ select, textarea {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 2px;
+    gap: 0px;
 }
 .footer-dev-name {
     font-size: 1.25rem;
     font-weight: 700;
     color: #fff;
-    margin-bottom: 0;
+    margin-bottom: -2px;
+    line-height: 1.2;
     font-family: 'Cinzel', serif;
 }
 .footer-dev-position {
@@ -911,4 +912,5 @@ select, textarea {
     text-transform: uppercase;
     letter-spacing: 1.5px;
     font-weight: 600;
+    margin-top: 0;
 }
