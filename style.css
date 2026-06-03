@@ -868,10 +868,11 @@ select, textarea {
 /* ---- FOOTER DEVELOPER PROFILE ---- */
 .footer-dev-profile {
     display: flex;
-    align-items: center;
-    gap: 15px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
     background: rgba(255, 255, 255, 0.03);
-    padding: 12px;
+    padding: 16px;
     border-radius: 12px;
     margin-top: 15px;
     margin-bottom: 15px;
@@ -883,24 +884,26 @@ select, textarea {
     border-color: rgba(217, 119, 6, 0.3);
 }
 .footer-dev-photo {
-    width: 48px;
-    height: 48px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--primary-color);
 }
 .footer-dev-info {
-    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 .footer-dev-name {
-    font-size: 0.95rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: #fff;
-    margin-bottom: 3px;
+    margin-bottom: 0;
     font-family: 'Cinzel', serif;
 }
 .footer-dev-position {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     color: var(--primary-color);
     text-transform: uppercase;
     letter-spacing: 1px;
