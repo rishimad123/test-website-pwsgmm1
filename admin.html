@@ -2323,6 +2323,65 @@ window._fmtBytesA = function(b) {
                         </div>
                     </div>
 
+                    <!-- T-shirt Showcase Photos -->
+                    <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #e74c3c;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-tshirt" style="color:#e74c3c;margin-right:8px;"></i>T-shirt Showcase Photos (Landing Page)</h3>
+                        </div>
+                        <p style="color:#666;font-size:0.9rem;margin:8px 0 16px;">Upload up to 4 images to showcase the T-shirts on the landing page.</p>
+                        
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;">
+                            <!-- Slot 1 -->
+                            <div style="background:#f9f9f9;padding:15px;border-radius:8px;border:1px solid #eee;">
+                                <h4 style="margin:0 0 10px;font-size:0.95rem;color:#333;">Slot 1</h4>
+                                <input type="file" id="adminTshirtPhoto0" accept="image/*" class="admin-input" style="width:100%;margin-bottom:10px;padding:6px;">
+                                <div style="display:flex;gap:10px;">
+                                    <button class="btn btn-primary btn-small" onclick="uploadAdminTshirtPhoto(0)" style="flex:1;"><i class="fas fa-upload"></i> Upload</button>
+                                    <button class="btn btn-small" onclick="deleteAdminTshirtPhoto(0)" style="background:#ffcdd2;color:#c62828;border:none;"><i class="fas fa-trash"></i></button>
+                                </div>
+                                <div id="adminTshirtPhotoPreviewWrap0" style="display:none;margin-top:10px;">
+                                    <img id="adminTshirtPhotoPreview0" src="" alt="Slot 1" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;border:1px solid #ddd;">
+                                </div>
+                            </div>
+                            <!-- Slot 2 -->
+                            <div style="background:#f9f9f9;padding:15px;border-radius:8px;border:1px solid #eee;">
+                                <h4 style="margin:0 0 10px;font-size:0.95rem;color:#333;">Slot 2</h4>
+                                <input type="file" id="adminTshirtPhoto1" accept="image/*" class="admin-input" style="width:100%;margin-bottom:10px;padding:6px;">
+                                <div style="display:flex;gap:10px;">
+                                    <button class="btn btn-primary btn-small" onclick="uploadAdminTshirtPhoto(1)" style="flex:1;"><i class="fas fa-upload"></i> Upload</button>
+                                    <button class="btn btn-small" onclick="deleteAdminTshirtPhoto(1)" style="background:#ffcdd2;color:#c62828;border:none;"><i class="fas fa-trash"></i></button>
+                                </div>
+                                <div id="adminTshirtPhotoPreviewWrap1" style="display:none;margin-top:10px;">
+                                    <img id="adminTshirtPhotoPreview1" src="" alt="Slot 2" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;border:1px solid #ddd;">
+                                </div>
+                            </div>
+                            <!-- Slot 3 -->
+                            <div style="background:#f9f9f9;padding:15px;border-radius:8px;border:1px solid #eee;">
+                                <h4 style="margin:0 0 10px;font-size:0.95rem;color:#333;">Slot 3</h4>
+                                <input type="file" id="adminTshirtPhoto2" accept="image/*" class="admin-input" style="width:100%;margin-bottom:10px;padding:6px;">
+                                <div style="display:flex;gap:10px;">
+                                    <button class="btn btn-primary btn-small" onclick="uploadAdminTshirtPhoto(2)" style="flex:1;"><i class="fas fa-upload"></i> Upload</button>
+                                    <button class="btn btn-small" onclick="deleteAdminTshirtPhoto(2)" style="background:#ffcdd2;color:#c62828;border:none;"><i class="fas fa-trash"></i></button>
+                                </div>
+                                <div id="adminTshirtPhotoPreviewWrap2" style="display:none;margin-top:10px;">
+                                    <img id="adminTshirtPhotoPreview2" src="" alt="Slot 3" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;border:1px solid #ddd;">
+                                </div>
+                            </div>
+                            <!-- Slot 4 -->
+                            <div style="background:#f9f9f9;padding:15px;border-radius:8px;border:1px solid #eee;">
+                                <h4 style="margin:0 0 10px;font-size:0.95rem;color:#333;">Slot 4</h4>
+                                <input type="file" id="adminTshirtPhoto3" accept="image/*" class="admin-input" style="width:100%;margin-bottom:10px;padding:6px;">
+                                <div style="display:flex;gap:10px;">
+                                    <button class="btn btn-primary btn-small" onclick="uploadAdminTshirtPhoto(3)" style="flex:1;"><i class="fas fa-upload"></i> Upload</button>
+                                    <button class="btn btn-small" onclick="deleteAdminTshirtPhoto(3)" style="background:#ffcdd2;color:#c62828;border:none;"><i class="fas fa-trash"></i></button>
+                                </div>
+                                <div id="adminTshirtPhotoPreviewWrap3" style="display:none;margin-top:10px;">
+                                    <img id="adminTshirtPhotoPreview3" src="" alt="Slot 4" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;border:1px solid #ddd;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Event Settings (Global) -->
                     <div class="admin-card" style="margin-bottom:20px;">
                         <div class="card-header">

@@ -39,7 +39,7 @@ const DB_NAME     = 'patelwadi';
 const mongoClient = new MongoClient(MONGODB_URI);
 let db;
 let colSettings;
-let globalSettings = { eventDate: '2026-09-07T00:00:00.000Z' };
+let globalSettings = { eventDate: '2026-09-07T00:00:00.000Z', tshirtPhotos: [null, null, null, null] };
 let colReceipts, colExpenses, colFinancials, colPautiBooks;
 let colDonations, colDonationEntries, colBuildings, colAreas, colSubAreas;
 let colLandmarks, colCommitteeMembers, colGallery, colEvents;
@@ -2629,6 +2629,51 @@ const server = http.createServer(async (req, res) => {
             if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
             return sendJSON(res, 200, { success: true, url: globalSettings.aboutPagePhoto });
         } catch(err) { return sendJSON(res, 500, { message: 'Upload error: ' + err.message }); }
+    }
+
+    // ── T-shirt Showcase Photo API ──────────────────────────────────
+    if (req.method === 'POST' && pathname === '/api/tshirt-showcase-photo') {
+        try {
+            const ct = req.headers['content-type'] || '';
+            const bm = ct.match(/boundary=([^;]+)/i);
+            if (!bm) return sendJSON(res, 400, { message: 'Missing boundary.' });
+            const rawBody = await readRawBody(req);
+            const parts = parseMultipart(rawBody, bm[1]);
+            const filePart = parts.find(p => p.filename && p.data);
+            if (!filePart) return sendJSON(res, 400, { message: 'No file uploaded.' });
+            
+            const slotPart = parts.find(p => p.name === 'slot' && !p.filename);
+            const slot = slotPart ? parseInt(slotPart.data.toString('utf8').trim(), 10) : 0;
+            if (slot < 0 || slot > 3) return sendJSON(res, 400, { message: 'Invalid slot (must be 0-3).' });
+
+            const safeName = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const uniqueName = `tshirt_${slot}_${Date.now()}_${safeName}`;
+            try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); }
+            catch (fsErr) { return sendJSON(res, 500, { message: 'Failed to save file: ' + fsErr.message }); }
+            
+            if (!globalSettings.tshirtPhotos) globalSettings.tshirtPhotos = [null, null, null, null];
+            globalSettings.tshirtPhotos[slot] = '/uploads/' + uniqueName;
+            
+            if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
+            
+            broadcastLiveEvent('settings_updated', { timestamp: Date.now() });
+            return sendJSON(res, 200, { success: true, url: globalSettings.tshirtPhotos[slot], slot: slot });
+        } catch(err) { return sendJSON(res, 500, { message: 'Upload error: ' + err.message }); }
+    }
+
+    if (req.method === 'DELETE' && pathname.startsWith('/api/tshirt-showcase-photo/')) {
+        const slotStr = decodeURIComponent(pathname.replace('/api/tshirt-showcase-photo/', ''));
+        const slot = parseInt(slotStr, 10);
+        
+        if (isNaN(slot) || slot < 0 || slot > 3) return sendJSON(res, 400, { message: 'Invalid slot.' });
+        
+        if (!globalSettings.tshirtPhotos) globalSettings.tshirtPhotos = [null, null, null, null];
+        globalSettings.tshirtPhotos[slot] = null;
+        
+        if (colSettings) await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
+        
+        broadcastLiveEvent('settings_updated', { timestamp: Date.now() });
+        return sendJSON(res, 200, { success: true, slot: slot });
     }
 
     // ── Translation Proxy API ──────────────────────────────────────────

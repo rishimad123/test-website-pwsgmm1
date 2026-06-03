@@ -367,6 +367,21 @@ async function loadSiteSettings() {
         if (s.socialYoutube)   applySocialLink('socialYoutubeLink',   s.socialYoutube);
         if (s.socialTwitter)   applySocialLink('socialTwitterLink',   s.socialTwitter);
 
+        // --- T-shirt Showcase Grid ---
+        const tshirtGrid = document.getElementById('tshirtShowcaseGrid');
+        if (tshirtGrid) {
+            let html = '';
+            for (let i = 0; i < 4; i++) {
+                const photoUrl = s.tshirtPhotos && s.tshirtPhotos[i] ? s.tshirtPhotos[i] : null;
+                if (photoUrl) {
+                    html += `<div class="tshirt-photo-item"><img src="${photoUrl}" alt="T-shirt ${i+1}"></div>`;
+                } else {
+                    html += `<div class="tshirt-photo-item"><div class="tshirt-photo-placeholder">?</div></div>`;
+                }
+            }
+            tshirtGrid.innerHTML = html;
+        }
+
     } catch(e) {
         console.warn('Failed to load site settings:', e.message);
     }
@@ -383,9 +398,13 @@ sse.onmessage = (event) => {
         if (data.type === 'events_updated' || data.type === 'gallery_updated') {
             loadPublicData();
         }
+        if (data.type === 'settings_updated') {
+            loadSiteSettings();
+        }
     } catch(e) {}
 };
 sse.addEventListener('gallery_updated', loadPublicData);
 sse.addEventListener('events_updated', loadPublicData);
+sse.addEventListener('settings_updated', loadSiteSettings);
 
 console.log('🕉️ Ganpati Bappa Morya! Website loaded successfully.');

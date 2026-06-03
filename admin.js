@@ -4023,6 +4023,19 @@ async function loadAdminEventDate() {
             if (wrap && img) { img.src = data.aboutPagePhoto; wrap.style.display = 'block'; }
         }
 
+        // T-shirt Showcase Photos
+        if (data && data.tshirtPhotos) {
+            for (let i = 0; i < 4; i++) {
+                const photoUrl = data.tshirtPhotos[i];
+                const wrap = document.getElementById(`adminTshirtPhotoPreviewWrap${i}`);
+                const img = document.getElementById(`adminTshirtPhotoPreview${i}`);
+                if (wrap && img && photoUrl) {
+                    img.src = photoUrl;
+                    wrap.style.display = 'block';
+                }
+            }
+        }
+
         // Countdown timer inputs
         const cdDateInput = document.getElementById('countdownDateInput');
         const cdTimeInput = document.getElementById('countdownTimeInput');
@@ -4195,6 +4208,61 @@ async function saveAboutPage() {
             if (s) { s.style.opacity = '1'; setTimeout(() => s.style.opacity = '0', 3000); }
         } else { alert('Failed to save: ' + (data.message || 'Unknown error')); }
     } catch(e) { alert('Error: ' + e.message); }
+}
+
+
+// Upload T-shirt Showcase Photo
+async function uploadAdminTshirtPhoto(slot) {
+    const fileInput = document.getElementById(`adminTshirtPhoto${slot}`);
+    const file = fileInput.files[0];
+    if (!file) return alert('Please select an image file first.');
+    
+    const formData = new FormData();
+    formData.append('photo', file);
+    formData.append('slot', slot);
+    
+    try {
+        const res = await fetch('/api/tshirt-showcase-photo', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+            const wrap = document.getElementById(`adminTshirtPhotoPreviewWrap${slot}`);
+            const img = document.getElementById(`adminTshirtPhotoPreview${slot}`);
+            if (wrap && img) {
+                img.src = data.url;
+                wrap.style.display = 'block';
+            }
+            fileInput.value = '';
+        } else {
+            alert('Upload failed: ' + (data.message || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Upload error: ' + e.message);
+    }
+}
+
+// Delete T-shirt Showcase Photo
+async function deleteAdminTshirtPhoto(slot) {
+    if (!confirm('Are you sure you want to remove this image?')) return;
+    try {
+        const res = await fetch(`/api/tshirt-showcase-photo/${slot}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            const wrap = document.getElementById(`adminTshirtPhotoPreviewWrap${slot}`);
+            const img = document.getElementById(`adminTshirtPhotoPreview${slot}`);
+            if (wrap && img) {
+                wrap.style.display = 'none';
+                img.src = '';
+            }
+            document.getElementById(`adminTshirtPhoto${slot}`).value = '';
+        } else {
+            alert('Failed to remove: ' + (data.message || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Error removing photo: ' + e.message);
+    }
 }
 
 
