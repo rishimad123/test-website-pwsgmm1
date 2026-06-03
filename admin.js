@@ -1955,22 +1955,23 @@ async function renderBsLedger(fid) {
       placeholder="Particulars" style="font-style:normal;font-weight:700;">
     &nbsp;<span id="bs_cCyLabel" style="font-size:.88rem;color:#555;">${escHtml(cyYear)}</span>
   </td>
-  <td class="bs-amts" style="color:#555;font-style:italic;font-size:.88rem;display:flex;align-items:center;gap:4px;">
-    (i+ii-iii) <input class="bs-input" id="bs_cResultDisplay" type="number" readonly style="background:#f5f5f5;cursor:not-allowed;font-weight:bold;color:#1a1a7a;width:90px;padding:2px 4px;">
-  </td>
-  <td class="bs-amt">
+  <td class="bs-amts">
     <input class="bs-input" id="bs_cWithdrawn" type="number" value="${bs.cWithdrawn||''}" placeholder="0" oninput="bsAutoCalc()">
+  </td>
+  <td class="bs-amt" style="color:#555;font-style:italic;font-size:.88rem;">
+    <span style="display:inline-flex;align-items:center;gap:4px;">(i+ii-iii)&nbsp;<input class="bs-input" id="bs_cResultDisplay" type="number" readonly style="background:#e8f4fd;cursor:not-allowed;font-weight:bold;color:#1a1a7a;width:90px;padding:2px 4px;border:1px solid #b3d4fc;"></span>
   </td>
 </tr>
 <!-- D) Expenses -->
 <tr class="bs-section-sep">
   <td class="bs-section-lbl">D)</td>
-  <td class="bs-section-lbl" colspan="2">
+  <td class="bs-section-lbl">
     Expenses for the Current Year&nbsp;<span id="bs_dCyLabel">${escHtml(cyYear)}</span>
   </td>
-  <td class="bs-amt">
+  <td class="bs-amts">
     <input class="bs-input" id="bs_dExp" type="number" value="${dExpVal||''}" placeholder="0" oninput="bsAutoCalc()" style="text-decoration:underline;">
   </td>
+  <td class="bs-amt"></td>
 </tr>
 <!-- E) Closing Balance -->
 <tr class="bs-section-sep">
