@@ -59,6 +59,11 @@ function renderTshirtSection() {
         if (!publicContainer) return;
 
         let html = '';
+
+        // ── Showcase Photos (rendered first, fetched inline) ──
+        html += `<div id="tshirtShowcaseWrap" style="margin-bottom:40px;"></div>`;
+
+        // ── Coordinators ──
         html += `
         <div style="margin-bottom:28px;">
             <h3 style="margin:0 0 14px;font-size:1.05rem;color:#e74c3c;font-weight:700;">
@@ -79,6 +84,7 @@ function renderTshirtSection() {
             </div>
         </div>`;
 
+        // ── Application Form ──
         html += `
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:28px;">
             <div style="background:#fff;border-radius:14px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.08);border:2px solid #e74c3c;">
@@ -126,22 +132,34 @@ function renderTshirtSection() {
                 </form>
             </div>
         </div>`;
-        
-        html += `
-        <div style="margin-top: 40px; text-align: center;">
-            <h3 style="font-size: 1.5rem; color: #e74c3c; margin-bottom: 20px;">T-shirt Showcase</h3>
-            <div class="tshirt-photo-grid" id="tshirtShowcaseGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; text-align: center;">
-                <!-- Populated by main.js -->
-            </div>
-        </div>`;
 
         publicContainer.innerHTML = html;
         tsUpdateTotal();
-        
-        // Re-run settings loader to populate the grid we just added
-        if (typeof loadSiteSettings === 'function') {
-            loadSiteSettings();
-        }
+
+        // Fetch and render showcase photos directly — no race with loadSiteSettings
+        fetch('/api/settings')
+            .then(r => r.json())
+            .then(settings => {
+                const wrap = document.getElementById('tshirtShowcaseWrap');
+                if (!wrap) return;
+                const photos = (settings && settings.tshirtPhotos) ? settings.tshirtPhotos.filter(p => p && p.trim()) : [];
+                if (photos.length === 0) { wrap.innerHTML = ''; return; }
+                let gridHtml = `
+                    <div style="display:flex;flex-direction:column;gap:24px;align-items:center;margin-bottom:10px;">
+                        ${photos.map((url, i) => `
+                        <div style="width:100%;max-width:480px;border-radius:16px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,0.13);background:#f4f4f4;">
+                            <img src="${url}" alt="T-shirt Showcase ${i+1}"
+                                style="width:100%;display:block;object-fit:cover;max-height:520px;"
+                                onerror="this.parentElement.style.display='none'">
+                        </div>`).join('')}
+                    </div>`;
+                wrap.innerHTML = gridHtml;
+            })
+            .catch(() => {
+                const wrap = document.getElementById('tshirtShowcaseWrap');
+                if (wrap) wrap.innerHTML = '';
+            });
+
 
     } else {
         // Admin or Volunteer Dashboard - Update Hardcoded DOM Elements

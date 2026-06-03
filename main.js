@@ -371,14 +371,10 @@ async function loadSiteSettings() {
         const tshirtGrid = document.getElementById('tshirtShowcaseGrid');
         if (tshirtGrid) {
             let html = '';
-            for (let i = 0; i < 4; i++) {
-                const photoUrl = s.tshirtPhotos && s.tshirtPhotos[i] ? s.tshirtPhotos[i] : null;
-                if (photoUrl) {
-                    html += `<div class="tshirt-photo-item"><img src="${photoUrl}" alt="T-shirt ${i+1}"></div>`;
-                } else {
-                    html += `<div class="tshirt-photo-item"><div class="tshirt-photo-placeholder">?</div></div>`;
-                }
-            }
+            const photos = (s.tshirtPhotos || []).filter(p => p && p.trim());
+            photos.forEach((photoUrl, i) => {
+                html += `<div class="tshirt-photo-item"><img src="${photoUrl}" alt="T-shirt ${i+1}" onerror="this.parentElement.style.display='none'"></div>`;
+            });
             tshirtGrid.innerHTML = html;
         }
 
