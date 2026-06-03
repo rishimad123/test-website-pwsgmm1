@@ -81,7 +81,7 @@ let colReceipts, colExpenses, colFinancials, colPautiBooks;
 let colDonations, colDonationEntries, colBuildings, colAreas, colSubAreas;
 let colLandmarks, colCommitteeMembers, colGallery, colEvents;
 let colTshirts, colTshirtSettings;
-let colVolunteerCards, colContactCards;
+let colVolunteerCards;
 
 // ─── In-memory stores (populated from MongoDB at startup) ───────────────────
 const SLIPS_PER_BOOK_DE = 50;
@@ -106,7 +106,7 @@ let tshirtSettings    = { price: 350 };
 let galleryPhotos     = [];
 let events            = [];
 let volunteerCards    = [];
-let contactCards      = Array.from({length:5}, (_,i) => ({ id:`CC-${i+1}`, slot:i+1, title:'', subtitle:'', phone:'', whatsapp:'', photoUrl:null }));
+
 
 // ─── SSE (Server-Sent Events) for Live Updates ───────────
 const sseClients = [];
@@ -160,10 +160,6 @@ async function saveVolunteerCards() {
     if (volunteerCards.length > 0) await colVolunteerCards.insertMany(volunteerCards.map(v => ({ ...v })));
 }
 
-async function saveContactCards() {
-    await colContactCards.deleteMany({});
-    if (contactCards.length > 0) await colContactCards.insertMany(contactCards.map(c => ({ ...c })));
-}
 
 async function saveFinancials() {
     await colFinancials.deleteMany({});
@@ -226,7 +222,7 @@ async function connectDB() {
     colTshirts          = db.collection('tshirts');
     colTshirtSettings   = db.collection('tshirtSettings');
     colVolunteerCards   = db.collection('volunteerCards');
-    colContactCards     = db.collection('contactCards');
+    
 
     const settingsDoc = await colSettings.findOne({});
     if (settingsDoc) {
@@ -2368,63 +2364,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ══════════════════════════════════════════════════════════════
-    // ─── CONTACT CARDS API ────────────────────────────────────────
-    // ══════════════════════════════════════════════════════════════
 
-    if (req.method === 'GET' && pathname === '/api/contact-cards') {
-        return sendJSON(res, 200, { cards: contactCards });
-    }
-    if (req.method === 'PUT' && pathname.startsWith('/api/contact-cards/')) {
-        const slot = Number(pathname.replace('/api/contact-cards/', ''));
-        const idx = contactCards.findIndex(c => c.slot === slot);
-        if (idx === -1) return sendJSON(res, 404, { message: 'Contact slot invalid (must be 1–5).' });
-        try {
-            const body = await readBody(req);
-            const c = contactCards[idx];
-            if (body.title     !== undefined) c.title     = String(body.title).trim();
-            if (body.subtitle  !== undefined) c.subtitle  = String(body.subtitle).trim();
-            if (body.phone     !== undefined) c.phone     = String(body.phone).trim();
-            if (body.whatsapp  !== undefined) c.whatsapp  = String(body.whatsapp).trim();
-            if (body.photoFile !== undefined) {
-                c.photoFile = body.photoFile || null;
-                c.photoUrl = body.photoFile ? `/uploads/${body.photoFile}` : null;
-            }
-            c.updatedAt = new Date().toISOString();
-            await saveContactCards();
-            return sendJSON(res, 200, { success: true, card: c });
-        } catch(err) { return sendJSON(res, 400, { message: err.message }); }
-    }
-    if (req.method === 'POST' && pathname === '/api/upload-contact-photo') {
-        try {
-            const ct = req.headers['content-type'] || '';
-            const bm = ct.match(/boundary=([^;]+)/i);
-            if (!bm) return sendJSON(res, 400, { message: 'Missing boundary.' });
-            const rawBody = await readRawBody(req);
-            const parts   = parseMultipart(rawBody, bm[1].trim());
-            const filePart = parts.find(p => p.name === 'photo' && p.filename);
-            if (!filePart) return sendJSON(res, 400, { message: 'No photo received.' });
-            if (filePart.data.length > 5 * 1024 * 1024) return sendJSON(res, 400, { message: 'File exceeds 5 MB.' });
-            const safeName   = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-            const uniqueName = `cc_${Date.now()}_${safeName}`;
-            try {
-                fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
-            } catch (fsErr) {
-                console.warn('⚠️  Could not write contact photo to disk:', fsErr.message);
-            }
-            const slotPart = parts.find(p => p.name === 'slot' && !p.filename);
-            const slotNum = slotPart ? Number(slotPart.data.toString('utf8').trim()) : null;
-            if (slotNum) {
-                const cidx = contactCards.findIndex(c => c.slot === slotNum);
-                if (cidx !== -1) {
-                    contactCards[cidx].photoFile = uniqueName;
-                    contactCards[cidx].photoUrl  = `/uploads/${uniqueName}`;
-                    contactCards[cidx].updatedAt = new Date().toISOString();
-                    await saveContactCards();
-                }
-            }
-            return sendJSON(res, 200, { success: true, fileName: uniqueName });
-        } catch(err) { return sendJSON(res, 500, { message: 'Upload error: ' + err.message }); }
-    }
     // ══════════════════════════════════════════════════════════════
     // ─── GALLERY API ──────────────────────────────────────────────
     // ══════════════════════════════════════════════════════════════
