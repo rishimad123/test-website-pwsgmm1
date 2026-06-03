@@ -59,29 +59,7 @@
             margin-bottom: 15px;
         }
         
-        .volunteer-contact {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 15px;
-        }
-        
-        .volunteer-contact a {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background: var(--light-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--dark-color);
-            transition: all 0.3s ease;
-        }
-        
-        .volunteer-contact a:hover {
-            background: var(--primary-color);
-            color: var(--white);
-        }
+
     </style>
 </head>
 <body class="theme-volunteers">
@@ -214,10 +192,7 @@
                                 <div class="volunteer-info">
                                     <h3>${v.name}</h3>
                                     <div class="volunteer-position">${v.position || 'Active Volunteer'}</div>
-                                    <div class="volunteer-contact">
-                                        ${v.phone ? `<a href="tel:${v.phone}" title="Call Volunteer"><i class="fas fa-phone"></i></a>` : ''}
-                                        ${v.phone ? `<a href="https://wa.me/91${v.phone.replace(/[^0-9]/g, '')}" target="_blank" title="WhatsApp Message"><i class="fab fa-whatsapp"></i></a>` : ''}
-                                    </div>
+
                                 </div>
                             </div>
                         `;
