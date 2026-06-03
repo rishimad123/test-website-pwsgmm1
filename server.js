@@ -2574,13 +2574,37 @@ const server = http.createServer(async (req, res) => {
             return sendJSON(res, 200, { ok: false, message: 'Missing Cloudinary credentials', diag });
         }
 
-        // Ping Cloudinary by fetching account info
         try {
             cloudinary.config({ cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret, secure: true });
+
+            // Step 1: Ping
             const pingResult = await cloudinary.api.ping();
-            return sendJSON(res, 200, { ok: true, message: 'Cloudinary connected successfully!', ping: pingResult, diag });
+
+            // Step 2: Try an actual upload_stream with a tiny 1x1 red PNG
+            const tinyPng = Buffer.from(
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwADhQGAWjR9awAAAABJRU5ErkJggg==',
+                'base64'
+            );
+            const uploadResult = await new Promise((resolve) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    { public_id: 'test_upload_probe', resource_type: 'image', folder: 'website-uploads' },
+                    (err, result) => {
+                        if (err) return resolve({ ok: false, error: err.message, http_code: err.http_code });
+                        resolve({ ok: true, url: result.secure_url });
+                    }
+                );
+                stream.end(tinyPng);
+            });
+
+            return sendJSON(res, 200, {
+                ok: true,
+                message: uploadResult.ok ? 'Cloudinary ping AND upload_stream both work!' : 'Ping OK but upload_stream FAILED',
+                ping: pingResult,
+                upload_test: uploadResult,
+                diag
+            });
         } catch (err) {
-            return sendJSON(res, 200, { ok: false, message: 'Cloudinary ping failed: ' + err.message, error: err, diag });
+            return sendJSON(res, 200, { ok: false, message: 'Cloudinary error: ' + err.message, error: String(err), diag });
         }
     }
     
