@@ -868,15 +868,19 @@ window.fixUrl = function(url) {
                     </div>
 
                     <!-- Responsive Banner -->
-                    <div id="volOverviewBannerContainer" style="background:linear-gradient(135deg, #1a237e 0%, #3949ab 100%);border-radius:16px;padding:35px 20px;text-align:center;margin-bottom:32px;box-shadow:0 8px 25px rgba(26,35,126,.25);position:relative;overflow:hidden;">
-                        <!-- decorative elements -->
-                        <div style="position:absolute;top:-20px;left:-20px;width:120px;height:120px;background:rgba(255,255,255,.05);border-radius:50%;"></div>
-                        <div style="position:absolute;bottom:-30px;right:-10px;width:150px;height:150px;background:rgba(255,255,255,.05);border-radius:50%;"></div>
-                        
-                        <h2 style="color:#fff;font-size:clamp(1.4rem, 4vw, 2.2rem);font-weight:800;margin:0;letter-spacing:0.02em;text-shadow:0 2px 10px rgba(0,0,0,.3);position:relative;z-index:1;line-height:1.4;">
-                            <i class="fas fa-om" style="color:#FFD54F;margin-right:12px;"></i>
-                            Patelwadi Cha Sukhakarta Cha Vijay Asoh .
-                        </h2>
+                    <div id="volOverviewBannerContainer" style="border-radius:16px;margin-bottom:32px;box-shadow:0 8px 25px rgba(26,35,126,.25);overflow:hidden;background:linear-gradient(135deg,#1a237e 0%,#3949ab 100%);">
+                        <!-- Default banner (shown when no image uploaded) -->
+                        <div id="volDefaultBanner" style="padding:35px 20px;text-align:center;position:relative;">
+                            <div style="position:absolute;top:-20px;left:-20px;width:120px;height:120px;background:rgba(255,255,255,.05);border-radius:50%;"></div>
+                            <div style="position:absolute;bottom:-30px;right:-10px;width:150px;height:150px;background:rgba(255,255,255,.05);border-radius:50%;"></div>
+                            <h2 style="color:#fff;font-size:clamp(1.4rem, 4vw, 2.2rem);font-weight:800;margin:0;letter-spacing:0.02em;text-shadow:0 2px 10px rgba(0,0,0,.3);position:relative;z-index:1;line-height:1.4;">
+                                <i class="fas fa-om" style="color:#FFD54F;margin-right:12px;"></i>
+                                Patelwadi Cha Sukhakarta Cha Vijay Asoh .
+                            </h2>
+                        </div>
+                        <!-- Image banner (shown when admin uploads) -->
+                        <img id="volBannerImg" src="" alt="Event Banner"
+                            style="display:none;width:100%;height:auto;max-height:320px;object-fit:contain;object-position:center;background:#1a237e;border-radius:16px;">
                     </div>
 
                     <!-- Top Section: T-shirt & Countdown -->
@@ -895,9 +899,30 @@ window.fixUrl = function(url) {
                         
                         <!-- Countdown Card -->
                         <div style="background:var(--white);border-radius:14px;padding:20px;border:1px solid #eee;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,.04);">
-                            <h3 id="volEventNameDisplay" style="margin:0;color:#555;font-size:1.1rem;text-transform:uppercase;letter-spacing:1px;">Days to Event</h3>
-                            <div id="eventCountdownDisplay" style="font-size:3rem;font-weight:800;color:#E65100;line-height:1.2;margin:10px 0;">--</div>
-                            <p id="volEventDescDisplay" style="margin:0;color:#888;font-size:0.85rem;">Automatic countdown based on IST</p>
+                            <h3 id="volEventNameDisplay" style="margin:0 0 12px;color:#555;font-size:1rem;text-transform:uppercase;letter-spacing:1px;">Days to Event</h3>
+                            <!-- Full ticking countdown -->
+                            <div style="display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;">
+                                <div style="text-align:center;">
+                                    <div id="volCdDays" style="font-size:2.4rem;font-weight:800;color:#E65100;line-height:1;">--</div>
+                                    <div style="font-size:0.7rem;color:#999;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Days</div>
+                                </div>
+                                <div style="font-size:2rem;font-weight:300;color:#ccc;padding-bottom:14px;">:</div>
+                                <div style="text-align:center;">
+                                    <div id="volCdHours" style="font-size:2.4rem;font-weight:800;color:#E65100;line-height:1;">--</div>
+                                    <div style="font-size:0.7rem;color:#999;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Hours</div>
+                                </div>
+                                <div style="font-size:2rem;font-weight:300;color:#ccc;padding-bottom:14px;">:</div>
+                                <div style="text-align:center;">
+                                    <div id="volCdMins" style="font-size:2.4rem;font-weight:800;color:#E65100;line-height:1;">--</div>
+                                    <div style="font-size:0.7rem;color:#999;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Mins</div>
+                                </div>
+                                <div style="font-size:2rem;font-weight:300;color:#ccc;padding-bottom:14px;">:</div>
+                                <div style="text-align:center;">
+                                    <div id="volCdSecs" style="font-size:2.4rem;font-weight:800;color:#1a237e;line-height:1;">--</div>
+                                    <div style="font-size:0.7rem;color:#999;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Secs</div>
+                                </div>
+                            </div>
+                            <p id="volEventDescDisplay" style="margin:10px 0 0;color:#888;font-size:0.82rem;">Synchronized with event date</p>
                         </div>
                     </div>
 
@@ -935,58 +960,70 @@ window.fixUrl = function(url) {
                     </div>
                     
                     <script>
-                        
-                        let defaultVolBannerHtml = null;
-                        
+                        let _volCdTarget = null;
+                        let _volCdInterval = null;
+
+                        function updateVolCountdown() {
+                            if (!_volCdTarget) return;
+                            const now = Date.now();
+                            const dist = _volCdTarget - now;
+                            const pad = n => String(Math.max(0, n)).padStart(2, '0');
+                            if (dist > 0) {
+                                const days  = Math.floor(dist / (1000*60*60*24));
+                                const hours = Math.floor((dist % (1000*60*60*24)) / (1000*60*60));
+                                const mins  = Math.floor((dist % (1000*60*60)) / (1000*60));
+                                const secs  = Math.floor((dist % (1000*60)) / 1000);
+                                document.getElementById('volCdDays').textContent  = pad(days);
+                                document.getElementById('volCdHours').textContent = pad(hours);
+                                document.getElementById('volCdMins').textContent  = pad(mins);
+                                document.getElementById('volCdSecs').textContent  = pad(secs);
+                            } else {
+                                ['volCdDays','volCdHours','volCdMins','volCdSecs'].forEach(id => {
+                                    document.getElementById(id).textContent = '00';
+                                });
+                            }
+                        }
+
                         async function loadEventCountdown() {
                             try {
                                 const res = await fetch('/api/settings');
                                 const data = await res.json();
-                                
-                                const bannerContainer = document.getElementById('volOverviewBannerContainer');
-                                if (bannerContainer && !defaultVolBannerHtml) {
-                                    defaultVolBannerHtml = bannerContainer.innerHTML;
+
+                                // --- Banner ---
+                                const bannerImg = document.getElementById('volBannerImg');
+                                const defaultBanner = document.getElementById('volDefaultBanner');
+                                if (data && data.dashboardBanner && bannerImg) {
+                                    bannerImg.src = data.dashboardBanner;
+                                    bannerImg.style.display = 'block';
+                                    if (defaultBanner) defaultBanner.style.display = 'none';
+                                } else if (bannerImg) {
+                                    bannerImg.style.display = 'none';
+                                    if (defaultBanner) defaultBanner.style.display = 'block';
                                 }
-                                
-                                if (data && data.dashboardBanner && bannerContainer) {
-                                    bannerContainer.innerHTML = `<img src="${data.dashboardBanner}" style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; border-radius:16px;">`;
-                                } else if (bannerContainer && defaultVolBannerHtml) {
-                                    bannerContainer.innerHTML = defaultVolBannerHtml;
+
+                                // --- Countdown: use same field as landing page (countdownDate or eventDate) ---
+                                const isoDate = (data && (data.countdownDate || data.eventDate)) || null;
+                                if (isoDate) {
+                                    const parsed = new Date(isoDate).getTime();
+                                    if (!isNaN(parsed)) _volCdTarget = parsed;
                                 }
-                                
-                                if (data && data.eventDate) {
-                                    const targetDate = new Date(data.eventDate);
-                                    const now = new Date();
-                                    
-                                    // Convert to IST offset (UTC+5:30)
-                                    const istOffset = 5.5 * 60 * 60 * 1000;
-                                    const targetIST = new Date(targetDate.getTime());
-                                    const nowIST = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
-                                    
-                                    targetIST.setUTCHours(0,0,0,0);
-                                    nowIST.setUTCHours(0,0,0,0);
-                                    
-                                    const diffTime = targetIST.getTime() - nowIST.getTime();
-                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                                    
-                                    const el = document.getElementById('eventCountdownDisplay');
-                                    if (el) {
-                                        if (diffDays > 0) el.textContent = diffDays;
-                                        else if (diffDays === 0) el.textContent = 'Today!';
-                                        else el.textContent = 'Passed';
-                                    }
-                                    
-                                    if (data.eventName) {
-                                        const nameEl = document.getElementById('volEventNameDisplay');
-                                        if (nameEl) nameEl.textContent = data.eventName + ' Countdown';
-                                    }
-                                    if (data.eventDesc) {
-                                        const descEl = document.getElementById('volEventDescDisplay');
-                                        if (descEl) descEl.textContent = data.eventDesc;
-                                    }
+
+                                if (data && data.eventName) {
+                                    const nameEl = document.getElementById('volEventNameDisplay');
+                                    if (nameEl) nameEl.textContent = data.eventName + ' Countdown';
                                 }
+                                if (data && data.eventDesc) {
+                                    const descEl = document.getElementById('volEventDescDisplay');
+                                    if (descEl) descEl.textContent = data.eventDesc;
+                                }
+
                             } catch(e) {
                                 console.warn('Failed to load event countdown');
+                            } finally {
+                                // Start ticking regardless
+                                updateVolCountdown();
+                                if (_volCdInterval) clearInterval(_volCdInterval);
+                                _volCdInterval = setInterval(updateVolCountdown, 1000);
                             }
                         }
                         
