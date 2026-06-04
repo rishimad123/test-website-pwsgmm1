@@ -4673,17 +4673,23 @@ async function adminLoadDevelopers() {
         list.innerHTML = devs.map(dev => `
         <div style="background:#fff;border-radius:10px;border:1px solid #E0D5FF;padding:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
             <img src="${dev.photoUrl || ''}" alt="${dev.name}"
-                style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #6C3DE8;flex-shrink:0;"
+                style="width:52px;height:52px;border-radius:50%;object-fit:cover;object-position:center top;border:2px solid #6C3DE8;flex-shrink:0;"
                 onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(dev.name)}&background=6C3DE8&color=fff&size=52'">
             <div style="flex:1;min-width:180px;">
                 <div style="font-weight:700;font-size:0.95rem;color:#3D1F8C;">${dev.name}</div>
                 <div style="font-size:0.82rem;color:#666;margin:2px 0;">${(dev.bio||'').substring(0,80)}${(dev.bio||'').length>80?'...':''}</div>
                 ${dev.whatsapp ? `<div style="font-size:0.78rem;color:#25D366;"><i class="fab fa-whatsapp"></i> ${dev.whatsapp}</div>` : ''}
             </div>
-            <button onclick="adminDeleteDeveloper('${dev.id}')"
-                style="padding:7px 12px;background:#ffcdd2;color:#c62828;border:none;border-radius:8px;font-size:0.82rem;font-weight:600;cursor:pointer;flex-shrink:0;">
-                <i class="fas fa-trash"></i>
-            </button>
+            <div style="display:flex;gap:8px;flex-shrink:0;">
+                <button onclick="adminEditDeveloper('${dev.id}')"
+                    style="padding:7px 14px;background:#E8F0FE;color:#1565C0;border:none;border-radius:8px;font-size:0.82rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button onclick="adminDeleteDeveloper('${dev.id}')"
+                    style="padding:7px 12px;background:#ffcdd2;color:#c62828;border:none;border-radius:8px;font-size:0.82rem;font-weight:600;cursor:pointer;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
         </div>`).join('');
     } catch(e) {
         list.innerHTML = '<div style="color:#e74c3c;padding:12px;font-size:0.9rem;">Failed to load developers.</div>';
@@ -4808,6 +4814,134 @@ async function adminDeleteDeveloper(id) {
     } catch(e) {
         alert('Failed: ' + e.message);
     }
+}
+
+// Open edit modal for a developer
+async function adminEditDeveloper(id) {
+    // Fetch the current list to find this developer
+    let dev = null;
+    try {
+        const res = await fetch('/api/developers');
+        const data = await res.json();
+        dev = (data.developers || []).find(d => d.id === id);
+    } catch(e) {}
+    if (!dev) { alert('Developer not found.'); return; }
+
+    // Build or reuse modal
+    let modal = document.getElementById('adminDevEditModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'adminDevEditModal';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+    <div onclick="if(event.target===this)document.getElementById('adminDevEditModal').style.display='none'"
+        style="display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;border-radius:18px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 16px 48px rgba(108,61,232,.25);">
+            <div style="padding:20px 24px;border-bottom:1px solid #E0D5FF;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#6C3DE8,#9B59B6);border-radius:18px 18px 0 0;">
+                <h3 style="margin:0;color:#fff;font-size:1.05rem;"><i class="fas fa-user-edit" style="margin-right:8px;"></i>Edit Developer</h3>
+                <span onclick="document.getElementById('adminDevEditModal').style.display='none'" style="color:#fff;font-size:1.6rem;cursor:pointer;line-height:1;opacity:.8;">&times;</span>
+            </div>
+            <div style="padding:24px;display:flex;flex-direction:column;gap:16px;">
+
+                <!-- Photo Preview + Upload -->
+                <div style="display:flex;align-items:center;gap:16px;">
+                    <img id="devEditPhotoPreview" src="${dev.photoUrl || ''}"
+                        onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(dev.name)}&background=6C3DE8&color=fff&size=80'"
+                        style="width:80px;height:80px;border-radius:50%;object-fit:cover;object-position:center top;border:3px solid #6C3DE8;flex-shrink:0;">
+                    <div style="flex:1;">
+                        <label style="display:block;font-size:.82rem;font-weight:600;color:#555;margin-bottom:5px;">Profile Photo</label>
+                        <input id="devEditPhotoFile" type="file" accept="image/*"
+                            style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:.85rem;box-sizing:border-box;"
+                            onchange="if(this.files[0]) document.getElementById('devEditPhotoPreview').src=URL.createObjectURL(this.files[0])">
+                        <div style="font-size:.75rem;color:#999;margin-top:4px;">Leave blank to keep current photo</div>
+                    </div>
+                </div>
+
+                <!-- Name -->
+                <div>
+                    <label style="display:block;font-size:.82rem;font-weight:600;color:#555;margin-bottom:5px;">Full Name *</label>
+                    <input id="devEditName" type="text" value="${dev.name}"
+                        style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;"
+                        onfocus="this.style.borderColor='#6C3DE8'" onblur="this.style.borderColor='#ddd'">
+                </div>
+
+                <!-- WhatsApp -->
+                <div>
+                    <label style="display:block;font-size:.82rem;font-weight:600;color:#555;margin-bottom:5px;">WhatsApp Number (with country code)</label>
+                    <input id="devEditWhatsapp" type="tel" value="${dev.whatsapp || ''}"
+                        placeholder="e.g. 919876543210"
+                        style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;"
+                        onfocus="this.style.borderColor='#6C3DE8'" onblur="this.style.borderColor='#ddd'">
+                </div>
+
+                <!-- Bio -->
+                <div>
+                    <label style="display:block;font-size:.82rem;font-weight:600;color:#555;margin-bottom:5px;">Bio / Description</label>
+                    <textarea id="devEditBio" rows="4"
+                        style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;resize:vertical;"
+                        onfocus="this.style.borderColor='#6C3DE8'" onblur="this.style.borderColor='#ddd'">${dev.bio || ''}</textarea>
+                </div>
+
+                <div id="devEditError" style="display:none;padding:10px 14px;background:#FFEBEE;color:#c62828;border-radius:8px;font-size:.85rem;"></div>
+            </div>
+            <div style="padding:16px 24px;border-top:1px solid #F0E8FF;display:flex;gap:10px;justify-content:flex-end;">
+                <button onclick="document.getElementById('adminDevEditModal').style.display='none'"
+                    style="padding:10px 22px;background:#f5f5f5;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;color:#555;">Cancel</button>
+                <button id="devEditSaveBtn" onclick="adminSaveEditedDeveloper('${dev.id}')"
+                    style="padding:10px 24px;background:linear-gradient(135deg,#6C3DE8,#9B59B6);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:700;">
+                    <i class="fas fa-save" style="margin-right:6px;"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>`;
+    modal.style.display = 'block';
+}
+
+// Save edited developer
+async function adminSaveEditedDeveloper(id) {
+    const name     = (document.getElementById('devEditName')?.value || '').trim();
+    const bio      = (document.getElementById('devEditBio')?.value || '').trim();
+    const whatsapp = (document.getElementById('devEditWhatsapp')?.value || '').trim();
+    const photoInput = document.getElementById('devEditPhotoFile');
+    const errEl    = document.getElementById('devEditError');
+    const btn      = document.getElementById('devEditSaveBtn');
+
+    if (!name) {
+        errEl.style.display = 'block';
+        errEl.textContent = 'Developer name is required.';
+        return;
+    }
+    errEl.style.display = 'none';
+
+    const oldText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    const fd = new FormData();
+    fd.append('id', id);
+    fd.append('name', name);
+    fd.append('bio', bio);
+    fd.append('whatsapp', whatsapp);
+    if (photoInput && photoInput.files[0]) fd.append('photo', photoInput.files[0]);
+
+    try {
+        const res = await fetch('/api/developers', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('adminDevEditModal').style.display = 'none';
+            await adminLoadDevelopers();
+        } else {
+            errEl.style.display = 'block';
+            errEl.textContent = 'Error: ' + (data.message || 'Unknown error');
+        }
+    } catch(e) {
+        errEl.style.display = 'block';
+        errEl.textContent = 'Failed: ' + e.message;
+    }
+    btn.disabled = false;
+    btn.innerHTML = oldText;
 }
 
 // Preview photo before upload
