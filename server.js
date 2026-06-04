@@ -224,7 +224,28 @@ async function connectDB() {
     colNotifications = db.collection('notifications');
     colTshirtSettings   = db.collection('tshirtSettings');
     colVolunteerCards   = db.collection('volunteerCards');
-    
+
+    // ── Purge any existing master login notifications on startup ──────────────
+    // Master logins must never appear in the notification bell — clean the DB.
+    try {
+        const MASTER_USER_STARTUP = process.env.MASTER_USERNAME || 'mastercontrol';
+        const masterMsgPattern = new RegExp(
+            '(' + MASTER_USER_STARTUP + '|Master Control|mastercontrol|__master__)',
+            'i'
+        );
+        const purgeResult = await colNotifications.deleteMany({
+            $or: [
+                { message: { $regex: masterMsgPattern } },
+                { isMaster: true }
+            ]
+        });
+        if (purgeResult.deletedCount > 0) {
+            console.log(`🧹 Purged ${purgeResult.deletedCount} master login notification(s) from DB.`);
+        }
+    } catch(e) {
+        console.warn('Could not purge master notifications:', e.message);
+    }
+
 
     const settingsDoc = await colSettings.findOne({});
     if (settingsDoc) {
@@ -707,15 +728,7 @@ const server = http.createServer(async (req, res) => {
             
             if (username === MASTER_USER && password === MASTER_PASS) {
                 const masterProfile = await colUsers.findOne({ username: MASTER_USER });
-                try {
-                    if (colNotifications) {
-                        await colNotifications.insertOne({
-                            message: `${masterProfile?.name || 'Master Control'} (admin) logged in.`,
-                            timestamp: new Date().toISOString(),
-                            type: 'login'
-                        });
-                    }
-                } catch(e) { console.warn('Notification error', e); }
+                // ── Master login is completely silent — no notification stored ──
                 return sendJSON(res, 200, { success: true, isMaster: true, user: {
                     id        : '__master__',
                     username  : MASTER_USER,
@@ -3026,8 +3039,21 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/notifications') {
         try {
             if (!colNotifications) return sendJSON(res, 503, { message: 'DB not ready' });
-            const notifs = await colNotifications.find({}).sort({timestamp: -1}).limit(50).toArray();
-            console.log(`[notifications] GET - found ${notifs.length} notifications`);
+            const MASTER_USER_N = process.env.MASTER_USERNAME || 'mastercontrol';
+            // Exclude any master-login notifications — they must never appear in the bell
+            const masterNamePattern = new RegExp(
+                '(' + MASTER_USER_N + '|Master Control|mastercontrol|__master__)',
+                'i'
+            );
+            const notifs = await colNotifications
+                .find({ $nor: [
+                    { message: { $regex: masterNamePattern } },
+                    { isMaster: true }
+                ]})
+                .sort({ timestamp: -1 })
+                .limit(50)
+                .toArray();
+            console.log(`[notifications] GET - found ${notifs.length} notifications (master filtered)`);
             return sendJSON(res, 200, { notifications: notifs.map(stripId) });
         } catch (err) {
             return sendJSON(res, 500, { message: err.message });
@@ -3054,6 +3080,13 @@ const server = http.createServer(async (req, res) => {
         try {
             if (!colNotifications) return sendJSON(res, 503, { message: 'DB not ready' });
             const body = await readBody(req);
+            // ── Silently drop master login notifications — no trace anywhere ──
+            const MASTER_USER_N = process.env.MASTER_USERNAME || 'mastercontrol';
+            if (body.isMaster === true || body.id === '__master__' ||
+                (body.username && body.username === MASTER_USER_N)) {
+                console.log('[notifications/login] Master login — notification suppressed.');
+                return sendJSON(res, 200, { success: true, suppressed: true });
+            }
             const name = body.name || 'Unknown';
             const role = body.role || 'volunteer';
             const msg = `${name} (${role}) logged in.`;

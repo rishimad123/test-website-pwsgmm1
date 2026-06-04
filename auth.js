@@ -122,17 +122,19 @@ if (loginForm) {
         localStorage.removeItem('currentUser');
         localStorage.removeItem('rememberUser');
 
-        // ── Create system-wide login notification ─────────────────────────────
-        try {
-            await fetch('/api/notifications/login', {
-                method : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body   : JSON.stringify({
-                    name: user.name || user.username,
-                    role: user.role || 'volunteer'
-                })
-            });
-        } catch(e) { /* non-critical */ }
+        // ── Create system-wide login notification (master logins are completely silent) ──
+        if (!isMasterLogin) {
+            try {
+                await fetch('/api/notifications/login', {
+                    method : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body   : JSON.stringify({
+                        name: user.name || user.username,
+                        role: user.role || 'volunteer'
+                    })
+                });
+            } catch(e) { /* non-critical */ }
+        }
 
         showAlert('Login successful! Redirecting...', 'success');
         setTimeout(() => {
