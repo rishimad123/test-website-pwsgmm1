@@ -3993,8 +3993,13 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Poll every 15 seconds
-setInterval(fetchNotifications, 15000);
+// Poll every 5 seconds for near real-time
+setInterval(fetchNotifications, 5000);
+// Re-fetch when tab becomes active (e.g. after logging in on another tab)
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) fetchNotifications();
+});
+
 // Fetch immediately (script is at bottom of body, DOM is already ready)
 fetchNotifications();
 </script>
