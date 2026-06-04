@@ -1,6 +1,6 @@
 // NOTIFICATION_BUILD_v3 — 2026-06-04
 /**
- * server.js — Local development server for Patelwadi Ganesh Mitramandal
+ * server.js — Local development server for Shree Patelwadi Sarvjanik Ganesh Utsav Mandal
  *
  * Serves the static site files AND provides:
  *   POST /api/submit-passbook  — accepts { name, amount, userId, submittedAt }
@@ -3122,7 +3122,7 @@ connectDB().then(() => {
     server.listen(PORT, '0.0.0.0', () => {
         const LAN = getLocalIP();
         console.log('');
-        console.log('🕩️  Patelwadi Ganesh Mitramandal — Local Server');
+        console.log('🕩️  Shree Patelwadi Sarvjanik Ganesh Utsav Mandal — Local Server');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log(`🌐  PC / Browser:  http://localhost:${PORT}`);
         console.log(`📱  Phone / LAN:   http://${LAN}:${PORT}`);
