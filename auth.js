@@ -122,6 +122,18 @@ if (loginForm) {
         localStorage.removeItem('currentUser');
         localStorage.removeItem('rememberUser');
 
+        // ── Create system-wide login notification ─────────────────────────────
+        try {
+            await fetch('/api/notifications/login', {
+                method : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body   : JSON.stringify({
+                    name: user.name || user.username,
+                    role: user.role || 'volunteer'
+                })
+            });
+        } catch(e) { /* non-critical */ }
+
         showAlert('Login successful! Redirecting...', 'success');
         setTimeout(() => {
             // Master user always goes to admin panel (has full access to both)

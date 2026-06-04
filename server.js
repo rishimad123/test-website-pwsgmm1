@@ -3049,6 +3049,26 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
+    // ── POST /api/notifications/login — called by auth.js on every successful login ──
+    if (req.method === 'POST' && pathname === '/api/notifications/login') {
+        try {
+            if (!colNotifications) return sendJSON(res, 503, { message: 'DB not ready' });
+            const body = await readBody(req);
+            const name = body.name || 'Unknown';
+            const role = body.role || 'volunteer';
+            const msg = `${name} (${role}) logged in.`;
+            console.log('[notifications/login] Inserting:', msg);
+            await colNotifications.insertOne({
+                message: msg,
+                timestamp: new Date().toISOString(),
+                type: 'login'
+            });
+            return sendJSON(res, 200, { success: true });
+        } catch (err) {
+            return sendJSON(res, 500, { message: err.message });
+        }
+    }
+
     // ── Static file serving ───────────────────────────────────────────────
     // Only serve static files for GET/HEAD — all other methods should have
     // been handled by an API route above.  If we reach here with POST/PUT/DELETE
