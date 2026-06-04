@@ -750,21 +750,10 @@ const server = http.createServer(async (req, res) => {
             // Check password
             if (existing.password !== password) return sendJSON(res, 401, { success: false, message: 'Invalid password.' });
             
-            try {
-                if (colNotifications) {
-                    const notifMsg = `${existing.name || existing.username} (${existing.role || 'volunteer'}) logged in.`;
-                    console.log('[login] Inserting notification:', notifMsg);
-                    await colNotifications.insertOne({
-                        message: notifMsg,
-                        timestamp: new Date().toISOString(),
-                        type: 'login'
-                    });
-                    console.log('[login] Notification inserted OK');
-                } else {
-                    console.warn('[login] colNotifications is null - skipping insert');
-                }
-            } catch(e) { console.warn('Notification insert error:', e.message); }
+            // Note: login notification is handled client-side via POST /api/notifications/login
+            // Do NOT insert here — that would create a duplicate entry.
             
+
             return sendJSON(res, 200, { success: true, user: {
                 id        : existing.id || existing._id?.toString(),
                 username  : existing.username,
