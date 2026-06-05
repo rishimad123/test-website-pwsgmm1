@@ -1,16 +1,9 @@
 const fs = require('fs');
-
-function fixSyntax(filename) {
-    let content = fs.readFileSync(filename, 'utf8');
-    
-    // Replace \` with `
-    content = content.replace(/\\`/g, '`');
-    // Replace \${ with ${
-    content = content.replace(/\\\$\{/g, '${');
-    
-    fs.writeFileSync(filename, content, 'utf8');
-    console.log(`Fixed syntax in ${filename}`);
-}
-
-fixSyntax('dashboard.html');
-fixSyntax('admin.html');
+const file = 'admin.html';
+const c = fs.readFileSync(file, 'utf8');
+const lines = c.split('\n');
+const start = 4643; // 0-based
+const end = 4647; // 0-based
+lines.splice(start, end - start + 1);
+fs.writeFileSync(file, lines.join('\n'));
+console.log('Removed lines 4644 to 4648.');

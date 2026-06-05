@@ -4641,11 +4641,6 @@ window._fmtBytesA = function(b) {
         document.body.appendChild(modal);
         modal.addEventListener('click', function(ev) { if (ev.target === modal) modal.remove(); });
     }
-        
-        document.body.appendChild(modal);
-        modal.addEventListener('click', ev => { if (ev.target === modal) modal.remove(); });
-    }
-
     function adeShowStatus(msg, type) {
         const el = document.getElementById('adeStatus');
         if (!el) return;

@@ -3014,6 +3014,108 @@ window.fixUrl = function(url) {
             } else { alert(d.message || 'Could not add building.'); }
         } catch(e) { alert('Server error.'); }
     }
+    document.getElementById('donationEntryForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('deSubmitBtn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Saving\u2026'; }
+
+        // ── Build payload with null-safe reads ──────────────────
+        let payload;
+        try {
+            const donorType = (document.getElementById('deDonorType')?.value || 'Individual');
+            const getVal  = id => document.getElementById(id)?.value ?? '';
+            const getTrim = id => getVal(id).trim();
+
+            const amtVal = getVal('deAmount');
+            if (amtVal === '') throw new Error('Donation Amount is mandatory.');
+            const pMode = getVal('dePaymentMode') || 'Cash';
+            const refNum = getTrim('deReference');
+            if (pMode === 'Cheque' && !refNum) throw new Error('Cheque number is mandatory for Cheque payments.');
+            if (pMode === 'RTGS' && !refNum) throw new Error('Transaction ID / Reference number is mandatory for RTGS payments.');
+
+            payload = {
+                bookNumber      : Number(getVal('deBookNumber')),
+                receiptNumber   : Number(getVal('deReceiptNumber')),
+                bookType        : document.querySelector('input[name="deBookType"]:checked')?.value || 'New',
+                donorType,
+                firstName       : donorType === 'Individual' ? getTrim('deFirstName').toUpperCase()    : null,
+                middleName      : donorType === 'Individual' ? getTrim('deMiddleName').toUpperCase()   : null,
+                lastName        : donorType === 'Individual' ? getTrim('deLastName').toUpperCase()     : null,
+                businessName    : donorType === 'Business'   ? getTrim('deBusinessName').toUpperCase(): null,
+                whatsappNumber  : getTrim('deWhatsapp')  || null,
+                mobileNumber    : getTrim('deMobile')    || null,
+                mailId          : getTrim('deMail')      || null,
+                buildingName    : getVal('deBuildingName') || null,
+                flatNumber      : getTrim('deFlatNumber') || null,
+                area            : getVal('deArea')         || null,
+                subArea         : getVal('deSubArea')      || null,
+                landmark        : getVal('deLandmark')     || null,
+                amount          : getVal('deAmount') !== '' ? Number(getVal('deAmount')) : null,
+                paymentMode     : getVal('dePaymentMode') || 'Cash',
+                referenceNumber : getTrim('deReference') || null,
+                submittedBy     : currentUser ? currentUser.name : null,
+                submittedByUserId: currentUser ? currentUser.id  : null,
+            };
+        } catch (buildErr) {
+            console.error('[DE Form] Payload build error:', buildErr);
+            deShowStatus('\u274c Form error: ' + buildErr.message, 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry'; }
+            return;
+        }
+
+        // ── Submit to server ─────────────────────────────────────
+        try {
+            console.log('[DE Form] Submitting payload:', payload);
+            const res  = await fetch('/api/donation-entries', {
+                method : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body   : JSON.stringify(payload)
+            });
+            const data = await res.json();
+            console.log('[DE Form] Server response:', res.status, data);
+            if (res.ok && data.success) {
+                // Upload passbook photo if one was captured
+                if (_pbDocBlob && data.entry && data.entry.entryId) {
+                    try {
+                        const fd = new FormData();
+                        fd.append('passbook', _pbDocBlob, (document.getElementById('pbDocFileName')?.textContent || 'receipt.jpg'));
+                        fd.append('userId',    currentUser ? String(currentUser.id)   : '');
+                        fd.append('userName',  currentUser ? currentUser.name : '');
+                        fd.append('entryId',   data.entry.entryId);
+                        await fetch('/api/upload-passbook', { method: 'POST', body: fd });
+                        pbClearDoc();
+                    } catch(_) { /* photo upload failure is non-blocking */ }
+                }
+                deShowStatus(`\u2705 Entry saved! Book ${data.entry.bookNumber}, Receipt #${data.entry.receiptNumber}`, 'success');
+                this.reset();
+                deSetDonorType('Individual');
+                deSetMode('Cash');
+                const rSel = document.getElementById('deReceiptNumber');
+                if (rSel) { rSel.innerHTML = '<option value="">\u2014 Select Book first \u2014</option>'; rSel.disabled = true; }
+                await deLoadMyEntries();
+            } else {
+                deShowStatus('\u274c ' + (data.message || 'Submission failed.'), 'error');
+            }
+        } catch(err) {
+            console.error('[DE Form] Fetch/network error:', err);
+            deShowStatus('\u274c Network error: ' + (err.message || 'Cannot reach server. Make sure server.js is running.'), 'error');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry'; }
+        }
+    });
+
+    function deShowStatus(msg, type) {
+        const el = document.getElementById('deStatus');
+        if (!el) return;
+        el.textContent = msg;
+        el.style.display = 'block';
+        el.style.background = type === 'success' ? '#D5F4E6' : '#FFEBEE';
+        el.style.color      = type === 'success' ? '#1a7a45' : '#c0392b';
+        el.style.border     = type === 'success' ? '1px solid #a3e6c1' : '1px solid #f5b7b1';
+        setTimeout(() => el.style.display = 'none', 6000);
+    }
+
+    // ── Load landmarks into volunteer form ───────────────────────────────────
     async function deAutoReceipt() {
         try {
             const bType = document.querySelector('input[name="deBookType"]:checked')?.value || 'New';
