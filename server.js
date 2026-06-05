@@ -2050,21 +2050,28 @@ const server = http.createServer(async (req, res) => {
 
     // ── GET /api/buildings ───────────────────────────────────────────────────
     if (req.method === 'GET' && pathname === '/api/buildings') {
-        return sendJSON(res, 200, { buildings });
+        const qp = new URL(`http://x${req.url}`).searchParams;
+        const subAreaIdFilter = qp.get('subAreaId');
+        const result = subAreaIdFilter
+            ? buildings.filter(b => b.subAreaId === subAreaIdFilter)
+            : buildings;
+        return sendJSON(res, 200, { buildings: result });
     }
 
     // ── POST /api/buildings ──────────────────────────────────────────────────
     if (req.method === 'POST' && pathname === '/api/buildings') {
         try {
             const body = await readBody(req);
-            const name = (body.name || '').trim();
+            const name       = (body.name       || '').trim();
+            const subAreaId  = (body.subAreaId  || '').trim() || null;
             if (!name) return sendJSON(res, 400, { message: 'Building name is required.' });
             if (buildings.find(b => b.name.toLowerCase() === name.toLowerCase()))
                 return sendJSON(res, 400, { message: `Building "${name}" already exists.` });
             const building = { id: `BLD-${Date.now()}`, name };
+            if (subAreaId) building.subAreaId = subAreaId;
             buildings.push(building);
             await saveBuildings();
-            console.log(`🏢 Building added: ${name}`);
+            console.log(`🏢 Building added: ${name}${subAreaId ? ` (subArea: ${subAreaId})` : ''}`);
             return sendJSON(res, 200, { success: true, building });
         } catch (err) {
             return sendJSON(res, 400, { message: err.message || 'Bad request.' });
@@ -2088,21 +2095,28 @@ const server = http.createServer(async (req, res) => {
 
     // ── GET /api/areas ───────────────────────────────────────────────────────
     if (req.method === 'GET' && pathname === '/api/areas') {
-        return sendJSON(res, 200, { areas });
+        const qp = new URL(`http://x${req.url}`).searchParams;
+        const landmarkIdFilter = qp.get('landmarkId');
+        const result = landmarkIdFilter
+            ? areas.filter(a => !a.landmarkId || a.landmarkId === landmarkIdFilter)
+            : areas;
+        return sendJSON(res, 200, { areas: result });
     }
 
     // ── POST /api/areas ──────────────────────────────────────────────────────
     if (req.method === 'POST' && pathname === '/api/areas') {
         try {
             const body = await readBody(req);
-            const name = (body.name || '').trim();
+            const name       = (body.name       || '').trim();
+            const landmarkId = (body.landmarkId || '').trim() || null;
             if (!name) return sendJSON(res, 400, { message: 'Area name is required.' });
             if (areas.find(a => a.name.toLowerCase() === name.toLowerCase()))
                 return sendJSON(res, 400, { message: `Area "${name}" already exists.` });
             const area = { id: `AREA-${Date.now()}`, name };
+            if (landmarkId) area.landmarkId = landmarkId;
             areas.push(area);
             await saveAreas();
-            console.log(`📍 Area added: ${name}`);
+            console.log(`📍 Area added: ${name}${landmarkId ? ` (landmark: ${landmarkId})` : ''}`);
             return sendJSON(res, 200, { success: true, area });
         } catch (err) {
             return sendJSON(res, 400, { message: err.message || 'Bad request.' });

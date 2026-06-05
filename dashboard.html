@@ -1325,45 +1325,34 @@ window.fixUrl = function(url) {
                                 </div>
                             </div>
 
-                            <!-- ── Section D: Landmark ── -->
-                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
-                                <i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Landmark
+                            <!-- Section D: Location Cascade -->
+                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:18px;"><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Location</div>
+                            <div class="form-group" id="deLandmarkGroup" style="margin-bottom:16px;">
+                                <label for="deLandmark" style="font-weight:600;font-size:.85rem;color:#333;"><i class="fas fa-landmark" style="color:var(--primary-color);margin-right:5px;font-size:.8rem;"></i> Common Landmark <span style="font-size:.75rem;color:#888;font-weight:400;margin-left:6px;">(Select first)</span></label>
+                                <div style="display:flex;gap:8px;align-items:stretch;">
+                                    <select id="deLandmark" class="form-control" style="flex:1;" onchange="deOnLandmarkChange()"><option value="">&#x2014; Select Landmark &#x2014;</option></select>
+                                    <button type="button" id="deAddLandmarkBtn" onclick="deAddLandmark()" style="display:none;padding:0 16px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.82rem;font-weight:700;white-space:nowrap;">&#x271a; Add</button>
+                                </div>
+                                <div id="deLandmarkHint" style="font-size:.74rem;color:#aaa;margin-top:5px;display:none;"><i class="fas fa-info-circle" style="margin-right:3px;"></i>No landmarks yet.</div>
                             </div>
-                            <div id="deLandmarkFields" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
-                                <div class="form-group" style="margin:0;">
-                                    <label for="deBuildingName">Building Name</label>
-                                    <div style="display:flex;gap:8px;">
-                                        <select id="deBuildingName" class="form-control" style="flex:1;" onchange="document.getElementById('deFlatNumberGroup').style.display = this.value ? 'block' : 'none';"></select>
-                                        <button type="button" id="deAddBldgBtn" onclick="deAddBuilding()" style="display:none;padding:0 14px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;cursor:pointer;font-size:.85rem;white-space:nowrap;">＋ Add</button>
-                                    </div>
-                                </div>
-                                <div class="form-group" id="deFlatNumberGroup" style="margin:0; display:none;">
-                                    <label for="deFlatNumber">Enter Flat Number</label>
-                                    <input type="text" id="deFlatNumber" class="form-control" placeholder="Flat No.">
-                                </div>
-                                <div class="form-group" style="margin:0;">
-                                    <label for="deArea">Area</label>
-                                    <div style="display:flex;gap:8px;">
-                                        <select id="deArea" class="form-control" style="flex:1;" onchange="deOnAreaChange()">
-                                            <option value="">— Select Area —</option>
-                                            <option value="Patelwadi">Patelwadi</option>
-                                            <option value="Shindewadi">Shindewadi</option>
-                                            <option value="Gurkhawadi">Gurkhawadi</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="form-group" id="deSubAreaGroup" style="margin:0;display:none;">
-                                    <label for="deSubArea">Sub-Area</label>
-                                    <select id="deSubArea" class="form-control">
-                                        <option value="">— Select Sub-Area —</option>
-                                    </select>
-                                </div>
-                            <div class="form-group" style="margin-top:12px;">
-                                <label for="deLandmark">Common Landmark</label>
-                                <select id="deLandmark" class="form-control">
-                                    <option value="">— Select Landmark (optional) —</option>
-                                </select>
+                            <div class="form-group" id="deAreaGroup" style="margin-bottom:16px;display:none;">
+                                <label for="deArea" style="font-weight:600;font-size:.85rem;color:#333;"><i class="fas fa-map-pin" style="color:#3949AB;margin-right:5px;font-size:.8rem;"></i> Area <span style="font-size:.75rem;color:#888;font-weight:400;margin-left:6px;">within landmark</span></label>
+                                <select id="deArea" class="form-control" onchange="deOnAreaChange()"><option value="">&#x2014; Select Area &#x2014;</option></select>
                             </div>
+                            <div class="form-group" id="deSubAreaGroup" style="margin-bottom:16px;display:none;">
+                                <label for="deSubArea" style="font-weight:600;font-size:.85rem;color:#333;"><i class="fas fa-map" style="color:#2E7D32;margin-right:5px;font-size:.8rem;"></i> Sub-Area</label>
+                                <select id="deSubArea" class="form-control" onchange="deOnSubAreaChange()"><option value="">&#x2014; Select Sub-Area &#x2014;</option></select>
+                            </div>
+                            <div class="form-group" id="deBuildingGroup" style="margin-bottom:16px;display:none;">
+                                <label for="deBuildingName" style="font-weight:600;font-size:.85rem;color:#333;"><i class="fas fa-building" style="color:#5C6BC0;margin-right:5px;font-size:.8rem;"></i> Building Name</label>
+                                <div style="display:flex;gap:8px;align-items:stretch;">
+                                    <select id="deBuildingName" class="form-control" style="flex:1;" onchange="deOnBuildingChange()"><option value="">&#x2014; Select Building &#x2014;</option></select>
+                                    <button type="button" id="deAddBldgBtn" onclick="deAddBuilding()" style="display:none;padding:0 16px;border:none;border-radius:8px;background:linear-gradient(135deg,#1a237e,#3949ab);color:#fff;cursor:pointer;font-size:.82rem;font-weight:700;white-space:nowrap;">&#x271a; Add</button>
+                                </div>
+                            </div>
+                            <div class="form-group" id="deFlatNumberGroup" style="margin-bottom:16px;display:none;">
+                                <label for="deFlatNumber" style="font-weight:600;font-size:.85rem;color:#333;"><i class="fas fa-door-open" style="color:#E67E22;margin-right:5px;font-size:.8rem;"></i> Flat / Unit Number</label>
+                                <input type="text" id="deFlatNumber" class="form-control" placeholder="e.g. A-201, Flat 3B">
                             </div>
 
                             <!-- ── Section E: Payment ── -->
@@ -2875,234 +2864,156 @@ window.fixUrl = function(url) {
         }
     }
 
-    // ── Load buildings & areas dropdowns ────────────────────
+    // ── Hierarchical Location Cascade ─────────────────────────────────────────────
+    let _deLandmarks = [], _deAreas = [], _deSubAreas = [], _deBuildings = [];
+
     async function deLoadDropdowns() {
-        await deLoadBuildings();
-        await deLoadAreas();
-        // Show Add buttons only for admin
-        const isAdmin = currentUser && currentUser.role === 'admin';
-        const bBtn = document.getElementById('deAddBldgBtn');
-        const aBtn = document.getElementById('deAddAreaBtn');
+        try {
+            const [lRes, aRes, saRes, bRes] = await Promise.all([
+                fetch('/api/landmarks'), fetch('/api/areas'),
+                fetch('/api/sub-areas'),  fetch('/api/buildings')
+            ]);
+            const [lData, aData, saData, bData] = await Promise.all([
+                lRes.json(), aRes.json(), saRes.json(), bRes.json()
+            ]);
+            _deLandmarks = lData.landmarks || [];
+            _deAreas     = aData.areas     || [];
+            _deSubAreas  = saData.subAreas || [];
+            _deBuildings = bData.buildings || [];
+        } catch(e) {
+            _deLandmarks = []; _deAreas = []; _deSubAreas = []; _deBuildings = [];
+        }
+        const lSel = document.getElementById('deLandmark');
+        if (lSel) {
+            const cur = lSel.value;
+            lSel.innerHTML = '<option value="">— Select Landmark —</option>';
+            _deLandmarks.forEach(function(l) {
+                lSel.innerHTML += '<option value="' + l.name + '"' + (l.name===cur?' selected':'') + '>' + l.name + '</option>';
+            });
+            var hint = document.getElementById('deLandmarkHint');
+            if (hint) hint.style.display = _deLandmarks.length === 0 ? '' : 'none';
+        }
+        var isAdmin = currentUser && currentUser.role === 'admin';
+        var lBtn = document.getElementById('deAddLandmarkBtn');
+        var bBtn = document.getElementById('deAddBldgBtn');
+        if (lBtn) lBtn.style.display = isAdmin ? '' : 'none';
         if (bBtn) bBtn.style.display = isAdmin ? '' : 'none';
-        if (aBtn) aBtn.style.display = isAdmin ? '' : 'none';
+        ['deAreaGroup','deSubAreaGroup','deBuildingGroup','deFlatNumberGroup'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.style.display = 'none';
+        });
         dePopulateBooks();
     }
 
-    async function deLoadBuildings() {
-        try {
-            const r = await fetch('/api/buildings');
-            const d = await r.json();
-            const sel = document.getElementById('deBuildingName');
-            if (!sel) return;
-            const cur = sel.value;
-            sel.innerHTML = '<option value="">— Select Building —</option>';
-            (d.buildings || []).forEach(b => {
-                sel.innerHTML += `<option value="${b.name}" ${b.name===cur?'selected':''}>${b.name}</option>`;
-            });
-        } catch(e) {}
-    }
-
-    async function deLoadAreas() {
-        const FIXED_AREAS = ['Patelwadi', 'Shindewadi', 'Gurkhawadi'];
-        const sel = document.getElementById('deArea');
-        if (!sel) return;
-        const cur = sel.value;
-        // Always start with the 3 fixed areas
-        sel.innerHTML = '<option value="">\u2014 Select Area \u2014</option>' +
-            FIXED_AREAS.map(n => `<option value="${n}" ${n===cur?'selected':''}>${n}</option>`).join('');
-        // Then append any extra ones from the API (skip duplicates)
-        try {
-            const r = await fetch('/api/areas');
-            const d = await r.json();
-            (d.areas || []).forEach(a => {
-                if (!FIXED_AREAS.includes(a.name)) {
-                    sel.innerHTML += `<option value="${a.name}" ${a.name===cur?'selected':''}>${a.name}</option>`;
-                }
-            });
-            deOnAreaChange();
-        } catch(e) { /* API unreachable — fixed areas still shown */ }
-    }
-
-    async function deLoadSubAreas(areaName) {
-        const sel = document.getElementById('deSubArea');
-        if (!sel) return;
-        const cur = sel.value;
-        sel.innerHTML = '<option value="">— Select Sub-Area —</option>';
-        if (!areaName) return;
-        
-        try {
-            const r1 = await fetch('/api/areas');
-            const d1 = await r1.json();
-            const areaObj = (d1.areas || []).find(a => a.name === areaName);
-            if (!areaObj) return;
-
-            const r2 = await fetch('/api/sub-areas');
-            const d2 = await r2.json();
-            const subs = (d2.subAreas || []).filter(s => s.areaId === areaObj.id);
-            
-            subs.forEach(s => {
-                sel.innerHTML += `<option value="${s.name}" ${s.name === cur ? 'selected' : ''}>${s.name}</option>`;
-            });
-        } catch (e) {
-            console.error(e);
-        }
+    function deOnLandmarkChange() {
+        var landmark = (document.getElementById('deLandmark') || {}).value || '';
+        ['deArea','deSubArea','deBuildingName','deFlatNumber'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.value = '';
+        });
+        ['deAreaGroup','deSubAreaGroup','deBuildingGroup','deFlatNumberGroup'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.style.display = 'none';
+        });
+        if (!landmark) return;
+        var lmObj = _deLandmarks.find(function(l) { return l.name === landmark; });
+        var filteredAreas = lmObj
+            ? _deAreas.filter(function(a) { return !a.landmarkId || a.landmarkId === lmObj.id; })
+            : _deAreas;
+        var areaSel = document.getElementById('deArea');
+        if (!areaSel) return;
+        areaSel.innerHTML = '<option value="">— Select Area —</option>';
+        filteredAreas.forEach(function(a) {
+            areaSel.innerHTML += '<option value="' + a.name + '" data-id="' + a.id + '">' + a.name + '</option>';
+        });
+        var areaGroup = document.getElementById('deAreaGroup');
+        if (areaGroup) { areaGroup.style.display = ''; areaGroup.style.animation = 'deSlideDown .25s ease'; }
     }
 
     function deOnAreaChange() {
-        const areaName = document.getElementById('deArea')?.value;
-        const group = document.getElementById('deSubAreaGroup');
-        if (!group) return;
-        
-        if (areaName) {
-            group.style.display = 'block';
-            deLoadSubAreas(areaName);
-        } else {
-            group.style.display = 'none';
-        }
+        var areaName = (document.getElementById('deArea') || {}).value || '';
+        ['deSubArea','deBuildingName','deFlatNumber'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.value = '';
+        });
+        ['deSubAreaGroup','deBuildingGroup','deFlatNumberGroup'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.style.display = 'none';
+        });
+        if (!areaName) return;
+        var areaObj = _deAreas.find(function(a) { return a.name === areaName; });
+        var subs = areaObj ? _deSubAreas.filter(function(s) { return s.areaId === areaObj.id; }) : [];
+        var subSel = document.getElementById('deSubArea');
+        if (!subSel) return;
+        subSel.innerHTML = '<option value="">— Select Sub-Area —</option>';
+        subs.forEach(function(s) {
+            subSel.innerHTML += '<option value="' + s.name + '" data-id="' + s.id + '">' + s.name + '</option>';
+        });
+        var subGroup = document.getElementById('deSubAreaGroup');
+        if (subGroup) { subGroup.style.display = ''; subGroup.style.animation = 'deSlideDown .25s ease'; }
+    }
+
+    function deOnSubAreaChange() {
+        var subAreaName = (document.getElementById('deSubArea') || {}).value || '';
+        ['deBuildingName','deFlatNumber'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.value = '';
+        });
+        ['deBuildingGroup','deFlatNumberGroup'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.style.display = 'none';
+        });
+        if (!subAreaName) return;
+        var saObj = _deSubAreas.find(function(s) { return s.name === subAreaName; });
+        var bldgs = saObj
+            ? _deBuildings.filter(function(b) { return !b.subAreaId || b.subAreaId === saObj.id; })
+            : _deBuildings;
+        var bSel = document.getElementById('deBuildingName');
+        if (!bSel) return;
+        bSel.innerHTML = '<option value="">— Select Building —</option>';
+        bldgs.forEach(function(b) {
+            bSel.innerHTML += '<option value="' + b.name + '">' + b.name + '</option>';
+        });
+        var bGroup = document.getElementById('deBuildingGroup');
+        if (bGroup) { bGroup.style.display = ''; bGroup.style.animation = 'deSlideDown .25s ease'; }
+    }
+
+    function deOnBuildingChange() {
+        var building = (document.getElementById('deBuildingName') || {}).value || '';
+        var flatGroup = document.getElementById('deFlatNumberGroup');
+        if (!flatGroup) return;
+        flatGroup.style.display = building ? '' : 'none';
+        if (building) flatGroup.style.animation = 'deSlideDown .25s ease';
+    }
+
+    async function deAddLandmark() {
+        var name = prompt('Enter new Landmark name:');
+        if (!name || !name.trim()) return;
+        try {
+            var r = await fetch('/api/landmarks', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name.trim() }) });
+            var d = await r.json();
+            if (r.ok && d.success) {
+                _deLandmarks.push(d.landmark);
+                var lSel = document.getElementById('deLandmark');
+                if (lSel) { lSel.innerHTML += '<option value="' + d.landmark.name + '">' + d.landmark.name + '</option>'; lSel.value = d.landmark.name; }
+                var hint = document.getElementById('deLandmarkHint');
+                if (hint) hint.style.display = 'none';
+                deOnLandmarkChange();
+            } else { alert(d.message || 'Could not add landmark.'); }
+        } catch(e) { alert('Server error.'); }
     }
 
     async function deAddBuilding() {
-        const name = prompt('Enter new Building Name:');
+        var name = prompt('Enter new Building name:');
         if (!name || !name.trim()) return;
+        var subAreaName = (document.getElementById('deSubArea') || {}).value || '';
+        var saObj = subAreaName ? _deSubAreas.find(function(s) { return s.name === subAreaName; }) : null;
+        var payload = { name: name.trim() };
+        if (saObj) payload.subAreaId = saObj.id;
         try {
-            const r = await fetch('/api/buildings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:name.trim() }) });
-            const d = await r.json();
-            if (r.ok && d.success) { await deLoadBuildings(); document.getElementById('deBuildingName').value = d.building.name; }
-            else alert(d.message || 'Could not add building.');
+            var r = await fetch('/api/buildings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+            var d = await r.json();
+            if (r.ok && d.success) {
+                _deBuildings.push(d.building);
+                var bSel = document.getElementById('deBuildingName');
+                if (bSel) { bSel.innerHTML += '<option value="' + d.building.name + '">' + d.building.name + '</option>'; bSel.value = d.building.name; }
+                deOnBuildingChange();
+            } else { alert(d.message || 'Could not add building.'); }
         } catch(e) { alert('Server error.'); }
     }
-
-    async function deAddArea() {
-        const name = prompt('Enter new Area Name:');
-        if (!name || !name.trim()) return;
-        try {
-            const r = await fetch('/api/areas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:name.trim() }) });
-            const d = await r.json();
-            if (r.ok && d.success) { await deLoadAreas(); document.getElementById('deArea').value = d.area.name; }
-            else alert(d.message || 'Could not add area.');
-        } catch(e) { alert('Server error.'); }
-    }
-
-    // ── Form submit ──────────────────────────────────────────
-    document.getElementById('donationEntryForm')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const btn = document.getElementById('deSubmitBtn');
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Saving\u2026'; }
-
-        // ── Build payload with null-safe reads ──────────────────
-        let payload;
-        try {
-            const donorType = (document.getElementById('deDonorType')?.value || 'Individual');
-            const getVal  = id => document.getElementById(id)?.value ?? '';
-            const getTrim = id => getVal(id).trim();
-
-            const amtVal = getVal('deAmount');
-            if (amtVal === '') throw new Error('Donation Amount is mandatory.');
-            const pMode = getVal('dePaymentMode') || 'Cash';
-            const refNum = getTrim('deReference');
-            if (pMode === 'Cheque' && !refNum) throw new Error('Cheque number is mandatory for Cheque payments.');
-            if (pMode === 'RTGS' && !refNum) throw new Error('Transaction ID / Reference number is mandatory for RTGS payments.');
-
-            payload = {
-                bookNumber      : Number(getVal('deBookNumber')),
-                receiptNumber   : Number(getVal('deReceiptNumber')),
-                bookType        : document.querySelector('input[name="deBookType"]:checked')?.value || 'New',
-                donorType,
-                firstName       : donorType === 'Individual' ? getTrim('deFirstName').toUpperCase()    : null,
-                middleName      : donorType === 'Individual' ? getTrim('deMiddleName').toUpperCase()   : null,
-                lastName        : donorType === 'Individual' ? getTrim('deLastName').toUpperCase()     : null,
-                businessName    : donorType === 'Business'   ? getTrim('deBusinessName').toUpperCase(): null,
-                whatsappNumber  : getTrim('deWhatsapp')  || null,
-                mobileNumber    : getTrim('deMobile')    || null,
-                mailId          : getTrim('deMail')      || null,
-                buildingName    : getVal('deBuildingName') || null,
-                flatNumber      : getTrim('deFlatNumber') || null,
-                area            : getVal('deArea')         || null,
-                subArea         : getVal('deSubArea')      || null,
-                landmark        : getVal('deLandmark')     || null,
-                amount          : getVal('deAmount') !== '' ? Number(getVal('deAmount')) : null,
-                paymentMode     : getVal('dePaymentMode') || 'Cash',
-                referenceNumber : getTrim('deReference') || null,
-                submittedBy     : currentUser ? currentUser.name : null,
-                submittedByUserId: currentUser ? currentUser.id  : null,
-            };
-        } catch (buildErr) {
-            console.error('[DE Form] Payload build error:', buildErr);
-            deShowStatus('\u274c Form error: ' + buildErr.message, 'error');
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry'; }
-            return;
-        }
-
-        // ── Submit to server ─────────────────────────────────────
-        try {
-            console.log('[DE Form] Submitting payload:', payload);
-            const res  = await fetch('/api/donation-entries', {
-                method : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body   : JSON.stringify(payload)
-            });
-            const data = await res.json();
-            console.log('[DE Form] Server response:', res.status, data);
-            if (res.ok && data.success) {
-                // Upload passbook photo if one was captured
-                if (_pbDocBlob && data.entry && data.entry.entryId) {
-                    try {
-                        const fd = new FormData();
-                        fd.append('passbook', _pbDocBlob, (document.getElementById('pbDocFileName')?.textContent || 'receipt.jpg'));
-                        fd.append('userId',    currentUser ? String(currentUser.id)   : '');
-                        fd.append('userName',  currentUser ? currentUser.name : '');
-                        fd.append('entryId',   data.entry.entryId);
-                        await fetch('/api/upload-passbook', { method: 'POST', body: fd });
-                        pbClearDoc();
-                    } catch(_) { /* photo upload failure is non-blocking */ }
-                }
-                deShowStatus(`\u2705 Entry saved! Book ${data.entry.bookNumber}, Receipt #${data.entry.receiptNumber}`, 'success');
-                this.reset();
-                deSetDonorType('Individual');
-                deSetMode('Cash');
-                const rSel = document.getElementById('deReceiptNumber');
-                if (rSel) { rSel.innerHTML = '<option value="">\u2014 Select Book first \u2014</option>'; rSel.disabled = true; }
-                await deLoadMyEntries();
-            } else {
-                deShowStatus('\u274c ' + (data.message || 'Submission failed.'), 'error');
-            }
-        } catch(err) {
-            console.error('[DE Form] Fetch/network error:', err);
-            deShowStatus('\u274c Network error: ' + (err.message || 'Cannot reach server. Make sure server.js is running.'), 'error');
-        } finally {
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry'; }
-        }
-    });
-
-    function deShowStatus(msg, type) {
-        const el = document.getElementById('deStatus');
-        if (!el) return;
-        el.textContent = msg;
-        el.style.display = 'block';
-        el.style.background = type === 'success' ? '#D5F4E6' : '#FFEBEE';
-        el.style.color      = type === 'success' ? '#1a7a45' : '#c0392b';
-        el.style.border     = type === 'success' ? '1px solid #a3e6c1' : '1px solid #f5b7b1';
-        setTimeout(() => el.style.display = 'none', 6000);
-    }
-
-    // ── Load landmarks into volunteer form ───────────────────────────────────
-    async function deLoadLandmarks() {
-        try {
-            const r = await fetch('/api/landmarks'); const data = await r.json();
-            const sel = document.getElementById('deLandmark'); if (!sel) return;
-            const cur = sel.value;
-            // Keep first option
-            while (sel.options.length > 1) sel.remove(1);
-            (data.landmarks||[]).forEach(l => {
-                const o = document.createElement('option');
-                o.value = l.name; o.textContent = l.name;
-                if (l.name === cur) o.selected = true;
-                sel.appendChild(o);
-            });
-        } catch(e) {}
-    }
-
-    // ── Auto-receipt for volunteer form ──────────────────────────────────────
     async function deAutoReceipt() {
         try {
             const bType = document.querySelector('input[name="deBookType"]:checked')?.value || 'New';
@@ -3127,30 +3038,19 @@ window.fixUrl = function(url) {
         } catch(e) { alert('❌ Auto-receipt error: ' + e.message); }
     }
 
-    // Load landmarks when the Donation Data Entry section first loads
+    // Reload cascade when donationEntry section becomes visible
     document.addEventListener('DOMContentLoaded', function() {
-        deLoadLandmarks();
-        // Also reload when section becomes visible
-        const observer = new MutationObserver(function(muts) {
+        var observer = new MutationObserver(function(muts) {
             muts.forEach(function(m) {
                 if (m.type === 'attributes' && m.attributeName === 'style') {
-                    const sec = document.getElementById('donationEntry');
-                    if (sec && sec.style.display !== 'none') deLoadLandmarks();
+                    var sec = document.getElementById('donationEntry');
+                    if (sec && sec.style.display !== 'none') deLoadDropdowns();
                 }
             });
         });
-        const sec = document.getElementById('donationEntry');
+        var sec = document.getElementById('donationEntry');
         if (sec) observer.observe(sec, { attributes: true });
     });
-
-    // Also add landmark to the submission payload (hook into the form submit)
-    // Patch the payload builder to include landmark
-    const _origDeForm = document.getElementById('donationEntryForm');
-    if (_origDeForm) {
-        const _origSubmit = _origDeForm.onsubmit;
-        // The landmark field is already in the form; the existing payload builder
-        // must include it. Patch: override getVal for deLandmark in payload
-    }
 
     // ── My entries table ─────────────────────────────────────────
     async function deLoadMyEntries() {
@@ -3890,7 +3790,11 @@ if (originalShowSection) {
         const s = document.createElement('style');
         s.id = 'myDonStyles';
         s.textContent = `
-            @keyframes myDonPulse {
+            @keyframes deSlideDown {
+            from { opacity:0; transform:translateY(-6px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        @keyframes myDonPulse {
                 0%   { transform: scale(1);   opacity: 1; }
                 50%  { transform: scale(1.5); opacity: 0.5; }
                 100% { transform: scale(1);   opacity: 1; }
