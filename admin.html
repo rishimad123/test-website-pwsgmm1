@@ -3750,7 +3750,7 @@ window._fmtBytesA = function(b) {
     }
 
     async function adeLoadDropdowns() {
-        await Promise.all([adeLoadBuildings(), adeLoadAreas(), adeLoadLandmarks()]);
+        await Promise.all([adeLoadBuildings(), adeLoadAreas(), adeLoadLandmarks(), aneLoadAll()]);
     }
 
     async function adeLoadBuildings() {
@@ -4445,40 +4445,56 @@ window._fmtBytesA = function(b) {
 
     // ── Building/Area Management modals ──────────────────────────
     async function adeBuildingModal() {
-        const res  = await fetch('/api/buildings');
-        const data = await res.json();
+        const [rB, rS] = await Promise.all([fetch('/api/buildings'), fetch('/api/sub-areas')]);
+        const [dB, dS] = await Promise.all([rB.json(), rS.json()]);
+        const allBldgs    = dB.buildings || [];
+        const allSubAreas = dS.subAreas  || [];
         const modal = document.createElement('div');
         modal.id = 'adeBldgModal';
         modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
-        modal.innerHTML = `
-        <div style="background:var(--white);border-radius:16px;padding:28px;max-width:440px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2);">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-                <h3 style="margin:0;"><i class="fas fa-building" style="color:#3949AB;margin-right:8px;"></i>Manage Buildings</h3>
-                <span onclick="document.getElementById('adeBldgModal').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
-            </div>
-            <div style="display:flex;gap:8px;margin-bottom:16px;">
-                <input type="text" id="adeBldgInput" class="form-control" placeholder="New building name" style="flex:1;">
-                <button onclick="adeAddBldg()" class="btn btn-primary btn-small">Add</button>
-            </div>
-            <div id="adeBldgList" style="display:flex;flex-direction:column;gap:8px;">
-                ${(data.buildings||[]).map(b => `
-                <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8f9fa;border-radius:8px;">
-                    <span style="flex:1;font-weight:600;">${b.name}</span>
-                    <button onclick="adeDeleteBldg('${b.id}',this)" style="border:none;background:#FFEBEE;color:#c0392b;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;"><i class="fas fa-trash"></i></button>
-                </div>`).join('')}
-            </div>
-        </div>`;
+        modal.innerHTML = '<div style="background:var(--white);border-radius:16px;padding:28px;max-width:480px;width:92%;max-height:82vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2);">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">' +
+                '<h3 style="margin:0;"><i class="fas fa-building" style="color:#3949AB;margin-right:8px;"></i>Manage Buildings</h3>' +
+                '<span onclick="document.getElementById(\'adeBldgModal\').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:16px;">' +
+                '<input type="text" id="adeBldgInput" class="form-control" placeholder="Building name" style="font-size:.85rem;">' +
+                '<select id="adeBldgSubArea" class="form-control" style="font-size:.85rem;">' +
+                    '<option value="">— Link to Sub-Area (optional) —</option>' +
+                    allSubAreas.map(function(s){ return '<option value="'+s.id+'">'+s.name+'</option>'; }).join('') +
+                '</select>' +
+                '<button onclick="amAddBuilding()" class="btn btn-primary">Add Building</button>' +
+            '</div>' +
+            '<div id="adeBldgList" style="display:flex;flex-direction:column;gap:8px;">' +
+            allBldgs.map(function(b) {
+                var saName = b.subAreaId ? (allSubAreas.find(function(s){return s.id===b.subAreaId;})||{}).name || '' : '';
+                return '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8f9fa;border-radius:8px;">' +
+                    '<div style="flex:1;">' +
+                        '<div style="font-weight:700;font-size:.85rem;">'+b.name+'</div>' +
+                        (saName ? '<div style="font-size:.75rem;color:#888;"><i class="fas fa-map" style="margin-right:3px;"></i>'+saName+'</div>' : '') +
+                    '</div>' +
+                    '<button onclick="amDeleteBuilding(\''+b.id+'\',this)" style="border:none;background:#FFEBEE;color:#c0392b;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;"><i class="fas fa-trash"></i></button>' +
+                '</div>';
+            }).join('') +
+            (!allBldgs.length ? '<div style="color:#aaa;text-align:center;padding:12px;">No buildings yet.</div>' : '') +
+            '</div></div>';
+        window.amAddBuilding = async function() {
+            var name = (document.getElementById('adeBldgInput')||{}).value||''; name = name.trim(); if(!name) return;
+            var saId = (document.getElementById('adeBldgSubArea')||{}).value||null;
+            var payload = { name: name }; if(saId) payload.subAreaId = saId;
+            var r = await fetch('/api/buildings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+            var d = await r.json();
+            if(r.ok && d.success) { document.getElementById('adeBldgModal')?.remove(); adeBuildingModal(); adeLoadBuildings(); }
+            else alert(d.message || 'Could not add.');
+        };
+        window.amDeleteBuilding = async function(id, btn) {
+            if (!confirm('Remove this building?')) return;
+            var r = await fetch('/api/buildings/' + encodeURIComponent(id), { method:'DELETE' });
+            if (r.ok) { btn.closest('div').remove(); adeLoadBuildings(); }
+            else alert('Could not delete.');
+        };
         document.body.appendChild(modal);
-        modal.addEventListener('click', ev => { if (ev.target === modal) modal.remove(); });
-    }
-
-    async function adeAddBldg() {
-        const name = document.getElementById('adeBldgInput')?.value.trim();
-        if (!name) return;
-        const res  = await fetch('/api/buildings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name }) });
-        const data = await res.json();
-        if (res.ok && data.success) { document.getElementById('adeBldgModal')?.remove(); adeBuildingModal(); }
-        else alert(data.message || 'Could not add.');
+        modal.addEventListener('click', function(ev) { if (ev.target === modal) modal.remove(); });
     }
 
     async function adeDeleteBldg(id, btn) {
@@ -4489,106 +4505,142 @@ window._fmtBytesA = function(b) {
     }
 
     async function adeAreaModal() {
-        const rA = await fetch('/api/areas');
-        const dA = await rA.json();
-        const rS = await fetch('/api/sub-areas');
-        const dS = await rS.json();
-        
-        const areas = dA.areas || [];
-        const subAreas = dS.subAreas || [];
-        
+        const [rL, rA, rS] = await Promise.all([fetch('/api/landmarks'), fetch('/api/areas'), fetch('/api/sub-areas')]);
+        const [dL, dA, dS] = await Promise.all([rL.json(), rA.json(), rS.json()]);
+        const allLandmarks = dL.landmarks || [];
+        const allAreas     = dA.areas     || [];
+        const allSubAreas  = dS.subAreas  || [];
         const modal = document.createElement('div');
         modal.id = 'adeAreaModalEl';
         modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
-        
-        let selectedAreaId = areas.length ? areas[0].id : null;
-        
-        function renderContent() {
-            const subsForArea = subAreas.filter(s => s.areaId === selectedAreaId);
-            
-            return `
-            <div style="background:var(--white);border-radius:16px;padding:28px;width:90%;max-width:800px;max-height:85vh;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.2);display:flex;flex-direction:column;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-                    <h3 style="margin:0;"><i class="fas fa-map-marker-alt" style="color:#F59E0B;margin-right:8px;"></i>Manage Areas & Sub-Areas</h3>
-                    <span onclick="document.getElementById('adeAreaModalEl').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
-                </div>
-                
-                <div style="display:flex;gap:20px;flex:1;overflow:hidden;min-height:300px;">
-                    <!-- Areas List -->
-                    <div style="flex:1;display:flex;flex-direction:column;border-right:1px solid rgba(0,0,0,0.05);padding-right:20px;">
-                        <h4 style="margin:0 0 10px 0;color:#555;">Areas</h4>
-                        <div style="display:flex;gap:8px;margin-bottom:12px;">
-                            <input type="text" id="adeAreaInput" class="form-control" placeholder="New area name" style="flex:1;">
-                            <button onclick="adeAddArea()" class="btn btn-primary btn-small">Add</button>
-                        </div>
-                        <div id="adeAreaList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
-                            ${areas.map(a => `
-                            <div onclick="adeSelectArea('${a.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:${selectedAreaId === a.id ? '#E0F2F1' : '#f8f9fa'};border-radius:8px;cursor:pointer;border:${selectedAreaId === a.id ? '1px solid #F59E0B' : '1px solid transparent'};">
-                                <span style="flex:1;font-weight:600;color:${selectedAreaId === a.id ? '#F59E0B' : '#333'};">${a.name}</span>
-                                <button onclick="event.stopPropagation(); adeDeleteArea('${a.id}')" style="border:none;background:#FFEBEE;color:#c0392b;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;"><i class="fas fa-trash"></i></button>
-                            </div>`).join('')}
-                            ${!areas.length ? '<div style="color:#888;text-align:center;padding:10px;">No areas found.</div>' : ''}
-                        </div>
-                    </div>
-                    
-                    <!-- Sub-Areas List -->
-                    <div style="flex:1;display:flex;flex-direction:column;">
-                        <h4 style="margin:0 0 10px 0;color:#555;">Sub-Areas ${selectedAreaId ? `for <strong>${areas.find(a=>a.id===selectedAreaId)?.name}</strong>` : ''}</h4>
-                        ${selectedAreaId ? `
-                        <div style="display:flex;gap:8px;margin-bottom:12px;">
-                            <input type="text" id="adeSubAreaInput" class="form-control" placeholder="New sub-area name" style="flex:1;">
-                            <button onclick="adeAddSubArea('${selectedAreaId}')" class="btn btn-primary btn-small" style="background:#1565C0;">Add</button>
-                        </div>
-                        <div id="adeSubAreaList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
-                            ${subsForArea.map(s => `
-                            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8f9fa;border-radius:8px;">
-                                <span style="flex:1;font-weight:600;">${s.name}</span>
-                                <button onclick="adeDeleteSubArea('${s.id}')" style="border:none;background:#FFEBEE;color:#c0392b;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;"><i class="fas fa-trash"></i></button>
-                            </div>`).join('')}
-                            ${!subsForArea.length ? '<div style="color:#888;text-align:center;padding:10px;">No sub-areas found.</div>' : ''}
-                        </div>
-                        ` : '<div style="color:#888;text-align:center;padding:10px;">Select an area first.</div>'}
-                    </div>
-                </div>
-            </div>`;
+        let selLmId = allLandmarks.length ? allLandmarks[0].id : null;
+        let selAreaId = null;
+
+        function areasForLm() {
+            return allAreas.filter(function(a) { return !a.landmarkId || a.landmarkId === selLmId; });
         }
-        
-        modal.innerHTML = renderContent();
-        
-        window.adeSelectArea = (id) => {
-            selectedAreaId = id;
-            modal.innerHTML = renderContent();
+        function subsForArea() {
+            return allSubAreas.filter(function(s) { return s.areaId === selAreaId; });
+        }
+
+        function renderModal() {
+            const lmAreas = areasForLm();
+            const subs    = subsForArea();
+            const selLm   = allLandmarks.find(function(l){ return l.id === selLmId; });
+            const selArea = allAreas.find(function(a){ return a.id === selAreaId; });
+            modal.innerHTML = '<div style="background:var(--white);border-radius:16px;padding:28px;width:94%;max-width:960px;max-height:88vh;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.22);display:flex;flex-direction:column;">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">' +
+                    '<h3 style="margin:0;"><i class="fas fa-sitemap" style="color:#F59E0B;margin-right:8px;"></i>Manage Locations</h3>' +
+                    '<span onclick="document.getElementById(\'adeAreaModalEl\').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>' +
+                '</div>' +
+                '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;flex:1;overflow:hidden;min-height:320px;">' +
+
+                // Column 1: Landmarks
+                '<div style="display:flex;flex-direction:column;border-right:1.5px solid #f0f0f0;padding-right:16px;">' +
+                    '<h4 style="margin:0 0 10px;color:#E65100;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;"><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>Landmarks</h4>' +
+                    '<div style="display:flex;gap:6px;margin-bottom:10px;">' +
+                        '<input type="text" id="amLmInput" class="form-control" placeholder="New landmark" style="flex:1;font-size:.83rem;">' +
+                        '<button onclick="amAddLandmark()" class="btn btn-primary btn-small" style="background:var(--primary-color);">Add</button>' +
+                    '</div>' +
+                    '<div id="amLmList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">' +
+                    allLandmarks.map(function(l) {
+                        return '<div onclick="amSelectLm(\''+l.id+'\')" style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:'+(selLmId===l.id?'#FFF3E0':'#f8f9fa')+';border:1.5px solid '+(selLmId===l.id?'#F59E0B':'transparent')+';border-radius:8px;cursor:pointer;">' +
+                            '<span style="flex:1;font-weight:700;font-size:.85rem;color:'+(selLmId===l.id?'#E65100':'#333')+'">'+l.name+'</span>' +
+                            '<button onclick="event.stopPropagation();amDeleteLandmark(\''+l.id+'\')" style="border:none;background:#FFEBEE;color:#c0392b;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;"><i class="fas fa-trash"></i></button>' +
+                        '</div>';
+                    }).join('') +
+                    (!allLandmarks.length ? '<div style="color:#aaa;text-align:center;padding:12px;font-size:.83rem;">No landmarks yet.</div>' : '') +
+                    '</div>' +
+                '</div>' +
+
+                // Column 2: Areas for selected landmark
+                '<div style="display:flex;flex-direction:column;border-right:1.5px solid #f0f0f0;padding-right:16px;">' +
+                    '<h4 style="margin:0 0 10px;color:#1565C0;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;"><i class="fas fa-map-pin" style="margin-right:5px;"></i>Areas' + (selLm ? ' <span style="font-weight:400;text-transform:none;color:#888;">(under '+selLm.name+')</span>' : '') + '</h4>' +
+                    (selLmId ? ('<div style="display:flex;gap:6px;margin-bottom:10px;">' +
+                        '<input type="text" id="amAreaInput" class="form-control" placeholder="New area" style="flex:1;font-size:.83rem;">' +
+                        '<button onclick="amAddArea(\''+selLmId+'\')" class="btn btn-primary btn-small" style="background:#1565C0;">Add</button>' +
+                    '</div>') : '') +
+                    '<div id="amAreaList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">' +
+                    lmAreas.map(function(a) {
+                        return '<div onclick="amSelectArea(\''+a.id+'\')" style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:'+(selAreaId===a.id?'#E3F2FD':'#f8f9fa')+';border:1.5px solid '+(selAreaId===a.id?'#1565C0':'transparent')+';border-radius:8px;cursor:pointer;">' +
+                            '<span style="flex:1;font-weight:700;font-size:.85rem;color:'+(selAreaId===a.id?'#1565C0':'#333')+'">'+a.name+'</span>' +
+                            '<button onclick="event.stopPropagation();amDeleteArea(\''+a.id+'\')" style="border:none;background:#FFEBEE;color:#c0392b;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;"><i class="fas fa-trash"></i></button>' +
+                        '</div>';
+                    }).join('') +
+                    (!lmAreas.length ? '<div style="color:#aaa;text-align:center;padding:12px;font-size:.83rem;">' + (selLmId ? 'No areas for this landmark.' : 'Select a landmark first.') + '</div>' : '') +
+                    '</div>' +
+                '</div>' +
+
+                // Column 3: Sub-Areas for selected area
+                '<div style="display:flex;flex-direction:column;">' +
+                    '<h4 style="margin:0 0 10px;color:#2E7D32;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;"><i class="fas fa-map" style="margin-right:5px;"></i>Sub-Areas' + (selArea ? ' <span style="font-weight:400;text-transform:none;color:#888;">(under '+selArea.name+')</span>' : '') + '</h4>' +
+                    (selAreaId ? ('<div style="display:flex;gap:6px;margin-bottom:10px;">' +
+                        '<input type="text" id="amSubAreaInput" class="form-control" placeholder="New sub-area" style="flex:1;font-size:.83rem;">' +
+                        '<button onclick="amAddSubArea(\''+selAreaId+'\')" class="btn btn-primary btn-small" style="background:#2E7D32;">Add</button>' +
+                    '</div>') : '') +
+                    '<div id="amSubAreaList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">' +
+                    subs.map(function(s) {
+                        return '<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#f8f9fa;border-radius:8px;">' +
+                            '<span style="flex:1;font-weight:600;font-size:.85rem;">'+s.name+'</span>' +
+                            '<button onclick="amDeleteSubArea(\''+s.id+'\')" style="border:none;background:#FFEBEE;color:#c0392b;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;"><i class="fas fa-trash"></i></button>' +
+                        '</div>';
+                    }).join('') +
+                    (!subs.length ? '<div style="color:#aaa;text-align:center;padding:12px;font-size:.83rem;">' + (selAreaId ? 'No sub-areas yet.' : 'Select an area first.') + '</div>' : '') +
+                    '</div>' +
+                '</div>' +
+
+                '</div></div>';
+        }
+
+        window.amSelectLm = function(id) { selLmId = id; selAreaId = null; renderModal(); };
+        window.amSelectArea = function(id) { selAreaId = id; renderModal(); };
+        window.amAddLandmark = async function() {
+            var name = (document.getElementById('amLmInput') || {}).value || '';
+            name = name.trim(); if (!name) return;
+            var r = await fetch('/api/landmarks', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name }) });
+            var d = await r.json();
+            if (r.ok && d.success) { allLandmarks.push(d.landmark); selLmId = d.landmark.id; selAreaId = null; renderModal(); adeLoadLandmarks(); }
+            else alert(d.message || 'Could not add.');
         };
-        
-        window.adeAddArea = async () => {
-            const name = document.getElementById('adeAreaInput')?.value.trim();
-            if (!name) return;
-            const res = await fetch('/api/areas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name }) });
-            if (res.ok) { document.getElementById('adeAreaModalEl')?.remove(); await adeAreaModal(); await adeLoadAreas(); }
-            else { const d = await res.json(); alert(d.message || 'Could not add.'); }
-        };
-        
-        window.adeDeleteArea = async (id) => {
-            if (!confirm('Remove this area and all its sub-areas?')) return;
-            const res = await fetch(`/api/areas/${encodeURIComponent(id)}`, { method:'DELETE' });
-            if (res.ok) { document.getElementById('adeAreaModalEl')?.remove(); await adeAreaModal(); await adeLoadAreas(); }
+        window.amDeleteLandmark = async function(id) {
+            if (!confirm('Delete this landmark?')) return;
+            var r = await fetch('/api/landmarks/' + encodeURIComponent(id), { method:'DELETE' });
+            if (r.ok) { var i = allLandmarks.findIndex(function(l){return l.id===id;}); if(i>=0) allLandmarks.splice(i,1); if(selLmId===id){selLmId=allLandmarks.length?allLandmarks[0].id:null;selAreaId=null;} renderModal(); adeLoadLandmarks(); }
             else alert('Could not delete.');
         };
-        
-        window.adeAddSubArea = async (areaId) => {
-            const name = document.getElementById('adeSubAreaInput')?.value.trim();
-            if (!name) return;
-            const res = await fetch('/api/sub-areas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name, areaId }) });
-            if (res.ok) { document.getElementById('adeAreaModalEl')?.remove(); await adeAreaModal(); await adeLoadAreas(); }
-            else { const d = await res.json(); alert(d.message || 'Could not add.'); }
+        window.amAddArea = async function(landmarkId) {
+            var name = (document.getElementById('amAreaInput') || {}).value || '';
+            name = name.trim(); if (!name) return;
+            var r = await fetch('/api/areas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name, landmarkId: landmarkId }) });
+            var d = await r.json();
+            if (r.ok && d.success) { allAreas.push(d.area); selAreaId = d.area.id; renderModal(); adeLoadAreas(); }
+            else alert(d.message || 'Could not add.');
         };
-        
-        window.adeDeleteSubArea = async (id) => {
-            if (!confirm('Remove this sub-area?')) return;
-            const res = await fetch(`/api/sub-areas/${encodeURIComponent(id)}`, { method:'DELETE' });
-            if (res.ok) { document.getElementById('adeAreaModalEl')?.remove(); await adeAreaModal(); await adeLoadAreas(); }
+        window.amDeleteArea = async function(id) {
+            if (!confirm('Delete this area and all its sub-areas?')) return;
+            var r = await fetch('/api/areas/' + encodeURIComponent(id), { method:'DELETE' });
+            if (r.ok) { var i = allAreas.findIndex(function(a){return a.id===id;}); if(i>=0) allAreas.splice(i,1); if(selAreaId===id) selAreaId=null; renderModal(); adeLoadAreas(); }
             else alert('Could not delete.');
         };
+        window.amAddSubArea = async function(areaId) {
+            var name = (document.getElementById('amSubAreaInput') || {}).value || '';
+            name = name.trim(); if (!name) return;
+            var r = await fetch('/api/sub-areas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name, areaId: areaId }) });
+            var d = await r.json();
+            if (r.ok && d.success) { allSubAreas.push(d.subArea); renderModal(); }
+            else alert(d.message || 'Could not add.');
+        };
+        window.amDeleteSubArea = async function(id) {
+            if (!confirm('Delete this sub-area?')) return;
+            var r = await fetch('/api/sub-areas/' + encodeURIComponent(id), { method:'DELETE' });
+            if (r.ok) { var i = allSubAreas.findIndex(function(s){return s.id===id;}); if(i>=0) allSubAreas.splice(i,1); renderModal(); }
+            else alert('Could not delete.');
+        };
+
+        renderModal();
+        document.body.appendChild(modal);
+        modal.addEventListener('click', function(ev) { if (ev.target === modal) modal.remove(); });
+    }
         
         document.body.appendChild(modal);
         modal.addEventListener('click', ev => { if (ev.target === modal) modal.remove(); });
@@ -4676,11 +4728,35 @@ window._fmtBytesA = function(b) {
                     <div class="form-group" style="margin:0;"><label>Mobile Number</label><input id="aneMobile" class="form-control" placeholder="10 digits" maxlength="10"></div>
                     <div class="form-group" style="margin:0;"><label>Email ID</label><input id="aneEmail" class="form-control" placeholder="name" oninput="aneEmailHint(this)"><small id="aneEmailHint" style="color:#888;font-size:.78rem;"></small></div>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
-                    <div class="form-group" style="margin:0;">    <label>Area</label>    <select id="aneArea" class="form-control" onchange="aneOnAreaChange()">        <option value="">- Select Area -</option>    </select></div><div class="form-group" id="aneSubAreaGroup" style="margin:0; display:none;">    <label>Sub-Area</label>    <select id="aneSubArea" class="form-control">        <option value="">- Select Sub-Area -</option>    </select></div>
-                    <div class="form-group" style="margin:0;"><label>Building Name</label><select id="aneBuilding" class="form-control" onchange="document.getElementById('aneFlatNumberGroup').style.display = this.value ? 'block' : 'none';"><option value="">— Select Building —</option></select></div>
-                    <div class="form-group" id="aneFlatNumberGroup" style="margin:0; display:none;"><label>Enter Flat Number</label><input type="text" id="aneFlatNumber" class="form-control" placeholder="Flat No."></div>
-                    <div class="form-group" style="margin:0;"><label>Common Landmark</label><select id="aneLandmark" class="form-control"><option value="">— Select Landmark —</option></select></div>
+                <!-- Location Cascade: Landmark → Area → Sub-Area → Building → Flat -->
+                <div style="border:1.5px dashed #ffe0d0;border-radius:12px;padding:16px;margin-bottom:14px;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--primary-color);margin-bottom:14px;letter-spacing:.07em;"><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Location</div>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label style="font-weight:600;font-size:.85rem;color:#333;"><i class="fas fa-landmark" style="color:var(--primary-color);margin-right:5px;font-size:.8rem;"></i> Landmark <span style="font-size:.75rem;font-weight:400;color:#888;">(Select first)</span></label>
+                        <div style="display:flex;gap:8px;">
+                            <select id="aneLandmark" class="form-control" style="flex:1;" onchange="aneOnLandmarkChange()"><option value="">&#x2014; Select Landmark &#x2014;</option></select>
+                            <button type="button" onclick="adeLandmarkModal()" style="padding:0 14px;border:none;border-radius:8px;background:#f3e5f5;color:#6A1B9A;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;"><i class="fas fa-cog"></i> Manage</button>
+                        </div>
+                    </div>
+                    <div id="aneAreaGroup" style="display:none;margin-bottom:12px;">
+                        <label style="font-weight:600;font-size:.85rem;color:#1565C0;"><i class="fas fa-map-pin" style="margin-right:5px;font-size:.8rem;"></i> Area</label>
+                        <select id="aneArea" class="form-control" onchange="aneOnAreaChange()"><option value="">&#x2014; Select Area &#x2014;</option></select>
+                    </div>
+                    <div id="aneSubAreaGroup" style="display:none;margin-bottom:12px;">
+                        <label style="font-weight:600;font-size:.85rem;color:#2E7D32;"><i class="fas fa-map" style="margin-right:5px;font-size:.8rem;"></i> Sub-Area</label>
+                        <select id="aneSubArea" class="form-control" onchange="aneOnSubAreaChange()"><option value="">&#x2014; Select Sub-Area &#x2014;</option></select>
+                    </div>
+                    <div id="aneBuildingGroup" style="display:none;margin-bottom:12px;">
+                        <label style="font-weight:600;font-size:.85rem;color:#3949AB;"><i class="fas fa-building" style="margin-right:5px;font-size:.8rem;"></i> Building Name</label>
+                        <div style="display:flex;gap:8px;">
+                            <select id="aneBuilding" class="form-control" style="flex:1;" onchange="aneOnBuildingChange()"><option value="">&#x2014; Select Building &#x2014;</option></select>
+                            <button type="button" onclick="adeBuildingModal()" style="padding:0 14px;border:none;border-radius:8px;background:#E3F2FD;color:#1565C0;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;"><i class="fas fa-cog"></i> Manage</button>
+                        </div>
+                    </div>
+                    <div id="aneFlatNumberGroup" style="display:none;margin-bottom:4px;">
+                        <label style="font-weight:600;font-size:.85rem;color:#E67E22;"><i class="fas fa-door-open" style="margin-right:5px;font-size:.8rem;"></i> Flat / Unit Number</label>
+                        <input type="text" id="aneFlatNumber" class="form-control" placeholder="e.g. A-201, Flat 3B">
+                    </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
                     <div class="form-group" style="margin:0;"><label>Amount (&#8377;)</label><input type="number" id="aneAmount" class="form-control" min="0" placeholder="0"></div>
@@ -4800,184 +4876,109 @@ window._fmtBytesA = function(b) {
         });
     });
     
-    async function aneLoadAreas() {
+    // ── ANE form: cached data ────────────────────────────────────────────────
+    var _aneLandmarks = [], _aneAreas = [], _aneSubAreas = [], _aneBuildings = [];
+
+    async function aneLoadAll() {
         try {
-            const r = await fetch('/api/areas');
-            const d = await r.json();
-            const sel = document.getElementById('aneArea');
-            if(!sel) return;
-            sel.innerHTML = '<option value="">- Select Area -</option>';
-            (d.areas||[]).forEach(a => {
-                const o = document.createElement('option');
-                o.value = a.name; o.textContent = a.name;
-                sel.appendChild(o);
+            var rs = await Promise.all([fetch('/api/landmarks'),fetch('/api/areas'),fetch('/api/sub-areas'),fetch('/api/buildings')]);
+            var ds = await Promise.all(rs.map(function(r){return r.json();}));
+            _aneLandmarks = ds[0].landmarks || [];
+            _aneAreas     = ds[1].areas     || [];
+            _aneSubAreas  = ds[2].subAreas  || [];
+            _aneBuildings = ds[3].buildings || [];
+        } catch(e) { _aneLandmarks=[]; _aneAreas=[]; _aneSubAreas=[]; _aneBuildings=[]; }
+
+        // Populate Landmark dropdown
+        var lSel = document.getElementById('aneLandmark');
+        if (lSel) {
+            var cur = lSel.value;
+            lSel.innerHTML = '<option value="">— Select Landmark —</option>';
+            _aneLandmarks.forEach(function(l) {
+                lSel.innerHTML += '<option value="'+l.name+'"'+(l.name===cur?' selected':'')+'>'+l.name+'</option>';
             });
-            window._adeAreasData = d.areas || [];
-        } catch(e) {}
-    }
-
-    async function aneOnAreaChange() {
-        const areaName = document.getElementById('aneArea')?.value;
-        const group = document.getElementById('aneSubAreaGroup');
-        const sel = document.getElementById('aneSubArea');
-        if (!group || !sel) return;
-        
-        if (areaName) {
-            group.style.display = 'block';
-            sel.innerHTML = '<option value="">- Select Sub-Area -</option>';
-            const areaObj = (window._adeAreasData || []).find(a => a.name === areaName);
-            if (areaObj) {
-                try {
-                    const r2 = await fetch('/api/sub-areas');
-                    const d2 = await r2.json();
-                    const subs = (d2.subAreas || []).filter(s => s.areaId === areaObj.id);
-                    subs.forEach(s => {
-                        sel.innerHTML += `<option value="${s.name}">${s.name}</option>`;
-                    });
-                } catch(e) {}
-            }
-        } else {
-            group.style.display = 'none';
-            sel.innerHTML = '<option value="">- Select Sub-Area -</option>';
         }
+        // Reset cascade
+        ['aneAreaGroup','aneSubAreaGroup','aneBuildingGroup','aneFlatNumberGroup'].forEach(function(id){
+            var el=document.getElementById(id); if(el) el.style.display='none';
+        });
     }
 
-    async function aneBookChange() {
-        const bn = Number(document.getElementById('aneBook').value);
-        const sel = document.getElementById('aneReceipt');
-        if (!bn) { sel.innerHTML='<option>— Select Book first —</option>'; sel.disabled=true; return; }
-        sel.disabled=true; sel.innerHTML='<option>Loading…</option>';
-        let used=[];
-        const bType = document.querySelector('input[name="aneBookType"]:checked')?.value || 'New';
-        try { const r=await fetch(`/api/donation-entries/used-receipts/${bn}?type=${bType}`); const d=await r.json(); used=d.usedReceipts||[]; } catch(e){}
-        const from=(bn-1)*50+1, to=bn*50;
-        sel.innerHTML='<option value="">— Select Receipt —</option>';
-        for(let n=from;n<=to;n++){const taken=used.includes(n);const o=document.createElement('option');o.value=n;o.textContent=n+(taken?' (used)':'');if(taken)o.disabled=true;sel.appendChild(o);}
-        sel.disabled=false;
+    function aneOnLandmarkChange() {
+        var lmName = (document.getElementById('aneLandmark')||{}).value||'';
+        // Reset downstream
+        ['aneArea','aneSubArea','aneBuilding'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+        ['aneAreaGroup','aneSubAreaGroup','aneBuildingGroup','aneFlatNumberGroup'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+        if (!lmName) return;
+        var lmObj = _aneLandmarks.find(function(l){return l.name===lmName;});
+        var filtAreas = lmObj ? _aneAreas.filter(function(a){return !a.landmarkId||a.landmarkId===lmObj.id;}) : _aneAreas;
+        var areaSel = document.getElementById('aneArea');
+        if (!areaSel) return;
+        areaSel.innerHTML = '<option value="">— Select Area —</option>';
+        filtAreas.forEach(function(a){ areaSel.innerHTML += '<option value="'+a.name+'" data-id="'+a.id+'">'+a.name+'</option>'; });
+        var g=document.getElementById('aneAreaGroup'); if(g) g.style.display='';
     }
+
+    function aneOnAreaChange() {
+        var areaName = (document.getElementById('aneArea')||{}).value||'';
+        ['aneSubArea','aneBuilding'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+        ['aneSubAreaGroup','aneBuildingGroup','aneFlatNumberGroup'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+        if (!areaName) return;
+        var areaObj = _aneAreas.find(function(a){return a.name===areaName;});
+        var subs = areaObj ? _aneSubAreas.filter(function(s){return s.areaId===areaObj.id;}) : [];
+        var subSel = document.getElementById('aneSubArea');
+        if (!subSel) return;
+        subSel.innerHTML = '<option value="">— Select Sub-Area —</option>';
+        subs.forEach(function(s){ subSel.innerHTML += '<option value="'+s.name+'" data-id="'+s.id+'">'+s.name+'</option>'; });
+        var g=document.getElementById('aneSubAreaGroup'); if(g) g.style.display='';
+    }
+
+    function aneOnSubAreaChange() {
+        var saName = (document.getElementById('aneSubArea')||{}).value||'';
+        var el=document.getElementById('aneBuilding'); if(el) el.value='';
+        ['aneBuildingGroup','aneFlatNumberGroup'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+        if (!saName) return;
+        var saObj = _aneSubAreas.find(function(s){return s.name===saName;});
+        var bldgs = saObj ? _aneBuildings.filter(function(b){return !b.subAreaId||b.subAreaId===saObj.id;}) : _aneBuildings;
+        var bSel = document.getElementById('aneBuilding');
+        if (!bSel) return;
+        bSel.innerHTML = '<option value="">— Select Building —</option>';
+        bldgs.forEach(function(b){ bSel.innerHTML += '<option value="'+b.name+'">'+b.name+'</option>'; });
+        var g=document.getElementById('aneBuildingGroup'); if(g) g.style.display='';
+    }
+
+    function aneOnBuildingChange() {
+        var b = (document.getElementById('aneBuilding')||{}).value||'';
+        var g=document.getElementById('aneFlatNumberGroup'); if(g) g.style.display=b?'':'none';
+    }
+
+    // Legacy stubs (kept for backward compat calls)
+    async function aneLoadAreas() { await aneLoadAll(); }
+    async function aneLoadBuildings() { await aneLoadAll(); }
+    async function aneLoadLandmarks() { await aneLoadAll(); }
+
     function aneShowStatus(msg, type) {
-        const el=document.getElementById('aneStatus'); if(!el) return;
+        var el=document.getElementById('aneStatus'); if(!el) return;
         el.style.display=''; el.textContent=msg;
         el.style.background=type==='success'?'#D5F4E6':'#FFEBEE';
         el.style.color=type==='success'?'#1a7a45':'#c0392b';
         el.style.border=type==='success'?'1px solid #a3e6c1':'1px solid #f5b7b1';
     }
+
     function aneReset() {
         document.getElementById('aneForm')?.reset();
         document.getElementById('aneBook').value='';
-        const rs=document.getElementById('aneReceipt'); if(rs){rs.innerHTML='<option>\u2014 Select Book first \u2014</option>';rs.disabled=true;}
-        const pp=document.getElementById('anePhotoPreview'); if(pp) pp.style.display='none';
-        _anePhotoFile=null;
+        var rs=document.getElementById('aneReceipt'); if(rs){rs.innerHTML='<option>\u2014 Select Book first \u2014</option>';rs.disabled=true;}
+        var pp=document.getElementById('anePhotoPreview'); if(pp) pp.style.display='none';
         window._anePhotoFile=null;
         document.getElementById('anePhotoInput').value='';
         document.getElementById('aneStatus').style.display='none';
-        // Reset payment mode tiles back to Cash
         aneSetMode('Cash');
-        const rg=document.getElementById('aneRefGroup'); if(rg) rg.style.display='';
-    }
-    async function aneSave(ev) {
-        ev.preventDefault();
-        const btn=document.getElementById('aneSaveBtn');
-        if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Saving…';}
-        const bn=Number(document.getElementById('aneBook').value);
-        const rn=Number(document.getElementById('aneReceipt').value);
-        const fn=(document.getElementById('aneFirst').value||'').trim().toUpperCase();
-        const mn=(document.getElementById('aneMid').value||'').trim().toUpperCase();
-        const ln=(document.getElementById('aneLast').value||'').trim().toUpperCase();
-        if(!bn||!rn){aneShowStatus('\u274c Select Book and Receipt Number.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
-        if(!fn||!mn||!ln){aneShowStatus('\u274c First, Middle, and Last Name are required.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
-        const amtVal = document.getElementById('aneAmount').value;
-        if(amtVal === ''){aneShowStatus('\u274c Donation Amount is mandatory.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
-        const currentUser = JSON.parse(sessionStorage.getItem('currentUser')||'null');
-        const payload={
-            bookNumber:bn, receiptNumber:rn, donorType:'Individual',
-            firstName:fn, middleName:mn, lastName:ln,
-            area:document.getElementById('aneArea').value||null,
-            subArea:document.getElementById('aneSubArea')?.value||null,
-            flatNumber:document.getElementById('aneFlatNumber')?.value.trim()||null,
-            amount:document.getElementById('aneAmount').value!==''?Number(document.getElementById('aneAmount').value):null,
-            paymentMode:document.getElementById('anePaymentMode')?.value||document.getElementById('aneMode')?.value||'Cash',
-            referenceNumber:document.getElementById('aneRef').value.trim()||null,
-            submittedBy:currentUser?currentUser.name:'Admin',
-            submittedByUserId:currentUser?currentUser.id:null
-        };
-        try {
-            const res=await fetch('/api/donation-entries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-            const data=await res.json();
-            if(res.ok&&data.success){
-                if(window._anePhotoFile&&data.entry&&data.entry.entryId){
-                    try{
-                        const fd=new FormData();
-                        fd.append('passbook',window._anePhotoFile,'receipt.jpg');
-                        fd.append('entryId',data.entry.entryId);
-                        fd.append('userId',currentUser?String(currentUser.id):'');
-                        await fetch('/api/upload-passbook',{method:'POST',body:fd});
-                    }catch(_px){} finally{ window._anePhotoFile=null; }
-                }
-                aneShowStatus('\u2705 Entry saved! Book '+data.entry.bookNumber+', Receipt #'+data.entry.receiptNumber,'success');
-                aneReset();
-                await adeLoad();
-            } else { aneShowStatus('\u274c '+(data.message||'Submission failed.'),'error'); }
-        } catch(err){ aneShowStatus('\u274c '+err.message,'error'); }
-        finally{ if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';} }
+        // Reset location cascade
+        ['aneLandmark','aneArea','aneSubArea','aneBuilding'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+        ['aneAreaGroup','aneSubAreaGroup','aneBuildingGroup','aneFlatNumberGroup'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
     }
 
-    // ── Donor type toggle for admin new entry form ───────────────────────────
-    function aneSetType(type) {
-        document.getElementById('aneDonorType').value = type;
-        const isInd = type === 'Individual';
-        const actS = 'padding:7px 20px;border:2px solid var(--primary-color);border-radius:16px;background:var(--primary-color);color:#fff;font-weight:700;cursor:pointer;';
-        const inactS = 'padding:7px 20px;border:2px solid #ddd;border-radius:16px;background:#f9f9f9;color:#555;font-weight:700;cursor:pointer;';
-        document.getElementById('aneBtnInd').style.cssText = isInd ? actS : inactS;
-        document.getElementById('aneBtnBiz').style.cssText = !isInd ? actS : inactS;
-        document.getElementById('aneIndFields').style.display = isInd ? 'grid' : 'none';
-        document.getElementById('aneBizFields').style.display = !isInd ? 'block' : 'none';
-    }
-
-    // ── Email hint auto-append @gmail.com ───────────────────────────────────
-    function aneEmailHint(inp) {
-        const hint = document.getElementById('aneEmailHint');
-        if (!inp.value.includes('@') && inp.value.trim()) {
-            if (hint) hint.textContent = inp.value.trim() + '@gmail.com';
-        } else { if (hint) hint.textContent = ''; }
-    }
-
-    // ── Auto-receipt: pick next free slot ───────────────────────────────────
-    async function aneAutoReceipt() {
-        try {
-            const resp = await fetch('/api/donation-entries/next-receipt');
-            const slot = await resp.json();
-            if (!slot.bookNumber) { alert('All receipt numbers are used.'); return; }
-            const bookSel = document.getElementById('aneBook');
-            if (bookSel) bookSel.value = slot.bookNumber;
-            await aneBookChange();
-            const receiptSel = document.getElementById('aneReceipt');
-            if (receiptSel) receiptSel.value = slot.receiptNumber;
-            aneShowStatus('✅ Auto-assigned: Book ' + slot.bookNumber + ', Receipt #' + slot.receiptNumber, 'success');
-        } catch(e) { alert('Could not fetch next receipt: ' + e.message); }
-    }
-
-    // ── Load buildings into ane form ────────────────────────────────────────
-    async function aneLoadBuildings() {
-        try {
-            const r = await fetch('/api/buildings'); const d = await r.json();
-            const sel = document.getElementById('aneBuilding'); if (!sel) return;
-            const cur = sel.value;
-            sel.innerHTML = '<option value="">— Select Building —</option>';
-            (d.buildings||[]).forEach(b => sel.innerHTML += `<option value="${b.name}" ${b.name===cur?'selected':''}>${b.name}</option>`);
-        } catch(e) {}
-    }
-
-    // ── Load landmarks into ane form ────────────────────────────────────────
-    async function aneLoadLandmarks() {
-        try {
-            const r = await fetch('/api/landmarks'); const d = await r.json();
-            const sel = document.getElementById('aneLandmark'); if (!sel) return;
-            const cur = sel.value;
-            sel.innerHTML = '<option value="">— Select Landmark —</option>';
-            (d.landmarks||[]).forEach(l => sel.innerHTML += `<option value="${l.name}" ${l.name===cur?'selected':''}>${l.name}</option>`);
-        } catch(e) {}
-    }
 
     // ── Manage Landmarks modal ───────────────────────────────────────────────
     async function adeLandmarkModal() {
@@ -5059,7 +5060,7 @@ window._fmtBytesA = function(b) {
             mobileNumber:document.getElementById('aneMobile')?.value.trim()||null,
             mailId:emailFull,
             buildingName:document.getElementById('aneBuilding')?.value||null,
-            area:document.getElementById('aneArea').value||null,
+            area:document.getElementById('aneArea').value||null,landmark:document.getElementById('aneLandmark')?.value||null,buildingName:document.getElementById('aneBuilding')?.value||null,
             subArea:document.getElementById('aneSubArea')?.value||null,
             landmark:document.getElementById('aneLandmark')?.value||null,
             amount:document.getElementById('aneAmount').value!==''?Number(document.getElementById('aneAmount').value):null,
