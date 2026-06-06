@@ -126,7 +126,7 @@ console.log('admin.html patched, tshirtSection now has content:', adminContent.i
 let dashContent = fs.readFileSync('dashboard.html', 'utf8');
 dashContent = dashContent.replace(
     /(<div id="tshirtSection" class="content-section">)(<\/div>)/,
-    '$1' + tshirtAdminHTML.replace('<h3 style="margin:0 0 18px;color:#2c3e50;font-size:1rem;">&#9881; Admin Settings</h3>', '<h3 style="margin:0 0 18px;color:#2c3e50;font-size:1rem;">&#128202; Volunteer View</h3>').replace('tsUpdatePrice(event)', 'return false') + '$2'
+    '$1' + tshirtAdminHTML.replace('<h3 style="margin:0 0 18px;color:#2c3e50;font-size:1rem;">&#9881; Admin Settings</h3>', '<h3 style="margin:0 0 18px;color:#2c3e50;font-size:1rem;">&#128202; Volunteer View</h3>') + '$2'
 );
 fs.writeFileSync('dashboard.html', dashContent, 'utf8');
 console.log('dashboard.html patched, tshirtSection now has content:', dashContent.includes('Lead Coordinator'));

@@ -1589,7 +1589,7 @@ window.fixUrl = function(url) {
             </div>
             <div style="background:var(--white);border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e0e0e0;align-self:start;">
                 <h3 style="margin:0 0 18px;color:#2c3e50;font-size:1rem;">&#128202; Volunteer View</h3>
-                <form onsubmit="return false">
+                <form onsubmit="tsUpdatePrice(event)">
                     <div style="margin-bottom:14px;">
                         <label style="display:block;font-size:.85rem;font-weight:600;color:#555;margin-bottom:5px;">Price per T-shirt (&#8377;)</label>
                         <input type="number" id="tsAdminPrice" value="350" min="0" required style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;">
