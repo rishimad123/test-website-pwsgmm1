@@ -5,7 +5,7 @@ function fixServerJs() {
 
     // 1. Add Duplicate Check logic in PUT API for both volunteer and admin
     // In server.js, the PUT block has this right before assigning new values:
-    const putTarget = `                if (body.area          !== undefined) e.area          = String(body.area);
+    const putTarget = `                if (body.landmark          !== undefined) e.landmark          = String(body.landmark);
                 if (body.buildingName  !== undefined) e.buildingName  = String(body.buildingName);
                 if (body.referenceNumber !== undefined) e.referenceNumber = String(body.referenceNumber);
                 if (body.landmark       !== undefined) e.landmark       = String(body.landmark);`;

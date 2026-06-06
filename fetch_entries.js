@@ -9,7 +9,7 @@ http.get('http://localhost:3000/api/receipts', (res) => {
         if (json.receipts && json.receipts.length > 0) {
             const latest = json.receipts.slice(-5);
             latest.forEach(e => {
-                console.log(`Receipt: ${e.firstName || ''} ${e.businessName || ''} | Area: ${e.area} | SubArea: ${e.subArea} | Landmark: ${e.landmark} | Building: ${e.buildingName}`);
+                console.log(`Receipt: ${e.firstName || ''} ${e.businessName || ''} | Landmark: ${e.landmark} | Area: ${e.area} | Landmark: ${e.landmark} | Building: ${e.buildingName}`);
             });
         }
     });
