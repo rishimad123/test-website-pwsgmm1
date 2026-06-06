@@ -4604,7 +4604,7 @@ async function adminTsSaveCoordinator(idx) {
         const res = await fetch('/api/tshirts/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ price: window.tsPrice || 350, coordinators: window.tsCoordinators })
+            body: JSON.stringify({ coordinators: window.tsCoordinators })
         });
         if (res.ok) {
             document.getElementById('adminCoordModal').style.display = 'none';
@@ -4627,7 +4627,7 @@ async function adminTsDeleteCoordinator(idx) {
         await fetch('/api/tshirts/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ price: window.tsPrice || 350, coordinators: window.tsCoordinators })
+            body: JSON.stringify({ coordinators: window.tsCoordinators })
         });
     } catch(e) { console.error(e); }
     adminTsRenderCoordinators();

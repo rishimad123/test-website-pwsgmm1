@@ -166,11 +166,9 @@ function renderTshirtSection() {
         const adminContainer = document.getElementById('tshirtSection');
         if (!adminContainer) return;
 
-        // 1. Update Price Settings Value if Admin
-        if (adminMode) {
-            const priceInput = document.getElementById('tsAdminPrice');
-            if (priceInput) priceInput.value = tsPrice;
-        }
+        // 1. Update Price Settings Value if Admin or Volunteer
+        const priceInput = document.getElementById('tsAdminPrice');
+        if (priceInput) priceInput.value = tsPrice;
 
         // 2. Update Total Amount Display in Application Form
         tsUpdateTotal();
@@ -382,7 +380,7 @@ async function tsSaveCoordinators() {
         const res = await fetch('/api/tshirts/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ price: tsPrice, coordinators: tsCoordinators })
+            body: JSON.stringify({ coordinators: tsCoordinators })
         });
         if (res.ok) {
             renderTshirtSection();
