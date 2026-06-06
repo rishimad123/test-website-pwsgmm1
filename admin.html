@@ -3287,7 +3287,7 @@ window._fmtBytesA = function(b) {
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
                 <button onclick="adeBuildingModal()" class="btn btn-small" style="background:#3949AB;color:#fff;"><i class="fas fa-building" style="margin-right:6px;"></i>Manage Buildings</button>
                 <button onclick="adeLandmarkModal()" class="btn btn-small" style="background:#F59E0B;color:#fff;"><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Manage Landmarks</button>
-                <button onclick="adeLandmarkModal()" class="btn btn-small" style="background:#6A1B9A;color:#fff;"><i class="fas fa-flag" style="margin-right:6px;"></i>Manage Landmarks</button>
+                <button onclick="adeManageAreasModal()" class="btn btn-small" style="background:#6A1B9A;color:#fff;"><i class="fas fa-map" style="margin-right:6px;"></i>Manage Areas</button>
                 <button onclick="adeToggleForm()" class="btn btn-small" style="background:var(--primary-color);color:#fff;"><i class="fas fa-plus" style="margin-right:6px;"></i>Record Donation</button>
                 <div style="display:inline-flex;gap:10px;">
                     <button onclick="adeExportExcel('en')" class="btn btn-small" style="background:#1D6F42;color:#fff;"><i class="fas fa-file-excel" style="margin-right:6px;"></i>Export (EN)</button>
@@ -3396,38 +3396,60 @@ window._fmtBytesA = function(b) {
                     </div>
                 </div>
 
-                <!-- ── Section D: Landmark ── -->
-                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
-                    <i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Landmark
+                <!-- ── Section D: Location Cascade ── -->
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;flex:1;">
+                        <i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Location
+                    </div>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
-                    <div class="form-group" style="margin:0;">
-                        <label for="adeBuildingNameSelect">Building Name</label>
-                        <div style="display:flex;gap:8px;">
-                            <select id="adeBuildingNameSelect" class="form-control" style="flex:1;" onchange="document.getElementById('adeFlatNumberGroup').style.display = this.value ? 'block' : 'none';"></select>
-                            <button type="button" onclick="adeAddBuildingPrompt()" style="padding:0 14px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;cursor:pointer;font-size:.85rem;white-space:nowrap;">＋ Add</button>
-                        </div>
-                    </div>
-                    <div class="form-group" id="adeFlatNumberGroup" style="margin:0; display:none;">
-                        <label for="adeFlatNumber">Enter Flat Number</label>
-                        <input type="text" id="adeFlatNumber" class="form-control" placeholder="Flat No.">
-                    </div>
-                    <div class="form-group" style="margin:0;">
-                        <label for="adeLandmarkSelect">Landmark</label>
-                        <div style="display:flex;gap:8px;">
-                            <select id="adeLandmarkSelect" class="form-control" style="flex:1;" onchange="adeOnLandmarkChange()"></select>
-                            <button type="button" onclick="adeLandmarkModal()" style="padding:0 14px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;cursor:pointer;font-size:.85rem;white-space:nowrap;">Manage Landmarks</button>
-                        </div>
-                    </div>
-                    <div class="form-group" id="adeAreaGroup" style="margin:0;display:none;">
-                        <label for="adeAreaSelect">Area</label>
-                        <div style="display:flex;gap:8px;">
-                            <select id="adeAreaSelect" class="form-control" style="flex:1;">
-                                <option value="">— Select Area —</option>
-                            </select>
-                        </div>
-                    </div>
 
+                <!-- Step 1: Landmark (always visible) -->
+                <div class="form-group" id="adeLandmarkGroup" style="margin-bottom:16px;">
+                    <label for="adeLandmarkSelect" style="font-weight:700;font-size:.85rem;color:#333;display:flex;align-items:center;gap:6px;">
+                        <i class="fas fa-map-marker-alt" style="color:#E65100;font-size:.85rem;"></i>
+                        Landmark <span style="font-size:.72rem;color:#aaa;font-weight:400;">Step 1 of 3</span>
+                    </label>
+                    <select id="adeLandmarkSelect" class="form-control" onchange="adeOnLandmarkChange()" style="font-weight:600;">
+                        <option value="">— Select Landmark —</option>
+                    </select>
+                </div>
+
+                <!-- Step 2: Area (slides in after landmark) -->
+                <div class="form-group" id="adeAreaGroup" style="margin-bottom:16px;display:none;">
+                    <label style="font-weight:700;font-size:.85rem;color:#333;display:flex;align-items:center;gap:6px;">
+                        <i class="fas fa-map" style="color:#2E7D32;font-size:.85rem;"></i>
+                        Area <span style="font-size:.72rem;color:#aaa;font-weight:400;">Step 2 of 3</span>
+                    </label>
+                    <select id="adeAreaSelect" class="form-control" onchange="adeOnAreaChange()" style="font-weight:600;">
+                        <option value="">— Select Area —</option>
+                    </select>
+                    <!-- Locked area badge -->
+                    <div id="adeAreaLocked" style="display:none;margin-top:8px;padding:8px 14px;background:linear-gradient(135deg,#E8F5E9,#F1F8E9);border:1.5px solid #66BB6A;border-radius:8px;align-items:center;gap:10px;">
+                        <i class="fas fa-check-circle" style="color:#2E7D32;font-size:1rem;"></i>
+                        <span id="adeAreaLockedName" style="font-weight:700;color:#1B5E20;font-size:.88rem;"></span>
+                        <button type="button" onclick="adeUnlockArea()" style="margin-left:auto;border:none;background:transparent;color:#888;cursor:pointer;font-size:.75rem;padding:2px 6px;border-radius:4px;"><i class="fas fa-times"></i> Change</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Building (slides in after area) -->
+                <div class="form-group" id="adeBuildingGroup" style="margin-bottom:16px;display:none;">
+                    <label for="adeBuildingNameSelect" style="font-weight:700;font-size:.85rem;color:#333;display:flex;align-items:center;gap:6px;">
+                        <i class="fas fa-building" style="color:#5C6BC0;font-size:.85rem;"></i>
+                        Building Name <span style="font-size:.72rem;color:#aaa;font-weight:400;">Step 3 of 3 (optional)</span>
+                    </label>
+                    <select id="adeBuildingNameSelect" class="form-control" onchange="adeOnBuildingChange()" style="font-weight:600;">
+                        <option value="">— Select Building (optional) —</option>
+                    </select>
+                    <div id="adeBuildingHint" style="display:none;font-size:.75rem;color:#888;margin-top:4px;"><i class="fas fa-info-circle"></i> No buildings linked to this area yet.</div>
+                </div>
+
+                <!-- Flat / Unit Number -->
+                <div class="form-group" id="adeFlatNumberGroup" style="margin-bottom:16px;display:none;">
+                    <label for="adeFlatNumber" style="font-weight:600;font-size:.85rem;color:#333;">
+                        <i class="fas fa-door-open" style="color:#E67E22;margin-right:5px;font-size:.8rem;"></i>
+                        Flat / Unit Number <span style="font-weight:400;color:#aaa;font-size:.75rem;">(optional)</span>
+                    </label>
+                    <input type="text" id="adeFlatNumber" class="form-control" placeholder="e.g. A-201, Flat 3B, Shop 5">
                 </div>
 
                 <!-- ── Section E: Payment ── -->
@@ -3794,58 +3816,128 @@ window._fmtBytesA = function(b) {
     }
 
     async function adeLoadAreas(landmarkName) {
-        const sel = document.getElementById('adeAreaSelect');
+        var sel = document.getElementById('adeAreaSelect');
         if (!sel) return;
-        const cur = sel.value;
         sel.innerHTML = '<option value="">— Select Area —</option>';
-        if (!landmarkName) return;
-        
+        var areaGroup = document.getElementById('adeAreaGroup');
+        if (!landmarkName) { if (areaGroup) areaGroup.style.display = 'none'; return; }
         try {
-            const r1 = await fetch('/api/landmarks');
-            const d1 = await r1.json();
-            const landmarkObj = (d1.landmarks || []).find(a => a.name === landmarkName);
-            if (!landmarkObj) return;
-
-            const r2 = await fetch('/api/areas');
-            const d2 = await r2.json();
-            const subs = (d2.areas || []).filter(s => s.landmarkId === landmarkObj.id);
-            
-            subs.forEach(s => {
-                sel.innerHTML += `<option value="${s.name}" ${s.name === cur ? 'selected' : ''}>${s.name}</option>`;
+            var r1 = await fetch('/api/landmarks');
+            var d1 = await r1.json();
+            var landmarkObj = (d1.landmarks || []).find(function(a) { return a.name === landmarkName; });
+            if (!landmarkObj) { if (areaGroup) areaGroup.style.display = 'none'; return; }
+            var r2 = await fetch('/api/areas');
+            var d2 = await r2.json();
+            var subs = (d2.areas || []).filter(function(s) { return s.landmarkId === landmarkObj.id; });
+            subs.forEach(function(s) {
+                sel.innerHTML += '<option value="' + s.name + '">' + s.name + '</option>';
             });
+            if (areaGroup) { areaGroup.style.display = ''; areaGroup.style.animation = 'deSlideDown .25s ease'; }
+            // Reset locked state
+            adeUnlockArea(true);
+            sel.style.display = '';
         } catch (e) {
             console.error(e);
         }
     }
 
-    function adeOnLandmarkChange() {
-        const landmarkName = document.getElementById('adeLandmarkSelect')?.value || '';
-        const group = document.getElementById('adeAreaGroup');
-        if (landmarkName) {
-            if (group) group.style.display = 'block';
-            adeLoadAreas(landmarkName);
-        } else {
-            if (group) group.style.display = 'none';
-        }
-        const lmObj = _adeAllLandmarks.find(function(l) { return l.name === landmarkName; });
+        function adeOnLandmarkChange() {
+        var landmarkName = document.getElementById('adeLandmarkSelect')?.value || '';
+        // Reset area + building
+        ['adeAreaSelect','adeBuildingNameSelect','adeFlatNumber'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.value = '';
+        });
+        ['adeAreaGroup','adeBuildingGroup','adeFlatNumberGroup'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.style.display = 'none';
+        });
+        adeUnlockArea(true);
+        if (!landmarkName) return;
+        adeLoadAreas(landmarkName);
+        // Pre-fill buildings linked directly to this landmark
+        var lmObj = _adeAllLandmarks.find(function(l) { return l.name === landmarkName; });
         adePopulateBuildingSelect(lmObj ? lmObj.id : null);
+    }
+
+    function adeOnAreaChange() {
+        var areaName = (document.getElementById('adeAreaSelect') || {}).value || '';
+        ['adeBuildingNameSelect','adeFlatNumber'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.value = '';
+        });
+        ['adeBuildingGroup','adeFlatNumberGroup'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.style.display = 'none';
+        });
+        if (!areaName) { adeUnlockArea(true); return; }
+        // LOCK the area
+        var lockedDiv  = document.getElementById('adeAreaLocked');
+        var lockedName = document.getElementById('adeAreaLockedName');
+        var areaSel    = document.getElementById('adeAreaSelect');
+        if (lockedName) lockedName.textContent = areaName;
+        if (lockedDiv)  { lockedDiv.style.display = 'flex'; }
+        if (areaSel)    areaSel.style.display = 'none';
+        // Populate buildings
+        var landmarkName = (document.getElementById('adeLandmarkSelect') || {}).value || '';
+        var lmObj  = _adeAllLandmarks.find(function(l) { return l.name === landmarkName; });
+        var saObj  = _adeAllAreas.find(function(a) { return a.name === areaName; });
+        var bldgs  = _adeAllBuildings.filter(function(b) {
+            return (saObj && b.areaId === saObj.id) ||
+                   (lmObj && b.landmarkId === lmObj.id && !b.areaId);
+        });
+        adeShowBuildings(bldgs);
+    }
+
+    function adeUnlockArea(silent) {
+        var lockedDiv = document.getElementById('adeAreaLocked');
+        var areaSel   = document.getElementById('adeAreaSelect');
+        if (lockedDiv) lockedDiv.style.display = 'none';
+        if (areaSel)  { areaSel.style.display = ''; areaSel.value = ''; }
+        if (!silent) {
+            ['adeBuildingNameSelect','adeFlatNumber'].forEach(function(id) {
+                var el = document.getElementById(id); if (el) el.value = '';
+            });
+            ['adeBuildingGroup','adeFlatNumberGroup'].forEach(function(id) {
+                var el = document.getElementById(id); if (el) el.style.display = 'none';
+            });
+        }
+    }
+
+    function adeOnBuildingChange() {
+        var building  = (document.getElementById('adeBuildingNameSelect') || {}).value || '';
+        var flatGroup = document.getElementById('adeFlatNumberGroup');
+        if (!flatGroup) return;
+        if (building) { flatGroup.style.display = 'block'; }
+        else flatGroup.style.display = 'none';
+    }
+
+    function adeShowBuildings(bldgs) {
+        var bSel  = document.getElementById('adeBuildingNameSelect');
+        var bHint = document.getElementById('adeBuildingHint');
+        var bGrp  = document.getElementById('adeBuildingGroup');
+        if (!bSel) return;
+        bSel.innerHTML = '<option value="">— Select Building (optional) —</option>';
+        bldgs.forEach(function(b) {
+            bSel.innerHTML += '<option value="' + b.name + '" data-id="' + b.id + '">' + b.name + '</option>';
+        });
+        if (bHint) bHint.style.display = bldgs.length === 0 ? '' : 'none';
+        if (bGrp)  { bGrp.style.display = ''; }
     }
 
     async function adeLoadLandmarks() {
         try {
-            const r = await fetch('/api/landmarks');
-            const data = await r.json();
-            const sel = document.getElementById('adeLandmarkSelect');
+            var r = await fetch('/api/landmarks');
+            var data = await r.json();
+            var sel = document.getElementById('adeLandmarkSelect');
             if (!sel) return;
-            const cur = sel.value;
-            while (sel.options.length > 1) sel.remove(1);
-            (data.landmarks || []).forEach(l => {
-                const o = document.createElement('option');
+            var cur = sel.value;
+            sel.innerHTML = '<option value="">— Select Landmark —</option>';
+            (data.landmarks || []).forEach(function(l) {
+                var o = document.createElement('option');
                 o.value = l.name;
                 o.textContent = l.name;
                 if (l.name === cur) o.selected = true;
                 sel.appendChild(o);
             });
+            // Sync cache
+            _adeAllLandmarks = data.landmarks || [];
         } catch (e) {}
     }
 
@@ -4698,6 +4790,12 @@ window._fmtBytesA = function(b) {
         document.body.appendChild(modal);
         modal.addEventListener('click', function(ev) { if (ev.target === modal) modal.remove(); });
     }
+        // ── Manage Areas quick modal (admin header button) ──────────────────────
+    async function adeManageAreasModal() {
+        // Delegate to the full location modal if available
+        if (typeof adeLandmarkModal === 'function') { adeLandmarkModal(); return; }
+    }
+
         function adeShowStatus(msg, type) {
         const el = document.getElementById('adeStatus');
         if (!el) return;
