@@ -2243,12 +2243,17 @@ const server = http.createServer(async (req, res) => {
     // ══════════════════════════════════════════════════════════════
 
     if (req.method === 'GET' && pathname === '/api/committee-members') {
-        return sendJSON(res, 200, { members: committeeMembers });
+        const sorted = [...committeeMembers].sort((a, b) => {
+            const seqA = a.sequence !== undefined && a.sequence !== null && a.sequence !== '' ? Number(a.sequence) : 999999;
+            const seqB = b.sequence !== undefined && b.sequence !== null && b.sequence !== '' ? Number(b.sequence) : 999999;
+            return seqA - seqB;
+        });
+        return sendJSON(res, 200, { members: sorted });
     }
     if (req.method === 'POST' && pathname === '/api/committee-members') {
         try {
             const body = await readBody(req);
-            const { name, memberId, phone, whatsapp, department, role } = body;
+            const { name, memberId, phone, whatsapp, department, role, sequence } = body;
             if (!name || !name.trim()) return sendJSON(res, 400, { message: 'Member name is required.' });
             const member = {
                 id: `CM-${Date.now()}`,
@@ -2258,6 +2263,7 @@ const server = http.createServer(async (req, res) => {
                 whatsapp: (whatsapp||'').trim(),
                 department: (department||'').trim(),
                 role: (role||'').trim(),
+                sequence: sequence !== undefined && sequence !== '' ? Number(sequence) : null,
                 photoFile: null, photoUrl: null,
                 createdAt: new Date().toISOString()
             };
@@ -2279,6 +2285,7 @@ const server = http.createServer(async (req, res) => {
             if (body.whatsapp   !== undefined) m.whatsapp   = String(body.whatsapp).trim();
             if (body.department !== undefined) m.department = String(body.department).trim();
             if (body.role       !== undefined) m.role       = String(body.role).trim();
+            if (body.sequence   !== undefined) m.sequence   = body.sequence !== '' && body.sequence !== null ? Number(body.sequence) : null;
             if (body.photoFile  !== undefined) { m.photoFile = body.photoFile||null; m.photoUrl = body.photoFile ? `/uploads/${body.photoFile}` : null; }
             m.updatedAt = new Date().toISOString();
             await saveCommitteeMembers();
@@ -2333,18 +2340,24 @@ const server = http.createServer(async (req, res) => {
     // ══════════════════════════════════════════════════════════════
 
     if (req.method === 'GET' && pathname === '/api/volunteer-cards') {
-        return sendJSON(res, 200, { cards: volunteerCards });
+        const sorted = [...volunteerCards].sort((a, b) => {
+            const seqA = a.sequence !== undefined && a.sequence !== null && a.sequence !== '' ? Number(a.sequence) : 999999;
+            const seqB = b.sequence !== undefined && b.sequence !== null && b.sequence !== '' ? Number(b.sequence) : 999999;
+            return seqA - seqB;
+        });
+        return sendJSON(res, 200, { cards: sorted });
     }
     if (req.method === 'POST' && pathname === '/api/volunteer-cards') {
         try {
             const body = await readBody(req);
-            const { name, position, phone } = body;
+            const { name, position, phone, sequence } = body;
             if (!name || !name.trim()) return sendJSON(res, 400, { message: 'Volunteer name is required.' });
             const card = {
                 id: `VC-${Date.now()}`,
                 name: name.trim(),
                 position: (position || '').trim(),
                 phone: (phone || '').trim(),
+                sequence: sequence !== undefined && sequence !== '' ? Number(sequence) : null,
                 photoFile: null, photoUrl: null,
                 createdAt: new Date().toISOString()
             };
@@ -2363,6 +2376,7 @@ const server = http.createServer(async (req, res) => {
             if (body.name     !== undefined) v.name     = String(body.name).trim();
             if (body.position !== undefined) v.position = String(body.position).trim();
             if (body.phone    !== undefined) v.phone    = String(body.phone).trim();
+            if (body.sequence !== undefined) v.sequence = body.sequence !== '' && body.sequence !== null ? Number(body.sequence) : null;
             if (body.photoFile !== undefined) {
                 v.photoFile = body.photoFile || null;
                 v.photoUrl = body.photoFile ? `/uploads/${body.photoFile}` : null;
