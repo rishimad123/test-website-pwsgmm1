@@ -1705,14 +1705,18 @@ let _activeBsId      = null;
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const finFmt = n => '\u20b9' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 0 });
 function finBalance(r) {
-    return Number(r.totalCollection || 0) - Number(r.currentYearExpenses || 0);
+    // Section E = (Section A + Section B) - Section D
+    const sectionA = Number(r.cashInHand || 0) + Number(r.cashAtBank || 0);
+    const sectionB = Number(r.currentYearDonations || 0);
+    const totalColl = sectionA + sectionB;
+    return totalColl - Number(r.currentYearExpenses || 0);
 }
 function finComputeCollection(r) {
-    return Number(r.lastYearBalance      || 0) +
-           Number(r.currentYearDonations || 0) +
-           Number(r.cashInHand           || 0) +
-           Number(r.cashAtBank           || 0) +
-           Number(r.cashWithdrawnFromBank|| 0);
+    // Total Collection = Section A (prev year: cash + bank) + Section B (CY: cash + bank + box)
+    return Number(r.cashInHand           || 0) +   // A cash
+           Number(r.cashAtBank           || 0) +   // A bank
+           Number(r.currentYearDonations || 0) +   // B cash received
+           Number(r.cashWithdrawnFromBank|| 0);    // B other
 }
 function growthBadge(curr, prev) {
     if (prev === null || prev === undefined || prev === 0) return '<span style="color:#aaa;font-size:.8rem;">\u2014</span>';
@@ -2020,25 +2024,40 @@ async function renderBsLedger(fid) {
 }
 
 // ─── Auto-calculate totals ────────────────────────────────────────────────────
+// Formula:
+//   Total Collection = Section A (prev year balance: cash + bank)
+//                    + Section B (current year income: cash + bank + cashbox)
+//   Section E Closing Balance = Total Collection − Section D (expenses)
+//   Section E CashInBank = aBank + bBank − cWithdrawn + eTransfer
 function bsAutoCalc() {
     const g  = id => Number(document.getElementById(id)?.value || 0);
     const gs = id => (document.getElementById(id)?.value || '');
     const si = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
 
-    // B) Total Collections
-    const transferVal = g('bs_eTransfer');
-    si('bs_totalColl', g('bs_bCash') + g('bs_bBank') + g('bs_bBox'));
+    // Section A sub-total (previous year balance)
+    const sectionA = g('bs_aCash') + g('bs_aBank');
 
-    // C) Cash Withdrawn Result (i + ii - iii)
+    // Section B sub-total (current year income)
+    const sectionB = g('bs_bCash') + g('bs_bBank') + g('bs_bBox');
+
+    // Total Collections = A + B
+    const totalColl = sectionA + sectionB;
+    si('bs_totalColl', totalColl);
+
+    // C) Cash Withdrawn result shown in col 4: aBank + bBank - cWithdrawn
     const c_result = g('bs_aBank') + g('bs_bBank') - g('bs_cWithdrawn');
     si('bs_cResultDisplay', c_result);
 
-    // E) Cash in Bank (Auto-calculated: C_result + Cash Transfer to Bank)
+    // E sub-items
+    const transferVal = g('bs_eTransfer');
+    // Cash in Bank = C_result + Cash Transfer to Bank
     si('bs_eBank', c_result + transferVal);
 
-    // E) Main Closing Balance = Last Year Bank Balance + Bank Received (CY) + Cash Transfer to Bank
-    //    i.e.  Section A (bank)  +  Section B (bank)  +  Section E (transfer)
-    const mainBal = g('bs_aBank') + g('bs_bBank') + transferVal;
+    // Section D expenses
+    const sectionD = g('bs_dExp');
+
+    // Section E Closing Balance = Total Collection − Expenses
+    const mainBal = totalColl - sectionD;
     si('bs_mainClosingBalance', mainBal);
 
     const cyYearVal = gs('bs_cyYear');
@@ -2066,13 +2085,18 @@ async function saveBsLedger(fid) {
         eCashTransferParticulars: gs('bs_eTransferPart'), eCashTransfer: g('bs_eTransfer'),
         eCashInBankParticulars: gs('bs_eBankPart'), eCashInBank: g('bs_eBank'),
     };
-    const totalColl = bsData.bCashReceived + bsData.bBankReceived + bsData.bCashBox;
-    const lyBalance = bsData.aCashBalance  + bsData.aBankBalance;
+    // Total Collection = Section A (prev year: cash + bank) + Section B (CY: cash + bank + box)
+    const lyBalance = bsData.aCashBalance + bsData.aBankBalance;
+    const sectionB  = bsData.bCashReceived + bsData.bBankReceived + bsData.bCashBox;
+    const totalColl = lyBalance + sectionB;
+    // Closing Balance (E) = Total Collection − Expenses
+    const closingBal = totalColl - bsData.dExpenses;
     const payload = {
         year: record.year, lastYearBalance: lyBalance,
         currentYearDonations: bsData.bCashReceived, cashInHand: bsData.aCashBalance,
         cashAtBank: bsData.aBankBalance, cashWithdrawnFromBank: bsData.cWithdrawn,
         totalCollection: totalColl, currentYearExpenses: bsData.dExpenses,
+        closingBalance: closingBal,
         notes: bsData.cyYear, _bsData: JSON.stringify(bsData),
     };
     try {
@@ -2198,8 +2222,12 @@ function exportBalanceSheetExcel() {
         eCashInBankParticulars: gs('bs_eBankPart'), eCashInBank: g('bs_eBank'),
     } : parseBsData(record);
 
-    const totalColl = Number(bs.bCashReceived) + Number(bs.bBankReceived) + Number(bs.bCashBox);
-    const mainBal   = Number(bs.aBankBalance) + Number(bs.bBankReceived) + Number(bs.eCashTransfer);
+    // Total Collection = Section A (prev year balance) + Section B (CY income)
+    const lyBalance = Number(bs.aCashBalance || 0) + Number(bs.aBankBalance || 0);
+    const sectionB  = Number(bs.bCashReceived || 0) + Number(bs.bBankReceived || 0) + Number(bs.bCashBox || 0);
+    const totalColl = lyBalance + sectionB;
+    // Section E Closing Balance = Total Collection − Section D Expenses
+    const mainBal   = totalColl - Number(bs.dExpenses || 0);
     const rupee = n => Number(n || 0) !== 0 ? Number(n).toLocaleString('en-IN') : '';
     const esc   = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const orgName  = 'Patelwadi Sarvajnik Ganesh Mitra Mandal';
@@ -2248,7 +2276,8 @@ td{border:1px solid #d4c9a8;padding:6px 14px;}
 <tr><td></td><td class="part">${esc(bs.eCashTransferParticulars)}</td><td class="amts">(+) ${rupee(bs.eCashTransfer)}</td><td></td></tr>
 <tr><td></td><td class="part">${esc(bs.eCashInBankParticulars)}</td><td class="amts ul">${rupee(bs.eCashInBank)}</td><td></td></tr>
 </tbody></table>
-<br><p class="sub">Total Collections = Amount Received Cash + Amount Received in Bank + Amount Received in Cash Box</p>
+<br><p class="sub">Total Collections = Section A (Previous Year Balance: Cash + Bank) + Section B (Current Year Income: Cash + Bank + Cash Box)</p>
+<p class="sub">Section E (Closing Balance) = Total Collections − Section D (Current Year Expenses)</p>
 </body></html>`;
 
     const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
