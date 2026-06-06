@@ -1327,15 +1327,8 @@ window.fixUrl = function(url) {
 
                             <!-- Section D: Location Cascade -->
                             <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:18px;"><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Location</div>
+                            
                             <div class="form-group" id="deLandmarkGroup" style="margin-bottom:16px;">
-                                <label for="deLandmark" style="font-weight:600;font-size:.85rem;color:#333;"><i class="fas fa-landmark" style="color:var(--primary-color);margin-right:5px;font-size:.8rem;"></i> Common Landmark <span style="font-size:.75rem;color:#888;font-weight:400;margin-left:6px;">(Select first)</span></label>
-                                <div style="display:flex;gap:8px;align-items:stretch;">
-                                    <select id="deLandmark" class="form-control" style="flex:1;" onchange="deOnLandmarkChange()"><option value="">&#x2014; Select Landmark &#x2014;</option></select>
-                                    <button type="button" id="deAddLandmarkBtn" onclick="deAddLandmark()" style="display:none;padding:0 16px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.82rem;font-weight:700;white-space:nowrap;">&#x271a; Add</button>
-                                </div>
-                                <div id="deLandmarkHint" style="font-size:.74rem;color:#aaa;margin-top:5px;display:none;"><i class="fas fa-info-circle" style="margin-right:3px;"></i>No landmarks yet.</div>
-                            </div>
-                            <div class="form-group" id="deLandmarkGroup" style="margin-bottom:16px;display:none;">
                                 <label for="deLandmark" style="font-weight:600;font-size:.85rem;color:#333;"><i class="fas fa-map-pin" style="color:#3949AB;margin-right:5px;font-size:.8rem;"></i> Landmark <span style="font-size:.75rem;color:#888;font-weight:400;margin-left:6px;">within landmark</span></label>
                                 <select id="deLandmark" class="form-control" onchange="deOnLandmarkChange()"><option value="">&#x2014; Select Landmark &#x2014;</option></select>
                             </div>
@@ -2865,23 +2858,22 @@ window.fixUrl = function(url) {
     }
 
     // ── Hierarchical Location Cascade ─────────────────────────────────────────────
-    let _deLandmarks = [], _deLandmarks = [], _deAreas = [], _deBuildings = [];
+    let _deLandmarks = [], _deAreas = [], _deBuildings = [];
 
     async function deLoadDropdowns() {
         try {
-            const [lRes, aRes, saRes, bRes] = await Promise.all([
-                fetch('/api/landmarks'), fetch('/api/landmarks'),
+            const [aRes, saRes, bRes] = await Promise.all([
+                fetch('/api/landmarks'),
                 fetch('/api/areas'),  fetch('/api/buildings')
             ]);
-            const [lData, aData, saData, bData] = await Promise.all([
-                lRes.json(), aRes.json(), saRes.json(), bRes.json()
+            const [aData, saData, bData] = await Promise.all([
+                aRes.json(), saRes.json(), bRes.json()
             ]);
-            _deLandmarks = lData.landmarks || [];
-            _deLandmarks     = aData.landmarks     || [];
+            _deLandmarks = aData.landmarks || [];
             _deAreas  = saData.areas || [];
             _deBuildings = bData.buildings || [];
         } catch(e) {
-            _deLandmarks = []; _deLandmarks = []; _deAreas = []; _deBuildings = [];
+            _deLandmarks = []; _deAreas = []; _deBuildings = [];
         }
         const lSel = document.getElementById('deLandmark');
         if (lSel) {
@@ -2898,34 +2890,16 @@ window.fixUrl = function(url) {
         var bBtn = document.getElementById('deAddBldgBtn');
         if (lBtn) lBtn.style.display = isAdmin ? '' : 'none';
         if (bBtn) bBtn.style.display = isAdmin ? '' : 'none';
-        ['deLandmarkGroup','deAreaGroup','deBuildingGroup','deFlatNumberGroup'].forEach(function(id) {
+        // Show Landmark group, hide child groups until user selects a landmark
+        var lmGrp = document.getElementById('deLandmarkGroup');
+        if (lmGrp) lmGrp.style.display = '';
+        ['deAreaGroup','deBuildingGroup','deFlatNumberGroup'].forEach(function(id) {
             var el = document.getElementById(id); if (el) el.style.display = 'none';
         });
         dePopulateBooks();
     }
 
-    function deOnLandmarkChange() {
-        var landmark = (document.getElementById('deLandmark') || {}).value || '';
-        ['deLandmark','deArea','deBuildingName','deFlatNumber'].forEach(function(id) {
-            var el = document.getElementById(id); if (el) el.value = '';
-        });
-        ['deLandmarkGroup','deAreaGroup','deBuildingGroup','deFlatNumberGroup'].forEach(function(id) {
-            var el = document.getElementById(id); if (el) el.style.display = 'none';
-        });
-        if (!landmark) return;
-        var lmObj = _deLandmarks.find(function(l) { return l.name === landmark; });
-        var filteredLandmarks = lmObj
-            ? _deLandmarks.filter(function(a) { return !a.landmarkId || a.landmarkId === lmObj.id; })
-            : _deLandmarks;
-        var landmarkSel = document.getElementById('deLandmark');
-        if (!landmarkSel) return;
-        landmarkSel.innerHTML = '<option value="">— Select Landmark —</option>';
-        filteredLandmarks.forEach(function(a) {
-            landmarkSel.innerHTML += '<option value="' + a.name + '" data-id="' + a.id + '">' + a.name + '</option>';
-        });
-        var landmarkGroup = document.getElementById('deLandmarkGroup');
-        if (landmarkGroup) { landmarkGroup.style.display = ''; landmarkGroup.style.animation = 'deSlideDown .25s ease'; }
-    }
+    // deOnLandmarkChange is defined below — this stale copy removed to avoid conflict
 
     function deOnLandmarkChange() {
         var landmarkName = (document.getElementById('deLandmark') || {}).value || '';

@@ -3427,12 +3427,7 @@ window._fmtBytesA = function(b) {
                             </select>
                         </div>
                     </div>
-                    <div class="form-group" style="margin:0;">
-                        <label for="adeLandmarkSelect">Common Landmark</label>
-                        <select id="adeLandmarkSelect" class="form-control">
-                            <option value="">— Select Landmark (optional) —</option>
-                        </select>
-                    </div>
+
                 </div>
 
                 <!-- ── Section E: Payment ── -->
@@ -4507,8 +4502,7 @@ window._fmtBytesA = function(b) {
     async function adeLandmarkModal() {
         const [rL, rA, rS] = await Promise.all([fetch('/api/landmarks'), fetch('/api/landmarks'), fetch('/api/areas')]);
         const [dL, dA, dS] = await Promise.all([rL.json(), rA.json(), rS.json()]);
-        const allLandmarks = dL.landmarks || [];
-        const allLandmarks     = dA.landmarks     || [];
+        const allLandmarks = dA.landmarks || [];
         const allAreas  = dS.areas  || [];
         const modal = document.createElement('div');
         modal.id = 'adeLandmarkModalEl';

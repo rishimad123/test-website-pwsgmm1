@@ -18,6 +18,7 @@
     "dotenv": "^17.4.2",
     "mongodb": "^7.2.0",
     "multer-storage-cloudinary": "^4.0.0",
+    "puppeteer": "^25.1.0",
     "translate-google": "^1.5.0"
   }
 }
