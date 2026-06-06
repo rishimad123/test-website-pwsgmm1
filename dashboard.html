@@ -2911,15 +2911,36 @@ window.fixUrl = function(url) {
         });
         if (!landmarkName) return;
         var landmarkObj = _deLandmarks.find(function(a) { return a.name === landmarkName; });
+
+        // Populate Areas linked to this Landmark
         var subs = landmarkObj ? _deAreas.filter(function(s) { return s.landmarkId === landmarkObj.id; }) : [];
-        var subSel = document.getElementById('deArea');
-        if (!subSel) return;
-        subSel.innerHTML = '<option value="">— Select Area —</option>';
-        subs.forEach(function(s) {
-            subSel.innerHTML += '<option value="' + s.name + '" data-id="' + s.id + '">' + s.name + '</option>';
-        });
-        var subGroup = document.getElementById('deAreaGroup');
-        if (subGroup) { subGroup.style.display = ''; subGroup.style.animation = 'deSlideDown .25s ease'; }
+        if (subs.length > 0) {
+            var subSel = document.getElementById('deArea');
+            if (subSel) {
+                subSel.innerHTML = '<option value="">— Select Area —</option>';
+                subs.forEach(function(s) {
+                    subSel.innerHTML += '<option value="' + s.name + '" data-id="' + s.id + '">' + s.name + '</option>';
+                });
+            }
+            var subGroup = document.getElementById('deAreaGroup');
+            if (subGroup) { subGroup.style.display = ''; subGroup.style.animation = 'deSlideDown .25s ease'; }
+        }
+
+        // Populate Buildings directly linked to this Landmark (no area needed)
+        var directBldgs = landmarkObj
+            ? _deBuildings.filter(function(b) { return b.landmarkId === landmarkObj.id; })
+            : [];
+        if (directBldgs.length > 0) {
+            var bSel2 = document.getElementById('deBuildingName');
+            if (bSel2) {
+                bSel2.innerHTML = '<option value="">— Select Building —</option>';
+                directBldgs.forEach(function(b) {
+                    bSel2.innerHTML += '<option value="' + b.name + '" data-id="' + b.id + '">' + b.name + '</option>';
+                });
+                var bGrp2 = document.getElementById('deBuildingGroup');
+                if (bGrp2) { bGrp2.style.display = ''; bGrp2.style.animation = 'deSlideDown .25s ease'; }
+            }
+        }
     }
 
     function deOnAreaChange() {
@@ -2930,19 +2951,31 @@ window.fixUrl = function(url) {
         ['deBuildingGroup','deFlatNumberGroup'].forEach(function(id) {
             var el = document.getElementById(id); if (el) el.style.display = 'none';
         });
-        if (!areaName) return;
-        var saObj = _deAreas.find(function(s) { return s.name === areaName; });
-        var bldgs = saObj
-            ? _deBuildings.filter(function(b) { return !b.areaId || b.areaId === saObj.id; })
-            : _deBuildings;
+        // Also scope by selected landmark
+        var landmarkName = (document.getElementById('deLandmark') || {}).value || '';
+        var landmarkObj  = _deLandmarks.find(function(l) { return l.name === landmarkName; });
+        var bldgs;
+        if (areaName) {
+            var saObj = _deAreas.find(function(s) { return s.name === areaName; });
+            bldgs = _deBuildings.filter(function(b) {
+                return (saObj && b.areaId === saObj.id) ||
+                       (landmarkObj && b.landmarkId === landmarkObj.id && !b.areaId);
+            });
+        } else if (landmarkObj) {
+            bldgs = _deBuildings.filter(function(b) { return b.landmarkId === landmarkObj.id; });
+        } else {
+            bldgs = [];
+        }
         var bSel = document.getElementById('deBuildingName');
         if (!bSel) return;
         bSel.innerHTML = '<option value="">— Select Building —</option>';
         bldgs.forEach(function(b) {
             bSel.innerHTML += '<option value="' + b.name + '">' + b.name + '</option>';
         });
-        var bGroup = document.getElementById('deBuildingGroup');
-        if (bGroup) { bGroup.style.display = ''; bGroup.style.animation = 'deSlideDown .25s ease'; }
+        if (bldgs.length > 0) {
+            var bGroup = document.getElementById('deBuildingGroup');
+            if (bGroup) { bGroup.style.display = ''; bGroup.style.animation = 'deSlideDown .25s ease'; }
+        }
     }
 
     function deOnBuildingChange() {

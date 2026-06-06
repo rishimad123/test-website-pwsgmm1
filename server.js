@@ -2055,16 +2055,47 @@ const server = http.createServer(async (req, res) => {
         try {
             const body = await readBody(req);
             const name       = (body.name       || '').trim();
-            const areaId  = (body.areaId  || '').trim() || null;
+            const areaId     = (body.areaId     || '').trim() || null;
+            const landmarkId = (body.landmarkId || '').trim() || null;
             if (!name) return sendJSON(res, 400, { message: 'Building name is required.' });
             if (buildings.find(b => b.name.toLowerCase() === name.toLowerCase()))
                 return sendJSON(res, 400, { message: `Building "${name}" already exists.` });
             const building = { id: `BLD-${Date.now()}`, name };
-            if (areaId) building.areaId = areaId;
+            if (areaId)     building.areaId     = areaId;
+            if (landmarkId) building.landmarkId = landmarkId;
             buildings.push(building);
             await saveBuildings();
-            console.log(`🏢 Building added: ${name}${areaId ? ` (area: ${areaId})` : ''}`);
+            console.log(`🏢 Building added: ${name}${landmarkId ? ` (landmark: ${landmarkId})` : ''}`);
             return sendJSON(res, 200, { success: true, building });
+        } catch (err) {
+            return sendJSON(res, 400, { message: err.message || 'Bad request.' });
+        }
+    }
+
+    // ── PUT /api/buildings/:id ───────────────────────────────────────────────
+    if (req.method === 'PUT' && pathname.startsWith('/api/buildings/')) {
+        const id  = decodeURIComponent(pathname.replace('/api/buildings/', ''));
+        const idx = buildings.findIndex(b => b.id === id);
+        if (idx === -1) return sendJSON(res, 404, { message: 'Building not found.' });
+        try {
+            const body = await readBody(req);
+            const name       = (body.name       || '').trim();
+            const landmarkId = Object.prototype.hasOwnProperty.call(body, 'landmarkId')
+                ? ((body.landmarkId || '').trim() || null)
+                : buildings[idx].landmarkId;
+            const areaId     = Object.prototype.hasOwnProperty.call(body, 'areaId')
+                ? ((body.areaId || '').trim() || null)
+                : buildings[idx].areaId;
+            if (!name) return sendJSON(res, 400, { message: 'Building name is required.' });
+            buildings[idx].name = name;
+            if (landmarkId !== undefined) buildings[idx].landmarkId = landmarkId || undefined;
+            if (areaId     !== undefined) buildings[idx].areaId     = areaId     || undefined;
+            // Clean up null/undefined keys
+            if (!buildings[idx].landmarkId) delete buildings[idx].landmarkId;
+            if (!buildings[idx].areaId)     delete buildings[idx].areaId;
+            await saveBuildings();
+            console.log(`✏️  Building updated: ${name}`);
+            return sendJSON(res, 200, { success: true, building: buildings[idx] });
         } catch (err) {
             return sendJSON(res, 400, { message: err.message || 'Bad request.' });
         }
@@ -2110,6 +2141,24 @@ const server = http.createServer(async (req, res) => {
             await saveLandmarks();
             console.log(`📍 Landmark added: ${name}${landmarkId ? ` (landmark: ${landmarkId})` : ''}`);
             return sendJSON(res, 200, { success: true, landmark });
+        } catch (err) {
+            return sendJSON(res, 400, { message: err.message || 'Bad request.' });
+        }
+    }
+
+    // ── PUT /api/landmarks/:id (rename) ─────────────────────────────────────────
+    if (req.method === 'PUT' && pathname.startsWith('/api/landmarks/')) {
+        const id  = decodeURIComponent(pathname.replace('/api/landmarks/', ''));
+        const idx = landmarks.findIndex(a => a.id === id);
+        if (idx === -1) return sendJSON(res, 404, { message: 'Landmark not found.' });
+        try {
+            const body = await readBody(req);
+            const name = (body.name || '').trim();
+            if (!name) return sendJSON(res, 400, { message: 'Landmark name is required.' });
+            landmarks[idx].name = name;
+            await saveLandmarks();
+            console.log(`✏️  Landmark renamed: ${name}`);
+            return sendJSON(res, 200, { success: true, landmark: landmarks[idx] });
         } catch (err) {
             return sendJSON(res, 400, { message: err.message || 'Bad request.' });
         }

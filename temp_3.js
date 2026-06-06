@@ -480,18 +480,30 @@ document.addEventListener('DOMContentLoaded', function() {
         await Promise.all([adeLoadBuildings(), adeLoadLandmarks(), adeLoadLandmarks(), aneLoadAll()]);
     }
 
+    let _adeAllBuildings = [], _adeAllLandmarks = [], _adeAllAreas = [];
+
     async function adeLoadBuildings() {
         try {
-            const r = await fetch('/api/buildings');
-            const d = await r.json();
-            const sel = document.getElementById('adeBuildingNameSelect');
-            if (!sel) return;
-            const cur = sel.value;
-            sel.innerHTML = '<option value="">— Select Building —</option>';
-            (d.buildings || []).forEach(b => {
-                sel.innerHTML += `<option value="${b.name}" ${b.name === cur ? 'selected' : ''}>${b.name}</option>`;
-            });
+            const [rB, rL, rA] = await Promise.all([fetch('/api/buildings'), fetch('/api/landmarks'), fetch('/api/areas')]);
+            const [dB, dL, dA] = await Promise.all([rB.json(), rL.json(), rA.json()]);
+            _adeAllBuildings = dB.buildings || [];
+            _adeAllLandmarks = dL.landmarks || [];
+            _adeAllAreas     = dA.areas     || [];
         } catch (e) {}
+        adePopulateBuildingSelect();
+    }
+
+    function adePopulateBuildingSelect(filterLandmarkId) {
+        const sel = document.getElementById('adeBuildingNameSelect');
+        if (!sel) return;
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">— Select Building —</option>';
+        const bldgs = filterLandmarkId
+            ? _adeAllBuildings.filter(function(b) { return b.landmarkId === filterLandmarkId; })
+            : _adeAllBuildings;
+        bldgs.forEach(function(b) {
+            sel.innerHTML += '<option value="' + b.name + '"' + (b.name === cur ? ' selected' : '') + '>' + b.name + '</option>';
+        });
     }
 
     async function adeLoadLandmarks() {
@@ -539,16 +551,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function adeOnLandmarkChange() {
-        const landmarkName = document.getElementById('adeLandmarkSelect')?.value;
+        const landmarkName = document.getElementById('adeLandmarkSelect')?.value || '';
         const group = document.getElementById('adeAreaGroup');
-        if (!group) return;
-        
         if (landmarkName) {
-            group.style.display = 'block';
+            if (group) group.style.display = 'block';
             adeLoadAreas(landmarkName);
         } else {
-            group.style.display = 'none';
+            if (group) group.style.display = 'none';
         }
+        const lmObj = _adeAllLandmarks.find(function(l) { return l.name === landmarkName; });
+        adePopulateBuildingSelect(lmObj ? lmObj.id : null);
     }
 
     async function adeLoadLandmarks() {
@@ -1232,134 +1244,185 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function adeLandmarkModal() {
-        const [rL, rA, rS] = await Promise.all([fetch('/api/landmarks'), fetch('/api/landmarks'), fetch('/api/areas')]);
-        const [dL, dA, dS] = await Promise.all([rL.json(), rA.json(), rS.json()]);
-        const allLandmarks = dA.landmarks || [];
-        const allAreas  = dS.areas  || [];
+        const [rL, rA, rB] = await Promise.all([fetch('/api/landmarks'), fetch('/api/areas'), fetch('/api/buildings')]);
+        const [dL, dA, dB] = await Promise.all([rL.json(), rA.json(), rB.json()]);
+        let allLandmarks = dL.landmarks || [];
+        let allAreas     = dA.areas     || [];
+        let allBuildings = dB.buildings || [];
+        _adeAllLandmarks = allLandmarks;
+        _adeAllAreas     = allAreas;
+        _adeAllBuildings = allBuildings;
+
+        let selLmId   = allLandmarks.length ? allLandmarks[0].id : null;
+        let editingLm = null;
+
         const modal = document.createElement('div');
         modal.id = 'adeLandmarkModalEl';
-        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
-        let selLmId = allLandmarks.length ? allLandmarks[0].id : null;
-        let selLandmarkId = null;
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:flex-start;justify-content:center;padding-top:40px;overflow-y:auto;';
 
-        function landmarksForLm() {
-            return allLandmarks.filter(function(a) { return !a.landmarkId || a.landmarkId === selLmId; });
-        }
-        function subsForLandmark() {
-            return allAreas.filter(function(s) { return s.landmarkId === selLandmarkId; });
-        }
+        function areasForLm()    { return allAreas.filter(function(a){ return a.landmarkId === selLmId; }); }
+        function buildingsForLm(){ return allBuildings.filter(function(b){ return b.landmarkId === selLmId; }); }
 
         function renderModal() {
-            const lmLandmarks = landmarksForLm();
-            const subs    = subsForLandmark();
-            const selLm   = allLandmarks.find(function(l){ return l.id === selLmId; });
-            const selLandmark = allLandmarks.find(function(a){ return a.id === selLandmarkId; });
-            modal.innerHTML = '<div style="background:var(--white);border-radius:16px;padding:28px;width:94%;max-width:960px;max-height:88vh;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.22);display:flex;flex-direction:column;">' +
-                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">' +
-                    '<h3 style="margin:0;"><i class="fas fa-sitemap" style="color:#F59E0B;margin-right:8px;"></i>Manage Locations</h3>' +
-                    '<span onclick="document.getElementById(\'adeLandmarkModalEl\').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>' +
-                '</div>' +
-                '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;flex:1;overflow:hidden;min-height:320px;">' +
+            var lm    = allLandmarks.find(function(l){ return l.id === selLmId; });
+            var areas = areasForLm();
+            var bldgs = buildingsForLm();
+            var lmName = lm ? lm.name : '';
 
-                // Column 1: Landmarks
-                '<div style="display:flex;flex-direction:column;border-right:1.5px solid #f0f0f0;padding-right:16px;">' +
-                    '<h4 style="margin:0 0 10px;color:#E65100;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;"><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>Landmarks</h4>' +
-                    '<div style="display:flex;gap:6px;margin-bottom:10px;">' +
-                        '<input type="text" id="amLmInput" class="form-control" placeholder="New landmark" style="flex:1;font-size:.83rem;">' +
-                        '<button onclick="amAddLandmark()" class="btn btn-primary btn-small" style="background:var(--primary-color);">Add</button>' +
-                    '</div>' +
-                    '<div id="amLmList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">' +
-                    allLandmarks.map(function(l) {
-                        return '<div onclick="amSelectLm(\''+l.id+'\')" style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:'+(selLmId===l.id?'#FFF3E0':'#f8f9fa')+';border:1.5px solid '+(selLmId===l.id?'#F59E0B':'transparent')+';border-radius:8px;cursor:pointer;">' +
-                            '<span style="flex:1;font-weight:700;font-size:.85rem;color:'+(selLmId===l.id?'#E65100':'#333')+'">'+l.name+'</span>' +
-                            '<button onclick="event.stopPropagation();amDeleteLandmark(\''+l.id+'\')" style="border:none;background:#FFEBEE;color:#c0392b;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;"><i class="fas fa-trash"></i></button>' +
-                        '</div>';
-                    }).join('') +
-                    (!allLandmarks.length ? '<div style="color:#aaa;text-align:center;padding:12px;font-size:.83rem;">No landmarks yet.</div>' : '') +
-                    '</div>' +
-                '</div>' +
+            var html = '<div style="background:#fff;border-radius:16px;padding:28px;width:96%;max-width:1000px;box-shadow:0 8px 40px rgba(0,0,0,.24);margin-bottom:40px;">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:2px solid #f0f0f0;padding-bottom:14px;">';
+            html += '<h3 style="margin:0;font-size:1.2rem;color:#1a237e;"><i class="fas fa-sitemap" style="color:#F59E0B;margin-right:10px;"></i>Manage Locations</h3>';
+            html += '<span onclick="document.getElementById(\'adeLandmarkModalEl\').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;line-height:1;">&times;</span>';
+            html += '</div>';
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;">';
 
-                // Column 2: Landmarks for selected landmark
-                '<div style="display:flex;flex-direction:column;border-right:1.5px solid #f0f0f0;padding-right:16px;">' +
-                    '<h4 style="margin:0 0 10px;color:#1565C0;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;"><i class="fas fa-map-pin" style="margin-right:5px;"></i>Landmarks' + (selLm ? ' <span style="font-weight:400;text-transform:none;color:#888;">(under '+selLm.name+')</span>' : '') + '</h4>' +
-                    (selLmId ? ('<div style="display:flex;gap:6px;margin-bottom:10px;">' +
-                        '<input type="text" id="amLandmarkInput" class="form-control" placeholder="New landmark" style="flex:1;font-size:.83rem;">' +
-                        '<button onclick="amAddLandmark(\''+selLmId+'\')" class="btn btn-primary btn-small" style="background:#1565C0;">Add</button>' +
-                    '</div>') : '') +
-                    '<div id="amLandmarkList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">' +
-                    lmLandmarks.map(function(a) {
-                        return '<div onclick="amSelectLandmark(\''+a.id+'\')" style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:'+(selLandmarkId===a.id?'#E3F2FD':'#f8f9fa')+';border:1.5px solid '+(selLandmarkId===a.id?'#1565C0':'transparent')+';border-radius:8px;cursor:pointer;">' +
-                            '<span style="flex:1;font-weight:700;font-size:.85rem;color:'+(selLandmarkId===a.id?'#1565C0':'#333')+'">'+a.name+'</span>' +
-                            '<button onclick="event.stopPropagation();amDeleteLandmark(\''+a.id+'\')" style="border:none;background:#FFEBEE;color:#c0392b;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;"><i class="fas fa-trash"></i></button>' +
-                        '</div>';
-                    }).join('') +
-                    (!lmLandmarks.length ? '<div style="color:#aaa;text-align:center;padding:12px;font-size:.83rem;">' + (selLmId ? 'No landmarks for this landmark.' : 'Select a landmark first.') + '</div>' : '') +
-                    '</div>' +
-                '</div>' +
+            // ── Col 1: Landmarks ────────────────────────────────────────────
+            html += '<div style="border-right:2px solid #f0f0f0;padding-right:18px;display:flex;flex-direction:column;gap:10px;">';
+            html += '<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#E65100;"><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>Landmarks</div>';
+            html += '<div style="display:flex;gap:6px;">';
+            html += '<input type="text" id="amLmInput" class="form-control" placeholder="New landmark name" style="flex:1;font-size:.82rem;">';
+            html += '<button onclick="amAddLandmark()" style="padding:0 14px;border:none;border-radius:8px;background:#E65100;color:#fff;font-weight:700;cursor:pointer;">+ Add</button>';
+            html += '</div>';
+            html += '<div style="overflow-y:auto;display:flex;flex-direction:column;gap:6px;max-height:360px;">';
+            allLandmarks.forEach(function(l) {
+                var isSel  = selLmId === l.id;
+                var isEdit = editingLm === l.id;
+                var bg  = isSel ? '#FFF3E0' : '#f8f9fa';
+                var bdr = isSel ? '#F59E0B' : 'transparent';
+                var clr = isSel ? '#E65100' : '#333';
+                html += '<div style="display:flex;align-items:center;gap:6px;padding:9px 12px;background:' + bg + ';border:2px solid ' + bdr + ';border-radius:8px;cursor:pointer;" onclick="amSelectLm(this)" data-lmid="' + l.id + '">';
+                if (isEdit) {
+                    html += '<input type="text" id="amRenLmInput" value="' + l.name.replace(/"/g, '&quot;') + '" style="flex:1;font-size:.82rem;border:1.5px solid #F59E0B;border-radius:6px;padding:4px 8px;" onclick="event.stopPropagation()">';
+                    html += '<button onclick="event.stopPropagation();amRenameLm(this)" data-lid="' + l.id + '" style="border:none;background:#E8F5E9;color:#2E7D32;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;"><i class="fas fa-check"></i></button>';
+                    html += '<button onclick="event.stopPropagation();amCancelRenLm()" style="border:none;background:#eee;color:#555;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;"><i class="fas fa-times"></i></button>';
+                } else {
+                    html += '<span style="flex:1;font-weight:700;font-size:.85rem;color:' + clr + ';">' + l.name + '</span>';
+                    html += '<button onclick="event.stopPropagation();amEditLm(this)" data-lid="' + l.id + '" style="border:none;background:#E3F2FD;color:#1565C0;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;" title="Rename"><i class="fas fa-pen"></i></button>';
+                    html += '<button onclick="event.stopPropagation();amDeleteLm(this)" data-lid="' + l.id + '" style="border:none;background:#FFEBEE;color:#c0392b;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;" title="Delete"><i class="fas fa-trash"></i></button>';
+                }
+                html += '</div>';
+            });
+            if (!allLandmarks.length) html += '<div style="color:#aaa;text-align:center;padding:20px;font-size:.83rem;">No landmarks yet.</div>';
+            html += '</div></div>';
 
-                // Column 3: Areas for selected landmark
-                '<div style="display:flex;flex-direction:column;">' +
-                    '<h4 style="margin:0 0 10px;color:#2E7D32;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;"><i class="fas fa-map" style="margin-right:5px;"></i>Areas' + (selLandmark ? ' <span style="font-weight:400;text-transform:none;color:#888;">(under '+selLandmark.name+')</span>' : '') + '</h4>' +
-                    (selLandmarkId ? ('<div style="display:flex;gap:6px;margin-bottom:10px;">' +
-                        '<input type="text" id="amAreaInput" class="form-control" placeholder="New area" style="flex:1;font-size:.83rem;">' +
-                        '<button onclick="amAddArea(\''+selLandmarkId+'\')" class="btn btn-primary btn-small" style="background:#2E7D32;">Add</button>' +
-                    '</div>') : '') +
-                    '<div id="amAreaList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">' +
-                    subs.map(function(s) {
-                        return '<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#f8f9fa;border-radius:8px;">' +
-                            '<span style="flex:1;font-weight:600;font-size:.85rem;">'+s.name+'</span>' +
-                            '<button onclick="amDeleteArea(\''+s.id+'\')" style="border:none;background:#FFEBEE;color:#c0392b;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;"><i class="fas fa-trash"></i></button>' +
-                        '</div>';
-                    }).join('') +
-                    (!subs.length ? '<div style="color:#aaa;text-align:center;padding:12px;font-size:.83rem;">' + (selLandmarkId ? 'No areas yet.' : 'Select an landmark first.') + '</div>' : '') +
-                    '</div>' +
-                '</div>' +
+            // ── Col 2: Areas ────────────────────────────────────────────────
+            html += '<div style="border-right:2px solid #f0f0f0;padding-right:18px;display:flex;flex-direction:column;gap:10px;">';
+            html += '<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#1565C0;"><i class="fas fa-map" style="margin-right:5px;"></i>Areas' + (lmName ? ' <span style="font-weight:400;text-transform:none;color:#888;">under ' + lmName + '</span>' : '') + '</div>';
+            if (selLmId) {
+                html += '<div style="display:flex;gap:6px;">';
+                html += '<input type="text" id="amAreaInput" class="form-control" placeholder="New area name" style="flex:1;font-size:.82rem;">';
+                html += '<button onclick="amAddArea(this)" data-lmid="' + selLmId + '" style="padding:0 14px;border:none;border-radius:8px;background:#1565C0;color:#fff;font-weight:700;cursor:pointer;">+ Add</button>';
+                html += '</div>';
+            }
+            html += '<div style="overflow-y:auto;display:flex;flex-direction:column;gap:6px;max-height:360px;">';
+            areas.forEach(function(a) {
+                html += '<div style="display:flex;align-items:center;gap:6px;padding:9px 12px;background:#f0f4ff;border-radius:8px;">';
+                html += '<span style="flex:1;font-weight:600;font-size:.85rem;">' + a.name + '</span>';
+                html += '<button onclick="amRenameAreaPrompt(this)" data-aid="' + a.id + '" data-aname="' + a.name.replace(/"/g, '&quot;') + '" style="border:none;background:#E3F2FD;color:#1565C0;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;" title="Rename"><i class="fas fa-pen"></i></button>';
+                html += '<button onclick="amDeleteArea(this)" data-aid="' + a.id + '" style="border:none;background:#FFEBEE;color:#c0392b;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;" title="Delete"><i class="fas fa-trash"></i></button>';
+                html += '</div>';
+            });
+            if (!areas.length && selLmId) html += '<div style="color:#aaa;text-align:center;padding:20px;font-size:.83rem;">No areas yet. Add one above.</div>';
+            if (!selLmId) html += '<div style="color:#aaa;text-align:center;padding:20px;font-size:.83rem;">Select a landmark first.</div>';
+            html += '</div></div>';
 
-                '</div></div>';
+            // ── Col 3: Buildings ────────────────────────────────────────────
+            html += '<div style="display:flex;flex-direction:column;gap:10px;">';
+            html += '<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#2E7D32;"><i class="fas fa-building" style="margin-right:5px;"></i>Buildings' + (lmName ? ' <span style="font-weight:400;text-transform:none;color:#888;">under ' + lmName + '</span>' : '') + '</div>';
+            if (selLmId) {
+                html += '<div style="display:flex;gap:6px;">';
+                html += '<input type="text" id="amBldgInput" class="form-control" placeholder="New building name" style="flex:1;font-size:.82rem;">';
+                html += '<button onclick="amAddBuilding(this)" data-lmid="' + selLmId + '" style="padding:0 14px;border:none;border-radius:8px;background:#2E7D32;color:#fff;font-weight:700;cursor:pointer;">+ Add</button>';
+                html += '</div>';
+                html += '<div style="font-size:.72rem;color:#888;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Buildings here are linked to ' + lmName + ' and appear when it is selected in donation forms.</div>';
+            }
+            html += '<div style="overflow-y:auto;display:flex;flex-direction:column;gap:6px;max-height:360px;">';
+            bldgs.forEach(function(b) {
+                html += '<div style="display:flex;align-items:center;gap:6px;padding:9px 12px;background:#f0fff4;border-radius:8px;">';
+                html += '<span style="flex:1;font-weight:600;font-size:.85rem;">' + b.name + '</span>';
+                html += '<button onclick="amRenameBuildingPrompt(this)" data-bid="' + b.id + '" data-bname="' + b.name.replace(/"/g, '&quot;') + '" style="border:none;background:#E3F2FD;color:#1565C0;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;" title="Rename"><i class="fas fa-pen"></i></button>';
+                html += '<button onclick="amDeleteBuilding(this)" data-bid="' + b.id + '" style="border:none;background:#FFEBEE;color:#c0392b;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;" title="Delete"><i class="fas fa-trash"></i></button>';
+                html += '</div>';
+            });
+            if (!bldgs.length && selLmId) html += '<div style="color:#aaa;text-align:center;padding:20px;font-size:.83rem;">No buildings linked. Add one above.</div>';
+            if (!selLmId) html += '<div style="color:#aaa;text-align:center;padding:20px;font-size:.83rem;">Select a landmark first.</div>';
+            html += '</div></div>';
+
+            html += '</div></div>';
+            modal.innerHTML = html;
         }
 
-        window.amSelectLm = function(id) { selLmId = id; selLandmarkId = null; renderModal(); };
-        window.amSelectLandmark = function(id) { selLandmarkId = id; renderModal(); };
+        // ── Event handlers (use data-* to avoid any quote nesting) ──────────
+        window.amSelectLm = function(el) { selLmId = el.dataset.lmid; editingLm = null; renderModal(); };
+        window.amEditLm   = function(btn) { editingLm = btn.dataset.lid; renderModal(); setTimeout(function(){ var i=document.getElementById('amRenLmInput'); if(i){i.focus();i.select();} },50); };
+        window.amCancelRenLm = function() { editingLm = null; renderModal(); };
+        window.amRenameLm = async function(btn) {
+            var id  = btn.dataset.lid;
+            var val = ((document.getElementById('amRenLmInput')||{}).value||''). trim();
+            if (!val) return;
+            var r = await fetch('/api/landmarks/'+encodeURIComponent(id), { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: val }) });
+            var d = await r.json();
+            if (r.ok && d.success) { var i=allLandmarks.findIndex(function(l){return l.id===id;}); if(i>=0) allLandmarks[i].name=val; _adeAllLandmarks=allLandmarks; editingLm=null; adeLoadLandmarks(); renderModal(); }
+            else alert(d.message||'Rename failed.');
+        };
         window.amAddLandmark = async function() {
-            var name = (document.getElementById('amLmInput') || {}).value || '';
-            name = name.trim(); if (!name) return;
+            var name = ((document.getElementById('amLmInput')||{}).value||'').trim(); if(!name) return;
             var r = await fetch('/api/landmarks', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name }) });
             var d = await r.json();
-            if (r.ok && d.success) { allLandmarks.push(d.landmark); selLmId = d.landmark.id; selLandmarkId = null; renderModal(); adeLoadLandmarks(); }
-            else alert(d.message || 'Could not add.');
+            if (r.ok && d.success) { allLandmarks.push(d.landmark); _adeAllLandmarks=allLandmarks; selLmId=d.landmark.id; adeLoadLandmarks(); renderModal(); }
+            else alert(d.message||'Could not add.');
         };
-        window.amDeleteLandmark = async function(id) {
-            if (!confirm('Delete this landmark?')) return;
-            var r = await fetch('/api/landmarks/' + encodeURIComponent(id), { method:'DELETE' });
-            if (r.ok) { var i = allLandmarks.findIndex(function(l){return l.id===id;}); if(i>=0) allLandmarks.splice(i,1); if(selLmId===id){selLmId=allLandmarks.length?allLandmarks[0].id:null;selLandmarkId=null;} renderModal(); adeLoadLandmarks(); }
-            else alert('Could not delete.');
-        };
-        window.amAddLandmark = async function(landmarkId) {
-            var name = (document.getElementById('amLandmarkInput') || {}).value || '';
-            name = name.trim(); if (!name) return;
-            var r = await fetch('/api/landmarks', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name, landmarkId: landmarkId }) });
-            var d = await r.json();
-            if (r.ok && d.success) { allLandmarks.push(d.landmark); selLandmarkId = d.landmark.id; renderModal(); adeLoadLandmarks(); }
-            else alert(d.message || 'Could not add.');
-        };
-        window.amDeleteLandmark = async function(id) {
+        window.amDeleteLm = async function(btn) {
+            var id = btn.dataset.lid;
             if (!confirm('Delete this landmark and all its areas?')) return;
-            var r = await fetch('/api/landmarks/' + encodeURIComponent(id), { method:'DELETE' });
-            if (r.ok) { var i = allLandmarks.findIndex(function(a){return a.id===id;}); if(i>=0) allLandmarks.splice(i,1); if(selLandmarkId===id) selLandmarkId=null; renderModal(); adeLoadLandmarks(); }
+            var r = await fetch('/api/landmarks/'+encodeURIComponent(id), { method:'DELETE' });
+            if (r.ok) { allLandmarks=allLandmarks.filter(function(l){return l.id!==id;}); allAreas=allAreas.filter(function(a){return a.landmarkId!==id;}); allBuildings=allBuildings.filter(function(b){return b.landmarkId!==id;}); _adeAllLandmarks=allLandmarks; _adeAllAreas=allAreas; _adeAllBuildings=allBuildings; if(selLmId===id) selLmId=allLandmarks.length?allLandmarks[0].id:null; adeLoadLandmarks(); renderModal(); }
             else alert('Could not delete.');
         };
-        window.amAddArea = async function(landmarkId) {
-            var name = (document.getElementById('amAreaInput') || {}).value || '';
-            name = name.trim(); if (!name) return;
+        window.amAddArea = async function(btn) {
+            var landmarkId = btn.dataset.lmid;
+            var name = ((document.getElementById('amAreaInput')||{}).value||'').trim(); if(!name) return;
             var r = await fetch('/api/areas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name, landmarkId: landmarkId }) });
             var d = await r.json();
-            if (r.ok && d.success) { allAreas.push(d.area); renderModal(); }
-            else alert(d.message || 'Could not add.');
+            if (r.ok && d.success) { allAreas.push(d.area); _adeAllAreas=allAreas; renderModal(); }
+            else alert(d.message||'Could not add.');
         };
-        window.amDeleteArea = async function(id) {
+        window.amRenameAreaPrompt = async function(btn) {
+            var id   = btn.dataset.aid;
+            var name = prompt('Rename area:', btn.dataset.aname); if (!name||!name.trim()) return;
+            var r = await fetch('/api/areas/'+encodeURIComponent(id), { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name.trim() }) });
+            var d = await r.json();
+            if (r.ok && d.success) { var i=allAreas.findIndex(function(a){return a.id===id;}); if(i>=0) allAreas[i].name=name.trim(); _adeAllAreas=allAreas; renderModal(); }
+            else alert(d.message||'Rename failed.');
+        };
+        window.amDeleteArea = async function(btn) {
+            var id = btn.dataset.aid;
             if (!confirm('Delete this area?')) return;
-            var r = await fetch('/api/areas/' + encodeURIComponent(id), { method:'DELETE' });
-            if (r.ok) { var i = allAreas.findIndex(function(s){return s.id===id;}); if(i>=0) allAreas.splice(i,1); renderModal(); }
+            var r = await fetch('/api/areas/'+encodeURIComponent(id), { method:'DELETE' });
+            if (r.ok) { allAreas=allAreas.filter(function(a){return a.id!==id;}); _adeAllAreas=allAreas; renderModal(); }
+            else alert('Could not delete.');
+        };
+        window.amAddBuilding = async function(btn) {
+            var landmarkId = btn.dataset.lmid;
+            var name = ((document.getElementById('amBldgInput')||{}).value||'').trim(); if(!name) return;
+            var r = await fetch('/api/buildings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name, landmarkId: landmarkId }) });
+            var d = await r.json();
+            if (r.ok && d.success) { allBuildings.push(d.building); _adeAllBuildings=allBuildings; adeLoadBuildings(); renderModal(); }
+            else alert(d.message||'Could not add.');
+        };
+        window.amRenameBuildingPrompt = async function(btn) {
+            var id   = btn.dataset.bid;
+            var name = prompt('Rename building:', btn.dataset.bname); if (!name||!name.trim()) return;
+            var r = await fetch('/api/buildings/'+encodeURIComponent(id), { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name.trim() }) });
+            var d = await r.json();
+            if (r.ok && d.success) { var i=allBuildings.findIndex(function(b){return b.id===id;}); if(i>=0) allBuildings[i].name=name.trim(); _adeAllBuildings=allBuildings; adeLoadBuildings(); renderModal(); }
+            else alert(d.message||'Rename failed.');
+        };
+        window.amDeleteBuilding = async function(btn) {
+            var id = btn.dataset.bid;
+            if (!confirm('Delete this building?')) return;
+            var r = await fetch('/api/buildings/'+encodeURIComponent(id), { method:'DELETE' });
+            if (r.ok) { allBuildings=allBuildings.filter(function(b){return b.id!==id;}); _adeAllBuildings=allBuildings; adeLoadBuildings(); renderModal(); }
             else alert('Could not delete.');
         };
 
@@ -1367,7 +1430,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.appendChild(modal);
         modal.addEventListener('click', function(ev) { if (ev.target === modal) modal.remove(); });
     }
-    function adeShowStatus(msg, type) {
+        function adeShowStatus(msg, type) {
         const el = document.getElementById('adeStatus');
         if (!el) return;
         el.textContent = msg;
