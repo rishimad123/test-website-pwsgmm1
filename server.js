@@ -1624,7 +1624,8 @@ const server = http.createServer(async (req, res) => {
                 whatsappNumber, mobileNumber, mailId,
                 buildingName, flatNumber, landmark, area,
                 amount, paymentMode, referenceNumber,
-                submittedBy, submittedByUserId
+                submittedBy, submittedByUserId,
+                receiptDate, receiptSnapshot
             } = body;
 
             // ── Validation ──────────────────────────────────────────────
@@ -1684,6 +1685,9 @@ const server = http.createServer(async (req, res) => {
                 submittedByUserId: submittedByUserId || null,
                 deleted          : false,
                 updatedAt        : null,
+                receiptDate      : (receiptDate || '').trim() || null,
+                receiptSnapshot  : receiptSnapshot || null,
+                receiptHistory   : [],
             };
 
             donationEntries.push(entry);
@@ -1692,6 +1696,76 @@ const server = http.createServer(async (req, res) => {
             return sendJSON(res, 200, { success: true, entry });
         } catch (err) {
             console.error('Donation entry error:', err.message);
+            return sendJSON(res, 400, { message: err.message || 'Bad request.' });
+        }
+    }
+
+    // ── PUT /api/donation-entries/:id/receipt  (edit receipt snapshot + append history) ──
+    if (req.method === 'PUT' && pathname.match(/^\/api\/donation-entries\/[^/]+\/receipt$/)) {
+        const entryId = decodeURIComponent(pathname.replace('/api/donation-entries/', '').replace('/receipt', ''));
+        const idx = donationEntries.findIndex(e => e.entryId === entryId && !e.deleted);
+        if (idx === -1) return sendJSON(res, 404, { message: 'Entry not found.' });
+        try {
+            const body = await readBody(req);
+            const { donorName, amount, receiptDate, status, reason, editedBy } = body;
+            if (!donorName || !donorName.trim()) return sendJSON(res, 400, { message: 'Donor name is required.' });
+
+            const e = donationEntries[idx];
+            const prevSnapshot = e.receiptSnapshot ? { ...e.receiptSnapshot } : null;
+
+            // Build change diff for audit trail
+            const changes = {};
+            const newSnapshot = {
+                donorName    : donorName.trim().toUpperCase(),
+                amount       : amount != null && !isNaN(Number(amount)) ? Number(amount) : (e.amount || null),
+                receiptDate  : (receiptDate || '').trim() || e.receiptDate || null,
+                receiptNo    : e.receiptNumber,
+                bookNo       : e.bookNumber,
+                paymentMode  : e.paymentMode,
+                savedAt      : new Date().toISOString(),
+                savedBy      : (editedBy || 'Unknown').trim()
+            };
+
+            if (prevSnapshot) {
+                if (prevSnapshot.donorName  !== newSnapshot.donorName)  changes.donorName  = { from: prevSnapshot.donorName,  to: newSnapshot.donorName };
+                if (prevSnapshot.amount     !== newSnapshot.amount)     changes.amount     = { from: prevSnapshot.amount,     to: newSnapshot.amount };
+                if (prevSnapshot.receiptDate!== newSnapshot.receiptDate)changes.receiptDate= { from: prevSnapshot.receiptDate,to: newSnapshot.receiptDate };
+            }
+
+            // Update status if provided
+            if (status && ['Received','Balance','Cash','Cheque','UPI','RTGS'].includes(status)) {
+                if (e.status !== status) {
+                    changes.status = { from: e.status, to: status };
+                    e.status = status;
+                }
+            }
+
+            // Update name fields from donorName (split into existing name fields for consistency)
+            const parts = newSnapshot.donorName.split(' ').filter(Boolean);
+            if (parts.length >= 1) e.firstName  = parts[0];
+            if (parts.length >= 2) e.lastName   = parts[parts.length - 1];
+            if (parts.length >= 3) e.middleName = parts.slice(1, -1).join(' ');
+            if (e.donorType === 'Business') e.businessName = newSnapshot.donorName;
+
+            if (newSnapshot.amount !== null) e.amount = newSnapshot.amount;
+            if (newSnapshot.receiptDate) e.receiptDate = newSnapshot.receiptDate;
+
+            e.receiptSnapshot = newSnapshot;
+            if (!Array.isArray(e.receiptHistory)) e.receiptHistory = [];
+            e.receiptHistory.push({
+                editedAt : new Date().toISOString(),
+                editedBy : (editedBy || 'Unknown').trim(),
+                reason   : (reason || '').trim() || 'Manual edit',
+                changes
+            });
+            e.updatedAt = new Date().toISOString();
+
+            await saveDonationEntries();
+            broadcastLiveEvent('donations_updated');
+            console.log(`✏️  Receipt snapshot updated: ${entryId} by ${editedBy}`);
+            return sendJSON(res, 200, { success: true, entry: e });
+        } catch (err) {
+            console.error('Receipt edit error:', err.message);
             return sendJSON(res, 400, { message: err.message || 'Bad request.' });
         }
     }
