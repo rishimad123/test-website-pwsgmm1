@@ -4334,7 +4334,7 @@ window._fmtBytesA = function(b) {
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
                     ${(e.editHistory && e.editHistory.length) || (e.nameHistory && e.nameHistory.length) ? `<span onclick="adeOpenEdit('${e.entryId}')" style="cursor:pointer;font-size:.7rem;font-weight:700;color:#c0392b;background:#FFEBEE;padding:3px 8px;border-radius:12px;border:1px solid #f5b7b1;"><i class="fas fa-pencil-alt" style="margin-right:4px;"></i>Edited</span>` : '<span></span>'}
                     ${(e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received')).toLowerCase() === 'received' ? `<span style="background:#E8F5E9;color:#1B5E20;font-size:.73rem;font-weight:800;padding:3px 9px;border-radius:16px;border:1px solid #c8e6c9;">STATUS: RECEIVED</span>` : `<span style="background:#FFF8E1;color:#F57F17;font-size:.73rem;font-weight:800;padding:3px 9px;border-radius:16px;border:1px solid #ffe0b2;">STATUS: BALANCE</span>`}
-                         ${(e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received')).toLowerCase() === 'received' ? `<button onclick="ade_rcg_openEditModal('${e.entryId}')" title="Edit Receipt" style="border:none;background:linear-gradient(135deg,#8B1A1A,#B71C1C);color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fas fa-file-invoice"></i> Edit Receipt</button>` : ''}
+                         ${(e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received')).toLowerCase() === 'received' ? `<div style="display:flex;gap:4px;"><button onclick="ade_rcg_openEditModal('${e.entryId}')" title="Edit Receipt" style="border:none;background:linear-gradient(135deg,#8B1A1A,#B71C1C);color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fas fa-file-invoice"></i> Edit</button>` + (e.receiptPreviewUrl ? `<button onclick="window.open('${e.receiptPreviewUrl}', '_blank')" title="View HD Receipt" style="border:none;background:#FFEBEE;color:#C62828;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fas fa-eye"></i> View</button>` : '') + `</div>` : ''}
                 </div>
                 <div style="display:flex;align-items:center;justify-content:space-between;">
                     <div style="font-size:1.1rem;font-weight:800;color:#2E7D32;">${amt}</div>
@@ -7027,6 +7027,75 @@ fetchNotifications();
 (function(){
   "use strict";
   var _editId = null;
+  
+  // ── Receipt Preview Image Uploader ──
+  window._uploadReceiptPreview = async function(entryId, name, amount, dateRaw, payMode, rcptNo, bookNo, statusLabel) {
+      if(!entryId) return;
+      var amtFmt = Number(amount).toLocaleString('en-IN');
+      var dateStr = '';
+      if(dateRaw) { var pts=dateRaw.split('-'); dateStr=(pts[2]||'')+'/'+(pts[1]||'')+'/'+(pts[0]||''); }
+      var rcptLabel = bookNo&&rcptNo?bookNo+'/'+rcptNo:(rcptNo||bookNo||'—');
+      
+      // We render a temporary exact replica of the receipt
+      var tpl = '<div style="width:380px;position:relative;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.12);font-family:\'Segoe UI\',Tahoma,Geneva,Verdana,sans-serif;padding-bottom:10px;margin-bottom:20px;">' +
+      '<div style="background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;text-align:center;padding:15px 10px;position:relative;">' +
+      '<div style="font-size:1.1rem;font-weight:800;letter-spacing:0.5px;text-shadow:1px 1px 2px rgba(0,0,0,0.2);">श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ</div>' +
+      '<div style="font-size:0.75rem;opacity:0.9;margin-top:4px;">Donation Receipt</div>' +
+      '</div>' +
+      '<div style="padding:16px;background:#fafafa;">' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:12px;border-bottom:1px dashed #ddd;padding-bottom:10px;">' +
+      '<div style="font-size:0.75rem;color:#666;">Date: <strong style="color:#333;">'+(dateStr||'—')+'</strong></div>' +
+      '<div style="font-size:0.75rem;color:#666;">Receipt: <strong style="color:#333;">'+rcptLabel+'</strong></div>' +
+      '</div>' +
+      '<div style="text-align:center;margin:15px 0;">' +
+      '<div style="font-size:0.8rem;color:#777;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Received with thanks from</div>' +
+      '<div style="font-size:1.2rem;font-weight:700;color:#111;">'+(name||'—')+'</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:20px 0;">' +
+      '<div style="background:#E8F5E9;color:#2E7D32;padding:10px 20px;border-radius:30px;font-size:1.4rem;font-weight:800;box-shadow:inset 0 2px 4px rgba(0,0,0,0.05);">₹'+amtFmt+'</div>' +
+      '</div>' +
+      '<div style="text-align:center;font-size:0.8rem;color:#666;">' +
+      'Payment Mode: <strong style="color:#444;background:#eee;padding:3px 8px;border-radius:6px;">'+payMode+'</strong>' +
+      '</div>' +
+      '<div style="margin-top:15px;text-align:center;font-size:0.8rem;font-weight:700;color:'+(statusLabel==='BALANCE'?'#F57F17':'#2E7D32')+'">' +
+      (statusLabel==='BALANCE'?'[ BALANCE ]':'[ RECEIVED ]') +
+      '</div>' +
+      '</div>' +
+      '<div style="text-align:center;font-size:0.7rem;color:#888;padding:10px;background:#f0f0f0;border-top:1px solid #ddd;">' +
+      'This is an electronically generated receipt.<br>Thank you for your generous contribution! 🙏' +
+      '</div>' +
+      '</div>';
+      
+      var container = document.createElement('div');
+      container.style.position = 'absolute'; container.style.top = '-9999px'; container.style.left = '-9999px';
+      container.innerHTML = tpl;
+      document.body.appendChild(container);
+      
+      return new Promise(function(resolve) {
+          function doCapture() {
+              html2canvas(container.firstChild, { scale: 3, backgroundColor: null, useCORS: true, logging: false })
+              .then(function(canvas) {
+                  canvas.toBlob(async function(blob) {
+                      document.body.removeChild(container);
+                      if (!blob) return resolve();
+                      var fd = new FormData();
+                      fd.append('receiptImage', blob, 'preview.png');
+                      fd.append('entryId', entryId);
+                      try { await fetch('/api/upload-receipt-preview', { method:'POST', body:fd }); } catch(e){}
+                      resolve();
+                  }, 'image/png');
+              }).catch(function(){ document.body.removeChild(container); resolve(); });
+          }
+          if (typeof html2canvas !== 'undefined') doCapture();
+          else {
+              var s = document.createElement('script');
+              s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+              s.onload = doCapture; s.onerror = resolve;
+              document.head.appendChild(s);
+          }
+      });
+  };
+
   window.ade_rcg_saveSnapshot = async function(entryId){
     if(!entryId) return;
     var dt=document.getElementById("adeDonorType"),dn="";

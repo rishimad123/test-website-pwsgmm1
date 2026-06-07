@@ -983,6 +983,65 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 200, { success: true, receipt: receipts[idx] });
     }
 
+    // ── POST /api/upload-receipt-preview ──────────────────────────────────
+    if (req.method === 'POST' && pathname === '/api/upload-receipt-preview') {
+        try {
+            const contentType = req.headers['content-type'] || '';
+            const boundaryMatch = contentType.match(/boundary=([^;]+)/i);
+            if (!boundaryMatch) {
+                return sendJSON(res, 400, { message: 'Missing multipart boundary.' });
+            }
+            const boundary = boundaryMatch[1].trim();
+            const rawBody = await readRawBody(req);
+            const parts   = parseMultipart(rawBody, boundary);
+
+            const filePart = parts.find(p => p.name === 'receiptImage' && p.filename);
+            const entryIdPart = parts.find(p => p.name === 'entryId' && !p.filename);
+
+            if (!filePart || !entryIdPart) {
+                return sendJSON(res, 400, { message: 'Missing receiptImage or entryId.' });
+            }
+
+            const entryId = entryIdPart.data.toString('utf8').trim();
+            const eidx = donationEntries.findIndex(e => e.entryId === entryId);
+            
+            if (eidx === -1) {
+                return sendJSON(res, 404, { message: 'Entry not found.' });
+            }
+
+            const uniqueName = `preview_${Date.now()}_${entryId}.png`;
+            let fileUrl = null;
+
+            // Try Cloudinary first, fall back to local disk
+            const cloudUrl = await uploadToCloudinary(filePart.data, uniqueName);
+            if (cloudUrl) {
+                fileUrl = cloudUrl;
+            } else {
+                try {
+                    fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
+                    fileUrl = `/uploads/${uniqueName}`;
+                    console.log(`🖼  Preview saved locally: ${fileUrl}`);
+                } catch (fsErr) {
+                    console.warn('⚠️ Could not write preview to disk:', fsErr.message);
+                }
+            }
+
+            if (fileUrl) {
+                donationEntries[eidx].receiptPreviewFile = uniqueName;
+                donationEntries[eidx].receiptPreviewUrl = fileUrl;
+                donationEntries[eidx].updatedAt = new Date().toISOString();
+                await saveDonationEntries();
+                // Broadcast update so the view button appears immediately
+                broadcastLiveUpdate({ type: 'entries', data: donationEntries });
+            }
+
+            return sendJSON(res, 200, { success: true, fileUrl });
+        } catch (err) {
+            console.error('[Upload Preview] Error:', err);
+            return sendJSON(res, 500, { message: 'Upload failed', error: err.message });
+        }
+    }
+
     // ── POST /api/upload-passbook ─────────────────────────────────────────
     if (req.method === 'POST' && pathname === '/api/upload-passbook') {
         try {
