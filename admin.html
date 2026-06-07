@@ -1270,6 +1270,12 @@ window._fmtBytesA = function(b) {
                     </a>
                 </li>
                 <li>
+                    <a href="#" onclick="showAdminSection('receiptGenerator')">
+                        <i class="fas fa-file-invoice" style="color:#8B1A1A;"></i>
+                        <span>Generate Receipt</span>
+                    </a>
+                </li>
+                <li>
                     <a href="#" onclick="showAdminSection('settings')">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
@@ -2823,6 +2829,529 @@ window._fmtBytesA = function(b) {
                     </div>
                 </div>
                 
+                <!-- ==================== RECEIPT GENERATOR SECTION ==================== -->
+                <div id="receiptGenerator" class="content-section">
+
+                <style>
+                /* ── Receipt Generator: all styles scoped with .rcg- prefix ── */
+                @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700;900&display=swap');
+
+                .rcg-wrap {
+                    display: grid;
+                    grid-template-columns: 360px 1fr;
+                    gap: 28px;
+                    align-items: start;
+                }
+                @media(max-width:1024px){ .rcg-wrap{ grid-template-columns:1fr; } }
+
+                /* ── Entry Form Panel ── */
+                .rcg-form-card {
+                    background:#fff;
+                    border-radius:16px;
+                    box-shadow:0 4px 24px rgba(0,0,0,.10);
+                    padding:28px 24px;
+                    position:sticky;
+                    top:80px;
+                }
+                .rcg-form-card h3 {
+                    font-size:1.15rem;
+                    font-weight:700;
+                    color:#8B1A1A;
+                    margin-bottom:4px;
+                    display:flex;
+                    align-items:center;
+                    gap:8px;
+                }
+                .rcg-form-card .rcg-sub {
+                    font-size:.82rem;
+                    color:#888;
+                    margin-bottom:20px;
+                }
+                .rcg-field { margin-bottom:16px; }
+                .rcg-field label {
+                    display:block;
+                    font-size:.82rem;
+                    font-weight:600;
+                    color:#444;
+                    margin-bottom:5px;
+                }
+                .rcg-field input, .rcg-field select {
+                    width:100%;
+                    padding:10px 13px;
+                    border:2px solid #E8E8E8;
+                    border-radius:9px;
+                    font-size:.95rem;
+                    font-family:inherit;
+                    transition:border-color .25s;
+                    box-sizing:border-box;
+                }
+                .rcg-field input:focus, .rcg-field select:focus {
+                    outline:none;
+                    border-color:#8B1A1A;
+                }
+                .rcg-field input[readonly] {
+                    background:#f9f9f9;
+                    color:#666;
+                    cursor:default;
+                }
+                .rcg-btn-generate {
+                    width:100%;
+                    padding:13px;
+                    background:linear-gradient(135deg,#8B1A1A,#C0392B);
+                    color:#fff;
+                    border:none;
+                    border-radius:10px;
+                    font-size:1rem;
+                    font-weight:700;
+                    cursor:pointer;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    gap:8px;
+                    margin-top:4px;
+                    transition:transform .2s,box-shadow .2s;
+                }
+                .rcg-btn-generate:hover {
+                    transform:translateY(-2px);
+                    box-shadow:0 6px 20px rgba(139,26,26,.35);
+                }
+                .rcg-action-row {
+                    display:none;
+                    gap:10px;
+                    margin-top:14px;
+                }
+                .rcg-action-row.visible { display:flex; }
+                .rcg-btn-dl, .rcg-btn-wa {
+                    flex:1;
+                    padding:11px 6px;
+                    border:none;
+                    border-radius:9px;
+                    font-size:.88rem;
+                    font-weight:700;
+                    cursor:pointer;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    gap:7px;
+                    transition:transform .2s,box-shadow .2s;
+                }
+                .rcg-btn-dl {
+                    background:linear-gradient(135deg,#1565C0,#1976D2);
+                    color:#fff;
+                }
+                .rcg-btn-dl:hover {
+                    transform:translateY(-2px);
+                    box-shadow:0 5px 16px rgba(21,101,192,.35);
+                }
+                .rcg-btn-wa {
+                    background:linear-gradient(135deg,#1A7B43,#25A55A);
+                    color:#fff;
+                }
+                .rcg-btn-wa:hover {
+                    transform:translateY(-2px);
+                    box-shadow:0 5px 16px rgba(26,123,67,.35);
+                }
+                .rcg-wa-num-row {
+                    display:none;
+                    margin-top:10px;
+                }
+                .rcg-wa-num-row.visible { display:block; }
+                .rcg-wa-num-row label {
+                    font-size:.8rem;
+                    font-weight:600;
+                    color:#444;
+                    margin-bottom:4px;
+                    display:block;
+                }
+                .rcg-wa-num-row input {
+                    width:100%;
+                    padding:9px 12px;
+                    border:2px solid #E8E8E8;
+                    border-radius:8px;
+                    font-size:.9rem;
+                    font-family:inherit;
+                    box-sizing:border-box;
+                    transition:border-color .25s;
+                }
+                .rcg-wa-num-row input:focus { outline:none; border-color:#1A7B43; }
+
+                /* ── Receipt Preview Panel ── */
+                .rcg-preview-card {
+                    background:#fff;
+                    border-radius:16px;
+                    box-shadow:0 4px 24px rgba(0,0,0,.10);
+                    padding:28px 24px;
+                }
+                .rcg-preview-card h3 {
+                    font-size:1.1rem;
+                    font-weight:700;
+                    color:#555;
+                    margin-bottom:18px;
+                    display:flex;
+                    align-items:center;
+                    gap:8px;
+                }
+
+                /* ── The Receipt itself ── */
+                .rcg-receipt {
+                    font-family:'Noto Sans Devanagari', 'Mangal', Arial, sans-serif;
+                    background:linear-gradient(145deg,#dff0fa 0%,#f0f8ff 40%,#e8f4fc 70%,#cbe8f6 100%);
+                    border:2px solid #AACCDD;
+                    border-radius:8px;
+                    padding:18px 24px 22px;
+                    max-width:780px;
+                    margin:0 auto;
+                    position:relative;
+                    box-shadow:0 2px 16px rgba(0,0,0,.12);
+                    box-sizing:border-box;
+                }
+                /* Top meta row */
+                .rcg-r-top {
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:flex-start;
+                    margin-bottom:6px;
+                    font-size:.78rem;
+                    color:#8B1A1A;
+                    font-weight:600;
+                }
+                .rcg-r-top .rcg-r-center { text-align:center; flex:1; }
+                .rcg-r-top .rcg-r-right  { text-align:right; white-space:nowrap; }
+                /* Big title */
+                .rcg-r-title {
+                    text-align:center;
+                    font-size:1.75rem;
+                    font-weight:900;
+                    color:#8B1A1A;
+                    line-height:1.25;
+                    margin-bottom:3px;
+                    letter-spacing:.01em;
+                }
+                .rcg-r-addr {
+                    text-align:center;
+                    font-size:.72rem;
+                    color:#8B1A1A;
+                    margin-bottom:12px;
+                    font-weight:500;
+                }
+                .rcg-r-divider {
+                    border:none;
+                    border-top:2px solid #8B1A1A;
+                    margin:8px 0;
+                }
+                /* Receipt num + date row */
+                .rcg-r-meta {
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    font-size:.9rem;
+                    font-weight:700;
+                    color:#8B1A1A;
+                    margin-bottom:10px;
+                    padding:4px 2px;
+                }
+                .rcg-r-meta-val {
+                    font-weight:400;
+                    color:#222;
+                    border-bottom:1.5px solid #8B1A1A;
+                    min-width:100px;
+                    display:inline-block;
+                    padding:1px 6px;
+                    text-align:center;
+                }
+                /* Donor name row */
+                .rcg-r-donor-row {
+                    display:flex;
+                    align-items:flex-end;
+                    gap:6px;
+                    margin-bottom:6px;
+                }
+                .rcg-r-donor-label {
+                    font-size:.92rem;
+                    font-weight:700;
+                    color:#8B1A1A;
+                    white-space:nowrap;
+                }
+                .rcg-r-donor-name {
+                    flex:1;
+                    border-bottom:1.5px solid #8B1A1A;
+                    min-height:24px;
+                    font-size:.95rem;
+                    color:#222;
+                    padding:0 6px;
+                    display:flex;
+                    align-items:flex-end;
+                    justify-content:center;
+                    font-weight:600;
+                }
+                .rcg-r-donor-suffix {
+                    font-size:.88rem;
+                    font-weight:700;
+                    color:#8B1A1A;
+                    white-space:nowrap;
+                }
+                /* Amount in words row */
+                .rcg-r-words-row {
+                    display:flex;
+                    align-items:flex-end;
+                    gap:6px;
+                    margin-bottom:6px;
+                }
+                .rcg-r-words-label {
+                    font-size:.92rem;
+                    font-weight:700;
+                    color:#8B1A1A;
+                    white-space:nowrap;
+                }
+                .rcg-r-words-val {
+                    flex:1;
+                    border-bottom:1.5px solid #8B1A1A;
+                    min-height:24px;
+                    font-size:.88rem;
+                    color:#333;
+                    padding:0 6px;
+                    display:flex;
+                    align-items:flex-end;
+                }
+                /* Thank you row */
+                .rcg-r-thanks-row {
+                    display:flex;
+                    justify-content:flex-end;
+                    align-items:center;
+                    gap:8px;
+                    margin:4px 0 10px;
+                }
+                .rcg-r-thanks-line {
+                    flex:1;
+                    border-bottom:1.5px solid #8B1A1A;
+                    min-height:14px;
+                }
+                .rcg-r-thanks-label {
+                    font-size:.88rem;
+                    font-weight:700;
+                    color:#8B1A1A;
+                    white-space:nowrap;
+                }
+                /* Amount box row */
+                .rcg-r-amt-row {
+                    display:flex;
+                    align-items:center;
+                    gap:12px;
+                    margin-bottom:16px;
+                }
+                .rcg-r-amt-box {
+                    border:2px solid #8B1A1A;
+                    border-radius:5px;
+                    padding:6px 16px;
+                    font-size:1.1rem;
+                    font-weight:700;
+                    color:#8B1A1A;
+                    min-width:110px;
+                    text-align:center;
+                    background:rgba(255,255,255,.5);
+                }
+                .rcg-r-paymode {
+                    font-size:.78rem;
+                    color:#666;
+                    font-style:italic;
+                }
+                /* Signature row */
+                .rcg-r-sigs {
+                    display:flex;
+                    justify-content:space-between;
+                    border-top:1px solid #AACCDD;
+                    padding-top:10px;
+                    margin-top:6px;
+                }
+                .rcg-r-sig {
+                    text-align:center;
+                    font-size:.72rem;
+                    color:#333;
+                    font-weight:600;
+                }
+                .rcg-r-sig .rcg-r-sig-title {
+                    font-size:.68rem;
+                    color:#777;
+                    font-weight:400;
+                    margin-bottom:2px;
+                }
+                .rcg-r-sig .rcg-r-sig-line {
+                    border-top:1.5px solid #8B1A1A;
+                    width:70px;
+                    margin:6px auto 3px;
+                }
+
+                /* Placeholder text styling */
+                .rcg-placeholder {
+                    color:#BBB;
+                    font-style:italic;
+                    font-weight:400;
+                }
+                /* filled state */
+                .rcg-filled {
+                    color:#222;
+                    font-style:normal;
+                    font-weight:600;
+                }
+                </style>
+
+                <div class="rcg-wrap">
+
+                    <!-- ── Left: Entry Form ── -->
+                    <div class="rcg-form-card">
+                        <h3><i class="fas fa-file-invoice" style="color:#8B1A1A;"></i> Donor Details</h3>
+                        <p class="rcg-sub">Fill in the donor information below and click Generate Receipt.</p>
+
+                        <div class="rcg-field">
+                            <label for="rcgReceiptNo">Receipt No. (पावती क्र.)</label>
+                            <input type="number" id="rcgReceiptNo" placeholder="e.g. 101" min="1">
+                        </div>
+
+                        <div class="rcg-field">
+                            <label for="rcgYear">Year (वर्ष)</label>
+                            <input type="text" id="rcgYear" placeholder="e.g. 2025-26" value="2025-26">
+                        </div>
+
+                        <div class="rcg-field">
+                            <label for="rcgDonorName">Donor Full Name (श्री/श्रीमती)</label>
+                            <input type="text" id="rcgDonorName" placeholder="e.g. Ramesh Kumar Sharma">
+                        </div>
+
+                        <div class="rcg-field">
+                            <label for="rcgAmount">Amount (₹)</label>
+                            <input type="number" id="rcgAmount" placeholder="e.g. 2100" min="1">
+                        </div>
+
+                        <div class="rcg-field">
+                            <label for="rcgAmountWords">Amount in Words (अक्षरी रुपये) <span style="color:#aaa;font-weight:400;">(auto)</span></label>
+                            <input type="text" id="rcgAmountWords" readonly placeholder="Auto-generated...">
+                        </div>
+
+                        <div class="rcg-field">
+                            <label for="rcgDate">Date (दिनांक)</label>
+                            <input type="date" id="rcgDate">
+                        </div>
+
+                        <div class="rcg-field">
+                            <label for="rcgPayMode">Payment Mode</label>
+                            <select id="rcgPayMode">
+                                <option value="Cash">Cash (रोख)</option>
+                                <option value="Cheque">Cheque (चेक)</option>
+                                <option value="UPI">UPI / Online</option>
+                            </select>
+                        </div>
+
+                        <button class="rcg-btn-generate" id="rcgGenerateBtn" onclick="rcg_generateReceipt()">
+                            <i class="fas fa-magic"></i> Generate Receipt
+                        </button>
+
+                        <!-- WhatsApp number field (shown after generate) -->
+                        <div class="rcg-wa-num-row" id="rcgWaNumRow">
+                            <label for="rcgWaNumber"><i class="fab fa-whatsapp" style="color:#25A55A;"></i> WhatsApp Number (optional)</label>
+                            <input type="tel" id="rcgWaNumber" placeholder="91XXXXXXXXXX (with country code)">
+                        </div>
+
+                        <!-- Action buttons (shown after generate) -->
+                        <div class="rcg-action-row" id="rcgActionRow">
+                            <button class="rcg-btn-dl" id="rcgDownloadBtn" onclick="rcg_downloadReceiptPNG()">
+                                <i class="fas fa-download"></i> Download PNG
+                            </button>
+                            <button class="rcg-btn-wa" id="rcgWhatsAppBtn" onclick="rcg_sendWhatsApp()">
+                                <i class="fab fa-whatsapp"></i> Send via WhatsApp
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ── Right: Receipt Preview ── -->
+                    <div class="rcg-preview-card">
+                        <h3><i class="fas fa-eye" style="color:#8B1A1A;"></i> Receipt Preview</h3>
+
+                        <!-- THE RECEIPT TEMPLATE -->
+                        <div class="rcg-receipt" id="rcgReceiptTemplate">
+
+                            <!-- Top meta row -->
+                            <div class="rcg-r-top">
+                                <span>स्थापना १९९१</span>
+                                <span class="rcg-r-center">॥ श्री गजानन प्रसन्न ॥</span>
+                                <span class="rcg-r-right">वर्ष : <span id="rcgRYear" class="rcg-placeholder">__</span></span>
+                            </div>
+
+                            <!-- Organisation title -->
+                            <div class="rcg-r-title">श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ</div>
+
+                            <!-- Address -->
+                            <div class="rcg-r-addr">
+                                पटेलवाडी, क्लासिक हॉटेलच्या मागे, जुना नागरदास रोड, अंधेरी (पूर्व), मुंबई - ४०००६९
+                            </div>
+
+                            <hr class="rcg-r-divider">
+
+                            <!-- Receipt no + Date -->
+                            <div class="rcg-r-meta">
+                                <span>पावती क्र. : <span id="rcgRReceiptNo" class="rcg-r-meta-val rcg-placeholder">___</span></span>
+                                <span>दिनांक : <span id="rcgRDate" class="rcg-r-meta-val rcg-placeholder">___________</span></span>
+                            </div>
+
+                            <!-- Donor name -->
+                            <div class="rcg-r-donor-row">
+                                <span class="rcg-r-donor-label">श्री/श्रीमती</span>
+                                <span class="rcg-r-donor-name" id="rcgRDonorName"><span class="rcg-placeholder">__________________________________</span></span>
+                                <span class="rcg-r-donor-suffix">यांचकडून</span>
+                            </div>
+
+                            <!-- Amount in words -->
+                            <div class="rcg-r-words-row">
+                                <span class="rcg-r-words-label">अक्षरी रुपये</span>
+                                <span class="rcg-r-words-val" id="rcgRAmtWords"><span class="rcg-placeholder">______________________________</span></span>
+                            </div>
+
+                            <!-- Thank you line -->
+                            <div class="rcg-r-thanks-row">
+                                <span class="rcg-r-thanks-line"></span>
+                                <span class="rcg-r-thanks-label">रोख/चेक मिळाले, धन्यवाद !</span>
+                            </div>
+
+                            <!-- Rupee amount box -->
+                            <div class="rcg-r-amt-row">
+                                <div class="rcg-r-amt-box" id="rcgRAmtBox"><span class="rcg-placeholder">₹</span></div>
+                                <span class="rcg-r-paymode" id="rcgRPayMode"></span>
+                            </div>
+
+                            <!-- Signatures -->
+                            <div class="rcg-r-sigs">
+                                <div class="rcg-r-sig">
+                                    <div class="rcg-r-sig-title">अध्यक्ष</div>
+                                    <div class="rcg-r-sig-line"></div>
+                                    <div>जयेश शिंदे</div>
+                                </div>
+                                <div class="rcg-r-sig">
+                                    <div class="rcg-r-sig-title">सरचिटणीस</div>
+                                    <div class="rcg-r-sig-line"></div>
+                                    <div>धुब चीटालीब</div>
+                                </div>
+                                <div class="rcg-r-sig">
+                                    <div class="rcg-r-sig-title">खजिनदार</div>
+                                    <div class="rcg-r-sig-line"></div>
+                                    <div>रणजीत रणपिसे</div>
+                                </div>
+                                <div class="rcg-r-sig">
+                                    <div class="rcg-r-sig-title">वसुल करणार</div>
+                                    <div class="rcg-r-sig-line"></div>
+                                    <div>&nbsp;</div>
+                                </div>
+                            </div>
+
+                        </div><!-- /.rcg-receipt -->
+
+                        <p id="rcgReceiptHint" style="text-align:center;color:#aaa;font-size:.8rem;margin-top:14px;">
+                            <i class="fas fa-arrow-left"></i> Fill in the form and click <strong>Generate Receipt</strong>
+                        </p>
+
+                    </div><!-- /.rcg-preview-card -->
+
+                </div><!-- /.rcg-wrap -->
+                </div><!-- /#receiptGenerator -->
+
             </div> <!-- End of .admin-content -->
         </main>
     </div>

@@ -102,6 +102,7 @@ function showAdminSection(sectionId) {
         'donationEntries' : 'Donation Data Entry',
         'donorSearch'     : 'Donor Search',
         'tshirtSection'   : 'T-shirt Section',
+        'receiptGenerator': 'Generate Receipt',
     };
 
     document.getElementById('pageTitle').textContent = titles[sectionId] || 'Admin Panel';
@@ -122,6 +123,7 @@ function showAdminSection(sectionId) {
     if (sectionId === 'donorSearch')      loadDonorSearch();
     if (sectionId === 'tshirtSection' && typeof renderTshirtSection === 'function') renderTshirtSection();
     if (sectionId === 'tshirtSection' && typeof adminTsInit === 'function') adminTsInit();
+    if (sectionId === 'receiptGenerator') rcg_initReceiptGenerator();
 }
 
 // ── Quick Upload (from Admin Dashboard home) ──────────────────────────────────
@@ -5007,3 +5009,239 @@ document.addEventListener('DOMContentLoaded', () => {
     // Trigger Developers card visibility
     initDevelopersSection();
 });
+
+
+// =============================================================================
+// ==================== RECEIPT GENERATOR (rcg_) ================================
+// All functions and variables prefixed rcg_ to avoid any collision with
+// existing admin panel code. Zero modifications made to existing functions.
+// =============================================================================
+
+/**
+ * Called when the "Generate Receipt" section is first shown.
+ * Sets today's date as the default date value.
+ */
+function rcg_initReceiptGenerator() {
+    const dateField = document.getElementById('rcgDate');
+    if (dateField && !dateField.value) {
+        const today = new Date();
+        const yyyy  = today.getFullYear();
+        const mm    = String(today.getMonth() + 1).padStart(2, '0');
+        const dd    = String(today.getDate()).padStart(2, '0');
+        dateField.value = `${yyyy}-${mm}-${dd}`;
+    }
+    // Wire up live amount-to-words
+    const amtField = document.getElementById('rcgAmount');
+    if (amtField && !amtField._rcgBound) {
+        amtField._rcgBound = true;
+        amtField.addEventListener('input', function() {
+            const words = document.getElementById('rcgAmountWords');
+            if (words) words.value = rcg_amountToWords(parseFloat(this.value) || 0);
+        });
+    }
+}
+
+/**
+ * Converts a number to English words (e.g. 2100 → "Two Thousand One Hundred Only")
+ */
+function rcg_amountToWords(num) {
+    if (!num || isNaN(num) || num <= 0) return '';
+    num = Math.round(num);
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven',
+                  'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen',
+                  'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty',
+                  'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+    function belowThousand(n) {
+        if (n === 0) return '';
+        if (n < 20) return ones[n];
+        if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 ? ' ' + ones[n % 10] : '');
+        return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' ' + belowThousand(n % 100) : '');
+    }
+
+    function convert(n) {
+        if (n === 0) return 'Zero';
+        let result = '';
+        // Indian system: Crore, Lakh, Thousand, rest
+        if (n >= 10000000) {
+            result += belowThousand(Math.floor(n / 10000000)) + ' Crore ';
+            n %= 10000000;
+        }
+        if (n >= 100000) {
+            result += belowThousand(Math.floor(n / 100000)) + ' Lakh ';
+            n %= 100000;
+        }
+        if (n >= 1000) {
+            result += belowThousand(Math.floor(n / 1000)) + ' Thousand ';
+            n %= 1000;
+        }
+        result += belowThousand(n);
+        return result.trim();
+    }
+
+    return convert(num) + ' Only';
+}
+
+/**
+ * Reads the form, validates, and populates the receipt preview.
+ */
+function rcg_generateReceipt() {
+    const receiptNo = document.getElementById('rcgReceiptNo').value.trim();
+    const year      = document.getElementById('rcgYear').value.trim();
+    const donorName = document.getElementById('rcgDonorName').value.trim();
+    const amount    = parseFloat(document.getElementById('rcgAmount').value);
+    const dateRaw   = document.getElementById('rcgDate').value;
+    const payMode   = document.getElementById('rcgPayMode').value;
+
+    // Validation
+    if (!donorName) {
+        if (typeof showNotification === 'function') showNotification('Please enter the donor name.', 'error');
+        else alert('Please enter the donor name.');
+        return;
+    }
+    if (!amount || isNaN(amount) || amount <= 0) {
+        if (typeof showNotification === 'function') showNotification('Please enter a valid amount.', 'error');
+        else alert('Please enter a valid amount.');
+        return;
+    }
+    if (!dateRaw) {
+        if (typeof showNotification === 'function') showNotification('Please select a date.', 'error');
+        else alert('Please select a date.');
+        return;
+    }
+
+    // Format date as DD/MM/YYYY
+    const [yyyy, mm, dd] = dateRaw.split('-');
+    const formattedDate  = `${dd}/${mm}/${yyyy}`;
+
+    // Amount in words
+    const wordsEl = document.getElementById('rcgAmountWords');
+    const words   = wordsEl && wordsEl.value ? wordsEl.value : rcg_amountToWords(amount);
+
+    // Format amount with Indian locale
+    const amtFormatted = '₹ ' + Number(amount).toLocaleString('en-IN');
+
+    // --- Populate receipt preview ---
+    function setFilled(id, text) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.innerHTML = `<span class="rcg-filled">${text}</span>`;
+    }
+
+    setFilled('rcgRYear',      year || '—');
+    setFilled('rcgRReceiptNo', receiptNo || '—');
+    setFilled('rcgRDate',      formattedDate);
+    setFilled('rcgRDonorName', donorName);
+    setFilled('rcgRAmtWords',  words);
+
+    // Amount box
+    const amtBox = document.getElementById('rcgRAmtBox');
+    if (amtBox) amtBox.innerHTML = `<span class="rcg-filled" style="font-size:1.1rem;">${amtFormatted}</span>`;
+
+    // Payment mode
+    const pmEl = document.getElementById('rcgRPayMode');
+    if (pmEl) pmEl.textContent = `(${payMode})`;
+
+    // Hide hint, show action buttons
+    const hint = document.getElementById('rcgReceiptHint');
+    if (hint) hint.style.display = 'none';
+
+    const actionRow = document.getElementById('rcgActionRow');
+    if (actionRow) actionRow.classList.add('visible');
+
+    const waRow = document.getElementById('rcgWaNumRow');
+    if (waRow) waRow.classList.add('visible');
+
+    // Store data for WhatsApp
+    window._rcgLastData = { donorName, amount, formattedDate, receiptNo, payMode, words };
+
+    if (typeof showNotification === 'function') {
+        showNotification('✅ Receipt generated! You can now download or send via WhatsApp.', 'success');
+    }
+}
+
+/**
+ * Downloads the receipt preview as a PNG using html2canvas.
+ * Lazily loads html2canvas from CDN if not already present.
+ */
+function rcg_downloadReceiptPNG() {
+    const btn = document.getElementById('rcgDownloadBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...'; }
+
+    function doCapture() {
+        const el = document.getElementById('rcgReceiptTemplate');
+        if (!el) return;
+
+        html2canvas(el, {
+            scale: 2,
+            backgroundColor: null,
+            useCORS: true,
+            logging: false
+        }).then(function(canvas) {
+            const link = document.createElement('a');
+            const data = window._rcgLastData || {};
+            const safeName = (data.donorName || 'receipt').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            link.download = `receipt_${safeName}_${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download PNG'; }
+        }).catch(function(err) {
+            console.error('html2canvas error:', err);
+            if (typeof showNotification === 'function') showNotification('Could not capture receipt image.', 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download PNG'; }
+        });
+    }
+
+    if (typeof html2canvas !== 'undefined') {
+        doCapture();
+    } else {
+        // Lazy-load html2canvas from CDN
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+        script.onload = function() { doCapture(); };
+        script.onerror = function() {
+            if (typeof showNotification === 'function') showNotification('Could not load image library. Check internet.', 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Download PNG'; }
+        };
+        document.head.appendChild(script);
+    }
+}
+
+/**
+ * Opens WhatsApp with a pre-filled receipt message.
+ * If a phone number is provided in rcgWaNumber, it opens a direct chat.
+ */
+function rcg_sendWhatsApp() {
+    const data = window._rcgLastData;
+    if (!data) {
+        if (typeof showNotification === 'function') showNotification('Please generate a receipt first.', 'error');
+        return;
+    }
+
+    const { donorName, amount, formattedDate, receiptNo, payMode } = data;
+    const amtFmt = Number(amount).toLocaleString('en-IN');
+
+    const msg = [
+        '🙏 *श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ*',
+        '━━━━━━━━━━━━━━━━━━━━━',
+        `📋 *Receipt No:* ${receiptNo || '—'}`,
+        `👤 *Donor:* ${donorName}`,
+        `💰 *Amount:* ₹${amtFmt}`,
+        `📅 *Date:* ${formattedDate}`,
+        `💳 *Payment Mode:* ${payMode}`,
+        '━━━━━━━━━━━━━━━━━━━━━',
+        'धन्यवाद! रोख/चेक मिळाले. 🙏',
+        '_Shree Patelwadi Sarvjanik Ganeshostav Mandal_'
+    ].join('\n');
+
+    const phoneRaw = (document.getElementById('rcgWaNumber')?.value || '').replace(/\D/g, '');
+    const phone    = phoneRaw.length >= 10 ? phoneRaw : '';
+    const encoded  = encodeURIComponent(msg);
+    const waUrl    = phone
+        ? `https://wa.me/${phone}?text=${encoded}`
+        : `https://wa.me/?text=${encoded}`;
+
+    window.open(waUrl, '_blank');
+}
+// ==================== END RECEIPT GENERATOR ===================================
