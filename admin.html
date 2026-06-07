@@ -4306,7 +4306,7 @@ window._fmtBytesA = function(b) {
             const dtObj = new Date(e.submittedAt);
             const dateStr = isNaN(dtObj) ? '—' : dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
             const timeStr = isNaN(dtObj) ? '' : dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
-            const photoUrl = e.photoUrl || '';
+            const photoUrl = e.photoUrl || e.receiptPreviewUrl || '';
             const photoSection = photoUrl
                 ? `<div style="margin-top:12px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="adeOpenLightbox('${photoUrl}')">
                        <img src="${photoUrl}?t=${Date.now()}" loading="lazy" alt="Receipt photo" style="width:100%;max-height:180px;object-fit:cover;display:block;">
@@ -4990,7 +4990,7 @@ window._fmtBytesA = function(b) {
                 <td><span style="padding:3px 10px;border-radius:12px;background:#FFF8F1;color:#E65100;font-size:.75rem;font-weight:700;">${e.paymentMode}</span></td>
                 <td style="font-size:.82rem;color:#777;">${e.referenceNumber||''}</td>
                 <td style="font-size:.82rem;color:#555;">${e.landmark||''}</td>
-                <td style="text-align:center;">${e.photoUrl ? `<img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" style="width:50px;height:50px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openAdminLightbox(fixUrl('${e.photoUrl}'))" title="View photo">` : '<span style="font-size:.72rem;color:#aaa;font-style:italic;">No Image</span>'}</td>
+                <td style="text-align:center;">${(e.photoUrl || e.receiptPreviewUrl) ? `<img src="${fixUrl(e.photoUrl || e.receiptPreviewUrl)}?t=${Date.now()}" style="width:50px;height:50px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openAdminLightbox(fixUrl('${e.photoUrl || e.receiptPreviewUrl}'))" title="View photo">` : '<span style="font-size:.72rem;color:#aaa;font-style:italic;">No Image</span>'}</td>
                 <td style="font-size:.82rem;color:#888;">${e.submittedBy||''}</td>
                 <td style="color:#888;font-size:.82rem;">${dt}</td>
                 <td>
@@ -5140,9 +5140,9 @@ window._fmtBytesA = function(b) {
         // Populate current photo
         const curPDiv = document.getElementById('adeEditCurPhotoDiv');
         const curPImg = document.getElementById('adeEditCurPhotoImg');
-        if (e.photoUrl && curPDiv && curPImg) {
-            curPImg.src = fixUrl(e.photoUrl) + '?t=' + Date.now();
-            curPImg.onclick = () => openAdminLightbox(fixUrl(e.photoUrl));
+        if ((e.photoUrl || e.receiptPreviewUrl) && curPDiv && curPImg) {
+            curPImg.src = fixUrl(e.photoUrl || e.receiptPreviewUrl) + '?t=' + Date.now();
+            curPImg.onclick = () => openAdminLightbox(fixUrl(e.photoUrl || e.receiptPreviewUrl));
             curPDiv.style.display = '';
         } else if (curPDiv) { curPDiv.style.display = 'none'; }
         const aePreview = document.getElementById('adeEditPhotoPreview');
