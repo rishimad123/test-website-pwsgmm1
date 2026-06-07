@@ -4044,11 +4044,143 @@ window._fmtBytesA = function(b) {
                     <p style="font-size:.78rem;color:#aaa;margin:0;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Image is automatically compressed to under 1 MB.</p>
                 </div>
 
+                <!-- Date field for receipt (before submit) -->
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label for="adeReceiptDate" style="font-weight:600;font-size:.85rem;color:#333;">
+                        <i class="fas fa-calendar-alt" style="color:var(--primary-color);margin-right:5px;"></i>
+                        Receipt Date <span style="color:#aaa;font-weight:400;font-size:.78rem;">(for receipt)</span>
+                    </label>
+                    <input type="date" id="adeReceiptDate" class="form-control">
+                </div>
+
                 <button type="submit" id="adeSubmitBtn" class="btn btn-primary" style="width:100%;max-width:360px;display:block;padding:14px 30px;font-size:1rem;border-radius:10px;margin-top:8px;">
                     <i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry
                 </button>
             </form>
-        </div>
+
+            <!-- ═══════════════════════════════════════════════════════════════
+                 LIVE RECEIPT PREVIEW — auto-fills from form above (ade_rcg_)
+                 Zero overlap with any other feature. Fully isolated.
+                 ═══════════════════════════════════════════════════════════════ -->
+            <div id="ade_rcg_wrapper" style="margin-top:28px;border-top:2px dashed #ffe0d0;padding-top:22px;display:none;">
+
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-file-invoice" style="color:#8B1A1A;font-size:1.1rem;"></i>
+                        <strong style="color:#8B1A1A;font-size:1rem;">Receipt Preview</strong>
+                        <span style="font-size:.75rem;color:#aaa;font-style:italic;">auto-updates as you type</span>
+                    </div>
+                    <button type="button" id="ade_rcg_wa_btn" onclick="ade_rcg_sendWhatsApp()"
+                        style="display:flex;align-items:center;gap:8px;padding:11px 20px;background:linear-gradient(135deg,#1A7B43,#25A55A);color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;transition:transform .2s,box-shadow .2s;"
+                        onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 18px rgba(26,123,67,.4)'"
+                        onmouseout="this.style.transform='';this.style.boxShadow=''">
+                        <i class="fab fa-whatsapp" style="font-size:1.1rem;"></i> Send Receipt via WhatsApp
+                    </button>
+                </div>
+
+                <!-- THE RECEIPT (captured as HD PNG for WhatsApp) -->
+                <div id="ade_rcg_receipt"
+                    style="font-family:'Noto Sans Devanagari','Mangal',Arial,sans-serif;
+                           background:linear-gradient(145deg,#dff0fa 0%,#f0f8ff 40%,#e8f4fc 70%,#cbe8f6 100%);
+                           border:2px solid #AACCDD;border-radius:10px;padding:20px 28px 24px;
+                           max-width:780px;margin:0 auto;box-shadow:0 4px 20px rgba(0,0,0,.13);
+                           box-sizing:border-box;position:relative;">
+
+                    <!-- Top meta row -->
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;font-size:.78rem;color:#8B1A1A;font-weight:600;">
+                        <span>स्थापना १९९१</span>
+                        <span style="text-align:center;flex:1;">॥ श्री गजानन प्रसन्न ॥</span>
+                        <span style="white-space:nowrap;">वर्ष : <span id="ade_rcg_r_year" style="color:#222;font-weight:500;">__</span></span>
+                    </div>
+
+                    <!-- Title -->
+                    <div style="text-align:center;font-size:1.75rem;font-weight:900;color:#8B1A1A;line-height:1.25;margin-bottom:3px;letter-spacing:.01em;">
+                        श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ
+                    </div>
+
+                    <!-- Address -->
+                    <div style="text-align:center;font-size:.72rem;color:#8B1A1A;margin-bottom:10px;font-weight:500;">
+                        पटेलवाडी, क्लासिक हॉटेलच्या मागे, जुना नागरदास रोड, अंधेरी (पूर्व), मुंबई - ४०००६९
+                    </div>
+
+                    <hr style="border:none;border-top:2px solid #8B1A1A;margin:6px 0 10px;">
+
+                    <!-- Receipt no + Date -->
+                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:.9rem;font-weight:700;color:#8B1A1A;margin-bottom:10px;padding:2px;">
+                        <span>पावती क्र. :
+                            <span id="ade_rcg_r_rcptno" style="font-weight:400;color:#222;border-bottom:1.5px solid #8B1A1A;min-width:80px;display:inline-block;padding:0 8px;text-align:center;">___</span>
+                        </span>
+                        <span>दिनांक :
+                            <span id="ade_rcg_r_date" style="font-weight:400;color:#222;border-bottom:1.5px solid #8B1A1A;min-width:110px;display:inline-block;padding:0 8px;text-align:center;">___________</span>
+                        </span>
+                    </div>
+
+                    <!-- Donor name row -->
+                    <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:8px;">
+                        <span style="font-size:.92rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">श्री/श्रीमती</span>
+                        <span id="ade_rcg_r_donor"
+                            style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:26px;font-size:1rem;color:#222;padding:0 8px;font-weight:700;text-align:center;display:flex;align-items:flex-end;justify-content:center;">
+                            <span style="color:#CCC;font-style:italic;font-weight:400;">__________________________</span>
+                        </span>
+                        <span style="font-size:.88rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">यांचकडून</span>
+                    </div>
+
+                    <!-- Amount in words row -->
+                    <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:8px;">
+                        <span style="font-size:.92rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">अक्षरी रुपये</span>
+                        <span id="ade_rcg_r_words"
+                            style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:26px;font-size:.88rem;color:#333;padding:0 8px;display:flex;align-items:flex-end;">
+                            <span style="color:#CCC;font-style:italic;font-weight:400;">______________________________</span>
+                        </span>
+                    </div>
+
+                    <!-- Thank you line -->
+                    <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:6px 0 12px;">
+                        <span style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:14px;"></span>
+                        <span style="font-size:.88rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">रोख/चेक मिळाले, धन्यवाद !</span>
+                    </div>
+
+                    <!-- Amount box -->
+                    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+                        <div id="ade_rcg_r_amt"
+                            style="border:2px solid #8B1A1A;border-radius:5px;padding:7px 18px;font-size:1.15rem;font-weight:700;color:#8B1A1A;min-width:120px;text-align:center;background:rgba(255,255,255,.5);">
+                            <span style="color:#CCC;font-style:italic;font-weight:400;">₹</span>
+                        </div>
+                        <span id="ade_rcg_r_mode" style="font-size:.8rem;color:#777;font-style:italic;"></span>
+                    </div>
+
+                    <!-- Signatures -->
+                    <div style="display:flex;justify-content:space-between;border-top:1px solid #AACCDD;padding-top:10px;margin-top:4px;">
+                        <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
+                            <div style="font-size:.68rem;color:#777;font-weight:400;">अध्यक्ष</div>
+                            <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
+                            <div>जयेश शिंदे</div>
+                        </div>
+                        <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
+                            <div style="font-size:.68rem;color:#777;font-weight:400;">सरचिटणीस</div>
+                            <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
+                            <div>धुब चीटालीब</div>
+                        </div>
+                        <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
+                            <div style="font-size:.68rem;color:#777;font-weight:400;">खजिनदार</div>
+                            <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
+                            <div>रणजीत रणपिसे</div>
+                        </div>
+                        <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
+                            <div style="font-size:.68rem;color:#777;font-weight:400;">वसुल करणार</div>
+                            <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
+                            <div>&nbsp;</div>
+                        </div>
+                    </div>
+
+                </div><!-- /#ade_rcg_receipt -->
+
+                <p style="text-align:center;font-size:.75rem;color:#aaa;margin-top:10px;">
+                    <i class="fas fa-info-circle"></i> The WhatsApp button converts this receipt to a high-resolution image and shares it.
+                </p>
+            </div><!-- /#ade_rcg_wrapper -->
+
+        </div><!-- /#adeFormCard -->
 
         <!-- All Submitted Entries cards -->
         <div class="admin-card" style="padding:24px;margin-bottom:18px;">
@@ -6557,6 +6689,313 @@ document.addEventListener('visibilitychange', function() {
 // Fetch immediately
 fetchNotifications();
 </script>
+
+<!-- ==========================================================================
+     ADE RECEIPT GENERATOR (ade_rcg_) — Live sync from donation entry form
+     Fully isolated. Zero changes to existing code. All IDs prefixed ade_rcg_.
+     ========================================================================== -->
+<script>
+(function() {
+    'use strict';
+
+    // ── Amount → English words (Indian system) ─────────────────────────────
+    function ade_rcg_amtToWords(num) {
+        if (!num || isNaN(num) || num <= 0) return '';
+        num = Math.round(num);
+        const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
+                      'Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen',
+                      'Seventeen','Eighteen','Nineteen'];
+        const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+        function h(n) {
+            if (!n) return '';
+            if (n < 20) return ones[n];
+            if (n < 100) return tens[Math.floor(n/10)] + (n%10 ? ' '+ones[n%10] : '');
+            return ones[Math.floor(n/100)]+' Hundred'+(n%100 ? ' '+h(n%100) : '');
+        }
+        let r = '', n = num;
+        if (n >= 10000000) { r += h(Math.floor(n/10000000))+' Crore '; n %= 10000000; }
+        if (n >= 100000)   { r += h(Math.floor(n/100000))+' Lakh ';   n %= 100000;   }
+        if (n >= 1000)     { r += h(Math.floor(n/1000))+' Thousand '; n %= 1000;      }
+        r += h(n);
+        return r.trim() + ' Only';
+    }
+
+    // ── Set a receipt field ─────────────────────────────────────────────────
+    function ade_rcg_set(id, html) {
+        var el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+    }
+
+    // ── Master sync — reads all form fields and paints the receipt ──────────
+    window.ade_rcg_liveSync = function() {
+        var wrapper = document.getElementById('ade_rcg_wrapper');
+        if (!wrapper) return;
+
+        // Donor name
+        var donorType = document.getElementById('adeDonorType')?.value || 'Individual';
+        var name = '';
+        if (donorType === 'Business') {
+            name = (document.getElementById('adeBusinessName')?.value || '').trim();
+        } else {
+            var fn = (document.getElementById('adeFirstName')?.value   || '').trim();
+            var mn = (document.getElementById('adeMiddleName')?.value  || '').trim();
+            var ln = (document.getElementById('adeLastName')?.value    || '').trim();
+            name = [fn, mn, ln].filter(Boolean).join(' ');
+        }
+
+        var amount    = parseFloat(document.getElementById('adeAmount')?.value) || 0;
+        var rcptNo    = document.getElementById('adeReceiptNumber')?.value || '';
+        var bookNo    = document.getElementById('adeBookNumber')?.value || '';
+        var payMode   = document.getElementById('adePaymentMode')?.value || 'Cash';
+        var dateRaw   = document.getElementById('adeReceiptDate')?.value || '';
+
+        // Show the wrapper only when at least a name or amount is entered
+        var hasData = name || amount > 0;
+        wrapper.style.display = hasData ? 'block' : 'none';
+        if (!hasData) return;
+
+        // Year from date
+        var yearStr = '';
+        var formattedDate = '';
+        if (dateRaw) {
+            var parts = dateRaw.split('-');
+            if (parts.length === 3) {
+                var yy = parts[0], mm = parts[1], dd = parts[2];
+                formattedDate = dd + '/' + mm + '/' + yy;
+                // Fiscal year e.g. 2025-26
+                var yr = parseInt(yy, 10);
+                var mo = parseInt(mm, 10);
+                if (mo >= 4) {
+                    yearStr = yr + '-' + String(yr + 1).slice(2);
+                } else {
+                    yearStr = (yr - 1) + '-' + String(yr).slice(2);
+                }
+            }
+        }
+
+        // Composite receipt label: Book-Receipt
+        var rcptLabel = '';
+        if (bookNo && rcptNo) rcptLabel = bookNo + ' / ' + rcptNo;
+        else if (rcptNo)      rcptLabel = rcptNo;
+        else if (bookNo)      rcptLabel = bookNo;
+
+        // Amount words
+        var words = amount > 0 ? ade_rcg_amtToWords(amount) : '';
+        var amtFmt = amount > 0 ? ('₹\u00a0' + Number(amount).toLocaleString('en-IN')) : '';
+
+        // Paint receipt fields
+        ade_rcg_set('ade_rcg_r_year',   yearStr   || '<span style="color:#CCC;font-style:italic;">__</span>');
+        ade_rcg_set('ade_rcg_r_rcptno', rcptLabel || '<span style="color:#CCC;font-style:italic;">___</span>');
+        ade_rcg_set('ade_rcg_r_date',   formattedDate || '<span style="color:#CCC;font-style:italic;">___________</span>');
+        ade_rcg_set('ade_rcg_r_donor',  name
+            ? '<span style="font-weight:700;color:#111;">'+name+'</span>'
+            : '<span style="color:#CCC;font-style:italic;font-weight:400;">__________________________</span>');
+        ade_rcg_set('ade_rcg_r_words',  words
+            ? '<span style="color:#222;">'+words+'</span>'
+            : '<span style="color:#CCC;font-style:italic;font-weight:400;">______________________________</span>');
+        ade_rcg_set('ade_rcg_r_amt',    amtFmt
+            ? '<span style="font-weight:700;color:#8B1A1A;">'+amtFmt+'</span>'
+            : '<span style="color:#CCC;font-style:italic;font-weight:400;">₹</span>');
+
+        var modeEl = document.getElementById('ade_rcg_r_mode');
+        if (modeEl) modeEl.textContent = payMode ? ('(' + payMode + ')') : '';
+    };
+
+    // ── Wire all form fields to trigger live sync ───────────────────────────
+    function ade_rcg_wireListeners() {
+        var ids = ['adeFirstName','adeMiddleName','adeLastName','adeBusinessName',
+                   'adeAmount','adeReceiptNumber','adeBookNumber','adeReceiptDate'];
+        ids.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el && !el._ade_rcg_bound) {
+                el._ade_rcg_bound = true;
+                el.addEventListener('input',  window.ade_rcg_liveSync);
+                el.addEventListener('change', window.ade_rcg_liveSync);
+            }
+        });
+
+        // Payment mode buttons — they update a hidden input, so watch that too
+        var pmEl = document.getElementById('adePaymentMode');
+        if (pmEl && !pmEl._ade_rcg_bound) {
+            pmEl._ade_rcg_bound = true;
+            // MutationObserver for value changes on hidden input
+            var obs = new MutationObserver(window.ade_rcg_liveSync);
+            obs.observe(pmEl, { attributes: true, attributeFilter: ['value'] });
+            // Also intercept the existing adeSetMode clicks
+            var origSetMode = window.adeSetMode;
+            if (typeof origSetMode === 'function') {
+                window.adeSetMode = function(mode) {
+                    origSetMode(mode);
+                    window.ade_rcg_liveSync();
+                };
+            }
+        }
+
+        // Donor type change — also triggers sync
+        var dtEl = document.getElementById('adeDonorType');
+        if (dtEl && !dtEl._ade_rcg_bound_dt) {
+            dtEl._ade_rcg_bound_dt = true;
+            var origSetDonorType = window.adeSetDonorType;
+            if (typeof origSetDonorType === 'function') {
+                window.adeSetDonorType = function(type) {
+                    origSetDonorType(type);
+                    window.ade_rcg_liveSync();
+                };
+            }
+        }
+
+        // Set today as default date if blank
+        var dateEl = document.getElementById('adeReceiptDate');
+        if (dateEl && !dateEl.value) {
+            var t = new Date();
+            dateEl.value = t.getFullYear() + '-'
+                + String(t.getMonth()+1).padStart(2,'0') + '-'
+                + String(t.getDate()).padStart(2,'0');
+            window.ade_rcg_liveSync();
+        }
+    }
+
+    // ── Re-wire every time the form card becomes visible ────────────────────
+    // (form card is hidden by default and toggled by adeToggleForm)
+    var _origToggle = window.adeToggleForm;
+    document.addEventListener('DOMContentLoaded', function() {
+        // Try to wrap adeToggleForm if it exists
+        function tryWrapToggle() {
+            if (typeof window.adeToggleForm === 'function' && window.adeToggleForm !== _patchedToggle) {
+                var _prev = window.adeToggleForm;
+                window.adeToggleForm = _patchedToggle = function() {
+                    _prev();
+                    setTimeout(ade_rcg_wireListeners, 100);
+                };
+            }
+        }
+        var _patchedToggle = null;
+        tryWrapToggle();
+        // Also wire via MutationObserver on adeFormCard visibility
+        var formCard = document.getElementById('adeFormCard');
+        if (formCard) {
+            var obs = new MutationObserver(function(muts) {
+                muts.forEach(function(m) {
+                    if (m.attributeName === 'style' && formCard.style.display !== 'none') {
+                        ade_rcg_wireListeners();
+                    }
+                });
+            });
+            obs.observe(formCard, { attributes: true, attributeFilter: ['style'] });
+        }
+        // Retry wrapping adeToggleForm (it may be defined after DOMContentLoaded)
+        setTimeout(tryWrapToggle, 500);
+        setTimeout(tryWrapToggle, 1500);
+    });
+
+    // ── HD WhatsApp send ────────────────────────────────────────────────────
+    window.ade_rcg_sendWhatsApp = function() {
+        var name = '';
+        var donorType = document.getElementById('adeDonorType')?.value || 'Individual';
+        if (donorType === 'Business') {
+            name = (document.getElementById('adeBusinessName')?.value || '').trim();
+        } else {
+            var fn = (document.getElementById('adeFirstName')?.value  || '').trim();
+            var mn = (document.getElementById('adeMiddleName')?.value || '').trim();
+            var ln = (document.getElementById('adeLastName')?.value   || '').trim();
+            name = [fn, mn, ln].filter(Boolean).join(' ');
+        }
+        var amount  = parseFloat(document.getElementById('adeAmount')?.value) || 0;
+        var rcptNo  = document.getElementById('adeReceiptNumber')?.value || '';
+        var bookNo  = document.getElementById('adeBookNumber')?.value || '';
+        var dateRaw = document.getElementById('adeReceiptDate')?.value || '';
+        var payMode = document.getElementById('adePaymentMode')?.value || 'Cash';
+        // Prefer WhatsApp number, fallback to mobile
+        var phone   = (document.getElementById('adeWhatsapp')?.value || '').replace(/\D/g,'');
+        if (!phone) phone = (document.getElementById('adeMobile')?.value || '').replace(/\D/g,'');
+        if (phone.length === 10) phone = '91' + phone; // prefix India code
+
+        if (!name && amount <= 0) {
+            if (typeof showNotification === 'function')
+                showNotification('Please fill in at least the donor name and amount.', 'error');
+            return;
+        }
+
+        var btn = document.getElementById('ade_rcg_wa_btn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating HD Image…'; }
+
+        function doCapture() {
+            var el = document.getElementById('ade_rcg_receipt');
+            if (!el) { if (btn) { btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp"></i> Send Receipt via WhatsApp'; } return; }
+
+            html2canvas(el, {
+                scale: 3,            // ← HD: 3× resolution
+                backgroundColor: null,
+                useCORS: true,
+                logging: false,
+                allowTaint: true
+            }).then(function(canvas) {
+                // Build the WhatsApp text message as a fallback / caption
+                var amtFmt = Number(amount).toLocaleString('en-IN');
+                var dateStr = '';
+                if (dateRaw) {
+                    var pts = dateRaw.split('-');
+                    dateStr = (pts[2]||'')+'/'+(pts[1]||'')+'/'+(pts[0]||'');
+                }
+                var rcptLabel = bookNo && rcptNo ? bookNo+'/'+rcptNo : (rcptNo || bookNo || '—');
+
+                var msg = [
+                    '🙏 *श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ*',
+                    '━━━━━━━━━━━━━━━━━━━━━',
+                    '📋 *Receipt No:* ' + rcptLabel,
+                    '👤 *Donor:* ' + (name || '—'),
+                    '💰 *Amount:* ₹' + amtFmt,
+                    '📅 *Date:* ' + (dateStr || '—'),
+                    '💳 *Payment:* ' + payMode,
+                    '━━━━━━━━━━━━━━━━━━━━━',
+                    'धन्यवाद! रोख/चेक मिळाले. 🙏',
+                    '_Shree Patelwadi Sarvjanik Ganeshostav Mandal_'
+                ].join('\n');
+
+                var encoded = encodeURIComponent(msg);
+                var waUrl   = phone
+                    ? 'https://wa.me/' + phone + '?text=' + encoded
+                    : 'https://wa.me/?text=' + encoded;
+
+                // Also trigger PNG download (HD receipt image)
+                var link = document.createElement('a');
+                link.download = 'receipt_' + (name || 'donor').replace(/[^a-z0-9]/gi,'_').toLowerCase() + '_' + Date.now() + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                // Small delay then open WhatsApp
+                setTimeout(function() {
+                    window.open(waUrl, '_blank');
+                }, 400);
+
+                if (btn) { btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp" style="font-size:1.1rem;"></i> Send Receipt via WhatsApp'; }
+            }).catch(function(err) {
+                console.error('[ade_rcg] html2canvas error:', err);
+                if (typeof showNotification === 'function')
+                    showNotification('Could not render receipt image. Please try again.', 'error');
+                if (btn) { btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp" style="font-size:1.1rem;"></i> Send Receipt via WhatsApp'; }
+            });
+        }
+
+        // Lazy-load html2canvas if not already available
+        if (typeof html2canvas !== 'undefined') {
+            doCapture();
+        } else {
+            var s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+            s.onload  = doCapture;
+            s.onerror = function() {
+                if (typeof showNotification === 'function')
+                    showNotification('Could not load image library. Check internet connection.', 'error');
+                if (btn) { btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp" style="font-size:1.1rem;"></i> Send Receipt via WhatsApp'; }
+            };
+            document.head.appendChild(s);
+        }
+    };
+
+})();
+</script>
+<!-- ======= END ADE RECEIPT GENERATOR ======= -->
 
 </body>
 </html>
