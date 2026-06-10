@@ -3410,13 +3410,14 @@ window.fixUrl = function(url) {
                     } catch(_) { /* photo upload failure is non-blocking */ }
                 }
                 deShowStatus(`\u2705 Entry saved! Book ${data.entry.bookNumber}, Receipt #${data.entry.receiptNumber}`, 'success');
+                // Save receipt snapshot & capture preview BEFORE resetting form so #de_rcg_receipt is still populated
+                try { await de_rcg_saveSnapshot(data.entry.entryId); } catch(_) {}
                 this.reset();
                 deSetDonorType('Individual');
                 deSetMode('Cash');
                 const rSel = document.getElementById('deReceiptNumber');
                 if (rSel) { rSel.innerHTML = '<option value="">\u2014 Select Book first \u2014</option>'; rSel.disabled = true; }
                 await deLoadMyEntries();
-                    try { await de_rcg_saveSnapshot(data.entry.entryId); } catch(_) {}
             } else {
                 deShowStatus('\u274c ' + (data.message || 'Submission failed.'), 'error');
             }
@@ -4403,6 +4404,8 @@ fetchNotifications();
         r += h(n);
         return r.trim() + ' Only';
     }
+    // Expose to window so the second IIFE (receipt uploader) can use it
+    window.de_rcg_amtToWords = de_rcg_amtToWords;
 
     // ── Set a receipt field ─────────────────────────────────────────────────
     function de_rcg_set(id, html) {
@@ -4716,53 +4719,59 @@ fetchNotifications();
   "use strict";
   var _deEditId=null,_deEntriesCache=[];
   // ── Receipt Preview Image Uploader ──
+  // Captures the actual live #de_rcg_receipt element (exactly as displayed on screen)
   window._deUploadReceiptPreview = async function(entryId, name, amount, dateRaw, payMode, rcptNo, bookNo, statusLabel) {
       if(!entryId) return;
-      var amtFmt = Number(amount).toLocaleString('en-IN');
-      var dateStr = '';
-      if(dateRaw) { var pts=dateRaw.split('-'); dateStr=(pts[2]||'')+'/'+(pts[1]||'')+'/'+(pts[0]||''); }
-      var rcptLabel = bookNo&&rcptNo?bookNo+'/'+rcptNo:(rcptNo||bookNo||'—');
-      
-      var tpl = '<div style="width:380px;position:relative;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.12);font-family:\'Segoe UI\',Tahoma,Geneva,Verdana,sans-serif;padding-bottom:10px;margin-bottom:20px;">' +
-      '<div style="background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;text-align:center;padding:15px 10px;position:relative;">' +
-      '<div style="font-size:1.1rem;font-weight:800;letter-spacing:0.5px;text-shadow:1px 1px 2px rgba(0,0,0,0.2);">श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ</div>' +
-      '<div style="font-size:0.75rem;opacity:0.9;margin-top:4px;">Donation Receipt</div>' +
-      '</div>' +
-      '<div style="padding:16px;background:#fafafa;">' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:12px;border-bottom:1px dashed #ddd;padding-bottom:10px;">' +
-      '<div style="font-size:0.75rem;color:#666;">Date: <strong style="color:#333;">'+(dateStr||'—')+'</strong></div>' +
-      '<div style="font-size:0.75rem;color:#666;">Receipt: <strong style="color:#333;">'+rcptLabel+'</strong></div>' +
-      '</div>' +
-      '<div style="text-align:center;margin:15px 0;">' +
-      '<div style="font-size:0.8rem;color:#777;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Received with thanks from</div>' +
-      '<div style="font-size:1.2rem;font-weight:700;color:#111;">'+(name||'—')+'</div>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:20px 0;">' +
-      '<div style="background:#E8F5E9;color:#2E7D32;padding:10px 20px;border-radius:30px;font-size:1.4rem;font-weight:800;box-shadow:inset 0 2px 4px rgba(0,0,0,0.05);">₹'+amtFmt+'</div>' +
-      '</div>' +
-      '<div style="text-align:center;font-size:0.8rem;color:#666;">' +
-      'Payment Mode: <strong style="color:#444;background:#eee;padding:3px 8px;border-radius:6px;">'+payMode+'</strong>' +
-      '</div>' +
-      '<div style="margin-top:15px;text-align:center;font-size:0.8rem;font-weight:700;color:'+(statusLabel==='BALANCE'?'#F57F17':'#2E7D32')+'">' +
-      (statusLabel==='BALANCE'?'[ BALANCE ]':'[ RECEIVED ]') +
-      '</div>' +
-      '</div>' +
-      '<div style="text-align:center;font-size:0.7rem;color:#888;padding:10px;background:#f0f0f0;border-top:1px solid #ddd;">' +
-      'This is an electronically generated receipt.<br>Thank you for your generous contribution! 🙏' +
-      '</div>' +
-      '</div>';
-      
-      var container = document.createElement('div');
-      container.style.position = 'fixed'; container.style.top = '0'; container.style.left = '0'; container.style.opacity = '0'; container.style.pointerEvents = 'none'; container.style.zIndex = '-999';
-      container.innerHTML = tpl;
-      document.body.appendChild(container);
-      
+
+      var rcptEl = document.getElementById('de_rcg_receipt');
+      var wrapEl = document.getElementById('de_rcg_wrapper');
+      if (!rcptEl) return;
+
+      // Pre-compute display values
+      var amtNum  = Number(amount) || 0;
+      var amtFmt  = amtNum > 0 ? '\u20b9\u00a0' + amtNum.toLocaleString('en-IN') : '';
+      var dateStr = '', yearStr = '';
+      if (dateRaw) {
+          var dp = dateRaw.split('-');
+          dateStr = (dp[2]||'') + '/' + (dp[1]||'') + '/' + (dp[0]||'');
+          var yr = parseInt(dp[0], 10), mo = parseInt(dp[1], 10);
+          yearStr = mo >= 4 ? yr + '-' + String(yr+1).slice(2) : (yr-1) + '-' + String(yr).slice(2);
+      }
+      var rcptLabel = (bookNo && rcptNo) ? bookNo+'/'+rcptNo : (rcptNo || bookNo || '\u2014');
+      var words = (amtNum > 0 && typeof window.de_rcg_amtToWords === 'function') ? window.de_rcg_amtToWords(amtNum) : '';
+
       return new Promise(function(resolve) {
           function doCapture() {
-              html2canvas(container.firstChild, { scale: 3, backgroundColor: null, useCORS: true, logging: false })
+              // Save wrapper state and all receipt span innerHTML
+              var prevWrapDisplay = wrapEl ? wrapEl.style.display : '';
+              var ids = ['de_rcg_r_year','de_rcg_r_rcptno','de_rcg_r_date','de_rcg_r_donor','de_rcg_r_words','de_rcg_r_amt'];
+              var modeEl = document.getElementById('de_rcg_r_mode');
+              var saved = {};
+              ids.forEach(function(id) { var el=document.getElementById(id); if(el) saved[id]=el.innerHTML; });
+              var savedMode = modeEl ? modeEl.textContent : '';
+
+              // Make wrapper visible for capture
+              if (wrapEl && wrapEl.style.display === 'none') wrapEl.style.display = 'block';
+
+              // Populate receipt spans (same format as de_rcg_liveSync)
+              function setEl(id, html) { var el=document.getElementById(id); if(el) el.innerHTML=html; }
+              setEl('de_rcg_r_year',   yearStr   || '<span style="color:#CCC;font-style:italic;">__</span>');
+              setEl('de_rcg_r_rcptno', rcptLabel || '<span style="color:#CCC;font-style:italic;">___</span>');
+              setEl('de_rcg_r_date',   dateStr   || '<span style="color:#CCC;font-style:italic;">___________</span>');
+              setEl('de_rcg_r_donor',  name      ? '<span style="font-weight:700;color:#111;">'+name+'</span>' : '<span style="color:#CCC;font-style:italic;font-weight:400;">__________________________</span>');
+              setEl('de_rcg_r_words',  words     ? '<span style="color:#222;">'+words+'</span>'               : '<span style="color:#CCC;font-style:italic;font-weight:400;">______________________________</span>');
+              setEl('de_rcg_r_amt',    amtFmt    ? '<span style="font-weight:700;color:#8B1A1A;">'+amtFmt+'</span>' : '<span style="color:#CCC;font-style:italic;font-weight:400;">\u20b9</span>');
+              if (modeEl) modeEl.textContent = payMode ? '(' + payMode + ')' : '';
+
+              // Capture the actual receipt element at 3x HD (same as WhatsApp send)
+              html2canvas(rcptEl, { scale: 3, backgroundColor: null, useCORS: true, logging: false, allowTaint: true })
               .then(function(canvas) {
+                  // Restore spans and wrapper
+                  ids.forEach(function(id) { var el=document.getElementById(id); if(el&&saved[id]!==undefined) el.innerHTML=saved[id]; });
+                  if (modeEl) modeEl.textContent = savedMode;
+                  if (wrapEl) wrapEl.style.display = prevWrapDisplay;
+
                   canvas.toBlob(async function(blob) {
-                      document.body.removeChild(container);
                       if (!blob) return resolve();
                       var fd = new FormData();
                       fd.append('receiptImage', blob, 'preview.png');
@@ -4770,7 +4779,13 @@ fetchNotifications();
                       try { await fetch('/api/upload-receipt-preview', { method:'POST', body:fd }); } catch(e){}
                       resolve();
                   }, 'image/png');
-              }).catch(function(){ document.body.removeChild(container); resolve(); });
+              }).catch(function() {
+                  // Restore on error
+                  ids.forEach(function(id) { var el=document.getElementById(id); if(el&&saved[id]!==undefined) el.innerHTML=saved[id]; });
+                  if (modeEl) modeEl.textContent = savedMode;
+                  if (wrapEl) wrapEl.style.display = prevWrapDisplay;
+                  resolve();
+              });
           }
           if (typeof html2canvas !== 'undefined') doCapture();
           else {
