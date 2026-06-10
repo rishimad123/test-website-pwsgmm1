@@ -2227,17 +2227,6 @@ window._fmtBytesA = function(b) {
                 <script>
                 (function(){
                   'use strict';
-                  var _qrLibLoaded = false;
-
-                  function loadQrLib(cb) {
-                    if (typeof QRCode !== 'undefined') { cb(); return; }
-                    if (_qrLibLoaded) { setTimeout(function(){ loadQrLib(cb); }, 100); return; }
-                    _qrLibLoaded = true;
-                    var s = document.createElement('script');
-                    s.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
-                    s.onload = cb;
-                    document.head.appendChild(s);
-                  }
 
                   fetch('/api/qr-config').then(function(r){return r.json();}).then(function(cfg){
                     if (!cfg) return;
@@ -2265,34 +2254,30 @@ window._fmtBytesA = function(b) {
                   };
 
                   window.qrCfgPreview = function() {
-                    var urlEl   = document.getElementById('qrMapsUrl');
-                    var img     = document.getElementById('qrPreviewImg');
-                    var loader  = document.getElementById('qrPreviewLoading');
-                    var errBox  = document.getElementById('qrPreviewError');
+                    var urlEl  = document.getElementById('qrMapsUrl');
+                    var img    = document.getElementById('qrPreviewImg');
+                    var loader = document.getElementById('qrPreviewLoading');
+                    var errBox = document.getElementById('qrPreviewError');
                     if (!urlEl || !img) return;
                     var url = urlEl.value.trim();
                     if (!url) return;
-                    // Show spinner while generating
-                    if (img)    img.style.display    = 'none';
-                    if (errBox) errBox.style.display  = 'none';
+                    // Show spinner
+                    img.style.display = 'none';
+                    if (errBox) errBox.style.display = 'none';
                     if (loader) { loader.style.display = 'flex'; loader.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:1.5rem;color:#ccc;"></i>'; }
-                    loadQrLib(function(){
-                      QRCode.toDataURL(url, {
-                        width: 200, margin: 2,
-                        errorCorrectionLevel: 'L',
-                        color: { dark: '#000000', light: '#FFFFFF' }
-                      }, function(err, dataUrl) {
-                        if (loader) loader.style.display = 'none';
-                        if (err) {
-                          img.style.display = 'none';
-                          if (errBox) errBox.style.display = 'block';
-                        } else {
-                          img.src = dataUrl;
-                          img.style.display = 'block';
-                          if (errBox) errBox.style.display = 'none';
-                        }
-                      });
-                    });
+                    // Use QR Server API — no JS library required
+                    var apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data=' + encodeURIComponent(url);
+                    img.onload = function() {
+                      if (loader) loader.style.display = 'none';
+                      img.style.display = 'block';
+                      if (errBox) errBox.style.display = 'none';
+                    };
+                    img.onerror = function() {
+                      if (loader) loader.style.display = 'none';
+                      img.style.display = 'none';
+                      if (errBox) errBox.style.display = 'block';
+                    };
+                    img.src = apiUrl;
                   };
 
                   window.qrCfgSave = async function() {

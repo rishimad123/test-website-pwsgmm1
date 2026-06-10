@@ -878,43 +878,26 @@
             document.getElementById('gmapsQrSection').style.display = 'block';
             document.getElementById('gmapsDirectLink').href = _gmapsUrl;
 
-            // Build QR code using toDataURL — more reliable than toCanvas
+            // Build QR code via QR Server API — no JS library needed
             function _buildQr(url) {
                 var img    = document.getElementById('gmapsQrImg');
                 var loader = document.getElementById('gmapsQrLoading');
                 var errBox = document.getElementById('gmapsQrError');
                 if (!img) return;
-
-                QRCode.toDataURL(url, {
-                    width: 220,
-                    margin: 2,
-                    errorCorrectionLevel: 'L',
-                    color: { dark: '#000000', light: '#FFFFFF' }
-                }, function(err, dataUrl) {
+                var apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&data=' + encodeURIComponent(url);
+                img.onload = function() {
                     if (loader) loader.style.display = 'none';
-                    if (err) {
-                        console.warn('[QR] Generation failed:', err.message);
-                        img.style.display = 'none';
-                        if (errBox) errBox.style.display = 'flex';
-                    } else {
-                        img.src = dataUrl;
-                        img.style.display = 'block';
-                        if (errBox) errBox.style.display = 'none';
-                        console.log('[QR] Generated OK');
-                    }
-                });
+                    img.style.display = 'block';
+                    if (errBox) errBox.style.display = 'none';
+                };
+                img.onerror = function() {
+                    if (loader) loader.style.display = 'none';
+                    img.style.display = 'none';
+                    if (errBox) { errBox.style.display = 'flex'; }
+                };
+                img.src = apiUrl;
             }
-
-            var script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
-            script.onload = function() { _buildQr(_gmapsUrl); };
-            script.onerror = function() {
-                var loader = document.getElementById('gmapsQrLoading');
-                var errBox = document.getElementById('gmapsQrError');
-                if (loader) loader.style.display = 'none';
-                if (errBox) errBox.style.display = 'flex';
-            };
-            document.head.appendChild(script);
+            _buildQr(_gmapsUrl);
 
             var templates = cfg.reviewTemplates || [];
             var box = document.getElementById('gmapsReviewTemplates');
