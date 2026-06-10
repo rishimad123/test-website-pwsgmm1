@@ -2164,7 +2164,153 @@ window._fmtBytesA = function(b) {
                             <button type="submit" class="btn btn-primary" id="profAdminBtn" style="margin-top:20px;"><i class="fas fa-save"></i> Save Profile</button>
                         </form>
                     </div>
-                </div>
+                </div><!-- /#myprofile close -->
+
+                <!-- ═══════════ GOOGLE MAPS QR CONFIG CARD ═══════════ -->
+                <div style="margin-top:28px;" id="qrConfigCard">
+                  <div class="admin-card">
+                    <div class="card-header" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                      <h3 style="display:flex;align-items:center;gap:8px;margin:0;"><i class="fab fa-google" style="color:#EA4335;"></i> Google Maps QR &amp; Review Configuration</h3>
+                      <span style="font-size:.78rem;color:#aaa;font-weight:400;">— Displayed on the public landing page</span>
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;gap:28px;margin-top:20px;align-items:flex-start;">
+
+                      <!-- Left: inputs -->
+                      <div style="flex:1;min-width:280px;">
+                        <div class="form-group">
+                          <label><i class="fas fa-map-marker-alt" style="color:#EA4335;margin-right:6px;"></i>Google Maps Profile URL <span style="color:#e00;font-size:.8rem;">*</span></label>
+                          <input type="url" id="qrMapsUrl" class="form-control" placeholder="https://maps.google.com/maps?..." oninput="qrCfgPreview()">
+                          <small style="color:#888;font-size:.75rem;">Paste your Google Maps business profile URL here.</small>
+                        </div>
+                        <div class="form-group">
+                          <label><i class="fas fa-search-location" style="color:#4285F4;margin-right:6px;"></i>Google Place ID <span style="color:#aaa;font-size:.78rem;font-weight:400;">(optional — for direct review link)</span></label>
+                          <input type="text" id="qrPlaceId" class="form-control" placeholder="ChIJxxxxxxxxxxxxxxxx">
+                          <small style="color:#888;font-size:.75rem;">Find yours at <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" style="color:#4285F4;">Place ID Finder</a>. If entered, the QR will link directly to the write-review page.</small>
+                        </div>
+
+                        <div class="form-group">
+                          <label><i class="fas fa-comment-dots" style="color:#34A853;margin-right:6px;"></i>Pre-typed Review Templates</label>
+                          <small style="display:block;color:#888;font-size:.75rem;margin-bottom:10px;">Add up to 10 review templates that visitors can choose from on the landing page.</small>
+                          <div id="qrTemplateList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+                          <button type="button" onclick="qrAddTemplate()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:#f0f7ff;border:1.5px dashed #4285F4;border-radius:8px;color:#4285F4;font-size:.82rem;cursor:pointer;font-weight:600;">
+                            <i class="fas fa-plus"></i> Add Template
+                          </button>
+                        </div>
+
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center;">
+                          <button type="button" onclick="qrCfgSave()" id="qrSaveBtn" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:7px;">
+                            <i class="fas fa-save"></i> Save &amp; Publish to Landing Page
+                          </button>
+                          <span id="qrSaveMsg" style="display:none;font-size:.85rem;font-weight:600;"></span>
+                        </div>
+                      </div>
+
+                      <!-- Right: QR preview -->
+                      <div style="flex:0 0 auto;text-align:center;">
+                        <p style="font-size:.8rem;color:#888;margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Live QR Preview</p>
+                        <div style="background:#fff;border-radius:16px;padding:20px;border:1.5px solid #eee;display:inline-block;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+                          <canvas id="qrPreviewCanvas" style="display:block;width:160px;height:160px;image-rendering:pixelated;border-radius:8px;"></canvas>
+                        </div>
+                        <p style="font-size:.72rem;color:#aaa;margin-top:8px;">Auto-updates as you type the URL</p>
+                      </div>
+
+                    </div>
+                  </div>
+                </div><!-- /#qrConfigCard -->
+
+                <script>
+                (function(){
+                  'use strict';
+                  var _qrLibLoaded = false;
+
+                  function loadQrLib(cb) {
+                    if (typeof QRCode !== 'undefined') { cb(); return; }
+                    if (_qrLibLoaded) { setTimeout(function(){ loadQrLib(cb); }, 100); return; }
+                    _qrLibLoaded = true;
+                    var s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+                    s.onload = cb;
+                    document.head.appendChild(s);
+                  }
+
+                  // Load existing config on page load
+                  fetch('/api/qr-config').then(function(r){return r.json();}).then(function(cfg){
+                    if (!cfg) return;
+                    if (cfg.mapsUrl) { document.getElementById('qrMapsUrl').value = cfg.mapsUrl; window.qrCfgPreview(); }
+                    if (cfg.placeId) document.getElementById('qrPlaceId').value = cfg.placeId;
+                    var templates = cfg.reviewTemplates || [];
+                    templates.forEach(function(t){ window.qrAddTemplate(t); });
+                  }).catch(function(){});
+
+                  window.qrAddTemplate = function(val) {
+                    var list = document.getElementById('qrTemplateList');
+                    if (!list) return;
+                    if (list.children.length >= 10) { alert('Maximum 10 templates allowed.'); return; }
+                    var row = document.createElement('div');
+                    row.style.cssText = 'display:flex;gap:6px;align-items:center;';
+                    var inp = document.createElement('input');
+                    inp.type = 'text';
+                    inp.className = 'form-control';
+                    inp.placeholder = 'e.g. Amazing festival! Ganpati Bappa Morya 🙏';
+                    inp.style.cssText = 'flex:1;font-size:.85rem;';
+                    if (val) inp.value = val;
+                    var del = document.createElement('button');
+                    del.type = 'button';
+                    del.innerHTML = '<i class="fas fa-times"></i>';
+                    del.title = 'Remove template';
+                    del.style.cssText = 'padding:6px 10px;background:#fee2e2;border:none;border-radius:7px;color:#dc2626;cursor:pointer;flex:0 0 auto;';
+                    del.onclick = function(){ list.removeChild(row); };
+                    row.appendChild(inp); row.appendChild(del);
+                    list.appendChild(row);
+                  };
+
+                  window.qrCfgPreview = function() {
+                    var urlEl = document.getElementById('qrMapsUrl');
+                    var canvas = document.getElementById('qrPreviewCanvas');
+                    if (!urlEl || !canvas) return;
+                    var url = urlEl.value.trim();
+                    if (!url) return;
+                    loadQrLib(function(){
+                      QRCode.toCanvas(canvas, url, { width: 160, margin: 2, color: { dark:'#1A0700', light:'#FFFFFF' } }, function(){});
+                    });
+                  };
+
+                  window.qrCfgSave = async function() {
+                    var urlEl = document.getElementById('qrMapsUrl');
+                    var placeEl = document.getElementById('qrPlaceId');
+                    var url = urlEl ? urlEl.value.trim() : '';
+                    var placeId = placeEl ? placeEl.value.trim() : '';
+                    var inputs = document.querySelectorAll('#qrTemplateList input[type=text]');
+                    var templates = [];
+                    inputs.forEach(function(i){ var v=i.value.trim(); if(v) templates.push(v); });
+                    var btn = document.getElementById('qrSaveBtn');
+                    var msg = document.getElementById('qrSaveMsg');
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving\u2026';
+                    try {
+                      var res = await fetch('/api/qr-config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mapsUrl: url, placeId: placeId, reviewTemplates: templates })
+                      });
+                      var data = await res.json();
+                      msg.style.display = 'inline';
+                      if (data.success) {
+                        msg.style.color = '#27ae60';
+                        msg.innerHTML = '\u2705 Saved! QR is now live on the landing page.';
+                      } else {
+                        msg.style.color = '#dc2626';
+                        msg.textContent = 'Error: ' + (data.message || 'Unknown error');
+                      }
+                    } catch(e) {
+                      msg.style.display = 'inline'; msg.style.color = '#dc2626'; msg.textContent = 'Network error.';
+                    }
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save"></i> Save &amp; Publish to Landing Page';
+                    setTimeout(function(){ msg.style.display='none'; }, 6000);
+                  };
+                })();
+                </script>
 
                 <div id="settings" class="content-section">
                     <div class="admin-card">

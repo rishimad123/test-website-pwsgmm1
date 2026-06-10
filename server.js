@@ -83,6 +83,7 @@ let colDonations, colDonationEntries, colBuildings, colLandmarks, colAreas;
 let colCommitteeMembers, colGallery, colEvents;
 let colTshirts, colTshirtSettings;
 let colVolunteerCards, colNotifications;
+let colQrConfig;
 
 // ─── In-memory stores (populated from MongoDB at startup) ───────────────────
 const SLIPS_PER_BOOK_DE = 50;
@@ -217,6 +218,7 @@ async function connectDB() {
     colNotifications = db.collection('notifications');
     colTshirtSettings   = db.collection('tshirtSettings');
     colVolunteerCards   = db.collection('volunteerCards');
+    colQrConfig         = db.collection('qrConfig');
 
     // ── Purge any existing master login notifications on startup ──────────────
     // Master logins must never appear in the notification bell — clean the DB.
@@ -3262,6 +3264,24 @@ const server = http.createServer(async (req, res) => {
         } catch (err) {
             return sendJSON(res, 500, { message: err.message });
         }
+    }
+
+    // ── QR Config API ──────────────────────────────────────────────────────
+    if (req.method === 'GET' && pathname === '/api/qr-config') {
+        try {
+            const cfg = await colQrConfig.findOne({}) || {};
+            delete cfg._id;
+            return sendJSON(res, 200, cfg);
+        } catch (e) { return sendJSON(res, 500, { message: e.message }); }
+    }
+
+    if (req.method === 'POST' && pathname === '/api/qr-config') {
+        try {
+            const body = JSON.parse((await readRawBody(req)).toString());
+            const { mapsUrl = '', placeId = '', reviewTemplates = [] } = body;
+            await colQrConfig.updateOne({}, { $set: { mapsUrl, placeId, reviewTemplates, updatedAt: new Date().toISOString() } }, { upsert: true });
+            return sendJSON(res, 200, { success: true });
+        } catch (e) { return sendJSON(res, 500, { message: e.message }); }
     }
 
     // ── Static file serving ───────────────────────────────────────────────

@@ -795,7 +795,162 @@
 
 
 
+
+    <!-- ══════════════════════════════════════════════════════════
+         GOOGLE MAPS QR + REVIEW SECTION
+    ══════════════════════════════════════════════════════════ -->
+    <section id="gmapsQrSection" style="display:none;background:linear-gradient(135deg,#1A0700 0%,#2D1000 50%,#0D0E1A 100%);padding:80px 20px;position:relative;overflow:hidden;">
+      <!-- Decorative blobs -->
+      <div style="position:absolute;top:-80px;left:-80px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(217,119,6,0.12),transparent 70%);pointer-events:none;"></div>
+      <div style="position:absolute;bottom:-80px;right:-80px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(185,28,28,0.12),transparent 70%);pointer-events:none;"></div>
+
+      <div style="max-width:900px;margin:0 auto;text-align:center;position:relative;z-index:1;">
+        <!-- Heading -->
+        <div style="font-size:clamp(1.6rem,4vw,2.6rem);font-family:'Cinzel',serif;font-weight:700;color:#FCD34D;margin-bottom:6px;text-shadow:0 0 30px rgba(252,211,77,0.35);">Rate Us on Google Maps</div>
+        <p style="color:rgba(255,240,210,0.65);font-size:.95rem;margin-bottom:40px;letter-spacing:.5px;">Scan the QR code or click below to share your blessings with a review ✨</p>
+
+        <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;justify-content:center;">
+
+          <!-- QR Code Box -->
+          <div style="flex:0 0 auto;">
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(217,119,6,0.25);border-radius:20px;padding:28px;backdrop-filter:blur(10px);display:inline-block;">
+              <canvas id="gmapsQrCanvas" style="display:block;border-radius:12px;width:180px;height:180px;image-rendering:pixelated;"></canvas>
+              <p style="color:rgba(252,211,77,0.6);font-size:.72rem;margin-top:12px;letter-spacing:1.5px;text-transform:uppercase;">Scan to Open Maps</p>
+            </div>
+            <div style="margin-top:18px;">
+              <a id="gmapsDirectLink" href="#" target="_blank" rel="noopener noreferrer"
+                style="display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:linear-gradient(135deg,#E07010,#C03008);color:#fff;border-radius:50px;font-weight:600;font-size:.92rem;text-decoration:none;box-shadow:0 4px 20px rgba(180,50,8,0.45);transition:all .3s;">
+                <i class="fab fa-google" style="font-size:1rem;"></i> Open on Google Maps
+              </a>
+            </div>
+          </div>
+
+          <!-- Review Helper -->
+          <div style="flex:1;min-width:280px;max-width:460px;text-align:left;">
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(217,119,6,0.2);border-radius:20px;padding:28px;backdrop-filter:blur(10px);">
+              <p style="color:rgba(252,211,77,0.9);font-weight:700;font-size:.88rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;"><i class="fas fa-star" style="color:#FCD34D;margin-right:6px;"></i>Leave a Review</p>
+
+              <!-- Star rating -->
+              <div id="gmapsStars" style="display:flex;gap:6px;margin-bottom:18px;font-size:2rem;cursor:pointer;">
+                <span data-v="1" style="color:#555;transition:color .15s;">★</span>
+                <span data-v="2" style="color:#555;transition:color .15s;">★</span>
+                <span data-v="3" style="color:#555;transition:color .15s;">★</span>
+                <span data-v="4" style="color:#555;transition:color .15s;">★</span>
+                <span data-v="5" style="color:#555;transition:color .15s;">★</span>
+              </div>
+
+              <!-- Pre-typed review templates -->
+              <p style="color:rgba(255,240,210,0.5);font-size:.78rem;margin-bottom:10px;letter-spacing:.5px;">Choose a template or write your own:</p>
+              <div id="gmapsReviewTemplates" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;max-height:180px;overflow-y:auto;padding-right:4px;"></div>
+
+              <!-- Custom textarea -->
+              <textarea id="gmapsReviewText" rows="3" placeholder="Write your review here…"
+                style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:1px solid rgba(217,119,6,0.25);border-radius:10px;color:#fff;padding:10px 14px;font-size:.88rem;resize:vertical;outline:none;font-family:'Inter',sans-serif;margin-bottom:14px;"></textarea>
+
+              <button id="gmapsReviewBtn" onclick="gmapsSubmitReview()"
+                style="width:100%;padding:12px;background:linear-gradient(135deg,#E07010,#C03008);color:#fff;border:none;border-radius:12px;font-size:.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .3s;">
+                <i class="fas fa-copy"></i> Copy Review &amp; Open Google Maps
+              </button>
+              <p id="gmapsReviewMsg" style="display:none;margin-top:10px;font-size:.8rem;color:#4ade80;text-align:center;"></p>
+            </div>
+          </div>
+
+        </div><!-- /flex row -->
+      </div>
+    </section>
+
+    <!-- Review modal JS (inline, self-contained) -->
+    <script>
+    (function() {
+        var _gmapsUrl = '', _gmapsStar = 0;
+
+        // Load QR config from server
+        fetch('/api/qr-config').then(function(r){ return r.json(); }).then(function(cfg) {
+            if (!cfg || !cfg.mapsUrl) return;
+            _gmapsUrl = cfg.mapsUrl;
+            document.getElementById('gmapsQrSection').style.display = 'block';
+            document.getElementById('gmapsDirectLink').href = _gmapsUrl;
+
+            // Build QR code
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+            script.onload = function() {
+                QRCode.toCanvas(document.getElementById('gmapsQrCanvas'), _gmapsUrl, {
+                    width: 180, margin: 2,
+                    color: { dark: '#1A0700', light: '#FFFFFF' }
+                });
+            };
+            document.head.appendChild(script);
+
+            // Render review templates
+            var templates = cfg.reviewTemplates || [];
+            var box = document.getElementById('gmapsReviewTemplates');
+            if (templates.length === 0) {
+                // Default templates as fallback
+                templates = [
+                    'Amazing Ganesh festival! The idol was magnificent and the energy was divine. A must-visit for every devotee! 🙏',
+                    'Shree Patelwadi Sarvjanik Ganesh Utsav Mandal organizes a truly spectacular celebration. The devotion and community spirit here is unmatched! 🎉',
+                    'Wonderful experience at Patelwadi Ganesh Utsav! The decoration, music, and prasad were all outstanding. Jai Ganesh! 🐘',
+                    'A spiritually enriching festival. The volunteers were very helpful and the atmosphere was incredibly festive. Highly recommended!',
+                    'Best Ganesh Chaturthi celebration in the area! Every year they surpass themselves. Ganpati Bappa Morya! 🪔'
+                ];
+            }
+            templates.forEach(function(t) {
+                var btn = document.createElement('button');
+                btn.textContent = t;
+                btn.style.cssText = 'text-align:left;background:rgba(255,255,255,0.05);border:1px solid rgba(217,119,6,0.2);border-radius:8px;color:rgba(255,240,210,0.8);padding:9px 12px;font-size:.82rem;cursor:pointer;line-height:1.4;transition:all .2s;width:100%;';
+                btn.onmouseenter = function(){ this.style.background='rgba(217,119,6,0.15)'; this.style.borderColor='rgba(217,119,6,0.5)'; this.style.color='#FFF'; };
+                btn.onmouseleave = function(){ this.style.background='rgba(255,255,255,0.05)'; this.style.borderColor='rgba(217,119,6,0.2)'; this.style.color='rgba(255,240,210,0.8)'; };
+                btn.onclick = function() {
+                    document.getElementById('gmapsReviewText').value = t;
+                    box.querySelectorAll('button').forEach(function(b){ b.style.borderColor='rgba(217,119,6,0.2)'; b.style.background='rgba(255,255,255,0.05)'; });
+                    this.style.borderColor = '#FCD34D'; this.style.background = 'rgba(252,211,77,0.1)';
+                };
+                box.appendChild(btn);
+            });
+        }).catch(function(){});
+
+        // Star rating interaction
+        var stars = document.querySelectorAll('#gmapsStars span');
+        stars.forEach(function(s) {
+            s.onmouseenter = function() {
+                var v = parseInt(this.dataset.v);
+                stars.forEach(function(x){ x.style.color = parseInt(x.dataset.v) <= v ? '#FCD34D' : '#555'; });
+            };
+            s.onmouseleave = function() {
+                stars.forEach(function(x){ x.style.color = parseInt(x.dataset.v) <= _gmapsStar ? '#FCD34D' : '#555'; });
+            };
+            s.onclick = function() {
+                _gmapsStar = parseInt(this.dataset.v);
+                stars.forEach(function(x){ x.style.color = parseInt(x.dataset.v) <= _gmapsStar ? '#FCD34D' : '#555'; });
+            };
+        });
+
+        window.gmapsSubmitReview = function() {
+            var text = document.getElementById('gmapsReviewText').value.trim();
+            var msg  = document.getElementById('gmapsReviewMsg');
+            if (!text) { msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='Please write or select a review first.'; return; }
+            // Copy review text to clipboard
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).catch(function(){});
+            } else {
+                var ta = document.createElement('textarea');
+                ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+            // Build Google Maps write-review URL
+            var reviewUrl = _gmapsUrl;
+            // If we have a direct write-review link configured, use it; otherwise open the maps profile
+            msg.style.display = 'block'; msg.style.color = '#4ade80';
+            msg.textContent = '✅ Review copied to clipboard! Opening Google Maps — paste your review there.';
+            setTimeout(function(){ window.open(reviewUrl, '_blank'); }, 300);
+        };
+    })();
+    </script>
+
     <!-- Footer -->
+
     <footer class="footer">
         <div class="container">
             <div class="footer-grid">
