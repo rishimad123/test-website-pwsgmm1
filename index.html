@@ -869,14 +869,22 @@
     <!-- Review modal JS (inline, self-contained) -->
     <script>
     (function() {
-        var _gmapsUrl = '', _gmapsStar = 0;
+        var _gmapsUrl = '', _gmapsStar = 0, _gmapsPlaceId = '';
 
         // Load QR config from server
         fetch('/api/qr-config').then(function(r){ return r.json(); }).then(function(cfg) {
             if (!cfg || !cfg.mapsUrl) return;
             _gmapsUrl = cfg.mapsUrl;
+            _gmapsPlaceId = cfg.placeId || '';
+
+            // Build the best review-form URL available
+            var _reviewFormUrl = _gmapsPlaceId
+                ? 'https://search.google.com/local/writereview?placeid=' + encodeURIComponent(_gmapsPlaceId)
+                : _gmapsUrl;
+
             document.getElementById('gmapsQrSection').style.display = 'block';
-            document.getElementById('gmapsDirectLink').href = _gmapsUrl;
+            // Direct link points to the review form (or Maps profile if no Place ID)
+            document.getElementById('gmapsDirectLink').href = _reviewFormUrl;
 
             // Build QR code via QR Server API — no JS library needed
             function _buildQr(url) {
@@ -945,22 +953,46 @@
         window.gmapsSubmitReview = function() {
             var text = document.getElementById('gmapsReviewText').value.trim();
             var msg  = document.getElementById('gmapsReviewMsg');
-            if (!text) { msg.style.display='block'; msg.style.color='#f87171'; msg.textContent='Please write or select a review first.'; return; }
-            // Copy review text to clipboard
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(text).catch(function(){});
-            } else {
-                var ta = document.createElement('textarea');
-                ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-                document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-                document.body.removeChild(ta);
+
+            if (!text && _gmapsStar === 0) {
+                msg.style.display='block'; msg.style.color='#f87171';
+                msg.textContent = 'Please select a star rating and write or choose a review first.';
+                return;
             }
-            // Build Google Maps write-review URL
-            var reviewUrl = _gmapsUrl;
-            // If we have a direct write-review link configured, use it; otherwise open the maps profile
+            if (!text) {
+                msg.style.display='block'; msg.style.color='#f87171';
+                msg.textContent = 'Please write or select a review before opening Google Maps.';
+                return;
+            }
+
+            // Copy review text to clipboard
+            var copied = false;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(function(){ copied = true; }).catch(function(){});
+            } else {
+                try {
+                    var ta = document.createElement('textarea');
+                    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+                    document.body.removeChild(ta); copied = true;
+                } catch(e) {}
+            }
+
+            // Build direct write-review URL
+            var reviewUrl = _gmapsPlaceId
+                ? 'https://search.google.com/local/writereview?placeid=' + encodeURIComponent(_gmapsPlaceId)
+                : _gmapsUrl;
+
+            // Guide message
+            var starNote = _gmapsStar > 0
+                ? ' You selected ' + _gmapsStar + ' star' + (_gmapsStar > 1 ? 's' : '') + ' — please tap the same on Google Maps.'
+                : ' Select your star rating on Google Maps.';
+
             msg.style.display = 'block'; msg.style.color = '#4ade80';
-            msg.textContent = '✅ Review copied to clipboard! Opening Google Maps — paste your review there.';
-            setTimeout(function(){ window.open(reviewUrl, '_blank'); }, 300);
+            msg.innerHTML = '📋 Review copied to clipboard!' + starNote + '<br><span style="font-size:.75rem;color:rgba(255,255,255,0.6);">Paste it in the Google Maps review box, then submit.</span>';
+
+            // Open the review form in a new tab
+            setTimeout(function() { window.open(reviewUrl, '_blank', 'noopener,noreferrer'); }, 250);
         };
     })();
     </script>
