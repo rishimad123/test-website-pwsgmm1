@@ -1585,11 +1585,14 @@ window.fixUrl = function(url) {
                         </div><!-- /#de_rcg_wrapper -->
                     </div>
 
-                    <!-- My Submitted Entries table -->
+                    <!-- All Entries by Book Number -->
                     <div class="card" style="margin-top:20px;">
                         <div class="card-header">
-                            <h3><i class="fas fa-list" style="color:var(--primary-color);margin-right:8px;"></i>My Submitted Entries</h3>
-                            <button onclick="deLoadMyEntries()" class="btn btn-small" style="background:var(--light-color);color:#555;font-size:.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+                            <h3><i class="fas fa-book-open" style="color:var(--primary-color);margin-right:8px;"></i>All Donation Entries <span style="font-size:.78rem;font-weight:400;color:#888;">(grouped by book)</span></h3>
+                            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                <input type="text" id="deAllEntriesSearch" placeholder="🔍 Search donor, book, receipt…" oninput="deFilterAllEntries()" style="padding:6px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.82rem;width:200px;">
+                                <button onclick="deLoadMyEntries()" class="btn btn-small" style="background:var(--light-color);color:#555;font-size:.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+                            </div>
                         </div>
                         <div class="de-entries-table-wrap" id="deMyEntriesWrap" style="overflow-x:auto;">
                             <table class="table">
@@ -3480,93 +3483,172 @@ window.fixUrl = function(url) {
     });
 
     // ── My entries table ─────────────────────────────────────────
-    async function deLoadMyEntries() {
-        const tbody = document.getElementById('deMyEntriesTbody');
+    // ── All Entries filtered cache (for search) ───────────────────
+    var _deAllEntriesFlat = [];
+
+    function deFilterAllEntries() {
+        const q = (document.getElementById('deAllEntriesSearch') || {}).value || '';
+        deRenderAllEntries(_deAllEntriesFlat, q.toLowerCase().trim());
+    }
+
+    function deRenderAllEntries(allEntries, filter) {
+        const tbody  = document.getElementById('deMyEntriesTbody');
+        const cards  = document.getElementById('deMyEntriesCards');
         if (!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;">Loading…</td></tr>';
-        try {
-            const uid = currentUser ? currentUser.id : null;
-            const url = uid && currentUser.role !== 'admin' ? `/api/donation-entries?userId=${uid}` : '/api/donation-entries';
-            const res = await fetch(url);
-            const data = await res.json();
-            const entries = data.entries || [];
-            if (!entries.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;">No entries yet.</td></tr>'; return; }
-            tbody.innerHTML = entries.slice().reverse().map(e => {
-                const donor = e.donorType === 'Business' ? (e.businessName||'—') : [e.firstName,e.middleName,e.lastName].filter(Boolean).join(' ') || '—';
+
+        // Group by bookNumber
+        const books = {};
+        allEntries.forEach(function(e) {
+            const bk = String(e.bookNumber || '—');
+            if (!books[bk]) books[bk] = [];
+            books[bk].push(e);
+        });
+
+        // Sort book keys numerically where possible
+        const sortedBks = Object.keys(books).sort(function(a, b) {
+            const na = Number(a), nb = Number(b);
+            if (!isNaN(na) && !isNaN(nb)) return na - nb;
+            return a.localeCompare(b);
+        });
+
+        let tableRows = '';
+        let cardHtml  = '';
+        let totalShown = 0;
+
+        sortedBks.forEach(function(bk) {
+            let entries = books[bk];
+            // Sort by receiptNumber ascending within each book
+            entries.sort(function(a, b) {
+                return (Number(a.receiptNumber) || 0) - (Number(b.receiptNumber) || 0);
+            });
+
+            // Apply search filter
+            if (filter) {
+                entries = entries.filter(function(e) {
+                    const donor = e.donorType === 'Business'
+                        ? (e.businessName || '')
+                        : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
+                    const haystack = [
+                        String(e.bookNumber || ''), String(e.receiptNumber || ''),
+                        donor, e.landmark || '', e.area || '', e.buildingName || '',
+                        e.paymentMode || '', e.submittedBy || ''
+                    ].join(' ').toLowerCase();
+                    return haystack.includes(filter);
+                });
+            }
+            if (!entries.length) return;
+            totalShown += entries.length;
+
+            const bookType   = (entries[0].bookType || 'New');
+            const bkTypeBadge = bookType === 'Old'
+                ? '<span style="background:#FFF8F1;color:#E65100;font-size:.7rem;padding:2px 7px;border-radius:10px;font-weight:700;margin-left:6px;">Old</span>'
+                : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 7px;border-radius:10px;font-weight:700;margin-left:6px;">New</span>';
+            const bookTotal  = entries.reduce(function(s, e) { return s + (Number(e.amount) || 0); }, 0);
+
+            // Book header row
+            tableRows += `<tr style="background:linear-gradient(90deg,#fff8f5,#fff3e0);border-top:2px solid #ffe0b2;">
+                <td colspan="10" style="padding:10px 14px;font-weight:700;color:#BF360C;font-size:.9rem;">
+                    <i class="fas fa-book" style="margin-right:6px;"></i>Book ${bk}${bkTypeBadge}
+                    <span style="margin-left:12px;font-size:.78rem;font-weight:500;color:#666;">${entries.length} entr${entries.length===1?'y':'ies'} &nbsp;&bull;&nbsp; Total: <strong style="color:#2E7D32;">₹${bookTotal.toLocaleString('en-IN')}</strong></span>
+                </td></tr>`;
+
+            // Card section header
+            cardHtml += `<div style="background:linear-gradient(90deg,#fff8f5,#fff3e0);border-radius:12px;padding:10px 14px;margin:12px 0 6px;border-left:4px solid #E65100;">
+                <span style="font-weight:700;color:#BF360C;"><i class="fas fa-book" style="margin-right:5px;"></i>Book ${bk}${bkTypeBadge}</span>
+                <span style="margin-left:10px;font-size:.78rem;color:#666;">${entries.length} entr${entries.length===1?'y':'ies'} &bull; ₹${bookTotal.toLocaleString('en-IN')}</span>
+            </div>`;
+
+            entries.forEach(function(e) {
+                const donor = e.donorType === 'Business'
+                    ? (e.businessName || '—')
+                    : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
                 const dtObj  = new Date(e.submittedAt);
                 const dtTime = dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
                 const dtDate = dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-                const dt    = `<span style="font-size:.78rem;white-space:nowrap;">${dtTime}<br><span style="color:#aaa;">${dtDate}</span></span>`;
-                const amt   = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '—';
+                const dt     = `<span style="font-size:.78rem;white-space:nowrap;">${dtTime}<br><span style="color:#aaa;">${dtDate}</span></span>`;
+                const amt    = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '—';
                 const photoCell = (e.photoUrl || e.receiptPreviewUrl)
                     ? `<img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" alt="Receipt" loading="lazy" decoding="async" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;vertical-align:middle;" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')" title="Click to enlarge">`
                     : '<span style="color:#ccc;font-size:.8rem;">—</span>';
-                return `<tr id="de-vol-row-${e.entryId}">
-                    <td style="font-weight:700;vertical-align:middle;">Bk ${e.bookNumber} ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF8F1;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>' }</td>
+                const editBtn = (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'volunteer_view') ? ''
+                    : `<button onclick="deOpenVolEdit('${e.entryId}')" style="padding:6px 12px;border:none;border-radius:7px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;margin-right:4px;"><i class="fas fa-edit"></i></button>`;
+                const rcptBtn = (e.status||(e.paymentMode==='Balance'?'Balance':'Received')).toLowerCase()==='received'
+                    ? `<button onclick="de_rcg_openEditModal('${e.entryId}')" title="Edit Receipt" style="padding:6px 10px;border:none;border-radius:7px;background:linear-gradient(135deg,#8B1A1A,#B71C1C);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;"><i class="fas fa-file-invoice"></i></button>` : '';
+                const viewBtn = e.receiptPreviewUrl
+                    ? `<button onclick="window.open('${e.receiptPreviewUrl}', '_blank')" title="View HD Receipt" style="padding:6px 10px;border:none;border-radius:7px;background:#FFEBEE;color:#C62828;cursor:pointer;font-size:.8rem;font-weight:700;margin-left:4px;"><i class="fas fa-eye"></i></button>` : '';
+
+                tableRows += `<tr id="de-vol-row-${e.entryId}">
+                    <td style="font-weight:700;vertical-align:middle;">Bk ${e.bookNumber}</td>
                     <td>#${e.receiptNumber}</td>
                     <td>${donor}</td>
                     <td>
                         ${e.landmark ? `<div style="font-weight:600;">${e.landmark}${e.area ? ` <span style="font-weight:normal;color:#777;">&bull; ${e.area}</span>` : ''}</div>` : ''}
                         ${e.buildingName ? `<div style="font-size:0.8rem;color:#555;"><i class="fas fa-building" style="margin-right:4px;"></i>${e.buildingName}${e.flatNumber ? ` (Flat: ${e.flatNumber})` : ''}</div>` : ''}
-                        ${e.landmark ? `<div style="font-size:0.8rem;color:#777;"><i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>${e.landmark}</div>` : ''}
                     </td>
                     <td style="color:#2E7D32;font-weight:600;">${amt}</td>
                     <td><span style="padding:3px 10px;border-radius:12px;background:#E3F2FD;color:#1565C0;font-size:.78rem;font-weight:700;">${e.paymentMode}</span></td>
                     <td style="text-align:center;">${photoCell}</td>
                     <td style="color:#888;font-size:.78rem;">${dt}</td>
-                    <td style="white-space:nowrap;">${(typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'volunteer_view') ? '' : `<button onclick="deOpenVolEdit('${e.entryId}')" style="padding:6px 12px;border:none;border-radius:7px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;margin-right:4px;"><i class="fas fa-edit"></i></button>`}${(e.status||(e.paymentMode==='Balance'?'Balance':'Received')).toLowerCase()==='received'?`<button onclick="de_rcg_openEditModal('${e.entryId}')" title="Edit Receipt" style="padding:6px 10px;border:none;border-radius:7px;background:linear-gradient(135deg,#8B1A1A,#B71C1C);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;"><i class="fas fa-file-invoice"></i></button>`:''}${e.receiptPreviewUrl ? `<button onclick="window.open('${e.receiptPreviewUrl}', '_blank')" title="View HD Receipt" style="padding:6px 10px;border:none;border-radius:7px;background:#FFEBEE;color:#C62828;cursor:pointer;font-size:.8rem;font-weight:700;margin-left:4px;"><i class="fas fa-eye"></i></button>` : ''}</td>
+                    <td style="white-space:nowrap;">${editBtn}</td>
+                    <td style="white-space:nowrap;">${rcptBtn}${viewBtn}</td>
                 </tr>`;
-            }).join('');
-        // ── Also populate mobile cards ─────────────────────────────────────────
-        const cardsEl = document.getElementById('deMyEntriesCards');
-        if (cardsEl) {
-            if (!entries.length) {
-                cardsEl.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">No entries yet.</p>';
-            } else {
-                cardsEl.innerHTML = entries.slice().reverse().map(e => {
-                    const donor = e.donorType === 'Business' ? (e.businessName||'—') : [e.firstName,e.middleName,e.lastName].filter(Boolean).join(' ') || '—';
-                    const amt   = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '—';
-                    const dtObj = new Date(e.submittedAt);
-                    const dtStr = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()
-                                + '\n' + dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
-                    const dtParts = dtStr.split('\n');
-                    const photoSection = (e.photoUrl || e.receiptPreviewUrl)
-                        ? `<div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')">
-                               <img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" loading="lazy" alt="Receipt photo"
-                                   style="width:100%;max-height:200px;object-fit:cover;display:block;">
-                               <div style="background:#fff8f5;padding:5px 10px;font-size:.72rem;color:#E65100;font-weight:600;display:flex;align-items:center;gap:5px;">
-                                   <i class="fas fa-expand-alt"></i> Tap to view full receipt
-                               </div>
-                           </div>`
-                        : `<div style="margin-top:10px;border:1.5px dashed #f0e0d0;border-radius:10px;padding:14px;text-align:center;background:#fffaf8;">
-                               <i class="fas fa-camera" style="font-size:1.4rem;color:#ddd;display:block;margin-bottom:6px;"></i>
-                               <span style="font-size:.75rem;color:#ccc;font-weight:600;">No Receipt Photo</span>
-                           </div>`;
-                    return `<div style="border:1px solid #f0e8e0;border-radius:14px;padding:14px;margin:0 0 12px;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.06);">
-                        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
-                            <div style="flex:1;min-width:0;">
-                                <div style="font-weight:700;font-size:.97rem;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${donor}</div>
-                                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;">
-                                    <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
-                                        <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${e.bookNumber} / #${e.receiptNumber} ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF8F1;color:#E65100;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">New</span>' }
-                                    </span>
-                                    ${(e.landmark || e.area || e.buildingName || e.landmark) ? `<span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;"><i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${[e.landmark, e.area, e.buildingName ? `${e.buildingName}${e.flatNumber ? ` (Flat: ${e.flatNumber})` : ''}` : null, e.landmark].filter(Boolean).join(' &middot; ')}</span>` : ''}
-                                    <span style="background:#FFF8F1;color:#E65100;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">${e.paymentMode}</span>
-                                </div>
-                                <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
-                                    <span style="color:#2E7D32;font-weight:700;font-size:1.05rem;">${amt}</span>
-                                    <span style="font-size:.72rem;color:#aaa;text-align:right;">${dtParts[0]}<br><span style="color:#bbb;">${dtParts[1]}</span></span>
-                                </div>
+
+                // Mobile card
+                const photoSection = (e.photoUrl || e.receiptPreviewUrl)
+                    ? `<div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')">
+                           <img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" loading="lazy" alt="Receipt photo" style="width:100%;max-height:200px;object-fit:cover;display:block;">
+                           <div style="background:#fff8f5;padding:5px 10px;font-size:.72rem;color:#E65100;font-weight:600;"><i class="fas fa-expand-alt"></i> Tap to view full receipt</div>
+                       </div>`
+                    : `<div style="margin-top:10px;border:1.5px dashed #f0e0d0;border-radius:10px;padding:14px;text-align:center;background:#fffaf8;">
+                           <i class="fas fa-camera" style="font-size:1.4rem;color:#ddd;display:block;margin-bottom:6px;"></i>
+                           <span style="font-size:.75rem;color:#ccc;font-weight:600;">No Receipt Photo</span>
+                       </div>`;
+                cardHtml += `<div style="border:1px solid #f0e8e0;border-radius:14px;padding:14px;margin:0 0 10px;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.06);">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:700;font-size:.97rem;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${donor}</div>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;">
+                                <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">Bk ${e.bookNumber} / #${e.receiptNumber}</span>
+                                ${e.landmark ? `<span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;"><i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${e.landmark}${e.area ? ' &middot; '+e.area : ''}</span>` : ''}
+                                <span style="background:#FFF8F1;color:#E65100;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">${e.paymentMode}</span>
                             </div>
-                            ${(typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'volunteer_view') ? '' : `<div style="display:flex;flex-direction:column;gap:4px;"><button onclick="deOpenVolEdit('${e.entryId}')" style="padding:8px 12px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;flex-shrink:0;margin-left:4px;"><i class="fas fa-edit"></i></button>` + ((e.status||(e.paymentMode==='Balance'?'Balance':'Received')).toLowerCase()==='received'?`<button onclick="de_rcg_openEditModal('${e.entryId}')" title="Edit Receipt" style="padding:8px 12px;border:none;border-radius:8px;background:linear-gradient(135deg,#8B1A1A,#B71C1C);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;flex-shrink:0;margin-left:4px;"><i class="fas fa-file-invoice"></i></button>`:'') + (e.receiptPreviewUrl ? `<button onclick="window.open('${e.receiptPreviewUrl}', '_blank')" title="View HD Receipt" style="padding:8px 12px;border:none;border-radius:8px;background:#FFEBEE;color:#C62828;cursor:pointer;font-size:.8rem;font-weight:700;flex-shrink:0;margin-left:4px;"><i class="fas fa-eye"></i></button>` : '') + `</div>`}
+                            <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+                                <span style="color:#2E7D32;font-weight:700;font-size:1.05rem;">${amt}</span>
+                                <span style="font-size:.72rem;color:#aaa;text-align:right;">${dtTime}<br><span style="color:#bbb;">${dtDate}</span></span>
+                            </div>
                         </div>
-                        ${photoSection}
-                    </div>`;
-                }).join('');
-            }
+                        ${(typeof currentUser !== 'undefined' && currentUser && currentUser.role !== 'volunteer_view') ? `<div style="display:flex;flex-direction:column;gap:4px;">${editBtn}${rcptBtn}${viewBtn}</div>` : ''}
+                    </div>
+                    ${photoSection}
+                </div>`;
+            });
+        });
+
+        if (totalShown === 0) {
+            const msg = filter ? 'No entries match your search.' : 'No entries yet.';
+            tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#999;padding:20px;">${msg}</td></tr>`;
+            if (cards) cards.innerHTML = `<p style="text-align:center;color:#999;padding:20px;">${msg}</p>`;
+        } else {
+            tbody.innerHTML = tableRows;
+            if (cards) cards.innerHTML = cardHtml;
         }
-        } catch(err) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#c00;">Error loading entries.</td></tr>'; }
     }
+
+    async function deLoadMyEntries() {
+        const tbody = document.getElementById('deMyEntriesTbody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;">Loading…</td></tr>';
+        try {
+            const res  = await fetch('/api/donation-entries');
+            const data = await res.json();
+            _deAllEntriesFlat = data.entries || [];
+            const searchVal = ((document.getElementById('deAllEntriesSearch') || {}).value || '').toLowerCase().trim();
+            deRenderAllEntries(_deAllEntriesFlat, searchVal);
+        } catch(err) {
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#c00;">Error loading entries.</td></tr>';
+        }
+    }
+
 
     // ── Volunteer Edit Modal ────────────────────────────────
     let _deVolEditBlob = null;
