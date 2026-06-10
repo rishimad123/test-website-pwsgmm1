@@ -2205,8 +2205,11 @@ window._fmtBytesA = function(b) {
                           <!-- Right: QR preview -->
                           <div style="flex:0 0 auto;text-align:center;">
                             <p style="font-size:.8rem;color:#888;margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Live QR Preview</p>
-                            <div style="background:#fff;border-radius:16px;padding:16px;border:1.5px solid #eee;display:inline-block;box-shadow:0 4px 20px rgba(0,0,0,0.08);min-width:200px;min-height:200px;">
-                              <canvas id="qrPreviewCanvas" style="display:block;width:200px;height:200px;"></canvas>
+                            <div style="background:#fff;border-radius:16px;padding:16px;border:1.5px solid #eee;display:inline-block;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+                              <img id="qrPreviewImg" src="" alt="QR Preview" style="display:none;width:200px;height:200px;border-radius:8px;">
+                              <div id="qrPreviewLoading" style="width:200px;height:200px;display:flex;align-items:center;justify-content:center;">
+                                <span style="font-size:.8rem;color:#ccc;">Enter URL above…</span>
+                              </div>
                               <div id="qrPreviewError" style="display:none;width:200px;padding:16px;text-align:center;">
                                 <i class="fas fa-exclamation-triangle" style="color:#E65100;font-size:1.5rem;display:block;margin-bottom:6px;"></i>
                                 <p style="font-size:.75rem;color:#888;margin:0;">URL too long for QR.<br>Try a short link (e.g. maps.app.goo.gl/…)</p>
@@ -2262,28 +2265,30 @@ window._fmtBytesA = function(b) {
                   };
 
                   window.qrCfgPreview = function() {
-                    var urlEl = document.getElementById('qrMapsUrl');
-                    var canvas = document.getElementById('qrPreviewCanvas');
-                    var errBox = document.getElementById('qrPreviewError');
-                    if (!urlEl || !canvas) return;
+                    var urlEl   = document.getElementById('qrMapsUrl');
+                    var img     = document.getElementById('qrPreviewImg');
+                    var loader  = document.getElementById('qrPreviewLoading');
+                    var errBox  = document.getElementById('qrPreviewError');
+                    if (!urlEl || !img) return;
                     var url = urlEl.value.trim();
                     if (!url) return;
-                    // Pre-fill white background so canvas is never transparent
-                    canvas.width = 200; canvas.height = 200;
-                    var ctx = canvas.getContext('2d');
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.fillRect(0, 0, 200, 200);
+                    // Show spinner while generating
+                    if (img)    img.style.display    = 'none';
+                    if (errBox) errBox.style.display  = 'none';
+                    if (loader) { loader.style.display = 'flex'; loader.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:1.5rem;color:#ccc;"></i>'; }
                     loadQrLib(function(){
-                      QRCode.toCanvas(canvas, url, {
+                      QRCode.toDataURL(url, {
                         width: 200, margin: 2,
                         errorCorrectionLevel: 'L',
-                        color: { dark: '#1A0700', light: '#FFFFFF' }
-                      }, function(err) {
+                        color: { dark: '#000000', light: '#FFFFFF' }
+                      }, function(err, dataUrl) {
+                        if (loader) loader.style.display = 'none';
                         if (err) {
-                          canvas.style.display = 'none';
+                          img.style.display = 'none';
                           if (errBox) errBox.style.display = 'block';
                         } else {
-                          canvas.style.display = 'block';
+                          img.src = dataUrl;
+                          img.style.display = 'block';
                           if (errBox) errBox.style.display = 'none';
                         }
                       });
