@@ -2205,8 +2205,12 @@ window._fmtBytesA = function(b) {
                           <!-- Right: QR preview -->
                           <div style="flex:0 0 auto;text-align:center;">
                             <p style="font-size:.8rem;color:#888;margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Live QR Preview</p>
-                            <div style="background:#fff;border-radius:16px;padding:20px;border:1.5px solid #eee;display:inline-block;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-                              <canvas id="qrPreviewCanvas" style="display:block;width:160px;height:160px;image-rendering:pixelated;border-radius:8px;"></canvas>
+                            <div style="background:#fff;border-radius:16px;padding:16px;border:1.5px solid #eee;display:inline-block;box-shadow:0 4px 20px rgba(0,0,0,0.08);min-width:200px;min-height:200px;">
+                              <canvas id="qrPreviewCanvas" style="display:block;width:200px;height:200px;"></canvas>
+                              <div id="qrPreviewError" style="display:none;width:200px;padding:16px;text-align:center;">
+                                <i class="fas fa-exclamation-triangle" style="color:#E65100;font-size:1.5rem;display:block;margin-bottom:6px;"></i>
+                                <p style="font-size:.75rem;color:#888;margin:0;">URL too long for QR.<br>Try a short link (e.g. maps.app.goo.gl/…)</p>
+                              </div>
                             </div>
                             <p style="font-size:.72rem;color:#aaa;margin-top:8px;">Auto-updates as you type the URL</p>
                           </div>
@@ -2260,11 +2264,29 @@ window._fmtBytesA = function(b) {
                   window.qrCfgPreview = function() {
                     var urlEl = document.getElementById('qrMapsUrl');
                     var canvas = document.getElementById('qrPreviewCanvas');
+                    var errBox = document.getElementById('qrPreviewError');
                     if (!urlEl || !canvas) return;
                     var url = urlEl.value.trim();
                     if (!url) return;
+                    // Pre-fill white background so canvas is never transparent
+                    canvas.width = 200; canvas.height = 200;
+                    var ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, 200, 200);
                     loadQrLib(function(){
-                      QRCode.toCanvas(canvas, url, { width:160, margin:2, color:{ dark:'#1A0700', light:'#FFFFFF' } }, function(){});
+                      QRCode.toCanvas(canvas, url, {
+                        width: 200, margin: 2,
+                        errorCorrectionLevel: 'L',
+                        color: { dark: '#1A0700', light: '#FFFFFF' }
+                      }, function(err) {
+                        if (err) {
+                          canvas.style.display = 'none';
+                          if (errBox) errBox.style.display = 'block';
+                        } else {
+                          canvas.style.display = 'block';
+                          if (errBox) errBox.style.display = 'none';
+                        }
+                      });
                     });
                   };
 

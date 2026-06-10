@@ -812,11 +812,15 @@
         <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;justify-content:center;">
 
           <!-- QR Code Box -->
-          <div style="flex:0 0 auto;">
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(217,119,6,0.25);border-radius:20px;padding:28px;backdrop-filter:blur(10px);display:inline-block;">
-              <canvas id="gmapsQrCanvas" style="display:block;border-radius:12px;width:180px;height:180px;image-rendering:pixelated;"></canvas>
-              <p style="color:rgba(252,211,77,0.6);font-size:.72rem;margin-top:12px;letter-spacing:1.5px;text-transform:uppercase;">Scan to Open Maps</p>
+          <div style="flex:0 0 auto;text-align:center;">
+            <div id="gmapsQrBox" style="background:#fff;border:3px solid rgba(217,119,6,0.4);border-radius:20px;padding:16px;display:inline-block;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+              <canvas id="gmapsQrCanvas" style="display:block;width:220px;height:220px;"></canvas>
+              <div id="gmapsQrError" style="display:none;width:220px;padding:16px;text-align:center;">
+                <i class="fas fa-exclamation-triangle" style="font-size:2rem;color:#E65100;display:block;margin-bottom:8px;"></i>
+                <p style="color:#555;font-size:.8rem;margin:0;">QR generation failed.<br>URL may be too long — use a short link.</p>
+              </div>
             </div>
+            <p style="color:rgba(252,211,77,0.75);font-size:.72rem;margin-top:10px;letter-spacing:1.5px;text-transform:uppercase;">📷 Scan to Open Maps</p>
             <div style="margin-top:18px;">
               <a id="gmapsDirectLink" href="#" target="_blank" rel="noopener noreferrer"
                 style="display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:linear-gradient(135deg,#E07010,#C03008);color:#fff;border-radius:50px;font-weight:600;font-size:.92rem;text-decoration:none;box-shadow:0 4px 20px rgba(180,50,8,0.45);transition:all .3s;">
@@ -871,18 +875,41 @@
             document.getElementById('gmapsQrSection').style.display = 'block';
             document.getElementById('gmapsDirectLink').href = _gmapsUrl;
 
-            // Build QR code
+            // Build QR code — use errorCorrectionLevel 'L' for long URLs
+            function _buildQr(url) {
+                var canvas = document.getElementById('gmapsQrCanvas');
+                var errBox = document.getElementById('gmapsQrError');
+                if (!canvas) return;
+                // Pre-fill canvas with white background so it's visible on dark page
+                canvas.width = 220; canvas.height = 220;
+                var ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, 220, 220);
+
+                QRCode.toCanvas(canvas, url, {
+                    width: 220,
+                    margin: 2,
+                    errorCorrectionLevel: 'L',
+                    color: { dark: '#1A0700', light: '#FFFFFF' }
+                }, function(err) {
+                    if (err) {
+                        console.warn('[QR] Generation failed:', err.message);
+                        canvas.style.display = 'none';
+                        if (errBox) errBox.style.display = 'block';
+                    } else {
+                        canvas.style.display = 'block';
+                        if (errBox) errBox.style.display = 'none';
+                        console.log('[QR] Generated successfully for:', url.substring(0,60) + '...');
+                    }
+                });
+            }
+
             var script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
-            script.onload = function() {
-                QRCode.toCanvas(document.getElementById('gmapsQrCanvas'), _gmapsUrl, {
-                    width: 180, margin: 2,
-                    color: { dark: '#1A0700', light: '#FFFFFF' }
-                });
-            };
+            script.onload = function() { _buildQr(_gmapsUrl); };
+            script.onerror = function() { console.warn('[QR] Failed to load qrcode library'); };
             document.head.appendChild(script);
 
-            // Render review templates
             var templates = cfg.reviewTemplates || [];
             var box = document.getElementById('gmapsReviewTemplates');
             if (templates.length === 0) {
