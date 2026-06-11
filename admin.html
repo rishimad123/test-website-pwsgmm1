@@ -3495,21 +3495,19 @@ window._fmtBytesA = function(b) {
 
                 <!-- ── Contributions Section ────────────────────────────── -->
                 <div id="contributions" class="content-section">
-                  <div class="contrib-hero">
-                    <div>
-                      <h2><i class="fas fa-hand-holding-heart" style="margin-right:10px;"></i>Contributions</h2>
-                      <p>Track all contributor amounts by month and date &mdash; securely stored in MongoDB</p>
+
+                  <!-- Compact Header (like other admin sections) -->
+                  <div class="contrib-header-bar">
+                    <h1><i class="fas fa-hand-holding-heart"></i> Contributions</h1>
+                    <div class="contrib-stats-strip">
+                      <div class="contrib-stat-pill"><div class="cs-val" id="contrib-stat-total-amt">&#x20B9;0</div><div class="cs-lbl">Total</div></div>
+                      <div class="contrib-stat-pill"><div class="cs-val" id="contrib-stat-count">0</div><div class="cs-lbl">Records</div></div>
+                      <div class="contrib-stat-pill"><div class="cs-val" id="contrib-stat-contributors">0</div><div class="cs-lbl">Contributors</div></div>
+                      <div class="contrib-stat-pill"><div class="cs-val" id="contrib-stat-this-month">&#x20B9;0</div><div class="cs-lbl">This Month</div></div>
                     </div>
-                    <i class="fas fa-donate contrib-hero-icon"></i>
                   </div>
 
-                  <div class="contrib-stats-row">
-                    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-total-amt">&#x20B9;0</div><div class="cs-lbl">Total Contributions</div></div>
-                    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-count">0</div><div class="cs-lbl">Total Records</div></div>
-                    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-contributors">0</div><div class="cs-lbl">Unique Contributors</div></div>
-                    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-this-month">&#x20B9;0</div><div class="cs-lbl">This Month</div></div>
-                  </div>
-
+                  <!-- Add Contributor Form -->
                   <div class="contrib-form-card">
                     <h3><i class="fas fa-user-plus"></i> Add Contributor</h3>
                     <div id="contrib-form-grid">
@@ -3517,13 +3515,14 @@ window._fmtBytesA = function(b) {
                       <div class="cfg"><label>Amount (&#x20B9;) *</label><input type="number" id="contrib-amount" placeholder="0" min="1" step="any"></div>
                       <div class="cfg"><label>Date *</label><input type="date" id="contrib-date"></div>
                       <div class="cfg"><label>Note (optional)</label><input type="text" id="contrib-note" placeholder="e.g. Annual donation&hellip;" autocomplete="off"></div>
+                      <div class="cfg" style="justify-content:flex-end;">
+                        <button id="contrib-add-btn" onclick="contribAdd()"><i class="fas fa-plus"></i> Add</button>
+                      </div>
                     </div>
-                    <div style="margin-top:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-                      <button id="contrib-add-btn" onclick="contribAdd()"><i class="fas fa-plus"></i> Add Contribution</button>
-                      <span id="contrib-form-msg" style="font-size:.88rem;font-weight:600;"></span>
-                    </div>
+                    <div id="contrib-form-msg"></div>
                   </div>
 
+                  <!-- Records Table -->
                   <div class="contrib-table-card">
                     <div class="contrib-table-header">
                       <h3><i class="fas fa-list-alt" style="color:#7C3AED;"></i> All Contribution Records</h3>
@@ -3533,13 +3532,14 @@ window._fmtBytesA = function(b) {
                       </div>
                     </div>
                     <div id="contrib-table-wrap">
-                      <div id="contrib-empty" style="display:none;"><i class="fas fa-inbox" style="font-size:2rem;opacity:.2;display:block;margin-bottom:10px;"></i>No contribution records yet. Add the first one above!</div>
+                      <div id="contrib-empty" style="display:none;"><i class="fas fa-inbox" style="font-size:1.8rem;opacity:.2;display:block;margin-bottom:8px;"></i>No contribution records yet. Add the first one above!</div>
                       <table id="contrib-tbl" style="display:none;">
                         <thead><tr><th>#</th><th>Contributor Name</th><th>Amount (&#x20B9;)</th><th>Date</th><th>Note</th><th>Added On</th><th>Action</th></tr></thead>
                         <tbody id="contrib-tbody"></tbody>
                       </table>
                     </div>
                   </div>
+
                 </div><!-- /#contributions -->
 
             </div> <!-- End of .admin-content -->
@@ -7329,7 +7329,7 @@ fetchNotifications();
     if(g("ade_rcg_editReason"))g("ade_rcg_editReason").value="";
     if(g("ade_rcg_editSubtitle"))g("ade_rcg_editSubtitle").textContent=(e.bookNumber&&e.receiptNumber?"Book "+e.bookNumber+" / Receipt #"+e.receiptNumber:entryId);
     var hb=g("ade_rcg_editHistoryBox"),hist=e.receiptHistory||[];
-    if(hb){if(hist.length){hb.style.display="block";hb.innerHTML="<strong style='color:#E65100;'><i class='fas fa-history'></i> Edit History</strong>"+hist.map(function(h){var ch=Object.keys(h.changes||{}).map(function(k){return k+": "+h.changes[k].from+" → "+h.changes[k].to;}).join(", ");return"<div style='margin-top:4px;border-top:1px solid #ffe0b2;padding-top:4px;'>"+new Date(h.editedAt).toLocaleString("en-IN")+" by "+h.editedBy+(ch?"<br>"+ch:"")+(h.reason?"<br><em>"+h.reason+"</em>":"")+"</div>";}).join("");}else{hb.style.display="none";}}
+    if(hb){if(hist.length){hb.style.display="block";hb.innerHTML="<strong style='color:#E65100;'><i class='fas fa-history'></i> Edit History</strong>"+hist.map(function(h){var ch=Object.keys(h.changes||{}).map(function(k){return k+": "+h.changes[k].from+" \u2192 "+h.changes[k].to;}).join(", ");return"<div style='margin-top:4px;border-top:1px solid #ffe0b2;padding-top:4px;'>"+new Date(h.editedAt).toLocaleString("en-IN")+" by "+h.editedBy+(ch?"<br>"+ch:"")+(h.reason?"<br><em>"+h.reason+"</em>":"")+"</div>";}).join("");}else{hb.style.display="none";}}
     if(g("ade_rcg_editStatusMsg"))g("ade_rcg_editStatusMsg").style.display="none";
     var m=g("ade_rcg_editModal");if(m)m.style.display="flex";
   };
@@ -7340,7 +7340,7 @@ fetchNotifications();
     var dn=(g("ade_rcg_editName").value||"").trim(),amt=parseFloat(g("ade_rcg_editAmount").value)||null,dt=(g("ade_rcg_editDate").value||"").trim(),st=g("ade_rcg_editStatus").value||"Received",rs=(g("ade_rcg_editReason").value||"").trim();
     if(!dn){if(typeof showNotification==="function")showNotification("Please enter the donor name.","error");return;}
     var e=(_adeAll||[]).find(function(x){return x.entryId===_editId;});
-    var btn=document.getElementById("ade_rcg_editSaveBtn");if(btn){btn.disabled=true;btn.innerHTML="<i class='fas fa-spinner fa-spin'></i> Saving…";}
+    var btn=document.getElementById("ade_rcg_editSaveBtn");if(btn){btn.disabled=true;btn.innerHTML="<i class='fas fa-spinner fa-spin'></i> Saving\u2026";}
     try{
       var res=await fetch("/api/donation-entries/"+encodeURIComponent(_editId)+"/receipt",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({donorName:dn,amount:amt,receiptDate:dt,status:st,reason:rs,editedBy:"Admin"})});
       var data=await res.json();
@@ -7351,7 +7351,7 @@ fetchNotifications();
         if(typeof showNotification==="function")showNotification("Receipt updated!","success");
         var doWA=confirm("Receipt saved! Re-send updated receipt via WhatsApp?");
         ade_rcg_closeEditModal();
-        if(doWA){var ph=(e?(e.whatsappNumber||e.mobileNumber||""):"").replace(/\D/g,"");if(ph.length===10)ph="91"+ph;var pts=dt?dt.split("-"):[];var ds=pts.length===3?(pts[2]+"/"+pts[1]+"/"+pts[0]):"";var rl=e?(e.bookNumber&&e.receiptNumber?e.bookNumber+"/"+e.receiptNumber:(e.receiptNumber||"")):"";var msg=["\uD83D\uDE4F *\u0936\u094D\u0930\u0940 \u092A\u0924\u0947\u0932\u0935\u093E\u0921\u0940 \u0938\u093E\u0930\u094D\u0935\u091C\u0928\u093F\u0915 \u0917\u0923\u0947\u0936\u094B\u0924\u094D\u0938\u0935 \u092E\u0902\u0921\u0933*","\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501","\uD83D\uDCCB *Receipt No:* "+(rl||"\u2014"),"\uD83D\uDC64 *Donor:* "+(dn||"\u2014"),"\uD83D\uDCB0 *Amount:* \u20B9"+(amt?Number(amt).toLocaleString("en-IN"):"\u2014"),"\uD83D\uDCC5 *Date:* "+(ds||"\u2014"),"\uD83D\uDCB3 *Payment:* "+(e?e.paymentMode:""),"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501","\u2705 *UPDATED RECEIPT* \u2014 \u0927\u0928\u094D\u092F\u0935\u093E\u0926! \uD83D\uDE4F","_Shree Patelwadi Sarvjanik Ganeshostav Mandal_"].join("\n");var url=ph?"https://wa.me/"+ph+"?text="+encodeURIComponent(msg):"https://wa.me/?text="+encodeURIComponent(msg);window.open(url,"_blank");}
+        if(doWA){var ph=(e?(e.whatsappNumber||e.mobileNumber||""):"").replace(/\D/g,"");if(ph.length===10)ph="91"+ph;var pts=dt?dt.split("-"):[];var ds=pts.length===3?(pts[2]+"/"+pts[1]+"/"+pts[0]):"";var rl=e?(e.bookNumber&&e.receiptNumber?e.bookNumber+"/"+e.receiptNumber:(e.receiptNumber||"")):"";var msg=["\uD83D\uDE4F *\u0936\u094D\u0930\u0940 \u092A\u0924\u0947\u0932\u0935\u093E\u0921\u0940 \u0938\u093E\u0930\u094D\u0935\u091C\u0928\u093F\u0915 \u0917\u0923\u0947\u0936\u094B\u0924\u094D\u0938\u0935 \u092E\u0902\u0921\u0933*","\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501","\uD83D\uDCCB *Receipt No:* "+(rl||"\u2014"),"\uD83D\uDC64 *Donor:* "+(dn||"\u2014"),"\uD83D\uDCB0 *Amount:* \u20B9"+(amt?Number(amt).toLocaleString("en-IN"):"\u2014"),"\uD83D\uDCC5 *Date:* "+(ds||"\u2014"),"\uD83D\uDCB3 *Payment:* "+(e?e.paymentMode:""),"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501","\u2705 *UPDATED RECEIPT*","_Shree Patelwadi Sarvjanik Ganeshostav Mandal_"].join("\n");var url=ph?"https://wa.me/"+ph+"?text="+encodeURIComponent(msg):"https://wa.me/?text="+encodeURIComponent(msg);window.open(url,"_blank");}
       }else{var sm=document.getElementById("ade_rcg_editStatusMsg");if(sm){sm.style.display="block";sm.style.background="#FFEBEE";sm.style.color="#C62828";sm.textContent="\u2717 "+(data.message||"Could not save.");}}
     }catch(err){if(typeof showNotification==="function")showNotification("Network error: "+err.message,"error");}
     finally{if(btn){btn.disabled=false;btn.innerHTML="<i class='fas fa-save'></i> Save & Re-send";}}
@@ -7361,54 +7361,8 @@ fetchNotifications();
 </script>
 <!-- ═══ END ADE RECEIPT EDIT MODAL ═══ -->
 <!-- ═══════════════════════════════════════════════════════════════════
-     CONTRIBUTIONS SECTION
+     CONTRIBUTIONS MODULE CSS + JS
      ═══════════════════════════════════════════════════════════════════ -->
-<style>
-#contributions .contrib-hero{background:linear-gradient(135deg,#7C3AED 0%,#4F46E5 60%,#3B82F6 100%);border-radius:16px;padding:28px 32px;color:#fff;margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;box-shadow:0 8px 32px rgba(124,58,237,.25);}
-#contributions .contrib-hero h2{font-size:1.7rem;font-weight:700;margin-bottom:4px;}
-#contributions .contrib-hero p{opacity:.85;font-size:.95rem;}
-#contributions .contrib-hero-icon{font-size:3.5rem;opacity:.3;}
-#contributions .contrib-stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:18px;margin-bottom:28px;}
-#contributions .contrib-stat-card{background:#fff;border-radius:14px;padding:22px 20px;box-shadow:0 3px 14px rgba(0,0,0,.07);text-align:center;transition:transform .22s,box-shadow .22s;}
-#contributions .contrib-stat-card:hover{transform:translateY(-4px);box-shadow:0 8px 22px rgba(0,0,0,.12);}
-#contributions .cs-val{font-size:2rem;font-weight:700;color:#4F46E5;}
-#contributions .cs-lbl{font-size:.82rem;color:#888;margin-top:4px;font-weight:500;}
-#contributions .contrib-form-card{background:#fff;border-radius:16px;padding:28px 28px 24px;box-shadow:0 3px 14px rgba(0,0,0,.07);margin-bottom:28px;border-top:4px solid #7C3AED;}
-#contributions .contrib-form-card h3{color:#4F46E5;font-size:1.15rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
-#contrib-form-grid{display:grid;grid-template-columns:2fr 1fr 1fr 2fr;gap:14px;align-items:end;}
-@media(max-width:900px){#contrib-form-grid{grid-template-columns:1fr 1fr;}}
-@media(max-width:560px){#contrib-form-grid{grid-template-columns:1fr;}}
-#contrib-form-grid .cfg{display:flex;flex-direction:column;gap:5px;}
-#contrib-form-grid .cfg label{font-size:.78rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em;}
-#contrib-form-grid .cfg input{padding:10px 13px;border:2px solid #E0E0E0;border-radius:9px;font-size:.95rem;font-family:inherit;transition:border-color .2s;background:#FAFAFA;box-sizing:border-box;width:100%;}
-#contrib-form-grid .cfg input:focus{outline:none;border-color:#7C3AED;background:#fff;}
-#contrib-add-btn{background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:.95rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity .2s,transform .15s;white-space:nowrap;min-height:44px;margin-top:6px;}
-#contrib-add-btn:hover{opacity:.88;transform:translateY(-1px);}
-#contrib-add-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
-#contributions .contrib-table-card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 3px 14px rgba(0,0,0,.07);}
-#contributions .contrib-table-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px;}
-#contributions .contrib-table-header h3{font-size:1.1rem;font-weight:700;color:#1E293B;display:flex;align-items:center;gap:8px;}
-#contrib-search-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-#contrib-search-bar input{padding:8px 14px;border:2px solid #E0E0E0;border-radius:8px;font-size:.88rem;font-family:inherit;transition:border-color .2s;min-width:180px;}
-#contrib-search-bar input:focus{outline:none;border-color:#7C3AED;}
-#contrib-export-btn{background:linear-gradient(135deg,#059669,#10B981);color:#fff;border:none;border-radius:9px;padding:10px 18px;font-size:.88rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:opacity .2s,transform .15s;min-height:40px;}
-#contrib-export-btn:hover{opacity:.88;transform:translateY(-1px);}
-#contrib-table-wrap{overflow-x:auto;}
-#contrib-tbl{width:100%;border-collapse:collapse;}
-#contrib-tbl thead tr{background:linear-gradient(135deg,#4F46E5,#7C3AED);}
-#contrib-tbl thead th{padding:12px 14px;text-align:left;color:#fff;font-size:.8rem;font-weight:700;letter-spacing:.05em;white-space:nowrap;}
-#contrib-tbl tbody tr{border-bottom:1px solid #F0F0F0;transition:background .15s;}
-#contrib-tbl tbody tr:hover{background:#F5F3FF;}
-#contrib-tbl tbody td{padding:12px 14px;color:#444;font-size:.88rem;vertical-align:middle;}
-#contrib-tbl .contrib-amt{font-weight:700;color:#059669;}
-#contrib-tbl .contrib-name{font-weight:600;color:#1E293B;}
-#contrib-tbl .contrib-note{color:#888;font-style:italic;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#contrib-empty{text-align:center;padding:48px 20px;color:#bbb;font-size:.9rem;}
-.contrib-del-btn{background:#FFEBEE;color:#C62828;border:none;border-radius:7px;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:background .18s,color .18s;font-size:.88rem;}
-.contrib-del-btn:hover{background:#C62828;color:#fff;}
-#contrib-tbl .contrib-month-row td{background:#EDE9FE;color:#4F46E5;font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:7px 14px;border-top:2px solid #C4B5FD;}
-#contrib-tbl .contrib-subtotal-row td{background:#F5F3FF;font-weight:700;font-size:.82rem;color:#4F46E5;padding:7px 14px;border-top:1px dashed #C4B5FD;}
-</style>
 
 <script>
 (function(){
