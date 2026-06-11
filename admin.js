@@ -85,12 +85,12 @@ function showAdminSection(sectionId) {
     
     // Update page title
     const titles = {
-        'dashboard': 'Dashboard Overview',
-        'users': 'User Management',
-        'volunteers': 'Volunteer Management',
+        'dashboard'       : 'Dashboard Overview',
+        'users'           : 'User Management',
+        'volunteers'      : 'Volunteer Management',
         'committeeMembers': 'Committee Members',
-        'donations': 'Upload Excel',
-        'gallery': 'Gallery Management',
+        'donations'       : 'Upload Excel',
+        'gallery'         : 'Gallery Management',
         'events'          : 'Event Management',
         'reports'         : 'Reports & Analytics',
         'settings'        : 'System Settings',
@@ -103,6 +103,8 @@ function showAdminSection(sectionId) {
         'donorSearch'     : 'Donor Search',
         'tshirtSection'   : 'T-shirt Section',
         'receiptGenerator': 'Generate Receipt',
+        'contributions'   : 'Contributions',
+        'developers'      : 'Developers',
     };
 
     document.getElementById('pageTitle').textContent = titles[sectionId] || 'Admin Panel';
@@ -124,6 +126,10 @@ function showAdminSection(sectionId) {
     if (sectionId === 'tshirtSection' && typeof renderTshirtSection === 'function') renderTshirtSection();
     if (sectionId === 'tshirtSection' && typeof adminTsInit === 'function') adminTsInit();
     if (sectionId === 'receiptGenerator') rcg_initReceiptGenerator();
+    if (sectionId === 'contributions') {
+        if (typeof window._contribLoad === 'function') window._contribLoad();
+        if (typeof window._contribSetDate === 'function') window._contribSetDate();
+    }
 }
 
 // ── Quick Upload (from Admin Dashboard home) ──────────────────────────────────

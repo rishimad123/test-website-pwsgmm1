@@ -7517,12 +7517,10 @@ window.contribExportExcel=function(){
   var now=new Date();
   XLSX.writeFile(wb,'Contributions_'+now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0')+'.xlsx');
 };
-var _origShow=window.showAdminSection;
-window.showAdminSection=function(section){
-  if(typeof _origShow==='function')_origShow(section);
-  if(section==='contributions'&&!_loaded)contribLoad();
-  if(section==='contributions'){var di=document.getElementById('contrib-date');if(di&&!di.value){var t=new Date();di.value=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');}}
-};
+// Expose contribLoad so admin.js showAdminSection can call it
+window._contribLoad=contribLoad;
+// Set today's date on section open via admin.js hook
+window._contribSetDate=function(){var di=document.getElementById('contrib-date');if(di&&!di.value){var t=new Date();di.value=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');}};
 document.addEventListener('DOMContentLoaded',function(){var sec=document.getElementById('contributions');if(sec&&sec.classList.contains('active'))contribLoad();});
 })();
 </script>
