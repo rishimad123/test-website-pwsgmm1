@@ -7441,23 +7441,37 @@ fetchNotifications();
 }
 #contrib-export-btn:hover{opacity:.88;transform:translateY(-1px);}
 
-/* Table */
-#contrib-table-wrap{overflow-x:auto;}
-#contrib-tbl{width:100%;border-collapse:collapse;}
-#contrib-tbl thead tr{background:linear-gradient(135deg,#4F46E5,#7C3AED);}
-#contrib-tbl thead th{
-  padding:9px 12px;text-align:left;color:#fff;
-  font-size:.76rem;font-weight:700;letter-spacing:.05em;white-space:nowrap;
-}
-#contrib-tbl tbody tr{border-bottom:1px solid #F0F0F0;transition:background .15s;}
-#contrib-tbl tbody tr:hover{background:#F5F3FF;}
-#contrib-tbl tbody td{padding:9px 12px;color:#444;font-size:.85rem;vertical-align:middle;}
-#contrib-tbl .contrib-amt{font-weight:700;color:#059669;}
-#contrib-tbl .contrib-name{font-weight:600;color:#1E293B;}
-#contrib-tbl .contrib-note{
-  color:#888;font-style:italic;max-width:160px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
+/* ── CRITICAL: override global @media(max-width:768px) table display:block ──
+   Without this, #contrib-tbl gets display:block on mobile making the page 129,318px tall */
+#contrib-tbl,
+#contrib-tbl thead,
+#contrib-tbl tbody,
+#contrib-tbl thead tr,
+#contrib-tbl tbody tr,
+#contrib-tbl thead th,
+#contrib-tbl tbody td { display: revert !important; white-space: normal !important; }
+#contrib-tbl { display: table !important; width: 100%; border-collapse: collapse; }
+#contrib-tbl thead { display: table-header-group !important; }
+#contrib-tbl tbody { display: table-row-group !important; }
+#contrib-tbl thead tr,
+#contrib-tbl tbody tr { display: table-row !important; margin-bottom: 0 !important; border: none !important; border-radius: 0 !important; padding: 0 !important; background: none !important; box-shadow: none !important; }
+#contrib-tbl thead th,
+#contrib-tbl tbody td { display: table-cell !important; width: auto !important; justify-content: initial !important; text-align: left !important; }
+#contrib-tbl thead th::before,
+#contrib-tbl tbody td::before { content: none !important; }
+
+/* Re-apply desired table styles after the reset */
+#contrib-tbl thead tr { background: linear-gradient(135deg,#4F46E5,#7C3AED) !important; }
+#contrib-tbl thead th { padding: 9px 12px !important; color: #fff !important; font-size: .76rem !important; font-weight: 700 !important; letter-spacing: .05em !important; white-space: nowrap !important; border-bottom: none !important; }
+#contrib-tbl tbody tr { border-bottom: 1px solid #F0F0F0 !important; }
+#contrib-tbl tbody tr:hover { background: #F5F3FF !important; }
+#contrib-tbl tbody td { padding: 9px 12px !important; color: #444 !important; font-size: .85rem !important; vertical-align: middle !important; border-bottom: none !important; }
+#contrib-tbl .contrib-month-row td { background: #EDE9FE !important; color: #4F46E5 !important; font-size: .74rem !important; font-weight: 800 !important; text-transform: uppercase !important; letter-spacing: .08em !important; padding: 5px 12px !important; border-top: 2px solid #C4B5FD !important; }
+#contrib-tbl .contrib-subtotal-row td { background: #F5F3FF !important; font-weight: 700 !important; font-size: .78rem !important; color: #4F46E5 !important; padding: 5px 12px !important; border-top: 1px dashed #C4B5FD !important; }
+
+/* Override global input font-size: max(16px,1rem) !important that overrides compact inputs */
+#contrib-form-grid .cfg input { font-size: .9rem !important; }
+#contrib-search-bar input { font-size: .85rem !important; }
 .contrib-del-btn{
   background:#FFEBEE;color:#C62828;border:none;border-radius:6px;
   width:30px;height:30px;display:inline-flex;align-items:center;
