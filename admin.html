@@ -3493,79 +3493,107 @@ window._fmtBytesA = function(b) {
                 </div><!-- /.rcg-wrap -->
                 </div><!-- /#receiptGenerator -->
 
-                <!-- ── Contributions Section ────────────────────────────── -->
+                <!-- Contributions Section -->
+                <!-- Contributions Section -->
                 <div id="contributions" class="content-section">
+                    <!-- Stats Cards -->
+                    <div class="admin-stats" style="margin-bottom: 30px;">
+                        <div class="admin-stat-card" style="border-left: 4px solid #667eea;">
+                            <div class="stat-icon" style="background: rgba(102, 126, 234, 0.1); color: #667eea;"><i class="fas fa-hand-holding-usd"></i></div>
+                            <div class="stat-details">
+                                <h3 id="contrib-stat-total-amt">&#x20B9;0</h3>
+                                <p>Total Contributions</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card" style="border-left: 4px solid #4facfe;">
+                            <div class="stat-icon" style="background: rgba(79, 172, 254, 0.1); color: #4facfe;"><i class="fas fa-receipt"></i></div>
+                            <div class="stat-details">
+                                <h3 id="contrib-stat-count">0</h3>
+                                <p>Total Records</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card" style="border-left: 4px solid #10b981;">
+                            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i class="fas fa-users"></i></div>
+                            <div class="stat-details">
+                                <h3 id="contrib-stat-contributors">0</h3>
+                                <p>Contributors</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card" style="border-left: 4px solid #f59e0b;">
+                            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i class="fas fa-calendar-alt"></i></div>
+                            <div class="stat-details">
+                                <h3 id="contrib-stat-this-month">&#x20B9;0</h3>
+                                <p>This Month</p>
+                            </div>
+                        </div>
+                    </div>
 
-                  <!-- ① Stat strip: 4 equal columns, inline grid (no CSS class dependency) -->
-                  <div id="contrib-stat-grid">
-                    <div class="csc">
-                      <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;flex-shrink:0;"><i class="fas fa-hand-holding-usd"></i></div>
-                      <div style="min-width:0;">
-                        <div id="contrib-stat-total-amt" style="font-size:1.25rem;font-weight:700;color:#1E293B;line-height:1.2;">&#x20B9;0</div>
-                        <div style="font-size:.75rem;color:#888;margin-top:1px;">Total Contributions</div>
-                      </div>
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-user-plus" style="color: var(--primary-color); margin-right: 10px;"></i> Add Contributor</h3>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Contributor Name *</label>
+                                <input type="text" id="contrib-name" class="form-control" placeholder="Full name&hellip;" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label>Amount (&#x20B9;) *</label>
+                                <input type="number" id="contrib-amount" class="form-control" placeholder="0" min="1" step="any">
+                            </div>
+                            <div class="form-group">
+                                <label>Date *</label>
+                                <input type="date" id="contrib-date" class="form-control">
+                            </div>
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label>Note (Optional)</label>
+                                <input type="text" id="contrib-note" class="form-control" placeholder="e.g. Festival donation" autocomplete="off">
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                            <span id="contrib-form-msg" style="font-size: 0.9rem; font-weight: 500;"></span>
+                            <button id="contrib-add-btn" class="btn btn-primary" onclick="contribAdd()">
+                                <i class="fas fa-plus"></i> Add Contribution
+                            </button>
+                        </div>
                     </div>
-                    <div class="csc">
-                      <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#4facfe,#00f2fe);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;flex-shrink:0;"><i class="fas fa-receipt"></i></div>
-                      <div style="min-width:0;">
-                        <div id="contrib-stat-count" style="font-size:1.25rem;font-weight:700;color:#1E293B;line-height:1.2;">0</div>
-                        <div style="font-size:.75rem;color:#888;margin-top:1px;">Total Records</div>
-                      </div>
-                    </div>
-                    <div class="csc">
-                      <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#f093fb,#f5576c);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;flex-shrink:0;"><i class="fas fa-users"></i></div>
-                      <div style="min-width:0;">
-                        <div id="contrib-stat-contributors" style="font-size:1.25rem;font-weight:700;color:#1E293B;line-height:1.2;">0</div>
-                        <div style="font-size:.75rem;color:#888;margin-top:1px;">Contributors</div>
-                      </div>
-                    </div>
-                    <div class="csc">
-                      <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#43e97b,#38f9d7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;flex-shrink:0;"><i class="fas fa-calendar-alt"></i></div>
-                      <div style="min-width:0;">
-                        <div id="contrib-stat-this-month" style="font-size:1.25rem;font-weight:700;color:#1E293B;line-height:1.2;">&#x20B9;0</div>
-                        <div style="font-size:.75rem;color:#888;margin-top:1px;">This Month</div>
-                      </div>
-                    </div>
-                  </div>
 
-                  <!-- ② Add Contributor form (inline-styled card) -->
-                  <div style="background:#fff;border-radius:12px;padding:16px 18px 14px;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:14px;border-left:4px solid #7C3AED;">
-                    <div style="font-size:.9rem;font-weight:700;color:#4F46E5;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
-                      <i class="fas fa-user-plus"></i> Add Contributor
-                    </div>
-                    <div id="contrib-form-grid">
-                      <div class="cfg"><label>Contributor Name *</label><input type="text" id="contrib-name" placeholder="Full name&hellip;" autocomplete="off"></div>
-                      <div class="cfg"><label>Amount (&#x20B9;) *</label><input type="number" id="contrib-amount" placeholder="0" min="1" step="any"></div>
-                      <div class="cfg"><label>Date *</label><input type="date" id="contrib-date"></div>
-                      <div class="cfg"><label>Note (optional)</label><input type="text" id="contrib-note" placeholder="e.g. Annual donation&hellip;" autocomplete="off"></div>
-                      <div class="cfg cfg-btn"><button id="contrib-add-btn" onclick="contribAdd()"><i class="fas fa-plus"></i> Add</button></div>
-                    </div>
-                    <div id="contrib-form-msg"></div>
-                  </div>
+                    <div class="admin-card">
+                        <div class="card-header" style="flex-wrap: wrap; gap: 15px;">
+                            <h3><i class="fas fa-list" style="color: var(--primary-color); margin-right: 10px;"></i> All Contribution Records</h3>
+                            <div class="header-actions" style="display: flex; gap: 15px; align-items: center;">
+                                <div class="search-box">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="contrib-search" placeholder="Search name or note..." oninput="contribRender()">
+                                </div>
+                                <button class="btn btn-secondary btn-small" onclick="contribExportExcel()">
+                                    <i class="fas fa-file-excel"></i> Export
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="contrib-empty" style="display:none;text-align:center;padding:40px;color:#bbb;">
+                            <i class="fas fa-inbox" style="font-size:3rem;opacity:.25;display:block;margin-bottom:15px;"></i>
+                            <p style="font-size: 1.1rem;">No contribution records yet. Add the first one above!</p>
+                        </div>
 
-                  <!-- ③ Records table (inline-styled card) -->
-                  <div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 2px 10px rgba(0,0,0,.06);">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-                      <div style="font-size:.9rem;font-weight:700;color:#1E293B;display:flex;align-items:center;gap:8px;">
-                        <i class="fas fa-list-alt" style="color:#7C3AED;"></i> All Contribution Records
-                      </div>
-                      <div id="contrib-search-bar">
-                        <input type="text" id="contrib-search" placeholder="Search name or note&hellip;" oninput="contribRender()">
-                        <button id="contrib-export-btn" onclick="contribExportExcel()"><i class="fas fa-file-excel"></i> Export to Excel</button>
-                      </div>
+                        <div class="table-responsive">
+                            <table class="admin-table" id="contrib-tbl" style="display:none;">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Contributor Name</th>
+                                        <th>Amount (&#x20B9;)</th>
+                                        <th>Date</th>
+                                        <th>Note</th>
+                                        <th>Added On</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="contrib-tbody"></tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div id="contrib-table-wrap">
-                      <div id="contrib-empty" style="display:none;text-align:center;padding:28px;color:#bbb;font-size:.88rem;">
-                        <i class="fas fa-inbox" style="font-size:1.8rem;opacity:.25;display:block;margin-bottom:8px;"></i>
-                        No contribution records yet. Add the first one above!
-                      </div>
-                      <table id="contrib-tbl" style="display:none;">
-                        <thead><tr><th>#</th><th>Contributor Name</th><th>Amount (&#x20B9;)</th><th>Date</th><th>Note</th><th>Added On</th><th>Action</th></tr></thead>
-                        <tbody id="contrib-tbody"></tbody>
-                      </table>
-                    </div>
-                  </div>
-
                 </div><!-- /#contributions -->
 
             </div> <!-- End of .admin-content -->
@@ -7386,143 +7414,7 @@ fetchNotifications();
 })();
 </script>
 <!-- ═══ END ADE RECEIPT EDIT MODAL ═══ -->
-<!-- ═══════════════════════════════════════════════════════════════════
-     CONTRIBUTIONS MODULE CSS + JS
-     ═══════════════════════════════════════════════════════════════════ -->
-<style>
-/* ═══════════════════════════════════════════════════════
-   CONTRIBUTIONS MODULE — Complete, self-contained CSS
-   Uses !important throughout to defeat ALL global overrides
-   ═══════════════════════════════════════════════════════ */
 
-/* ── Defensive layout reset ── */
-.admin-content:has(#contributions.active) > div:not(#contributions) {
-  display: none !important;
-  height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-}
-#contributions.active {
-  display: block !important;
-  margin-top: 0 !important;
-  padding-top: 0 !important;
-}
-
-/* ── Stat grid: 4 equal columns, compact cards ── */
-#contrib-stat-grid {
-  display: grid !important;
-  grid-template-columns: repeat(4, 1fr) !important;
-  gap: 14px !important;
-  margin-bottom: 14px !important;
-}
-#contrib-stat-grid .csc {
-  background: #fff !important;
-  border-radius: 12px !important;
-  padding: 14px 16px !important;
-  box-shadow: 0 2px 10px rgba(0,0,0,.06) !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  transition: transform .2s, box-shadow .2s !important;
-  overflow: hidden !important;
-}
-#contrib-stat-grid .csc:hover { transform: translateY(-2px) !important; box-shadow: 0 5px 16px rgba(0,0,0,.1) !important; }
-@media (max-width: 900px) { #contrib-stat-grid { grid-template-columns: repeat(2, 1fr) !important; } }
-@media (max-width: 480px) { #contrib-stat-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; } }
-
-/* ── Form grid: 5 columns on desktop ── */
-#contrib-form-grid {
-  display: grid !important;
-  grid-template-columns: 2fr 1fr 1.2fr 2fr auto !important;
-  gap: 10px !important;
-  align-items: end !important;
-  width: 100% !important;
-}
-@media (max-width: 900px) {
-  #contrib-form-grid { grid-template-columns: 1fr 1fr !important; }
-  #contrib-form-grid .cfg-btn { grid-column: 1 / -1 !important; }
-}
-@media (max-width: 480px) { #contrib-form-grid { grid-template-columns: 1fr !important; } }
-
-#contrib-form-grid .cfg { display: flex !important; flex-direction: column !important; gap: 4px !important; min-width: 0 !important; }
-#contrib-form-grid .cfg label {
-  font-size: .72rem !important; font-weight: 700 !important; color: #555 !important;
-  text-transform: uppercase !important; letter-spacing: .04em !important; margin: 0 !important;
-}
-#contrib-form-grid .cfg input {
-  padding: 8px 10px !important; border: 1.5px solid #E0E0E0 !important; border-radius: 8px !important;
-  font-size: .9rem !important; font-family: inherit !important; transition: border-color .2s !important;
-  background: #FAFAFA !important; box-sizing: border-box !important; width: 100% !important;
-  min-height: 0 !important; height: auto !important;
-}
-#contrib-form-grid .cfg input:focus { outline: none !important; border-color: #7C3AED !important; background: #fff !important; }
-#contrib-form-grid .cfg-btn { display: flex !important; align-items: flex-end !important; }
-
-/* Override global .btn min-height:44px on the Add button */
-#contrib-add-btn {
-  background: linear-gradient(135deg,#7C3AED,#4F46E5) !important;
-  color: #fff !important; border: none !important; border-radius: 8px !important;
-  padding: 9px 16px !important; font-size: .9rem !important; font-weight: 600 !important;
-  cursor: pointer !important; display: flex !important; align-items: center !important;
-  gap: 7px !important; transition: opacity .2s, transform .15s !important;
-  white-space: nowrap !important; min-height: 0 !important; height: auto !important;
-}
-#contrib-add-btn:hover { opacity: .88 !important; transform: translateY(-1px) !important; }
-#contrib-add-btn:disabled { opacity: .55 !important; cursor: not-allowed !important; transform: none !important; }
-#contrib-form-msg { font-size: .82rem !important; font-weight: 600 !important; margin-top: 8px !important; }
-
-/* ── Search bar + Export button ── */
-#contrib-search-bar { display: flex !important; align-items: center !important; gap: 8px !important; flex-wrap: wrap !important; }
-#contrib-search-bar input {
-  padding: 7px 12px !important; border: 1.5px solid #E0E0E0 !important; border-radius: 8px !important;
-  font-size: .85rem !important; font-family: inherit !important; transition: border-color .2s !important;
-  min-width: 150px !important; min-height: 0 !important; height: auto !important;
-}
-#contrib-search-bar input:focus { outline: none !important; border-color: #7C3AED !important; }
-#contrib-export-btn {
-  background: linear-gradient(135deg,#059669,#10B981) !important; color: #fff !important;
-  border: none !important; border-radius: 8px !important; padding: 8px 14px !important;
-  font-size: .82rem !important; font-weight: 600 !important; cursor: pointer !important;
-  display: flex !important; align-items: center !important; gap: 6px !important;
-  transition: opacity .2s, transform .15s !important; min-height: 0 !important; height: auto !important;
-}
-#contrib-export-btn:hover { opacity: .88 !important; transform: translateY(-1px) !important; }
-
-/* ── Table wrapper ── */
-#contrib-table-wrap { overflow-x: auto !important; }
-
-/* ── CRITICAL TABLE RESET: defeat the global @media(max-width:768px) display:block rule ──
-   That rule makes rows stack vertically, creating 129,318px page height */
-#contrib-tbl                { display: table !important;            width: 100% !important; border-collapse: collapse !important; }
-#contrib-tbl thead          { display: table-header-group !important; }
-#contrib-tbl tbody          { display: table-row-group !important; }
-#contrib-tbl thead tr       { display: table-row !important; margin: 0 !important; border: none !important; border-radius: 0 !important; padding: 0 !important; background: linear-gradient(135deg,#4F46E5,#7C3AED) !important; box-shadow: none !important; }
-#contrib-tbl tbody tr       { display: table-row !important; margin: 0 !important; border: none !important; border-radius: 0 !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; border-bottom: 1px solid #F0F0F0 !important; }
-#contrib-tbl tbody tr:hover { background: #F5F3FF !important; }
-#contrib-tbl thead th       { display: table-cell !important; padding: 9px 12px !important; text-align: left !important; color: #fff !important; font-size: .76rem !important; font-weight: 700 !important; letter-spacing: .05em !important; white-space: nowrap !important; border-bottom: none !important; width: auto !important; }
-#contrib-tbl tbody td       { display: table-cell !important; padding: 9px 12px !important; text-align: left !important; color: #444 !important; font-size: .85rem !important; vertical-align: middle !important; border-bottom: none !important; width: auto !important; }
-#contrib-tbl thead th::before,
-#contrib-tbl tbody td::before { content: none !important; }
-
-/* Table cell styles */
-#contrib-tbl .contrib-amt  { font-weight: 700 !important; color: #059669 !important; }
-#contrib-tbl .contrib-name { font-weight: 600 !important; color: #1E293B !important; }
-#contrib-tbl .contrib-note { color: #888 !important; font-style: italic !important; max-width: 160px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
-
-/* Month / subtotal rows */
-#contrib-tbl .contrib-month-row td    { display: table-cell !important; background: #EDE9FE !important; color: #4F46E5 !important; font-size: .74rem !important; font-weight: 800 !important; text-transform: uppercase !important; letter-spacing: .08em !important; padding: 5px 12px !important; border-top: 2px solid #C4B5FD !important; }
-#contrib-tbl .contrib-subtotal-row td { display: table-cell !important; background: #F5F3FF !important; font-weight: 700 !important; font-size: .78rem !important; color: #4F46E5 !important; padding: 5px 12px !important; border-top: 1px dashed #C4B5FD !important; }
-
-/* Delete button */
-.contrib-del-btn {
-  background: #FFEBEE !important; color: #C62828 !important; border: none !important; border-radius: 6px !important;
-  width: 30px !important; height: 30px !important; min-height: 0 !important;
-  display: inline-flex !important; align-items: center !important; justify-content: center !important;
-  cursor: pointer !important; transition: background .18s, color .18s !important; font-size: .85rem !important;
-}
-.contrib-del-btn:hover { background: #C62828 !important; color: #fff !important; }
-</style>
 
 <script>
 (function(){
