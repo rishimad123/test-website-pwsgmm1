@@ -7363,6 +7363,151 @@ fetchNotifications();
 <!-- ═══════════════════════════════════════════════════════════════════
      CONTRIBUTIONS MODULE CSS + JS
      ═══════════════════════════════════════════════════════════════════ -->
+<style>
+/* ── Contributions Section – compact, no-scroll layout ────────────── */
+#contributions{box-sizing:border-box;width:100%;overflow-x:hidden;}
+
+/* Header bar: title left, stat pills right */
+#contributions .contrib-header-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;margin-bottom:14px;
+}
+#contributions .contrib-header-bar h1{
+  font-size:1.25rem;font-weight:700;color:#1E293B;
+  display:flex;align-items:center;gap:9px;margin:0;
+}
+#contributions .contrib-header-bar h1 i{color:#7C3AED;}
+
+/* Stat pills row */
+#contributions .contrib-stats-strip{
+  display:flex;flex-wrap:wrap;gap:8px;
+}
+#contributions .contrib-stat-pill{
+  background:#fff;border-radius:10px;padding:7px 14px;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);
+  display:flex;flex-direction:column;align-items:center;
+  min-width:90px;flex:1 1 90px;
+  transition:transform .2s,box-shadow .2s;
+}
+#contributions .contrib-stat-pill:hover{
+  transform:translateY(-2px);box-shadow:0 5px 14px rgba(0,0,0,.12);
+}
+#contributions .cs-val{
+  font-size:1.1rem;font-weight:700;color:#4F46E5;line-height:1.1;
+}
+#contributions .cs-lbl{
+  font-size:.68rem;color:#888;margin-top:2px;font-weight:500;
+  text-align:center;white-space:nowrap;
+}
+
+/* Add Contributor form card */
+#contributions .contrib-form-card{
+  background:#fff;border-radius:12px;padding:14px 16px 12px;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:12px;
+  border-left:4px solid #7C3AED;box-sizing:border-box;
+}
+#contributions .contrib-form-card h3{
+  color:#4F46E5;font-size:.92rem;font-weight:700;
+  margin:0 0 10px;display:flex;align-items:center;gap:7px;
+}
+
+/* Form grid: 4 fields + button in one row on desktop */
+#contrib-form-grid{
+  display:grid;
+  grid-template-columns:2fr 1fr 1.2fr 2fr auto;
+  gap:8px;align-items:end;box-sizing:border-box;width:100%;
+}
+@media(max-width:860px){
+  #contrib-form-grid{grid-template-columns:1fr 1fr;}
+  #contrib-form-grid .cfg:last-child{grid-column:1/-1;}
+}
+@media(max-width:480px){
+  #contrib-form-grid{grid-template-columns:1fr;}
+}
+#contrib-form-grid .cfg{display:flex;flex-direction:column;gap:4px;min-width:0;}
+#contrib-form-grid .cfg label{
+  font-size:.7rem;font-weight:700;color:#555;
+  text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;
+}
+#contrib-form-grid .cfg input{
+  padding:7px 9px;border:1.5px solid #E0E0E0;border-radius:8px;
+  font-size:.88rem;font-family:inherit;transition:border-color .2s;
+  background:#FAFAFA;box-sizing:border-box;width:100%;
+}
+#contrib-form-grid .cfg input:focus{outline:none;border-color:#7C3AED;background:#fff;}
+
+#contrib-add-btn{
+  background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;
+  border:none;border-radius:8px;padding:8px 16px;font-size:.88rem;
+  font-weight:600;cursor:pointer;display:flex;align-items:center;
+  gap:7px;transition:opacity .2s,transform .15s;
+  white-space:nowrap;height:36px;align-self:end;
+}
+#contrib-add-btn:hover{opacity:.88;transform:translateY(-1px);}
+#contrib-add-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+#contrib-form-msg{font-size:.8rem;font-weight:600;margin-top:6px;}
+
+/* Records table card */
+#contributions .contrib-table-card{
+  background:#fff;border-radius:12px;padding:14px;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);box-sizing:border-box;
+}
+#contributions .contrib-table-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:10px;flex-wrap:wrap;gap:8px;
+}
+#contributions .contrib-table-header h3{
+  font-size:.92rem;font-weight:700;color:#1E293B;
+  display:flex;align-items:center;gap:7px;margin:0;
+}
+#contrib-search-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+#contrib-search-bar input{
+  padding:6px 11px;border:1.5px solid #E0E0E0;border-radius:8px;
+  font-size:.82rem;font-family:inherit;transition:border-color .2s;
+  min-width:130px;
+}
+#contrib-search-bar input:focus{outline:none;border-color:#7C3AED;}
+#contrib-export-btn{
+  background:linear-gradient(135deg,#059669,#10B981);color:#fff;
+  border:none;border-radius:8px;padding:7px 13px;font-size:.8rem;
+  font-weight:600;cursor:pointer;display:flex;align-items:center;
+  gap:6px;transition:opacity .2s,transform .15s;height:34px;
+}
+#contrib-export-btn:hover{opacity:.88;transform:translateY(-1px);}
+#contrib-table-wrap{overflow-x:auto;}
+#contrib-tbl{width:100%;border-collapse:collapse;}
+#contrib-tbl thead tr{background:linear-gradient(135deg,#4F46E5,#7C3AED);}
+#contrib-tbl thead th{
+  padding:8px 10px;text-align:left;color:#fff;
+  font-size:.74rem;font-weight:700;letter-spacing:.05em;white-space:nowrap;
+}
+#contrib-tbl tbody tr{border-bottom:1px solid #F0F0F0;transition:background .15s;}
+#contrib-tbl tbody tr:hover{background:#F5F3FF;}
+#contrib-tbl tbody td{padding:8px 10px;color:#444;font-size:.83rem;vertical-align:middle;}
+#contrib-tbl .contrib-amt{font-weight:700;color:#059669;}
+#contrib-tbl .contrib-name{font-weight:600;color:#1E293B;}
+#contrib-tbl .contrib-note{
+  color:#888;font-style:italic;max-width:160px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#contrib-empty{text-align:center;padding:28px 20px;color:#bbb;font-size:.86rem;}
+.contrib-del-btn{
+  background:#FFEBEE;color:#C62828;border:none;border-radius:6px;
+  width:28px;height:28px;display:inline-flex;align-items:center;
+  justify-content:center;cursor:pointer;transition:background .18s,color .18s;
+  font-size:.8rem;
+}
+.contrib-del-btn:hover{background:#C62828;color:#fff;}
+#contrib-tbl .contrib-month-row td{
+  background:#EDE9FE;color:#4F46E5;font-size:.72rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:.08em;padding:5px 10px;
+  border-top:2px solid #C4B5FD;
+}
+#contrib-tbl .contrib-subtotal-row td{
+  background:#F5F3FF;font-weight:700;font-size:.76rem;color:#4F46E5;
+  padding:5px 10px;border-top:1px dashed #C4B5FD;
+}
+</style>
 
 <script>
 (function(){
