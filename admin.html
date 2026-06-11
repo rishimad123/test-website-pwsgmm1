@@ -1398,7 +1398,110 @@ window._fmtBytesA = function(b) {
                 </div>
                 
                 <!-- Donor Search Section -->
-                <div id="donorSearch" class="content-section">
+                <!-- Contributions Section -->
+                <!-- Contributions Section -->
+                <div id="contributions" class="content-section">
+                    <!-- Stats Cards -->
+                    <div class="admin-stats" style="margin-bottom: 30px;">
+                        <div class="admin-stat-card" style="border-left: 4px solid #667eea;">
+                            <div class="stat-icon" style="background: rgba(102, 126, 234, 0.1); color: #667eea;"><i class="fas fa-hand-holding-usd"></i></div>
+                            <div class="stat-details">
+                                <h3 id="contrib-stat-total-amt">&#x20B9;0</h3>
+                                <p>Total Contributions</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card" style="border-left: 4px solid #4facfe;">
+                            <div class="stat-icon" style="background: rgba(79, 172, 254, 0.1); color: #4facfe;"><i class="fas fa-receipt"></i></div>
+                            <div class="stat-details">
+                                <h3 id="contrib-stat-count">0</h3>
+                                <p>Total Records</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card" style="border-left: 4px solid #10b981;">
+                            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i class="fas fa-users"></i></div>
+                            <div class="stat-details">
+                                <h3 id="contrib-stat-contributors">0</h3>
+                                <p>Contributors</p>
+                            </div>
+                        </div>
+                        <div class="admin-stat-card" style="border-left: 4px solid #f59e0b;">
+                            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i class="fas fa-calendar-alt"></i></div>
+                            <div class="stat-details">
+                                <h3 id="contrib-stat-this-month">&#x20B9;0</h3>
+                                <p>This Month</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-user-plus" style="color: var(--primary-color); margin-right: 10px;"></i> Add Contributor</h3>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Contributor Name *</label>
+                                <input type="text" id="contrib-name" class="form-control" placeholder="Full name&hellip;" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label>Amount (&#x20B9;) *</label>
+                                <input type="number" id="contrib-amount" class="form-control" placeholder="0" min="1" step="any">
+                            </div>
+                            <div class="form-group">
+                                <label>Date *</label>
+                                <input type="date" id="contrib-date" class="form-control">
+                            </div>
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label>Note (Optional)</label>
+                                <input type="text" id="contrib-note" class="form-control" placeholder="e.g. Festival donation" autocomplete="off">
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                            <span id="contrib-form-msg" style="font-size: 0.9rem; font-weight: 500;"></span>
+                            <button id="contrib-add-btn" class="btn btn-primary" onclick="contribAdd()">
+                                <i class="fas fa-plus"></i> Add Contribution
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="admin-card">
+                        <div class="card-header" style="flex-wrap: wrap; gap: 15px;">
+                            <h3><i class="fas fa-list" style="color: var(--primary-color); margin-right: 10px;"></i> All Contribution Records</h3>
+                            <div class="header-actions" style="display: flex; gap: 15px; align-items: center;">
+                                <div class="search-box">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="contrib-search" placeholder="Search name or note..." oninput="contribRender()">
+                                </div>
+                                <button class="btn btn-secondary btn-small" onclick="contribExportExcel()">
+                                    <i class="fas fa-file-excel"></i> Export
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="contrib-empty" style="display:none;text-align:center;padding:40px;color:#bbb;">
+                            <i class="fas fa-inbox" style="font-size:3rem;opacity:.25;display:block;margin-bottom:15px;"></i>
+                            <p style="font-size: 1.1rem;">No contribution records yet. Add the first one above!</p>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="admin-table" id="contrib-tbl" style="display:none;">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Contributor Name</th>
+                                        <th>Amount (&#x20B9;)</th>
+                                        <th>Date</th>
+                                        <th>Note</th>
+                                        <th>Added On</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="contrib-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div><!-- /#contributions -->
+
+<div id="donorSearch" class="content-section">
                     <div class="page-title">
                         <h1><i class="fas fa-search" style="color:var(--primary-color);margin-right:10px;"></i>Donor Search</h1>
                         <p>Search and filter all donation records</p>
@@ -2867,7 +2970,6 @@ window._fmtBytesA = function(b) {
         </div>
     </div>
                         </div>
-                    </div>
                 </div>
 
 
@@ -3493,108 +3595,7 @@ window._fmtBytesA = function(b) {
                 </div><!-- /.rcg-wrap -->
                 </div><!-- /#receiptGenerator -->
 
-                <!-- Contributions Section -->
-                <!-- Contributions Section -->
-                <div id="contributions" class="content-section">
-                    <!-- Stats Cards -->
-                    <div class="admin-stats" style="margin-bottom: 30px;">
-                        <div class="admin-stat-card" style="border-left: 4px solid #667eea;">
-                            <div class="stat-icon" style="background: rgba(102, 126, 234, 0.1); color: #667eea;"><i class="fas fa-hand-holding-usd"></i></div>
-                            <div class="stat-details">
-                                <h3 id="contrib-stat-total-amt">&#x20B9;0</h3>
-                                <p>Total Contributions</p>
-                            </div>
-                        </div>
-                        <div class="admin-stat-card" style="border-left: 4px solid #4facfe;">
-                            <div class="stat-icon" style="background: rgba(79, 172, 254, 0.1); color: #4facfe;"><i class="fas fa-receipt"></i></div>
-                            <div class="stat-details">
-                                <h3 id="contrib-stat-count">0</h3>
-                                <p>Total Records</p>
-                            </div>
-                        </div>
-                        <div class="admin-stat-card" style="border-left: 4px solid #10b981;">
-                            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i class="fas fa-users"></i></div>
-                            <div class="stat-details">
-                                <h3 id="contrib-stat-contributors">0</h3>
-                                <p>Contributors</p>
-                            </div>
-                        </div>
-                        <div class="admin-stat-card" style="border-left: 4px solid #f59e0b;">
-                            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i class="fas fa-calendar-alt"></i></div>
-                            <div class="stat-details">
-                                <h3 id="contrib-stat-this-month">&#x20B9;0</h3>
-                                <p>This Month</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="admin-card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-user-plus" style="color: var(--primary-color); margin-right: 10px;"></i> Add Contributor</h3>
-                        </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label>Contributor Name *</label>
-                                <input type="text" id="contrib-name" class="form-control" placeholder="Full name&hellip;" autocomplete="off">
-                            </div>
-                            <div class="form-group">
-                                <label>Amount (&#x20B9;) *</label>
-                                <input type="number" id="contrib-amount" class="form-control" placeholder="0" min="1" step="any">
-                            </div>
-                            <div class="form-group">
-                                <label>Date *</label>
-                                <input type="date" id="contrib-date" class="form-control">
-                            </div>
-                            <div class="form-group" style="grid-column: 1 / -1;">
-                                <label>Note (Optional)</label>
-                                <input type="text" id="contrib-note" class="form-control" placeholder="e.g. Festival donation" autocomplete="off">
-                            </div>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-                            <span id="contrib-form-msg" style="font-size: 0.9rem; font-weight: 500;"></span>
-                            <button id="contrib-add-btn" class="btn btn-primary" onclick="contribAdd()">
-                                <i class="fas fa-plus"></i> Add Contribution
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="admin-card">
-                        <div class="card-header" style="flex-wrap: wrap; gap: 15px;">
-                            <h3><i class="fas fa-list" style="color: var(--primary-color); margin-right: 10px;"></i> All Contribution Records</h3>
-                            <div class="header-actions" style="display: flex; gap: 15px; align-items: center;">
-                                <div class="search-box">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" id="contrib-search" placeholder="Search name or note..." oninput="contribRender()">
-                                </div>
-                                <button class="btn btn-secondary btn-small" onclick="contribExportExcel()">
-                                    <i class="fas fa-file-excel"></i> Export
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div id="contrib-empty" style="display:none;text-align:center;padding:40px;color:#bbb;">
-                            <i class="fas fa-inbox" style="font-size:3rem;opacity:.25;display:block;margin-bottom:15px;"></i>
-                            <p style="font-size: 1.1rem;">No contribution records yet. Add the first one above!</p>
-                        </div>
-
-                        <div class="table-responsive">
-                            <table class="admin-table" id="contrib-tbl" style="display:none;">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Contributor Name</th>
-                                        <th>Amount (&#x20B9;)</th>
-                                        <th>Date</th>
-                                        <th>Note</th>
-                                        <th>Added On</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="contrib-tbody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div><!-- /#contributions -->
+                
 
             </div> <!-- End of .admin-content -->
         </main>
