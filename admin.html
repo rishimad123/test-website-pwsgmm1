@@ -7395,6 +7395,20 @@ fetchNotifications();
    Uses !important throughout to defeat ALL global overrides
    ═══════════════════════════════════════════════════════ */
 
+/* ── Defensive layout reset ── */
+.admin-content:has(#contributions.active) > div:not(#contributions) {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+#contributions.active {
+  display: block !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
 /* ── Stat grid: 4 equal columns, compact cards ── */
 #contrib-stat-grid {
   display: grid !important;
