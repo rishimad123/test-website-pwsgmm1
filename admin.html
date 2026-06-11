@@ -3493,6 +3493,55 @@ window._fmtBytesA = function(b) {
                 </div><!-- /.rcg-wrap -->
                 </div><!-- /#receiptGenerator -->
 
+                <!-- ── Contributions Section ────────────────────────────── -->
+                <div id="contributions" class="content-section">
+                  <div class="contrib-hero">
+                    <div>
+                      <h2><i class="fas fa-hand-holding-heart" style="margin-right:10px;"></i>Contributions</h2>
+                      <p>Track all contributor amounts by month and date &mdash; securely stored in MongoDB</p>
+                    </div>
+                    <i class="fas fa-donate contrib-hero-icon"></i>
+                  </div>
+
+                  <div class="contrib-stats-row">
+                    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-total-amt">&#x20B9;0</div><div class="cs-lbl">Total Contributions</div></div>
+                    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-count">0</div><div class="cs-lbl">Total Records</div></div>
+                    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-contributors">0</div><div class="cs-lbl">Unique Contributors</div></div>
+                    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-this-month">&#x20B9;0</div><div class="cs-lbl">This Month</div></div>
+                  </div>
+
+                  <div class="contrib-form-card">
+                    <h3><i class="fas fa-user-plus"></i> Add Contributor</h3>
+                    <div id="contrib-form-grid">
+                      <div class="cfg"><label>Contributor Name *</label><input type="text" id="contrib-name" placeholder="Full name&hellip;" autocomplete="off"></div>
+                      <div class="cfg"><label>Amount (&#x20B9;) *</label><input type="number" id="contrib-amount" placeholder="0" min="1" step="any"></div>
+                      <div class="cfg"><label>Date *</label><input type="date" id="contrib-date"></div>
+                      <div class="cfg"><label>Note (optional)</label><input type="text" id="contrib-note" placeholder="e.g. Annual donation&hellip;" autocomplete="off"></div>
+                    </div>
+                    <div style="margin-top:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+                      <button id="contrib-add-btn" onclick="contribAdd()"><i class="fas fa-plus"></i> Add Contribution</button>
+                      <span id="contrib-form-msg" style="font-size:.88rem;font-weight:600;"></span>
+                    </div>
+                  </div>
+
+                  <div class="contrib-table-card">
+                    <div class="contrib-table-header">
+                      <h3><i class="fas fa-list-alt" style="color:#7C3AED;"></i> All Contribution Records</h3>
+                      <div id="contrib-search-bar">
+                        <input type="text" id="contrib-search" placeholder="Search name or note&hellip;" oninput="contribRender()">
+                        <button id="contrib-export-btn" onclick="contribExportExcel()"><i class="fas fa-file-excel"></i> Export to Excel</button>
+                      </div>
+                    </div>
+                    <div id="contrib-table-wrap">
+                      <div id="contrib-empty" style="display:none;"><i class="fas fa-inbox" style="font-size:2rem;opacity:.2;display:block;margin-bottom:10px;"></i>No contribution records yet. Add the first one above!</div>
+                      <table id="contrib-tbl" style="display:none;">
+                        <thead><tr><th>#</th><th>Contributor Name</th><th>Amount (&#x20B9;)</th><th>Date</th><th>Note</th><th>Added On</th><th>Action</th></tr></thead>
+                        <tbody id="contrib-tbody"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div><!-- /#contributions -->
+
             </div> <!-- End of .admin-content -->
         </main>
     </div>
@@ -7360,54 +7409,6 @@ fetchNotifications();
 #contrib-tbl .contrib-month-row td{background:#EDE9FE;color:#4F46E5;font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:7px 14px;border-top:2px solid #C4B5FD;}
 #contrib-tbl .contrib-subtotal-row td{background:#F5F3FF;font-weight:700;font-size:.82rem;color:#4F46E5;padding:7px 14px;border-top:1px dashed #C4B5FD;}
 </style>
-
-<div id="contributions" class="content-section">
-  <div class="contrib-hero">
-    <div>
-      <h2><i class="fas fa-hand-holding-heart" style="margin-right:10px;"></i>Contributions</h2>
-      <p>Track all contributor amounts by month and date &mdash; securely stored in MongoDB</p>
-    </div>
-    <i class="fas fa-donate contrib-hero-icon"></i>
-  </div>
-
-  <div class="contrib-stats-row">
-    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-total-amt">&#x20B9;0</div><div class="cs-lbl">Total Contributions</div></div>
-    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-count">0</div><div class="cs-lbl">Total Records</div></div>
-    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-contributors">0</div><div class="cs-lbl">Unique Contributors</div></div>
-    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-this-month">&#x20B9;0</div><div class="cs-lbl">This Month</div></div>
-  </div>
-
-  <div class="contrib-form-card">
-    <h3><i class="fas fa-user-plus"></i> Add Contributor</h3>
-    <div id="contrib-form-grid">
-      <div class="cfg"><label>Contributor Name *</label><input type="text" id="contrib-name" placeholder="Full name&hellip;" autocomplete="off"></div>
-      <div class="cfg"><label>Amount (&#x20B9;) *</label><input type="number" id="contrib-amount" placeholder="0" min="1" step="any"></div>
-      <div class="cfg"><label>Date *</label><input type="date" id="contrib-date"></div>
-      <div class="cfg"><label>Note (optional)</label><input type="text" id="contrib-note" placeholder="e.g. Annual donation&hellip;" autocomplete="off"></div>
-    </div>
-    <div style="margin-top:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-      <button id="contrib-add-btn" onclick="contribAdd()"><i class="fas fa-plus"></i> Add Contribution</button>
-      <span id="contrib-form-msg" style="font-size:.88rem;font-weight:600;"></span>
-    </div>
-  </div>
-
-  <div class="contrib-table-card">
-    <div class="contrib-table-header">
-      <h3><i class="fas fa-list-alt" style="color:#7C3AED;"></i> All Contribution Records</h3>
-      <div id="contrib-search-bar">
-        <input type="text" id="contrib-search" placeholder="Search name or note&hellip;" oninput="contribRender()">
-        <button id="contrib-export-btn" onclick="contribExportExcel()"><i class="fas fa-file-excel"></i> Export to Excel</button>
-      </div>
-    </div>
-    <div id="contrib-table-wrap">
-      <div id="contrib-empty" style="display:none;"><i class="fas fa-inbox" style="font-size:2rem;opacity:.2;display:block;margin-bottom:10px;"></i>No contribution records yet. Add the first one above!</div>
-      <table id="contrib-tbl" style="display:none;">
-        <thead><tr><th>#</th><th>Contributor Name</th><th>Amount (&#x20B9;)</th><th>Date</th><th>Note</th><th>Added On</th><th>Action</th></tr></thead>
-        <tbody id="contrib-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
 
 <script>
 (function(){
