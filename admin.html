@@ -1276,6 +1276,12 @@ window._fmtBytesA = function(b) {
                     </a>
                 </li>
                 <li>
+                    <a href="#" onclick="showAdminSection('contributions')">
+                        <i class="fas fa-hand-holding-heart"></i>
+                        <span>Contributions</span>
+                    </a>
+                </li>
+                <li>
                     <a href="#" onclick="showAdminSection('settings')">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
@@ -7305,5 +7311,220 @@ fetchNotifications();
 })();
 </script>
 <!-- ═══ END ADE RECEIPT EDIT MODAL ═══ -->
+<!-- ═══════════════════════════════════════════════════════════════════
+     CONTRIBUTIONS SECTION
+     ═══════════════════════════════════════════════════════════════════ -->
+<style>
+#contributions .contrib-hero{background:linear-gradient(135deg,#7C3AED 0%,#4F46E5 60%,#3B82F6 100%);border-radius:16px;padding:28px 32px;color:#fff;margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;box-shadow:0 8px 32px rgba(124,58,237,.25);}
+#contributions .contrib-hero h2{font-size:1.7rem;font-weight:700;margin-bottom:4px;}
+#contributions .contrib-hero p{opacity:.85;font-size:.95rem;}
+#contributions .contrib-hero-icon{font-size:3.5rem;opacity:.3;}
+#contributions .contrib-stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:18px;margin-bottom:28px;}
+#contributions .contrib-stat-card{background:#fff;border-radius:14px;padding:22px 20px;box-shadow:0 3px 14px rgba(0,0,0,.07);text-align:center;transition:transform .22s,box-shadow .22s;}
+#contributions .contrib-stat-card:hover{transform:translateY(-4px);box-shadow:0 8px 22px rgba(0,0,0,.12);}
+#contributions .cs-val{font-size:2rem;font-weight:700;color:#4F46E5;}
+#contributions .cs-lbl{font-size:.82rem;color:#888;margin-top:4px;font-weight:500;}
+#contributions .contrib-form-card{background:#fff;border-radius:16px;padding:28px 28px 24px;box-shadow:0 3px 14px rgba(0,0,0,.07);margin-bottom:28px;border-top:4px solid #7C3AED;}
+#contributions .contrib-form-card h3{color:#4F46E5;font-size:1.15rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+#contrib-form-grid{display:grid;grid-template-columns:2fr 1fr 1fr 2fr;gap:14px;align-items:end;}
+@media(max-width:900px){#contrib-form-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:560px){#contrib-form-grid{grid-template-columns:1fr;}}
+#contrib-form-grid .cfg{display:flex;flex-direction:column;gap:5px;}
+#contrib-form-grid .cfg label{font-size:.78rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em;}
+#contrib-form-grid .cfg input{padding:10px 13px;border:2px solid #E0E0E0;border-radius:9px;font-size:.95rem;font-family:inherit;transition:border-color .2s;background:#FAFAFA;box-sizing:border-box;width:100%;}
+#contrib-form-grid .cfg input:focus{outline:none;border-color:#7C3AED;background:#fff;}
+#contrib-add-btn{background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:.95rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity .2s,transform .15s;white-space:nowrap;min-height:44px;margin-top:6px;}
+#contrib-add-btn:hover{opacity:.88;transform:translateY(-1px);}
+#contrib-add-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+#contributions .contrib-table-card{background:#fff;border-radius:16px;padding:24px;box-shadow:0 3px 14px rgba(0,0,0,.07);}
+#contributions .contrib-table-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px;}
+#contributions .contrib-table-header h3{font-size:1.1rem;font-weight:700;color:#1E293B;display:flex;align-items:center;gap:8px;}
+#contrib-search-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+#contrib-search-bar input{padding:8px 14px;border:2px solid #E0E0E0;border-radius:8px;font-size:.88rem;font-family:inherit;transition:border-color .2s;min-width:180px;}
+#contrib-search-bar input:focus{outline:none;border-color:#7C3AED;}
+#contrib-export-btn{background:linear-gradient(135deg,#059669,#10B981);color:#fff;border:none;border-radius:9px;padding:10px 18px;font-size:.88rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:opacity .2s,transform .15s;min-height:40px;}
+#contrib-export-btn:hover{opacity:.88;transform:translateY(-1px);}
+#contrib-table-wrap{overflow-x:auto;}
+#contrib-tbl{width:100%;border-collapse:collapse;}
+#contrib-tbl thead tr{background:linear-gradient(135deg,#4F46E5,#7C3AED);}
+#contrib-tbl thead th{padding:12px 14px;text-align:left;color:#fff;font-size:.8rem;font-weight:700;letter-spacing:.05em;white-space:nowrap;}
+#contrib-tbl tbody tr{border-bottom:1px solid #F0F0F0;transition:background .15s;}
+#contrib-tbl tbody tr:hover{background:#F5F3FF;}
+#contrib-tbl tbody td{padding:12px 14px;color:#444;font-size:.88rem;vertical-align:middle;}
+#contrib-tbl .contrib-amt{font-weight:700;color:#059669;}
+#contrib-tbl .contrib-name{font-weight:600;color:#1E293B;}
+#contrib-tbl .contrib-note{color:#888;font-style:italic;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#contrib-empty{text-align:center;padding:48px 20px;color:#bbb;font-size:.9rem;}
+.contrib-del-btn{background:#FFEBEE;color:#C62828;border:none;border-radius:7px;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:background .18s,color .18s;font-size:.88rem;}
+.contrib-del-btn:hover{background:#C62828;color:#fff;}
+#contrib-tbl .contrib-month-row td{background:#EDE9FE;color:#4F46E5;font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:7px 14px;border-top:2px solid #C4B5FD;}
+#contrib-tbl .contrib-subtotal-row td{background:#F5F3FF;font-weight:700;font-size:.82rem;color:#4F46E5;padding:7px 14px;border-top:1px dashed #C4B5FD;}
+</style>
+
+<div id="contributions" class="content-section">
+  <div class="contrib-hero">
+    <div>
+      <h2><i class="fas fa-hand-holding-heart" style="margin-right:10px;"></i>Contributions</h2>
+      <p>Track all contributor amounts by month and date &mdash; securely stored in MongoDB</p>
+    </div>
+    <i class="fas fa-donate contrib-hero-icon"></i>
+  </div>
+
+  <div class="contrib-stats-row">
+    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-total-amt">&#x20B9;0</div><div class="cs-lbl">Total Contributions</div></div>
+    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-count">0</div><div class="cs-lbl">Total Records</div></div>
+    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-contributors">0</div><div class="cs-lbl">Unique Contributors</div></div>
+    <div class="contrib-stat-card"><div class="cs-val" id="contrib-stat-this-month">&#x20B9;0</div><div class="cs-lbl">This Month</div></div>
+  </div>
+
+  <div class="contrib-form-card">
+    <h3><i class="fas fa-user-plus"></i> Add Contributor</h3>
+    <div id="contrib-form-grid">
+      <div class="cfg"><label>Contributor Name *</label><input type="text" id="contrib-name" placeholder="Full name&hellip;" autocomplete="off"></div>
+      <div class="cfg"><label>Amount (&#x20B9;) *</label><input type="number" id="contrib-amount" placeholder="0" min="1" step="any"></div>
+      <div class="cfg"><label>Date *</label><input type="date" id="contrib-date"></div>
+      <div class="cfg"><label>Note (optional)</label><input type="text" id="contrib-note" placeholder="e.g. Annual donation&hellip;" autocomplete="off"></div>
+    </div>
+    <div style="margin-top:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <button id="contrib-add-btn" onclick="contribAdd()"><i class="fas fa-plus"></i> Add Contribution</button>
+      <span id="contrib-form-msg" style="font-size:.88rem;font-weight:600;"></span>
+    </div>
+  </div>
+
+  <div class="contrib-table-card">
+    <div class="contrib-table-header">
+      <h3><i class="fas fa-list-alt" style="color:#7C3AED;"></i> All Contribution Records</h3>
+      <div id="contrib-search-bar">
+        <input type="text" id="contrib-search" placeholder="Search name or note&hellip;" oninput="contribRender()">
+        <button id="contrib-export-btn" onclick="contribExportExcel()"><i class="fas fa-file-excel"></i> Export to Excel</button>
+      </div>
+    </div>
+    <div id="contrib-table-wrap">
+      <div id="contrib-empty" style="display:none;"><i class="fas fa-inbox" style="font-size:2rem;opacity:.2;display:block;margin-bottom:10px;"></i>No contribution records yet. Add the first one above!</div>
+      <table id="contrib-tbl" style="display:none;">
+        <thead><tr><th>#</th><th>Contributor Name</th><th>Amount (&#x20B9;)</th><th>Date</th><th>Note</th><th>Added On</th><th>Action</th></tr></thead>
+        <tbody id="contrib-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var _contribs=[],_loaded=false;
+function fmtAmt(n){return '\u20b9'+Number(n).toLocaleString('en-IN',{minimumFractionDigits:0});}
+function fmtDate(iso){if(!iso)return '\u2014';var p=iso.split('-');return p.length!==3?iso:p[2]+'/'+p[1]+'/'+p[0];}
+function monthKey(iso){return iso?iso.slice(0,7):'0000-00';}
+function monthLabel(yyyymm){var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];var p=yyyymm.split('-');return m[parseInt(p[1],10)-1]+' '+p[0];}
+async function contribLoad(){
+  try{var res=await fetch('/api/contributors');var data=await res.json();
+  _contribs=(data.contributors||[]).sort(function(a,b){return b.date.localeCompare(a.date);});
+  _loaded=true;contribUpdateStats();contribRender();}catch(e){console.error('[Contributions] Load error:',e.message);}
+}
+function contribUpdateStats(){
+  var total=0,count=_contribs.length,names=new Set();
+  var now=new Date(),thisMonth=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  var monthTotal=0;
+  _contribs.forEach(function(c){total+=c.amount||0;names.add((c.name||'').toLowerCase().trim());if(monthKey(c.date)===thisMonth)monthTotal+=c.amount||0;});
+  function el(id){return document.getElementById(id);}
+  if(el('contrib-stat-total-amt'))el('contrib-stat-total-amt').textContent=fmtAmt(total);
+  if(el('contrib-stat-count'))el('contrib-stat-count').textContent=count;
+  if(el('contrib-stat-contributors'))el('contrib-stat-contributors').textContent=names.size;
+  if(el('contrib-stat-this-month'))el('contrib-stat-this-month').textContent=fmtAmt(monthTotal);
+}
+window.contribRender=function(){
+  var search=((document.getElementById('contrib-search')||{}).value||'').toLowerCase().trim();
+  var filtered=search?_contribs.filter(function(c){return(c.name||'').toLowerCase().includes(search)||(c.note||'').toLowerCase().includes(search);}):_contribs;
+  var tbody=document.getElementById('contrib-tbody'),tbl=document.getElementById('contrib-tbl'),empty=document.getElementById('contrib-empty');
+  if(!tbody)return;
+  if(filtered.length===0){if(tbl)tbl.style.display='none';if(empty)empty.style.display='block';return;}
+  if(tbl)tbl.style.display='table';if(empty)empty.style.display='none';
+  var groups={};
+  filtered.forEach(function(c){var mk=monthKey(c.date);if(!groups[mk])groups[mk]=[];groups[mk].push(c);});
+  var sortedMonths=Object.keys(groups).sort(function(a,b){return b.localeCompare(a);});
+  var rows='',rowIdx=1;
+  sortedMonths.forEach(function(mk){
+    var items=groups[mk],monthSum=items.reduce(function(s,c){return s+(c.amount||0);},0);
+    rows+='<tr class="contrib-month-row"><td colspan="7">'+monthLabel(mk)+'</td></tr>';
+    items.forEach(function(c){
+      var noteHtml=c.note?'<span class="contrib-note" title="'+c.note.replace(/"/g,'&quot;')+'">'+c.note.replace(/</g,'&lt;')+'</span>':'<span style="color:#ccc;">\u2014</span>';
+      var addedOn=c.createdAt?new Date(c.createdAt).toLocaleDateString('en-IN'):'\u2014';
+      rows+='<tr><td style="color:#aaa;font-size:.78rem;">'+(rowIdx++)+'</td><td class="contrib-name">'+(c.name||'').replace(/</g,'&lt;')+'</td><td class="contrib-amt">'+fmtAmt(c.amount||0)+'</td><td>'+fmtDate(c.date)+'</td><td>'+noteHtml+'</td><td style="color:#aaa;font-size:.78rem;">'+addedOn+'</td><td><button class="contrib-del-btn" title="Delete" onclick="contribDelete('+JSON.stringify(c.id)+')"><i class="fas fa-trash-alt"></i></button></td></tr>';
+    });
+    rows+='<tr class="contrib-subtotal-row"><td colspan="2" style="text-align:right;padding-right:18px;">Subtotal for '+monthLabel(mk)+':</td><td>'+fmtAmt(monthSum)+'</td><td colspan="4"></td></tr>';
+  });
+  tbody.innerHTML=rows;
+};
+window.contribAdd=async function(){
+  var name=((document.getElementById('contrib-name')||{}).value||'');
+  var amount=((document.getElementById('contrib-amount')||{}).value||'');
+  var date=((document.getElementById('contrib-date')||{}).value||'');
+  var note=((document.getElementById('contrib-note')||{}).value||'');
+  var msg=document.getElementById('contrib-form-msg'),btn=document.getElementById('contrib-add-btn');
+  function setMsg(txt,ok){if(!msg)return;msg.textContent=txt;msg.style.color=ok?'#059669':'#C62828';if(txt)setTimeout(function(){msg.textContent='';},3500);}
+  if(!name.trim()){setMsg('\u26a0 Please enter a contributor name.',false);return;}
+  if(!amount||Number(amount)<=0){setMsg('\u26a0 Please enter a valid amount.',false);return;}
+  if(!date){setMsg('\u26a0 Please select a date.',false);return;}
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saving\u2026';}
+  try{
+    var res=await fetch('/api/contributors',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim(),amount:Number(amount),date:date,note:note.trim()})});
+    var data=await res.json();
+    if(res.ok&&data.success){
+      _contribs.unshift(data.entry);_contribs.sort(function(a,b){return b.date.localeCompare(a.date);});
+      contribUpdateStats();contribRender();
+      document.getElementById('contrib-name').value='';document.getElementById('contrib-amount').value='';document.getElementById('contrib-note').value='';
+      setMsg('\u2713 Contribution added successfully!',true);
+    }else{setMsg('\u2717 '+(data.message||'Could not save.'),false);}
+  }catch(e){setMsg('\u2717 Network error: '+e.message,false);}
+  finally{if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-plus"></i> Add Contribution';}}
+};
+window.contribDelete=async function(id){
+  if(!confirm('Delete this contribution record? This cannot be undone.'))return;
+  try{
+    var res=await fetch('/api/contributors/'+encodeURIComponent(id),{method:'DELETE'});
+    var data=await res.json();
+    if(res.ok&&data.success){_contribs=_contribs.filter(function(c){return c.id!==id;});contribUpdateStats();contribRender();if(typeof showNotification==='function')showNotification('Contribution record deleted.','success');}
+    else{if(typeof showNotification==='function')showNotification(data.message||'Delete failed.','error');}
+  }catch(e){if(typeof showNotification==='function')showNotification('Network error: '+e.message,'error');}
+};
+window.contribExportExcel=function(){
+  if(_contribs.length===0){alert('No contribution records to export.');return;}
+  if(typeof XLSX==='undefined'){alert('Excel library not loaded. Please refresh the page.');return;}
+  var rows=[['#','Contributor Name','Amount (\u20b9)','Date','Month','Note','Added On']];
+  var groups={};
+  _contribs.forEach(function(c){var mk=monthKey(c.date);if(!groups[mk])groups[mk]=[];groups[mk].push(c);});
+  var sortedMonths=Object.keys(groups).sort(function(a,b){return b.localeCompare(a);});
+  var idx=1,grandTotal=0;
+  sortedMonths.forEach(function(mk){
+    var items=groups[mk],monthSum=0;
+    rows.push(['','\u2014 '+monthLabel(mk)+' \u2014','','','','','']);
+    items.forEach(function(c){
+      var addedOn=c.createdAt?new Date(c.createdAt).toLocaleDateString('en-IN'):'';
+      rows.push([idx++,c.name,c.amount,fmtDate(c.date),monthLabel(mk),c.note||'',addedOn]);
+      monthSum+=c.amount||0;grandTotal+=c.amount||0;
+    });
+    rows.push(['','Subtotal \u2014 '+monthLabel(mk),monthSum,'','','','']);
+  });
+  rows.push(['','','','','','','']);
+  rows.push(['','GRAND TOTAL',grandTotal,'','','','']);
+  var ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:5},{wch:30},{wch:14},{wch:14},{wch:16},{wch:30},{wch:16}];
+  var range=XLSX.utils.decode_range(ws['!ref']);
+  for(var C=range.s.c;C<=range.e.c;C++){var cell=ws[XLSX.utils.encode_cell({r:0,c:C})];if(cell){cell.s={font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'4F46E5'}},alignment:{horizontal:'center'}};}}
+  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Contributions');
+  var now=new Date();
+  XLSX.writeFile(wb,'Contributions_'+now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0')+'.xlsx');
+};
+var _origShow=window.showAdminSection;
+window.showAdminSection=function(section){
+  if(typeof _origShow==='function')_origShow(section);
+  if(section==='contributions'&&!_loaded)contribLoad();
+  if(section==='contributions'){var di=document.getElementById('contrib-date');if(di&&!di.value){var t=new Date();di.value=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');}}
+};
+document.addEventListener('DOMContentLoaded',function(){var sec=document.getElementById('contributions');if(sec&&sec.classList.contains('active'))contribLoad();});
+})();
+</script>
+<!-- ═══ END CONTRIBUTIONS MODULE ═══ -->
 </body>
 </html>

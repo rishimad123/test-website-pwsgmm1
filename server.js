@@ -84,6 +84,7 @@ let colCommitteeMembers, colGallery, colEvents;
 let colTshirts, colTshirtSettings;
 let colVolunteerCards, colNotifications;
 let colQrConfig;
+let colContributors;
 
 // ─── In-memory stores (populated from MongoDB at startup) ───────────────────
 const SLIPS_PER_BOOK_DE = 50;
@@ -219,6 +220,7 @@ async function connectDB() {
     colTshirtSettings   = db.collection('tshirtSettings');
     colVolunteerCards   = db.collection('volunteerCards');
     colQrConfig         = db.collection('qrConfig');
+    colContributors     = db.collection('contributors');
 
     // ── Purge any existing master login notifications on startup ──────────────
     // Master logins must never appear in the notification bell — clean the DB.
@@ -3282,6 +3284,57 @@ const server = http.createServer(async (req, res) => {
             await colQrConfig.updateOne({}, { $set: { mapsUrl, placeId, reviewTemplates, updatedAt: new Date().toISOString() } }, { upsert: true });
             return sendJSON(res, 200, { success: true });
         } catch (e) { return sendJSON(res, 500, { message: e.message }); }
+    }
+
+    // ── GET /api/contributors ─────────────────────────────────────────────────
+    if (req.method === 'GET' && pathname === '/api/contributors') {
+        try {
+            const contributors = await colContributors.find({}).toArray();
+            return sendJSON(res, 200, { contributors: contributors.map(stripId) });
+        } catch (err) {
+            console.error('GET /api/contributors error:', err.message);
+            return sendJSON(res, 500, { message: 'Server error.' });
+        }
+    }
+
+    // ── POST /api/contributors ────────────────────────────────────────────────
+    if (req.method === 'POST' && pathname === '/api/contributors') {
+        try {
+            const body = await readBody(req);
+            const { name, amount, date, note } = body;
+            if (!name || !name.trim()) return sendJSON(res, 400, { message: 'Contributor name is required.' });
+            if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) return sendJSON(res, 400, { message: 'A positive contribution amount is required.' });
+            if (!date) return sendJSON(res, 400, { message: 'Contribution date is required.' });
+
+            const entry = {
+                id          : `CONT-${Date.now()}`,
+                name        : name.trim(),
+                amount      : Number(amount),
+                date        : date,           // ISO date string YYYY-MM-DD
+                note        : (note || '').trim(),
+                createdAt   : new Date().toISOString(),
+            };
+            await colContributors.insertOne(entry);
+            console.log(`✅ Contributor added: ${entry.id} | ${entry.name} | ₹${entry.amount} | ${entry.date}`);
+            return sendJSON(res, 200, { success: true, entry: stripId(entry) });
+        } catch (err) {
+            console.error('POST /api/contributors error:', err.message);
+            return sendJSON(res, 400, { message: err.message || 'Bad request.' });
+        }
+    }
+
+    // ── DELETE /api/contributors/:id ──────────────────────────────────────────
+    if (req.method === 'DELETE' && pathname.startsWith('/api/contributors/')) {
+        const contribId = decodeURIComponent(pathname.replace('/api/contributors/', ''));
+        try {
+            const result = await colContributors.deleteOne({ id: contribId });
+            if (result.deletedCount === 0) return sendJSON(res, 404, { message: 'Contributor entry not found.' });
+            console.log(`🗑️  Contributor deleted: ${contribId}`);
+            return sendJSON(res, 200, { success: true });
+        } catch (err) {
+            console.error('DELETE /api/contributors error:', err.message);
+            return sendJSON(res, 500, { message: 'Server error.' });
+        }
     }
 
     // ── Static file serving ───────────────────────────────────────────────
