@@ -1195,6 +1195,12 @@ window._fmtBytesA = function(b) {
                     </a>
                 </li>
                 <li>
+                    <a href="#" onclick="showAdminSection('contributions')">
+                        <i class="fas fa-hand-holding-heart"></i>
+                        <span>Contributions</span>
+                    </a>
+                </li>
+                <li>
                     <a href="#" onclick="showAdminSection('donorSearch')">
                         <i class="fas fa-search"></i>
                         <span>Donor Search</span>
@@ -1273,12 +1279,6 @@ window._fmtBytesA = function(b) {
                     <a href="#" onclick="showAdminSection('receiptGenerator')">
                         <i class="fas fa-file-invoice" style="color:#8B1A1A;"></i>
                         <span>Generate Receipt</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" onclick="showAdminSection('contributions')">
-                        <i class="fas fa-hand-holding-heart"></i>
-                        <span>Contributions</span>
                     </a>
                 </li>
                 <li>
@@ -1471,8 +1471,8 @@ window._fmtBytesA = function(b) {
                                     <i class="fas fa-search"></i>
                                     <input type="text" id="contrib-search" placeholder="Search name or note..." oninput="contribRender()">
                                 </div>
-                                <button class="btn btn-secondary btn-small" onclick="contribExportExcel()">
-                                    <i class="fas fa-file-excel"></i> Export
+                                <button class="btn btn-primary" style="background:#10b981; border:none; padding:10px 16px; font-weight:600;" onclick="contribExportExcel()">
+                                    <i class="fas fa-file-excel" style="margin-right:6px;"></i> Export to Excel
                                 </button>
                             </div>
                         </div>
