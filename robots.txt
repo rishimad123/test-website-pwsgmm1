@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin.html
+Disallow: /dashboard.html
+Disallow: /login.html
+Disallow: /api/
+
+Sitemap: https://test-website-pwsgmm1.onrender.com/sitemap.xml
