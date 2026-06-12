@@ -324,6 +324,7 @@ function tsOpenModal(size) {
                         <th style="padding:10px;text-align:center;">Qty</th>
                         <th style="padding:10px;text-align:right;">Total</th>
                         <th style="padding:10px;text-align:center;">Status</th>
+                        <th style="padding:10px;text-align:center;">Actions</th>
                     </tr></thead>
                     <tbody>
                     ${applicants.map(app => `
@@ -338,6 +339,10 @@ function tsOpenModal(size) {
                                     <option value="Pending" ${app.status!=='Received'?'selected':''}>Pending</option>
                                     <option value="Received" ${app.status==='Received'?'selected':''}>Received</option>
                                 </select>
+                            </td>
+                            <td style="padding:10px;text-align:center;">
+                                <button onclick="tsOpenEditModal('${app.id||app._id}', ${size})" style="background:none;border:none;cursor:pointer;color:#3b82f6;margin-right:8px;" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button onclick="tsDeleteApplication('${app.id||app._id}', ${size})" style="background:none;border:none;cursor:pointer;color:#ef4444;" title="Delete"><i class="fas fa-trash-alt"></i></button>
                             </td>
                         </tr>`).join('')}
                     </tbody>
@@ -357,6 +362,75 @@ async function tsUpdateStatus(id, newStatus) {
         if (res.ok) { const entry = tsApplications.find(a => (a.id||a._id) === id); if (entry) entry.status = newStatus; }
         else alert('Failed to update status.');
     } catch(e) { console.error(e); alert('Network error.'); }
+}
+
+async function tsDeleteApplication(id, size) {
+    if (!confirm("Are you sure you want to delete this application?")) return;
+    try {
+        const res = await fetch('/api/tshirts/' + id, { method: 'DELETE' });
+        if (res.ok) {
+            tsApplications = tsApplications.filter(a => (a.id || a._id) !== id);
+            tsOpenModal(size);
+            if (typeof showNotification === 'function') showNotification('Application deleted', 'success');
+        } else {
+            alert('Failed to delete application');
+        }
+    } catch(e) { alert('Network error: ' + e.message); }
+}
+
+function tsOpenEditModal(id, size) {
+    const app = tsApplications.find(a => (a.id || a._id) === id);
+    if (!app) return;
+    
+    let modal = document.getElementById('tsEditModal');
+    if (!modal) { modal = document.createElement('div'); modal.id='tsEditModal'; document.body.appendChild(modal); }
+    
+    modal.innerHTML = `
+    <div onclick="if(event.target===this)this.style.display='none'" style="display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:#fff;border-radius:14px;width:100%;max-width:400px;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.25);padding:20px;">
+            <h3 style="margin-top:0;">Edit Application</h3>
+            <label style="font-size:0.85rem;font-weight:600;margin-bottom:5px;">Name</label>
+            <input type="text" id="tsEditName" value="${app.name}" style="padding:10px;border:1px solid #ccc;border-radius:6px;margin-bottom:15px;width:100%;box-sizing:border-box;">
+            
+            <label style="font-size:0.85rem;font-weight:600;margin-bottom:5px;">Contact</label>
+            <input type="text" id="tsEditPhone" value="${app.phone || app.number || ''}" style="padding:10px;border:1px solid #ccc;border-radius:6px;margin-bottom:15px;width:100%;box-sizing:border-box;">
+            
+            <label style="font-size:0.85rem;font-weight:600;margin-bottom:5px;">Quantity</label>
+            <input type="number" id="tsEditQty" value="${app.quantity || 1}" min="1" style="padding:10px;border:1px solid #ccc;border-radius:6px;margin-bottom:20px;width:100%;box-sizing:border-box;">
+            
+            <div style="display:flex;justify-content:flex-end;gap:10px;">
+                <button onclick="document.getElementById('tsEditModal').style.display='none'" style="padding:8px 15px;background:#f0f0f0;border:none;border-radius:6px;cursor:pointer;">Cancel</button>
+                <button onclick="tsSaveApplication('${id}', ${size})" style="padding:8px 15px;background:#3b82f6;color:#fff;border:none;border-radius:6px;cursor:pointer;">Save</button>
+            </div>
+        </div>
+    </div>`;
+    modal.style.display = 'block';
+}
+
+async function tsSaveApplication(id, size) {
+    const name = document.getElementById('tsEditName').value.trim();
+    const phone = document.getElementById('tsEditPhone').value.trim();
+    const quantity = parseInt(document.getElementById('tsEditQty').value) || 1;
+    
+    if (!name || !phone) { alert('Name and Contact are required'); return; }
+    
+    try {
+        const res = await fetch('/api/tshirts/' + id, { 
+            method: 'PUT', 
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name, phone, quantity })
+        });
+        
+        if (res.ok) {
+            const app = tsApplications.find(a => (a.id || a._id) === id);
+            if (app) { app.name = name; app.phone = phone; app.quantity = quantity; app.totalAmount = quantity * tsPrice; }
+            document.getElementById('tsEditModal').style.display = 'none';
+            tsOpenModal(size);
+            if (typeof showNotification === 'function') showNotification('Application updated', 'success');
+        } else {
+            alert('Failed to update application');
+        }
+    } catch(e) { alert('Network error: ' + e.message); }
 }
 
 

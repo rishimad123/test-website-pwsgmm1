@@ -580,12 +580,30 @@ const server = http.createServer(async (req, res) => {
         const id = decodeURIComponent(pathname.replace('/api/tshirts/', ''));
         try {
             const body = await readBody(req);
-            if (!body.status) return sendJSON(res, 400, { message: 'Status is required' });
+            const updateDoc = { updatedAt: new Date().toISOString() };
+            if (body.status) updateDoc.status = body.status;
+            if (body.name) updateDoc.name = body.name;
+            if (body.phone) updateDoc.phone = body.phone;
+            if (body.quantity !== undefined) updateDoc.quantity = Number(body.quantity);
+            
+            if (Object.keys(updateDoc).length === 1) return sendJSON(res, 400, { message: 'No valid fields to update' });
+            
             const result = await db.collection('tshirts').updateOne(
                 { $or: [{ id }, { _id: id }] },
-                { $set: { status: body.status, updatedAt: new Date().toISOString() } }
+                { $set: updateDoc }
             );
             if (result.matchedCount === 0) return sendJSON(res, 404, { message: 'Not found' });
+            return sendJSON(res, 200, { success: true });
+        } catch (err) {
+            return sendJSON(res, 500, { message: 'Server error' });
+        }
+    }
+
+    if (req.method === 'DELETE' && pathname.startsWith('/api/tshirts/') && !pathname.includes('/settings')) {
+        const id = decodeURIComponent(pathname.replace('/api/tshirts/', ''));
+        try {
+            const result = await db.collection('tshirts').deleteOne({ $or: [{ id }, { _id: id }] });
+            if (result.deletedCount === 0) return sendJSON(res, 404, { message: 'Not found' });
             return sendJSON(res, 200, { success: true });
         } catch (err) {
             return sendJSON(res, 500, { message: 'Server error' });
