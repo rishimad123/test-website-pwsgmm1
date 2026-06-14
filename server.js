@@ -77,7 +77,32 @@ const DB_NAME     = 'patelwadi';
 const mongoClient = new MongoClient(MONGODB_URI);
 let db;
 let colSettings;
-let globalSettings = { eventDate: '2026-09-07T00:00:00.000Z', tshirtPhotos: [null, null, null, null], maxNewBooks: 50, maxOldBooks: 30 };
+let globalSettings = { 
+    eventDate: '2026-09-07T00:00:00.000Z', 
+    tshirtPhotos: [null, null, null, null], 
+    maxNewBooks: 50, 
+    maxOldBooks: 30,
+    receiptFormat: {
+        receiptTopLeft: "स्थापना १९९१",
+        receiptTopCenter: "॥ श्री गजानन प्रसन्न ॥",
+        receiptTopRightPrefix: "वर्ष :",
+        receiptYear: "२०२६-२७",
+        receiptTitle: "श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ",
+        receiptAddress: "पटेलवाडी, क्लासिक हॉटेलच्या मागे, जुना नागरदास रोड, अंधेरी (पूर्व), मुंबई - ४०००६९",
+        receiptDonorPrefix: "श्री/श्रीमती",
+        receiptDonorSuffix: "यांचकडून",
+        receiptAmountWordsPrefix: "अक्षरी रुपये",
+        receiptThankYouText: "रोख/चेक मिळाले, धन्यवाद !",
+        receiptSign1Role: "अध्यक्ष",
+        receiptSign1Name: "जयेश शिंदे",
+        receiptSign2Role: "सरचिटणीस",
+        receiptSign2Name: "<span class=\"sg-marathi\" translate=\"no\">ध्रुव चीटालीय</span><span class=\"sg-english\" translate=\"no\" style=\"display:none;\">Dhruv Chotaliya</span>",
+        receiptSign3Role: "खजिनदार",
+        receiptSign3Name: "रणजीत राजपूत",
+        receiptSign4Role: "वसुल करणार",
+        receiptSign4Name: "&nbsp;"
+    }
+};
 let colReceipts, colExpenses, colFinancials, colPautiBooks;
 let colDonations, colDonationEntries, colBuildings, colLandmarks, colAreas;
 let colCommitteeMembers, colGallery, colEvents;
@@ -2797,7 +2822,7 @@ const server = http.createServer(async (req, res) => {
             if (body.aboutText !== undefined) globalSettings.aboutText = body.aboutText;
             if (body.aboutPageText !== undefined) globalSettings.aboutPageText = body.aboutPageText;
             if (body.cloudinaryConfig !== undefined) globalSettings.cloudinaryConfig = body.cloudinaryConfig;
-            
+            if (body.receiptFormat !== undefined) globalSettings.receiptFormat = body.receiptFormat;
             // Footer & Social Settings
             if (body.footerAboutText !== undefined) globalSettings.footerAboutText = body.footerAboutText;
             if (body.contactAddress !== undefined) globalSettings.contactAddress = body.contactAddress;

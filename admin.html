@@ -2528,6 +2528,99 @@ window._fmtBytesA = function(b) {
                 <!-- ═══════════ Events Section (Admin) ═══════════ -->
                 <div id="events" class="content-section">
 
+                    
+                    <!-- Receipt Format Configuration -->
+                    <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #8B1A1A;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-file-invoice" style="color:#8B1A1A;margin-right:8px;"></i>Receipt Format Settings</h3>
+                        </div>
+                        <p style="color:#666;font-size:0.9rem;margin:8px 0 16px;">Configure the default text displayed on the donation receipts (for both Admin and Volunteer panels).</p>
+                        
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;">
+                            <div>
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Top Left Text</label>
+                                <input type="text" id="rfTopLeft" class="admin-input" placeholder="स्थापना १९९१" style="width:100%;margin:0;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Top Center Text</label>
+                                <input type="text" id="rfTopCenter" class="admin-input" placeholder="॥ श्री गजानन प्रसन्न ॥" style="width:100%;margin:0;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Top Right Prefix</label>
+                                <input type="text" id="rfTopRight" class="admin-input" placeholder="वर्ष :" style="width:100%;margin:0;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Receipt Year</label>
+                                <input type="text" id="rfYear" class="admin-input" placeholder="२०२६-२७" style="width:100%;margin:0;">
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom:15px;">
+                            <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Main Title</label>
+                            <input type="text" id="rfTitle" class="admin-input" placeholder="श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ" style="width:100%;margin:0;">
+                        </div>
+
+                        <div style="margin-bottom:15px;">
+                            <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Address</label>
+                            <input type="text" id="rfAddress" class="admin-input" placeholder="पटेलवाडी, क्लासिक हॉटेलच्या मागे..." style="width:100%;margin:0;">
+                        </div>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;">
+                            <div>
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Donor Prefix</label>
+                                <input type="text" id="rfDonorPrefix" class="admin-input" placeholder="श्री/श्रीमती" style="width:100%;margin:0;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Donor Suffix</label>
+                                <input type="text" id="rfDonorSuffix" class="admin-input" placeholder="यांचकडून" style="width:100%;margin:0;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Amount Prefix (Words)</label>
+                                <input type="text" id="rfAmountWords" class="admin-input" placeholder="अक्षरी रुपये" style="width:100%;margin:0;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Thank You Text</label>
+                                <input type="text" id="rfThankYou" class="admin-input" placeholder="रोख/चेक मिळाले, धन्यवाद !" style="width:100%;margin:0;">
+                            </div>
+                        </div>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:15px;">
+                            <div>
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Sign 1 Role</label>
+                                <input type="text" id="rfSign1Role" class="admin-input" placeholder="अध्यक्ष" style="width:100%;margin:0;">
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;margin-top:5px;">Sign 1 Name</label>
+                                <input type="text" id="rfSign1Name" class="admin-input" placeholder="जयेश शिंदे" style="width:100%;margin:0;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Sign 2 Role</label>
+                                <input type="text" id="rfSign2Role" class="admin-input" placeholder="सरचिटणीस" style="width:100%;margin:0;">
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;margin-top:5px;">Sign 2 Name</label>
+                                <input type="text" id="rfSign2Name" class="admin-input" placeholder="ध्रुव चीटालीय" style="width:100%;margin:0;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Sign 3 Role</label>
+                                <input type="text" id="rfSign3Role" class="admin-input" placeholder="खजिनदार" style="width:100%;margin:0;">
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;margin-top:5px;">Sign 3 Name</label>
+                                <input type="text" id="rfSign3Name" class="admin-input" placeholder="रणजीत राजपूत" style="width:100%;margin:0;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Sign 4 Role</label>
+                                <input type="text" id="rfSign4Role" class="admin-input" placeholder="वसुल करणार" style="width:100%;margin:0;">
+                                <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;margin-top:5px;">Sign 4 Name</label>
+                                <input type="text" id="rfSign4Name" class="admin-input" placeholder="&nbsp;" style="width:100%;margin:0;">
+                            </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <button class="btn btn-primary btn-small" onclick="saveReceiptFormat()" style="background:#8B1A1A;border-color:#8B1A1A;color:#fff;font-weight:bold;">
+                                    <i class="fas fa-save"></i> Save Receipt Settings
+                                </button>
+                                <span id="rfStatus" style="margin-left:10px;font-size:0.85rem;color:#27AE60;font-weight:600;opacity:0;transition:opacity 0.3s;">Saved successfully!</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Cloudinary Setup -->
                     <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #3448C5;">
                         <div class="card-header">
@@ -3541,7 +3634,7 @@ window._fmtBytesA = function(b) {
 
                             <!-- Top meta row -->
                             <div class="rcg-r-top">
-                                <span>स्थापना १९९१</span>
+                                <span id="ade_rcg_f_receiptTopLeft">स्थापना १९९१</span>
                                 <span class="rcg-r-center">॥ श्री गजानन प्रसन्न ॥</span>
                                 <span class="rcg-r-right">वर्ष : <span id="rcgRYear" class="rcg-placeholder">__</span></span>
                             </div>
@@ -4362,17 +4455,17 @@ window._fmtBytesA = function(b) {
                     <!-- Top meta row -->
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;font-size:.78rem;color:#8B1A1A;font-weight:600;">
                         <span>स्थापना १९९१</span>
-                        <span style="text-align:center;flex:1;">॥ श्री गजानन प्रसन्न ॥</span>
-                        <span style="white-space:nowrap;">वर्ष : <span id="ade_rcg_r_year" style="color:#222;font-weight:500;">__</span></span>
+                        <span id="ade_rcg_f_receiptTopCenter" style="text-align:center;flex:1;">॥ श्री गजानन प्रसन्न ॥</span>
+                        <span style="white-space:nowrap;"><span id="ade_rcg_f_receiptTopRightPrefix">वर्ष :</span> <span id="ade_rcg_r_year" style="color:#222;font-weight:500;">__</span></span>
                     </div>
 
                     <!-- Title -->
-                    <div style="text-align:center;font-size:1.75rem;font-weight:900;color:#8B1A1A;line-height:1.25;margin-bottom:3px;letter-spacing:.01em;">
+                    <div id="ade_rcg_f_receiptTitle" style="text-align:center;font-size:1.75rem;font-weight:900;color:#8B1A1A;line-height:1.25;margin-bottom:3px;letter-spacing:.01em;">
                         श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ
                     </div>
 
                     <!-- Address -->
-                    <div style="text-align:center;font-size:.72rem;color:#8B1A1A;margin-bottom:10px;font-weight:500;">
+                    <div id="ade_rcg_f_receiptAddress" style="text-align:center;font-size:.72rem;color:#8B1A1A;margin-bottom:10px;font-weight:500;">
                         पटेलवाडी, क्लासिक हॉटेलच्या मागे, जुना नागरदास रोड, अंधेरी (पूर्व), मुंबई - ४०००६९
                     </div>
 
@@ -4390,17 +4483,17 @@ window._fmtBytesA = function(b) {
 
                     <!-- Donor name row -->
                     <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:8px;">
-                        <span style="font-size:.92rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">श्री/श्रीमती</span>
+                        <span id="ade_rcg_f_receiptDonorPrefix" style="font-size:.92rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">श्री/श्रीमती</span>
                         <span id="ade_rcg_r_donor"
                             style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:26px;font-size:1rem;color:#222;padding:0 8px;font-weight:700;text-align:center;display:flex;align-items:flex-end;justify-content:center;">
                             <span style="color:#CCC;font-style:italic;font-weight:400;">__________________________</span>
                         </span>
-                        <span style="font-size:.88rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">यांचकडून</span>
+                        <span id="ade_rcg_f_receiptDonorSuffix" style="font-size:.88rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">यांचकडून</span>
                     </div>
 
                     <!-- Amount in words row -->
                     <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:8px;">
-                        <span style="font-size:.92rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">अक्षरी रुपये</span>
+                        <span id="ade_rcg_f_receiptAmountWordsPrefix" style="font-size:.92rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">अक्षरी रुपये</span>
                         <span id="ade_rcg_r_words"
                             style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:26px;font-size:.88rem;color:#333;padding:0 8px;display:flex;align-items:flex-end;">
                             <span style="color:#CCC;font-style:italic;font-weight:400;">______________________________</span>
@@ -4410,7 +4503,7 @@ window._fmtBytesA = function(b) {
                     <!-- Thank you line -->
                     <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:6px 0 12px;">
                         <span style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:14px;"></span>
-                        <span style="font-size:.88rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">रोख/चेक मिळाले, धन्यवाद !</span>
+                        <span id="ade_rcg_f_receiptThankYouText" style="font-size:.88rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">रोख/चेक मिळाले, धन्यवाद !</span>
                     </div>
 
                     <!-- Amount box -->
@@ -4425,24 +4518,24 @@ window._fmtBytesA = function(b) {
                     <!-- Signatures -->
                     <div style="display:flex;justify-content:space-between;border-top:1px solid #AACCDD;padding-top:10px;margin-top:4px;">
                         <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
-                            <div style="font-size:.68rem;color:#777;font-weight:400;">अध्यक्ष</div>
+                            <div id="ade_rcg_f_receiptSign1Role" style="font-size:.68rem;color:#777;font-weight:400;">अध्यक्ष</div>
                             <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
-                            <div>जयेश शिंदे</div>
+                            <div id="ade_rcg_f_receiptSign1Name">जयेश शिंदे</div>
                         </div>
                         <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
-                            <div style="font-size:.68rem;color:#777;font-weight:400;">सरचिटणीस</div>
+                            <div id="ade_rcg_f_receiptSign2Role" style="font-size:.68rem;color:#777;font-weight:400;">सरचिटणीस</div>
                             <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
-                            <div><span class="sg-marathi" translate="no">ध्रुव चीटालीय</span><span class="sg-english" translate="no" style="display:none;">Dhruv Chotaliya</span></div>
+                            <div id="ade_rcg_f_receiptSign2Name"><span class="sg-marathi" translate="no">ध्रुव चीटालीय</span><span class="sg-english" translate="no" style="display:none;">Dhruv Chotaliya</span></div>
                         </div>
                         <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
-                            <div style="font-size:.68rem;color:#777;font-weight:400;">खजिनदार</div>
+                            <div id="ade_rcg_f_receiptSign3Role" style="font-size:.68rem;color:#777;font-weight:400;">खजिनदार</div>
                             <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
-                            <div>रणजीत राजपूत</div>
+                            <div id="ade_rcg_f_receiptSign3Name">रणजीत राजपूत</div>
                         </div>
                         <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
-                            <div style="font-size:.68rem;color:#777;font-weight:400;">वसुल करणार</div>
+                            <div id="ade_rcg_f_receiptSign4Role" style="font-size:.68rem;color:#777;font-weight:400;">वसुल करणार</div>
                             <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
-                            <div>&nbsp;</div>
+                            <div id="ade_rcg_f_receiptSign4Name">&nbsp;</div>
                         </div>
                     </div>
 
