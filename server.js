@@ -1721,8 +1721,21 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 200, { entries: result, total: result.length, slipsPerBook: SLIPS_PER_BOOK_DE, maxNewBooks: globalSettings.maxNewBooks, maxOldBooks: globalSettings.maxOldBooks });
     }
 
+    // ── GET /api/donation-years  (list all distinct years) ───────────────────
+    if (req.method === 'GET' && pathname === '/api/donation-years') {
+        const years = new Set();
+        donationEntries.forEach(e => {
+            if (!e.deleted && e.year) years.add(e.year);
+        });
+        const activeYear = globalSettings.activeDonationYear || '2026-27';
+        years.add(activeYear); // always include the active year even if no entries yet
+        const sorted = Array.from(years).sort().reverse();
+        return sendJSON(res, 200, { success: true, years: sorted, activeYear });
+    }
+
     // ── POST /api/donation-entries  (create new entry) ────────────────────
     if (req.method === 'POST' && pathname === '/api/donation-entries') {
+
         try {
             const body = await readBody(req);
             const {
