@@ -371,23 +371,32 @@ async function loadSiteSettings() {
         const applySocialLink = (id, url) => {
             const formattedUrl = formatUrl(url);
             if (!formattedUrl) return;
-            // Try by ID first (fastest, most reliable)
-            let el = document.getElementById(id);
-            if (!el) {
-                // Fallback: find by icon class inside .social-links
+            
+            // Apply to all elements with this ID
+            const els = document.querySelectorAll(\`[id="\${id}"]\`);
+            els.forEach(el => {
+                el.href = formattedUrl;
+                el.target = '_blank';
+                el.rel = 'noopener noreferrer';
+            });
+            
+            // Fallback: find by icon class inside .social-links (if none found by ID)
+            if (els.length === 0) {
                 const iconClass = {
                     socialFacebookLink: 'fa-facebook',
                     socialInstagramLink: 'fa-instagram',
                     socialYoutubeLink: 'fa-youtube',
                     socialTwitterLink: 'fa-twitter'
                 }[id];
-                const icon = document.querySelector(`.social-links a i.${iconClass}`);
-                el = icon ? icon.parentElement : null;
-            }
-            if (el) {
-                el.href = formattedUrl;
-                el.target = '_blank';
-                el.rel = 'noopener noreferrer';
+                const icons = document.querySelectorAll(\`.social-links a i.\${iconClass}\`);
+                icons.forEach(icon => {
+                    const el = icon.parentElement;
+                    if (el) {
+                        el.href = formattedUrl;
+                        el.target = '_blank';
+                        el.rel = 'noopener noreferrer';
+                    }
+                });
             }
         };
 
