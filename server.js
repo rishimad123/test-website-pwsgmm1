@@ -1710,10 +1710,20 @@ const server = http.createServer(async (req, res) => {
         });
 
         const userIdFilter = qp.get('userId');
+        const yearFilter = qp.get('year');
+
         if (landmarkFilter) result = result.filter(e => e.landmark === landmarkFilter);
         if (userIdFilter) result = result.filter(e =>
             String(e.submittedByUserId || e.userId || '') === String(userIdFilter)
         );
+        
+        // Year filtering logic
+        if (yearFilter && String(yearFilter).toLowerCase() !== 'all') {
+            const targetYear = String(yearFilter).toLowerCase() === 'active' 
+                ? (globalSettings.activeDonationYear || '2026-27') 
+                : yearFilter;
+            result = result.filter(e => e.year === targetYear);
+        }
         
         // Sort chronologically so they appear in correct order
         result.sort((a, b) => new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0));
@@ -1723,7 +1733,7 @@ const server = http.createServer(async (req, res) => {
 
     // ── GET /api/donation-years  (list all distinct years) ───────────────────
     if (req.method === 'GET' && pathname === '/api/donation-years') {
-        const years = new Set();
+        const years = new Set(globalSettings.allowedYears || []);
         donationEntries.forEach(e => {
             if (!e.deleted && e.year) years.add(e.year);
         });
@@ -1731,6 +1741,100 @@ const server = http.createServer(async (req, res) => {
         years.add(activeYear); // always include the active year even if no entries yet
         const sorted = Array.from(years).sort().reverse();
         return sendJSON(res, 200, { success: true, years: sorted, activeYear });
+    }
+
+    // ── POST /api/donation-years  (add explicit year) ─────────────────────────
+    if (req.method === 'POST' && pathname === '/api/donation-years') {
+        try {
+            const body = await readBody(req);
+            if (!body.year) return sendJSON(res, 400, { message: 'Year is required.' });
+            const newYear = String(body.year).trim();
+            if (!globalSettings.allowedYears) globalSettings.allowedYears = [];
+            if (!globalSettings.allowedYears.includes(newYear)) {
+                globalSettings.allowedYears.push(newYear);
+                await colSettings.updateOne({}, { $set: { allowedYears: globalSettings.allowedYears } }, { upsert: true });
+            }
+            return sendJSON(res, 200, { success: true, message: 'Year added successfully.' });
+        } catch (err) {
+            return sendJSON(res, 500, { message: 'Error adding year', error: err.message });
+        }
+    }
+
+    // ── DELETE /api/donation-years/:year  (cascade soft delete) ─────────────
+    if (req.method === 'DELETE' && pathname.startsWith('/api/donation-years/')) {
+        const yearToDelete = decodeURIComponent(pathname.replace('/api/donation-years/', ''));
+        if (!yearToDelete) return sendJSON(res, 400, { message: 'Year is required.' });
+        if (yearToDelete === globalSettings.activeDonationYear) {
+            return sendJSON(res, 400, { message: 'Cannot delete the active donation year. Please change the active year first.' });
+        }
+
+        try {
+            let entriesDeleted = 0;
+            const nowStr = new Date().toISOString();
+
+            // 1. Delete from allowedYears
+            if (globalSettings.allowedYears && globalSettings.allowedYears.includes(yearToDelete)) {
+                globalSettings.allowedYears = globalSettings.allowedYears.filter(y => y !== yearToDelete);
+                await colSettings.updateOne({}, { $set: { allowedYears: globalSettings.allowedYears } }, { upsert: true });
+            }
+
+            // 2. Soft delete matching donationEntries
+            let saveEntries = false;
+            for (let i = 0; i < donationEntries.length; i++) {
+                if (donationEntries[i].year === yearToDelete && !donationEntries[i].deleted) {
+                    donationEntries[i].deleted = true;
+                    donationEntries[i].deletedAt = nowStr;
+                    entriesDeleted++;
+                    saveEntries = true;
+                }
+            }
+
+            // 3. Soft delete matching pautiBooks slips
+            let savePauti = false;
+            for (let i = 0; i < pautiBooks.length; i++) {
+                if (pautiBooks[i].year === yearToDelete && !pautiBooks[i].deleted) {
+                    if (pautiBooks[i].slips) {
+                        pautiBooks[i].slips.forEach(slip => {
+                            if (!slip.deleted) {
+                                slip.deleted = true;
+                                slip.deletedAt = nowStr;
+                                entriesDeleted++;
+                                savePauti = true;
+                            }
+                        });
+                    }
+                    pautiBooks[i].deleted = true;
+                    pautiBooks[i].deletedAt = nowStr;
+                    savePauti = true;
+                }
+            }
+
+            // 4. Soft delete matching receipts
+            let saveReceipts = false;
+            for (let i = 0; i < receipts.length; i++) {
+                if (receipts[i].year === yearToDelete && !receipts[i].deleted) {
+                    receipts[i].deleted = true;
+                    receipts[i].deletedAt = nowStr;
+                    entriesDeleted++;
+                    saveReceipts = true;
+                }
+            }
+
+            // Perform saves in parallel
+            const savePromises = [];
+            if (saveEntries) savePromises.push(saveDonationEntries());
+            if (savePauti) savePromises.push(savePautiBooks());
+            if (saveReceipts) savePromises.push(saveReceiptsData());
+            
+            await Promise.all(savePromises);
+
+            console.log(`🗑️  Deleted year ${yearToDelete} and soft-deleted ${entriesDeleted} related entries.`);
+            return sendJSON(res, 200, { success: true, message: `Year deleted. ${entriesDeleted} entries removed.` });
+
+        } catch (err) {
+            console.error('Error deleting year:', err);
+            return sendJSON(res, 500, { message: 'Failed to delete year.', error: err.message });
+        }
     }
 
     // ── POST /api/donation-entries  (create new entry) ────────────────────
