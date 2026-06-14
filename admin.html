@@ -8020,6 +8020,7 @@ document.addEventListener('DOMContentLoaded',function(){var sec=document.getElem
 <!--  END CONTRIBUTIONS EDIT MODAL  -->
 
 
+<script>
     // ─── Manage Donation Years Logic ──────────────────────────────────────────
     async function adminLoadYears() {
         const tbody = document.getElementById('adminYearsTbody');
@@ -8082,7 +8083,7 @@ document.addEventListener('DOMContentLoaded',function(){var sec=document.getElem
     }
 
     async function adminDeleteYear(year) {
-        const confirmMsg = `WARNING: You are about to delete the year "${year}".\n\nThis will REMOVE ALL donation entries associated with this year.\nAre you absolutely sure you want to proceed?`;
+        const confirmMsg = \`WARNING: You are about to delete the year "\${year}".\\n\\nThis will REMOVE ALL donation entries associated with this year.\\nAre you absolutely sure you want to proceed?\`;
         if (!confirm(confirmMsg)) return;
         
         try {
@@ -8101,6 +8102,7 @@ document.addEventListener('DOMContentLoaded',function(){var sec=document.getElem
             alert('Failed to delete year.');
         }
     }
+</script>
 
 </body>
 </html>
