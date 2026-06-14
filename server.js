@@ -3371,74 +3371,7 @@ const server = http.createServer(async (req, res) => {
             if (!finalName) return sendJSON(res, 400, { message: 'Contributor name cannot be empty.' });
 
             // 1. Delete all existing records for the original name (case-insensitive)
-            await colContributors.deleteMany({ name: new RegExp('^' + originalName.trim() + '─────────────────────────────────────────────
-    // Only serve static files for GET/HEAD — all other methods should have
-    // been handled by an API route above.  If we reach here with POST/PUT/DELETE
-    // it means no route matched → return 404 JSON immediately instead of hanging.
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-        
-    return sendJSON(res, 404, { message: `No API route for ${req.method} ${pathname}` });
-    }
-
-    let filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);
-
-
-    // Prevent directory traversal
-    if (!filePath.startsWith(__dirname)) {
-        res.writeHead(403);
-        return res.end('Forbidden');
-    }
-
-    fs.readFile(filePath, (err, data) => {
-        if (err) {
-            // Try appending .html
-            const withHtml = filePath + '.html';
-            fs.readFile(withHtml, (err2, data2) => {
-                if (err2) {
-                    res.writeHead(404, { 'Content-Type': 'text/plain' });
-                    return res.end('404 Not Found');
-                }
-                res.writeHead(200, { 'Content-Type': 'text/html' });
-                res.end(data2);
-            });
-            return;
-        }
-
-        const ext      = path.extname(filePath).toLowerCase();
-        const mimeType = MIME[ext] || 'application/octet-stream';
-        const isUpload = filePath.startsWith(UPLOADS_DIR);
-        const headers  = {
-            'Content-Type'               : mimeType,
-            'Access-Control-Allow-Origin': '*',
-        };
-        // Cache uploaded images for 1 hour; client busts with ?t=timestamp
-        if (isUpload) headers['Cache-Control'] = 'public, max-age=3600';
-        res.writeHead(200, headers);
-        res.end(data);
-    });
-});
-
-// ─── Connect to MongoDB, then start HTTP server ───────────────────────────────
-connectDB().then(() => {
-    // Bind to 0.0.0.0 so the site is reachable on the local network (mobile, tablet, etc.)
-    server.listen(PORT, '0.0.0.0', () => {
-        const LAN = getLocalIP();
-        console.log('');
-        console.log('🕩️  Shree Patelwadi Sarvjanik Ganesh Utsav Mandal — Local Server');
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log(`🌐  PC / Browser:  http://localhost:${PORT}`);
-        console.log(`📱  Phone / LAN:   http://${LAN}:${PORT}`);
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log(`📋  Receipts:      http://localhost:${PORT}/api/receipts`);
-        console.log(`💾  Files dir:     ${UPLOADS_DIR}`);
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('');
-    });
-}).catch(err => {
-    console.error('❌ Failed to connect to MongoDB:', err.message);
-    process.exit(1);
-});
-, 'i') });
+            await colContributors.deleteMany({ name: new RegExp('^' + originalName.trim() + '$', 'i') });
 
             // 2. Re-insert records for months that have an amount > 0
             const now = new Date();
