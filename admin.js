@@ -2078,9 +2078,11 @@ function bsAutoCalc() {
 
     // Section A sub-total (previous year balance)
     const sectionA = g('bs_aCash') + g('bs_aBank');
+    si('bs_aTotalDisp', sectionA);
 
     // Section B sub-total (current year income)
     const sectionB = g('bs_bCash') + g('bs_bBank') + g('bs_bBox');
+    si('bs_bTotalDisp', sectionB);
 
     // Total Collections = A + B
     const totalColl = sectionA + sectionB;
@@ -2304,13 +2306,15 @@ td{border:1px solid #d4c9a8;padding:6px 14px;}
 </tr></thead>
 <tbody>
 <tr class="tot"><td class="sec">A)</td><td class="sec" colspan="2">Balance for the year (L.Y) ${esc(bs.lyYear)}</td><td></td></tr>
-<tr><td></td><td class="part">${esc(bs.aCashBalanceParticulars)}</td><td class="amts">${rupee(bs.aCashBalance)}</td><td></td></tr>
-<tr><td></td><td class="part">${esc(bs.aBankBalanceParticulars)}</td><td class="amts ul">${rupee(bs.aBankBalance)}</td><td></td></tr>
+<tr><td></td><td class="part" style="font-weight:700;color:#1565C0;">${esc(bs.aCashBalanceParticulars)}</td><td class="amts">${rupee(bs.aCashBalance)}</td><td></td></tr>
+<tr><td></td><td class="part" style="font-weight:700;color:#1565C0;">${esc(bs.aBankBalanceParticulars)}</td><td class="amts ul">${rupee(bs.aBankBalance)}</td><td></td></tr>
+<tr style="background:#E3F2FD;"><td></td><td style="text-align:right;font-weight:700;color:#0D47A1;font-style:italic;">Section A Total (Previous Year Balance)</td><td></td><td class="amt" style="font-weight:700;color:#0D47A1;">${rupee(lyBalance)}</td></tr>
 <tr class="tot"><td class="sec">B)</td><td class="sec" colspan="2">Income for the Current Year ${esc(bs.cyYear)}</td><td></td></tr>
-<tr><td></td><td class="part">${esc(bs.bCashReceivedParticulars)}</td><td class="amts">${rupee(bs.bCashReceived)}</td><td></td></tr>
-<tr><td></td><td class="part">${esc(bs.bBankReceivedParticulars)}</td><td class="amts">${rupee(bs.bBankReceived)}</td><td></td></tr>
-<tr><td></td><td class="part">${esc(bs.bCashBoxParticulars)}</td><td class="amts ul">${rupee(bs.bCashBox)}</td><td></td></tr>
-<tr class="tot"><td></td><td style="text-align:right;font-style:italic;">Total Collections for C.Y. ${esc(bs.cyYear)}</td><td class="amts ul">${rupee(totalColl)}</td><td></td></tr>
+<tr><td></td><td class="part" style="font-weight:700;color:#1B5E20;">${esc(bs.bCashReceivedParticulars)}</td><td class="amts">${rupee(bs.bCashReceived)}</td><td></td></tr>
+<tr><td></td><td class="part" style="font-weight:700;color:#1B5E20;">${esc(bs.bBankReceivedParticulars)}</td><td class="amts">${rupee(bs.bBankReceived)}</td><td></td></tr>
+<tr><td></td><td class="part" style="font-weight:700;color:#1B5E20;">${esc(bs.bCashBoxParticulars)}</td><td class="amts ul">${rupee(bs.bCashBox)}</td><td></td></tr>
+<tr style="background:#E8F5E9;"><td></td><td style="text-align:right;font-weight:700;color:#1B5E20;font-style:italic;">Section B Total (Current Year Income)</td><td></td><td class="amt" style="font-weight:700;color:#1B5E20;">${rupee(sectionB)}</td></tr>
+<tr style="background:#FFF3E0;border-top:2px solid #E65100;"><td></td><td style="text-align:right;font-weight:800;color:#E65100;">Collection for Current Year ${esc(bs.cyYear)}</td><td class="amts ul" style="font-weight:800;color:#E65100;">${rupee(totalColl)}</td><td></td></tr>
 <tr class="tot"><td class="sec">C)</td><td class="sec">${esc(bs.cWithdrawnParticulars)} ${esc(bs.cyYear)}</td><td style="text-align:center;font-style:italic;color:#555;">(i+ii-iii)</td><td class="amt">${rupee(bs.cWithdrawn)}</td></tr>
 <tr class="tot"><td class="sec">D)</td><td class="sec" colspan="2">Expenses for the Current Year ${esc(bs.cyYear)}</td><td class="amt ul">${rupee(bs.dExpenses)}</td></tr>
 <tr class="tot"><td class="sec">E)</td><td class="sec" colspan="2">Balance for the Current Year ${esc(bs.cyYear)}</td><td class="amt ul">${rupee(mainBal)}</td></tr>
