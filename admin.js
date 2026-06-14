@@ -475,12 +475,13 @@ async function loadDonationTrackingCards() {
 
         // ── Main cards ──────────────────────────────────────────────────
         setEl('dtTotalReceived', fmt(totalRec));
-        // Fix: received count = total submitted (allSlips.length) so both numbers always match
-        setEl('dtReceivedCount', `${allSlips.length} slip${allSlips.length !== 1 ? 's' : ''} submitted`);
+        setEl('dtReceivedCount', `${withAmt.length} slip${withAmt.length !== 1 ? 's' : ''} received`);
         setEl('dtTotalPending',  fmt(totalPend));
         setEl('dtPendingCount',  `${withoutAmt.length} slip${withoutAmt.length !== 1 ? 's' : ''} pending`);
-        // Total Slips Submitted = allSlips.length (matches received count above)
-        setEl('dtTotalSlips', `${allSlips.length} / 2500`);
+        
+        // Total Slips Submitted = allSlips.length
+        const maxSlips = ((window._adeMaxNewBooks || 50) + (window._adeMaxOldBooks || 30)) * 50;
+        setEl('dtTotalSlips', `${allSlips.length} / ${maxSlips}`);
 
         // ── Receipt range for total slips ───────────────────────────────
         if (allSlips.length > 0) {
