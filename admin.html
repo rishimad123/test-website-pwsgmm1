@@ -1486,17 +1486,16 @@ window._fmtBytesA = function(b) {
 
                         <div class="table-responsive">
                             <table class="admin-table" id="contrib-tbl" style="display:none;">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Contributor Name</th>
-                                        <th>Amount (&#x20B9;)</th>
-                                        <th>Date</th>
-                                        <th>Note</th>
-                                        <th>Added On</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
+    <thead>
+        <tr>
+            <th style="min-width:30px;">#</th>
+            <th style="min-width:180px;">Contributor Name</th>
+            <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th>
+            <th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+            <th style="font-weight:bold;color:#4facfe;">Total (&#x20B9;)</th>
+            <th>Action</th>
+        </tr>
+    </thead>
                                 <tbody id="contrib-tbody"></tbody>
                             </table>
                         </div>
@@ -7594,22 +7593,129 @@ window.contribRender=function(){
   if(!tbody)return;
   if(filtered.length===0){if(tbl)tbl.style.display='none';if(empty)empty.style.display='block';return;}
   if(tbl)tbl.style.display='table';if(empty)empty.style.display='none';
+  
+  // Aggregate by contributor name
   var groups={};
-  filtered.forEach(function(c){var mk=monthKey(c.date);if(!groups[mk])groups[mk]=[];groups[mk].push(c);});
-  var sortedMonths=Object.keys(groups).sort(function(a,b){return b.localeCompare(a);});
-  var rows='',rowIdx=1;
-  sortedMonths.forEach(function(mk){
-    var items=groups[mk],monthSum=items.reduce(function(s,c){return s+(c.amount||0);},0);
-    rows+='<tr class="contrib-month-row"><td colspan="7">'+monthLabel(mk)+'</td></tr>';
-    items.forEach(function(c){
-      var noteHtml=c.note?'<span class="contrib-note" title="'+c.note.replace(/"/g,'&quot;')+'">'+c.note.replace(/</g,'&lt;')+'</span>':'<span style="color:#ccc;">\u2014</span>';
-      var addedOn=c.createdAt?new Date(c.createdAt).toLocaleDateString('en-IN'):'\u2014';
-      rows+='<tr><td style="color:#aaa;font-size:.78rem;">'+(rowIdx++)+'</td><td class="contrib-name">'+(c.name||'').replace(/</g,'&lt;')+'</td><td class="contrib-amt">'+fmtAmt(c.amount||0)+'</td><td>'+fmtDate(c.date)+'</td><td>'+noteHtml+'</td><td style="color:#aaa;font-size:.78rem;">'+addedOn+'</td><td><button class="contrib-del-btn" title="Delete" onclick="contribDelete('+JSON.stringify(c.id)+')"><i class="fas fa-trash-alt"></i></button></td></tr>';
-    });
-    rows+='<tr class="contrib-subtotal-row"><td colspan="2" style="text-align:right;padding-right:18px;">Subtotal for '+monthLabel(mk)+':</td><td>'+fmtAmt(monthSum)+'</td><td colspan="4"></td></tr>';
+  filtered.forEach(function(c){
+    var n = (c.name||'').trim().toUpperCase();
+    if(!groups[n]) groups[n] = { name: (c.name||'').trim(), total:0, months: Array(12).fill(0) };
+    
+    // Parse month from date (YYYY-MM-DD)
+    var mMatch = (c.date||'').match(/-(\d{2})-/);
+    if(mMatch) {
+      var mIdx = parseInt(mMatch[1], 10) - 1;
+      if(mIdx >= 0 && mIdx <= 11) {
+        groups[n].months[mIdx] += (c.amount||0);
+        groups[n].total += (c.amount||0);
+      }
+    }
   });
+  
+  var sortedNames = Object.keys(groups).sort(function(a,b){return a.localeCompare(b);});
+  var rows='',rowIdx=1;
+  
+  sortedNames.forEach(function(nKey){
+    var g = groups[nKey];
+    var monthCells = '';
+    g.months.forEach(function(amt) {
+      monthCells += '<td style="font-size:0.85rem;color:'+(amt>0?'#1565C0':'#ccc')+'">' + (amt>0?fmtAmt(amt):'-') + '</td>';
+    });
+    
+    rows += '<tr><td style="color:#aaa;font-size:.78rem;">'+(rowIdx++)+'</td>' +
+            '<td class="contrib-name" style="font-weight:600;">'+g.name.replace(/</g,'&lt;')+'</td>' +
+            monthCells +
+            '<td style="font-weight:bold;color:#1B5E20;font-size:.9rem;">'+fmtAmt(g.total)+'</td>' +
+            '<td style="white-space:nowrap;">' +
+              '<button class="contrib-edit-btn" title="Edit" onclick="contribEditModalOpen(\''+g.name.replace(/'/g,"\\'")+'\')" style="margin-right:6px;background:none;border:none;color:#3949AB;cursor:pointer;"><i class="fas fa-edit"></i></button>' +
+              '<button class="contrib-del-btn" title="Delete All" onclick="contribDeleteAll(\''+g.name.replace(/'/g,"\\'")+'\')" style="background:none;border:none;color:#C62828;cursor:pointer;"><i class="fas fa-trash-alt"></i></button>' +
+            '</td></tr>';
+  });
+  
   tbody.innerHTML=rows;
 };
+
+window.contribEditModalOpen=function(name){
+  var groups={};
+  _contribs.forEach(function(c){
+    var n = (c.name||'').trim().toUpperCase();
+    if(!groups[n]) groups[n] = { name: (c.name||'').trim(), months: Array(12).fill(0) };
+    var mMatch = (c.date||'').match(/-(\d{2})-/);
+    if(mMatch) {
+      var mIdx = parseInt(mMatch[1], 10) - 1;
+      if(mIdx >= 0 && mIdx <= 11) groups[n].months[mIdx] += (c.amount||0);
+    }
+  });
+  
+  var g = groups[name.toUpperCase()];
+  if(!g) return;
+  
+  document.getElementById('cemOriginalName').value = g.name;
+  document.getElementById('cemName').value = g.name;
+  for(var i=1; i<=12; i++) {
+    document.getElementById('cemMonth'+i).value = g.months[i-1] || '';
+  }
+  
+  document.getElementById('contribEditModal').classList.add('active');
+};
+
+window.contribEditModalClose=function(){
+  document.getElementById('contribEditModal').classList.remove('active');
+};
+
+window.contribSubmitEdit=async function(ev){
+  ev.preventDefault();
+  var origName = document.getElementById('cemOriginalName').value;
+  var newName = document.getElementById('cemName').value.trim();
+  
+  var amounts = {};
+  for(var i=1; i<=12; i++) {
+    var val = document.getElementById('cemMonth'+i).value;
+    amounts[String(i).padStart(2, '0')] = Number(val) || 0;
+  }
+  
+  var btn = document.getElementById('cemSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+  
+  try {
+    var res = await fetch('/api/contributors-bulk', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ originalName: origName, newName: newName, monthlyAmounts: amounts })
+    });
+    var data = await res.json();
+    if(res.ok && data.success) {
+      contribEditModalClose();
+      await contribLoad();
+      if(typeof showNotification==='function') showNotification('Contributor updated successfully!', 'success');
+    } else {
+      alert(data.message || 'Could not update.');
+    }
+  } catch(e) {
+    alert('Network error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+  }
+};
+
+window.contribDeleteAll=async function(name){
+  if(!confirm('Delete ALL contributions for "' + name + '"? This cannot be undone.')) return;
+  
+  var toDelete = _contribs.filter(function(c){ return (c.name||'').trim().toUpperCase() === name.toUpperCase(); });
+  var deletedCount = 0;
+  for(var i=0; i<toDelete.length; i++){
+    try {
+      var res = await fetch('/api/contributors/'+encodeURIComponent(toDelete[i].id), { method:'DELETE' });
+      if(res.ok) deletedCount++;
+    } catch(e){}
+  }
+  if(deletedCount>0) {
+    await contribLoad();
+    if(typeof showNotification==='function') showNotification('Deleted ' + deletedCount + ' records.', 'success');
+  }
+};
+
 window.contribAdd=async function(){
   var name=((document.getElementById('contrib-name')||{}).value||'');
   var amount=((document.getElementById('contrib-amount')||{}).value||'');
@@ -7645,30 +7751,51 @@ window.contribDelete=async function(id){
 window.contribExportExcel=function(){
   if(_contribs.length===0){alert('No contribution records to export.');return;}
   if(typeof XLSX==='undefined'){alert('Excel library not loaded. Please refresh the page.');return;}
-  var rows=[['#','Contributor Name','Amount (\u20b9)','Date','Month','Note','Added On']];
+  
+  var rows=[['#','Contributor Name','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Total (₹)']];
   var groups={};
-  _contribs.forEach(function(c){var mk=monthKey(c.date);if(!groups[mk])groups[mk]=[];groups[mk].push(c);});
-  var sortedMonths=Object.keys(groups).sort(function(a,b){return b.localeCompare(a);});
-  var idx=1,grandTotal=0;
-  sortedMonths.forEach(function(mk){
-    var items=groups[mk],monthSum=0;
-    rows.push(['','\u2014 '+monthLabel(mk)+' \u2014','','','','','']);
-    items.forEach(function(c){
-      var addedOn=c.createdAt?new Date(c.createdAt).toLocaleDateString('en-IN'):'';
-      rows.push([idx++,c.name,c.amount,fmtDate(c.date),monthLabel(mk),c.note||'',addedOn]);
-      monthSum+=c.amount||0;grandTotal+=c.amount||0;
-    });
-    rows.push(['','Subtotal \u2014 '+monthLabel(mk),monthSum,'','','','']);
+  _contribs.forEach(function(c){
+    var n = (c.name||'').trim().toUpperCase();
+    if(!groups[n]) groups[n] = { name: (c.name||'').trim(), total:0, months: Array(12).fill(0) };
+    var mMatch = (c.date||'').match(/-(\d{2})-/);
+    if(mMatch) {
+      var mIdx = parseInt(mMatch[1], 10) - 1;
+      if(mIdx >= 0 && mIdx <= 11) {
+        groups[n].months[mIdx] += (c.amount||0);
+        groups[n].total += (c.amount||0);
+      }
+    }
   });
-  rows.push(['','','','','','','']);
-  rows.push(['','GRAND TOTAL',grandTotal,'','','','']);
+  
+  var sortedNames=Object.keys(groups).sort(function(a,b){return a.localeCompare(b);});
+  var idx=1, grandTotal=0;
+  var monthTotals = Array(12).fill(0);
+  
+  sortedNames.forEach(function(nKey){
+    var g = groups[nKey];
+    var row = [idx++, g.name];
+    g.months.forEach(function(amt, i) {
+      row.push(amt > 0 ? amt : '-');
+      monthTotals[i] += amt;
+    });
+    row.push(g.total);
+    rows.push(row);
+    grandTotal += g.total;
+  });
+  
+  rows.push(['','','','','','','','','','','','','','','']);
+  var subRow = ['','GRAND TOTAL'];
+  monthTotals.forEach(function(m) { subRow.push(m); });
+  subRow.push(grandTotal);
+  rows.push(subRow);
+  
   var ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:5},{wch:30},{wch:14},{wch:14},{wch:16},{wch:30},{wch:16}];
+  ws['!cols']=[{wch:5},{wch:30},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:12}];
   var range=XLSX.utils.decode_range(ws['!ref']);
   for(var C=range.s.c;C<=range.e.c;C++){var cell=ws[XLSX.utils.encode_cell({r:0,c:C})];if(cell){cell.s={font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'4F46E5'}},alignment:{horizontal:'center'}};}}
   var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Contributions');
   var now=new Date();
-  XLSX.writeFile(wb,'Contributions_'+now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0')+'.xlsx');
+  XLSX.writeFile(wb,'ContributionsGrid_'+now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0')+'.xlsx');
 };
 // Expose contribLoad so admin.js showAdminSection can call it
 window._contribLoad=contribLoad;
