@@ -1917,6 +1917,9 @@ const server = http.createServer(async (req, res) => {
                     return sendJSON(res, 400, { message: `Receipt number for Book ${newBook} must be ${expectedFrom}–${expectedTo}.` });
             }
 
+            if (body.receiptSnapshot !== undefined) e.receiptSnapshot = body.receiptSnapshot;
+            if (body.receiptDate !== undefined) e.receiptDate = body.receiptDate;
+
             if (isAdmin) {
                 // Admin: all editable fields
                 const fields = ['bookNumber','receiptNumber','bookType','donorType','firstName','middleName','lastName',

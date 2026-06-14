@@ -2178,8 +2178,8 @@ window.fixUrl = function(url) {
                                 + '\n' + dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
                     const dtParts = dtStr.split('\n');
                     const photoSection = (r.photoUrl || r.receiptPreviewUrl)
-                        ? `<div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(r.photoUrl)}')">
-                               <img src="${fixUrl(r.photoUrl)}?t=${Date.now()}" loading="lazy" alt="Receipt photo"
+                        ? `<div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(r.photoUrl || r.receiptPreviewUrl)}')">
+                               <img src="${fixUrl(r.photoUrl || r.receiptPreviewUrl)}?t=${Date.now()}" loading="lazy" alt="Receipt photo"
                                    style="width:100%;max-height:200px;object-fit:cover;display:block;">
                                <div style="background:#fff8f5;padding:5px 10px;font-size:.72rem;color:#E65100;font-weight:600;display:flex;align-items:center;gap:5px;">
                                    <i class="fas fa-expand-alt"></i> Tap to view full receipt
@@ -3583,7 +3583,7 @@ window.fixUrl = function(url) {
                 const dt     = `<span style="font-size:.78rem;white-space:nowrap;">${dtTime}<br><span style="color:#aaa;">${dtDate}</span></span>`;
                 const amt    = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '—';
                 const photoCell = (e.photoUrl || e.receiptPreviewUrl)
-                    ? `<img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" alt="Receipt" loading="lazy" decoding="async" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;vertical-align:middle;" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')" title="Click to enlarge">`
+                    ? `<img src="${fixUrl(e.photoUrl || e.receiptPreviewUrl)}?t=${Date.now()}" alt="Receipt" loading="lazy" decoding="async" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;vertical-align:middle;" onclick="openPbLightbox('${fixUrl(e.photoUrl || e.receiptPreviewUrl)}')" title="Click to enlarge">`
                     : '<span style="color:#ccc;font-size:.8rem;">—</span>';
                 const editBtn = (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'volunteer_view') ? ''
                     : `<button onclick="deOpenVolEdit('${e.entryId}')" style="padding:6px 12px;border:none;border-radius:7px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;margin-right:4px;"><i class="fas fa-edit"></i></button>`;
@@ -3610,8 +3610,8 @@ window.fixUrl = function(url) {
 
                 // Mobile card
                 const photoSection = (e.photoUrl || e.receiptPreviewUrl)
-                    ? `<div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')">
-                           <img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" loading="lazy" alt="Receipt photo" style="width:100%;max-height:200px;object-fit:cover;display:block;">
+                    ? `<div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.photoUrl || e.receiptPreviewUrl)}')">
+                           <img src="${fixUrl(e.photoUrl || e.receiptPreviewUrl)}?t=${Date.now()}" loading="lazy" alt="Receipt photo" style="width:100%;max-height:200px;object-fit:cover;display:block;">
                            <div style="background:#fff8f5;padding:5px 10px;font-size:.72rem;color:#E65100;font-weight:600;"><i class="fas fa-expand-alt"></i> Tap to view full receipt</div>
                        </div>`
                     : `<div style="margin-top:10px;border:1.5px dashed #f0e0d0;border-radius:10px;padding:14px;text-align:center;background:#fffaf8;">
@@ -4228,8 +4228,8 @@ if (originalShowSection) {
                                 + '\n' + dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
                     const dtParts = dtStr.split('\n');
                     const photoSection = (e.photoUrl || e.receiptPreviewUrl)
-                        ? `<div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')">
-                               <img src="${fixUrl(e.photoUrl)}?t=${Date.now()}" loading="lazy" alt="Receipt photo"
+                        ? `<div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.photoUrl || e.receiptPreviewUrl)}')">
+                               <img src="${fixUrl(e.photoUrl || e.receiptPreviewUrl)}?t=${Date.now()}" loading="lazy" alt="Receipt photo"
                                    style="width:100%;max-height:200px;object-fit:cover;display:block;">
                                <div style="background:#fff8f5;padding:5px 10px;font-size:.72rem;color:#E65100;font-weight:600;display:flex;align-items:center;gap:5px;">
                                    <i class="fas fa-expand-alt"></i> Tap to view full receipt
