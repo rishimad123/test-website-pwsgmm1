@@ -4570,6 +4570,7 @@ window._fmtBytesA = function(b) {
                 <h3 style="margin:0;color:var(--dark-color);font-size:1.2rem;"><i class="fas fa-list-ul" style="color:var(--primary-color);margin-right:8px;"></i>All Submitted Entries</h3>
                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                     <span id="adeCardCount" style="font-size:.83rem;color:#888;"></span>
+                    <select id="adeYearFilter" style="display:inline-block;padding:7px 10px;border:1.5px solid var(--primary-color);border-radius:8px;font-size:.85rem;font-weight:700;color:#fff;background:var(--primary-color);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.12);" onchange="window._adeSelectedYear=this.value; adeLoad();" title="Filter by year"><option value="active">Active Year</option></select>
                     <input type="text" id="adeCardSearch" placeholder="🔍 Search donor, landmark…"
                         style="padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.85rem;width:180px;"
                         oninput="adeRenderCards()">
@@ -5326,13 +5327,46 @@ window._fmtBytesA = function(b) {
         if(status) { status.style.display='block'; status.style.background='#E8F5E9'; status.style.color='#1B5E20'; status.textContent='Exported to Excel successfully!'; setTimeout(()=>status.style.display='none', 3000); }
     }
 
+    
+    // ─── Year Filter for Admin Data Entry ────────────────────────────────
+    async function adeLoadYearFilter() {
+        const sel = document.getElementById('adeYearFilter');
+        if (!sel) return;
+        sel.style.display = 'inline-block';
+        try {
+            const r = await fetch('/api/donation-years');
+            const data = await r.json();
+            if (!data.years || !data.years.length) return;
+            sel.innerHTML = '';
+            const activeYear = data.activeYear;
+            // Add "All Years" option
+            const allOpt = document.createElement('option');
+            allOpt.value = 'all';
+            allOpt.textContent = '📅 All Years';
+            sel.appendChild(allOpt);
+            
+            data.years.forEach(yr => {
+                const opt = document.createElement('option');
+                opt.value = yr;
+                opt.textContent = yr === activeYear ? '⭐ ' + yr + ' (Active)' : yr;
+                if (!window._adeSelectedYear && yr === activeYear) opt.selected = true;
+                if (window._adeSelectedYear === yr) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            if (!window._adeSelectedYear) window._adeSelectedYear = activeYear;
+        } catch(e) {
+            console.warn('Could not load donation years from API:', e);
+            if (!window._adeSelectedYear) window._adeSelectedYear = 'active';
+        }
+    }
+
     async function adeLoad() {
         const tbody = document.getElementById('adeTbody');
         if (!tbody) return;
         tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">Loading…</td></tr>';
         try {
             const [entRes, landmarkRes, settingsRes] = await Promise.all([
-                fetch('/api/donation-entries'),
+                fetch('/api/donation-entries?year=' + (window._adeSelectedYear || 'active')),
                 fetch('/api/landmarks'),
                 fetch('/api/settings')
             ]);
@@ -7028,7 +7062,7 @@ window._fmtBytesA = function(b) {
     const _origShowAdmin = window.showAdminSection;
     window.showAdminSection = function(id) {
         if (typeof _origShowAdmin === 'function') _origShowAdmin(id);
-        if (id === 'donationEntries') adeLoad();
+        if (id === 'donationEntries') { adeLoadYearFilter().then(() => adeLoad()); }
         if (id === 'committeeMembers') { if(typeof cmLoad==='function') cmLoad(); }
         if (id === 'volunteers') { if(typeof switchVolTab==='function') switchVolTab('cards'); }
         
