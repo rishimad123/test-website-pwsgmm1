@@ -1925,8 +1925,8 @@ async function renderBsLedger(fid) {
 </tr>
 <tr>
   <td></td>
-  <td class="bs-particulars">
-    <input class="bs-particulars-input" id="bs_aCashPart" value="${escAttr(bs.aCashBalanceParticulars)}" placeholder="Particulars">
+  <td class="bs-particulars" style="font-weight:700;color:#1565C0;">
+    <input class="bs-particulars-input" id="bs_aCashPart" style="font-weight:700;color:#1565C0;" value="${escAttr(bs.aCashBalanceParticulars)}" placeholder="Particulars">
   </td>
   <td class="bs-amts">
     <input class="bs-input" id="bs_aCash" type="number" value="${bs.aCashBalance||''}" placeholder="0" oninput="bsAutoCalc()">
@@ -1935,13 +1935,21 @@ async function renderBsLedger(fid) {
 </tr>
 <tr>
   <td></td>
-  <td class="bs-particulars">
-    <input class="bs-particulars-input" id="bs_aBankPart" value="${escAttr(bs.aBankBalanceParticulars)}" placeholder="Particulars">
+  <td class="bs-particulars" style="font-weight:700;color:#1565C0;">
+    <input class="bs-particulars-input" id="bs_aBankPart" style="font-weight:700;color:#1565C0;" value="${escAttr(bs.aBankBalanceParticulars)}" placeholder="Particulars">
   </td>
   <td class="bs-amts">
     <input class="bs-input" id="bs_aBank" type="number" value="${bs.aBankBalance||''}" placeholder="0" oninput="bsAutoCalc()" style="text-decoration:underline;">
   </td>
   <td class="bs-amt"></td>
+</tr>
+<tr style="background:#E3F2FD;">
+  <td></td>
+  <td style="text-align:right;font-weight:700;color:#0D47A1;font-style:italic;padding-right:12px;">Section A Total (Previous Year Balance)</td>
+  <td></td>
+  <td class="bs-amt">
+    <input class="bs-input" id="bs_aTotalDisp" type="number" readonly style="background:#BBDEFB;cursor:not-allowed;font-weight:bold;color:#0D47A1;border:2px solid #1565C0;">
+  </td>
 </tr>
 <!-- B) Income for Current Year -->
 <tr class="bs-section-sep">
@@ -1955,8 +1963,8 @@ async function renderBsLedger(fid) {
 </tr>
 <tr>
   <td></td>
-  <td class="bs-particulars">
-    <input class="bs-particulars-input" id="bs_bCashPart" value="${escAttr(bs.bCashReceivedParticulars)}" placeholder="Particulars">
+  <td class="bs-particulars" style="font-weight:700;color:#1B5E20;">
+    <input class="bs-particulars-input" id="bs_bCashPart" style="font-weight:700;color:#1B5E20;" value="${escAttr(bs.bCashReceivedParticulars)}" placeholder="Particulars">
   </td>
   <td class="bs-amts">
     <input class="bs-input" id="bs_bCash" type="number" value="${bs.bCashReceived||''}" placeholder="0" oninput="bsAutoCalc()">
@@ -1965,8 +1973,8 @@ async function renderBsLedger(fid) {
 </tr>
 <tr>
   <td></td>
-  <td class="bs-particulars">
-    <input class="bs-particulars-input" id="bs_bBankPart" value="${escAttr(bs.bBankReceivedParticulars)}" placeholder="Particulars">
+  <td class="bs-particulars" style="font-weight:700;color:#1B5E20;">
+    <input class="bs-particulars-input" id="bs_bBankPart" style="font-weight:700;color:#1B5E20;" value="${escAttr(bs.bBankReceivedParticulars)}" placeholder="Particulars">
   </td>
   <td class="bs-amts">
     <input class="bs-input" id="bs_bBank" type="number" value="${bs.bBankReceived||''}" placeholder="0" oninput="bsAutoCalc()">
@@ -1975,21 +1983,29 @@ async function renderBsLedger(fid) {
 </tr>
 <tr>
   <td></td>
-  <td class="bs-particulars">
-    <input class="bs-particulars-input" id="bs_bBoxPart" value="${escAttr(bs.bCashBoxParticulars)}" placeholder="Particulars">
+  <td class="bs-particulars" style="font-weight:700;color:#1B5E20;">
+    <input class="bs-particulars-input" id="bs_bBoxPart" style="font-weight:700;color:#1B5E20;" value="${escAttr(bs.bCashBoxParticulars)}" placeholder="Particulars">
   </td>
   <td class="bs-amts">
     <input class="bs-input" id="bs_bBox" type="number" value="${bs.bCashBox||''}" placeholder="0" oninput="bsAutoCalc()" style="text-decoration:underline;">
   </td>
   <td class="bs-amt"></td>
 </tr>
-<tr class="bs-total-row">
+<tr style="background:#E8F5E9;">
   <td></td>
-  <td style="text-align:right;font-style:italic;">
-    Total Collections for C.Y.&nbsp;<span id="bs_cyYearLabel">${escHtml(cyYear)}</span>
+  <td style="text-align:right;font-weight:700;color:#1B5E20;font-style:italic;padding-right:12px;">Section B Total (Current Year Income)</td>
+  <td></td>
+  <td class="bs-amt">
+    <input class="bs-input" id="bs_bTotalDisp" type="number" readonly style="background:#C8E6C9;cursor:not-allowed;font-weight:bold;color:#1B5E20;border:2px solid #2E7D32;">
+  </td>
+</tr>
+<tr style="background:#FFF3E0;border-top:3px solid #E65100;">
+  <td></td>
+  <td style="text-align:right;font-weight:800;color:#E65100;font-size:1rem;padding-right:12px;">
+    Collection for Current Year&nbsp;<span id="bs_cyYearLabel">${escHtml(cyYear)}</span>
   </td>
   <td class="bs-amts" style="text-decoration:underline;">
-    <input class="bs-input" id="bs_totalColl" type="number" readonly style="background:#f5f5f5;cursor:not-allowed;font-weight:bold;color:#1a1a7a;">
+    <input class="bs-input" id="bs_totalColl" type="number" readonly style="background:#FFE0B2;cursor:not-allowed;font-weight:bold;color:#E65100;border:2px solid #FF9800;">
   </td>
   <td class="bs-amt"></td>
 </tr>
