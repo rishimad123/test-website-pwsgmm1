@@ -1053,3 +1053,7 @@ select, textarea {
         width: auto;
     }
 }
+
+/* Fix for Secretary General Name in Receipt Translation */
+html.translated-ltr .sg-marathi { display: none !important; }
+html.translated-ltr .sg-english { display: inline !important; }
