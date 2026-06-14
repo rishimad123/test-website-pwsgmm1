@@ -7242,7 +7242,7 @@ fetchNotifications();
         wrapper.style.display = hasData ? 'block' : 'none';
         if (!hasData) return;
 
-        // Year from date
+        // Year from date (overridden by admin receipt format setting if set)
         var yearStr = '';
         var formattedDate = '';
         if (dateRaw) {
@@ -7250,13 +7250,17 @@ fetchNotifications();
             if (parts.length === 3) {
                 var yy = parts[0], mm = parts[1], dd = parts[2];
                 formattedDate = dd + '/' + mm + '/' + yy;
-                // Fiscal year e.g. 2025-26
-                var yr = parseInt(yy, 10);
-                var mo = parseInt(mm, 10);
-                if (mo >= 4) {
-                    yearStr = yr + '-' + String(yr + 1).slice(2);
+                if (window._receiptYear) {
+                    yearStr = window._receiptYear;
                 } else {
-                    yearStr = (yr - 1) + '-' + String(yr).slice(2);
+                    // Fiscal year e.g. 2025-26
+                    var yr = parseInt(yy, 10);
+                    var mo = parseInt(mm, 10);
+                    if (mo >= 4) {
+                        yearStr = yr + '-' + String(yr + 1).slice(2);
+                    } else {
+                        yearStr = (yr - 1) + '-' + String(yr).slice(2);
+                    }
                 }
             }
         }
@@ -7528,8 +7532,12 @@ fetchNotifications();
       if (dateRaw) {
           var dp = dateRaw.split('-');
           dateStr = (dp[2]||'') + '/' + (dp[1]||'') + '/' + (dp[0]||'');
-          var yr = parseInt(dp[0], 10), mo = parseInt(dp[1], 10);
-          yearStr = mo >= 4 ? yr + '-' + String(yr+1).slice(2) : (yr-1) + '-' + String(yr).slice(2);
+          if (window._receiptYear) {
+              yearStr = window._receiptYear;
+          } else {
+              var yr = parseInt(dp[0], 10), mo = parseInt(dp[1], 10);
+              yearStr = mo >= 4 ? yr + '-' + String(yr+1).slice(2) : (yr-1) + '-' + String(yr).slice(2);
+          }
       }
       var rcptLabel = (bookNo && rcptNo) ? bookNo+'/'+rcptNo : (rcptNo || bookNo || '\u2014');
       var words = (amtNum > 0 && typeof window.ade_rcg_amtToWords === 'function') ? window.ade_rcg_amtToWords(amtNum) : '';

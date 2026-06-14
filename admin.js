@@ -4118,6 +4118,8 @@ async function saveReceiptFormat() {
 
 function applyReceiptFormat(rf, prefix) {
     if (!rf) return;
+    // Store year globally so ade_rcg_liveSync and _uploadReceiptPreview use it
+    if (rf.receiptYear !== undefined) window._receiptYear = rf.receiptYear;
     const setVal = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.innerHTML = val; };
     const setInput = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val; };
     

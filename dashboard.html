@@ -5,6 +5,8 @@
 // Apply dynamic receipt format from server settings
 function applyReceiptFormat(rf, prefix) {
     if (!rf) return;
+    // Store year globally so receipt liveSync functions use it
+    if (rf.receiptYear !== undefined) window._receiptYear = rf.receiptYear;
     const setVal = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.innerHTML = val; };
     setVal(prefix + '_f_receiptTopLeft', rf.receiptTopLeft);
     setVal(prefix + '_f_receiptTopCenter', rf.receiptTopCenter);
@@ -4576,7 +4578,9 @@ fetchNotifications();
                 // Fiscal year e.g. 2025-26
                 var yr = parseInt(yy, 10);
                 var mo = parseInt(mm, 10);
-                if (mo >= 4) {
+                if (window._receiptYear) {
+                    yearStr = window._receiptYear;
+                } else if (mo >= 4) {
                     yearStr = yr + '-' + String(yr + 1).slice(2);
                 } else {
                     yearStr = (yr - 1) + '-' + String(yr).slice(2);
@@ -4859,7 +4863,7 @@ fetchNotifications();
           var dp = dateRaw.split('-');
           dateStr = (dp[2]||'') + '/' + (dp[1]||'') + '/' + (dp[0]||'');
           var yr = parseInt(dp[0], 10), mo = parseInt(dp[1], 10);
-          yearStr = mo >= 4 ? yr + '-' + String(yr+1).slice(2) : (yr-1) + '-' + String(yr).slice(2);
+          yearStr = window._receiptYear || (mo >= 4 ? yr + '-' + String(yr+1).slice(2) : (yr-1) + '-' + String(yr).slice(2));
       }
       var rcptLabel = (bookNo && rcptNo) ? bookNo+'/'+rcptNo : (rcptNo || bookNo || '\u2014');
       var words = (amtNum > 0 && typeof window.de_rcg_amtToWords === 'function') ? window.de_rcg_amtToWords(amtNum) : '';
