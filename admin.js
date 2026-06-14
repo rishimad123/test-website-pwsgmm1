@@ -3597,6 +3597,9 @@ async function loadAdminEvents() {
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:30px;"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>';
     
+    // Also refresh the Manage Donation Years table in the same section
+    if (typeof adminLoadYears === 'function') adminLoadYears();
+
     try {
         const res = await fetch('/api/events');
         const data = await res.json();
