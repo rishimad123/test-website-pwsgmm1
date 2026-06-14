@@ -401,7 +401,10 @@ async function loadSiteSettings() {
         };
 
         if (s.socialFacebook)  applySocialLink('socialFacebookLink',  s.socialFacebook);
-        if (s.socialInstagram) applySocialLink('socialInstagramLink', s.socialInstagram);
+        if (s.socialInstagram) {
+            applySocialLink('socialInstagramLink', s.socialInstagram);
+            applySocialLink('heroInstagramLink', s.socialInstagram);
+        }
         if (s.socialYoutube)   applySocialLink('socialYoutubeLink',   s.socialYoutube);
         if (s.socialTwitter)   applySocialLink('socialTwitterLink',   s.socialTwitter);
 
