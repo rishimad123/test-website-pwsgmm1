@@ -2810,7 +2810,23 @@ const server = http.createServer(async (req, res) => {
             return sendJSON(res, 200, { ok: false, message: 'Cloudinary error: ' + err.message, error: String(err), diag });
         }
     }
-    
+    if (req.method === 'PUT' && pathname === '/api/settings/active-year') {
+        try {
+            const body = await readBody(req);
+            if (!body.year) return sendJSON(res, 400, { message: 'Year is required' });
+            globalSettings.activeDonationYear = String(body.year).trim();
+            // Automatically sync receipt print year
+            if (!globalSettings.receiptFormat) globalSettings.receiptFormat = {};
+            globalSettings.receiptFormat.receiptYear = globalSettings.activeDonationYear;
+            await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });
+            broadcastLiveEvent('settings_updated', globalSettings);
+            console.log(`✅ Active Donation Year updated to ${globalSettings.activeDonationYear}`);
+            return sendJSON(res, 200, { success: true, settings: globalSettings });
+        } catch (e) {
+            return sendJSON(res, 500, { message: e.message });
+        }
+    }
+
     if (req.method === 'POST' && pathname === '/api/settings') {
         try {
             const body = await readBody(req);
