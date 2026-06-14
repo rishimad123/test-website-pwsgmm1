@@ -5440,3 +5440,81 @@ function rcg_sendWhatsApp() {
     window.open(waUrl, '_blank');
 }
 // ==================== END RECEIPT GENERATOR ===================================
+
+
+// ─── Manage Donation Years ────────────────────────────────────────────────────
+async function adminLoadYears() {
+    const tbody = document.getElementById('adminYearsTbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#aaa;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+    try {
+        const r = await fetch('/api/donation-years', { credentials: 'include' });
+        const data = await r.json();
+        if (!data.years || data.years.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#aaa;padding:20px;">No years found.</td></tr>';
+            return;
+        }
+        const active = data.activeYear || '';
+        let html = '';
+        data.years.forEach(y => {
+            const isActive = (y === active);
+            const statusBadge = isActive
+                ? '<span style="background:#E8F5E9;color:#2E7D32;padding:3px 10px;border-radius:12px;font-size:0.75rem;font-weight:700;">Active</span>'
+                : '<span style="background:#F5F5F5;color:#777;padding:3px 10px;border-radius:12px;font-size:0.75rem;font-weight:700;">Inactive</span>';
+            const deleteBtn = isActive
+                ? '<button class="btn btn-small" style="background:#ccc;cursor:not-allowed;" disabled title="Cannot delete active year"><i class="fas fa-trash"></i></button>'
+                : `<button class="btn btn-small" style="background:#e74c3c;color:#fff;" onclick="adminDeleteYear('${y}')" title="Delete Year & All Entries"><i class="fas fa-trash"></i> Delete</button>`;
+            html += `<tr>
+                <td style="font-weight:600;font-size:1rem;">${y}</td>
+                <td>${statusBadge}</td>
+                <td>${deleteBtn}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    } catch (e) {
+        console.error('adminLoadYears error:', e);
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#e74c3c;padding:20px;">Error loading years. Check console.</td></tr>';
+    }
+}
+
+async function adminAddYear() {
+    const input = document.getElementById('adminNewYearInput');
+    const year  = (input ? input.value : '').trim();
+    if (!year) return alert('Please enter a year (e.g. 2024-25)');
+    try {
+        const r    = await fetch('/api/donation-years', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ year })
+        });
+        const data = await r.json();
+        if (r.ok) {
+            if (input) input.value = '';
+            adminLoadYears();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (e) {
+        alert('Failed to add year: ' + e.message);
+    }
+}
+
+async function adminDeleteYear(year) {
+    if (!confirm('WARNING: Deleting "' + year + '" will permanently remove ALL donation entries for that year.\n\nContinue?')) return;
+    try {
+        const r    = await fetch('/api/donation-years/' + encodeURIComponent(year), {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        const data = await r.json();
+        if (r.ok) {
+            alert(data.message || 'Year deleted successfully.');
+            adminLoadYears();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (e) {
+        alert('Failed to delete year: ' + e.message);
+    }
+}
