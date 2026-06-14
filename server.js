@@ -1731,12 +1731,12 @@ const server = http.createServer(async (req, res) => {
 
             if (donorType === 'Individual') {
                 if (!firstName || !firstName.trim()) return sendJSON(res, 400, { message: 'First Name is required.' });
-                if (!middleName || !middleName.trim()) return sendJSON(res, 400, { message: 'Middle Name is required.' });
                 if (!lastName || !lastName.trim()) return sendJSON(res, 400, { message: 'Last Name is required.' });
             } else {
                 if (!businessName || !businessName.trim()) return sendJSON(res, 400, { message: 'Business Name is required.' });
             }
 
+            if (!landmark || !landmark.trim()) return sendJSON(res, 400, { message: 'Landmark is required.' });
             if (!paymentMode || !['Cash', 'Cheque', 'UPI', 'RTGS', 'Balance'].includes(paymentMode))
                 return sendJSON(res, 400, { message: 'Payment mode must be Cash, Cheque, UPI, RTGS, or Balance.' });
 
