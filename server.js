@@ -1748,7 +1748,8 @@ const server = http.createServer(async (req, res) => {
                 return sendJSON(res, 400, { message: `Receipt number for Book ${bn} must be ${expectedFrom}–${expectedTo}.` });
 
             // Check receipt number not already used
-            const dup = donationEntries.find(e => !e.deleted && e.bookNumber === bn && e.receiptNumber === rn && (e.bookType || 'New') === bType);
+            const activeYear = globalSettings.activeDonationYear || '2026-27';
+            const dup = donationEntries.find(e => !e.deleted && e.bookNumber === bn && e.receiptNumber === rn && (e.bookType || 'New') === bType && e.year === activeYear);
             if (dup) return sendJSON(res, 400, { message: `Receipt #${rn} in Book ${bn} (${bType}) is already used.` });
 
             if (!donorType || !['Individual', 'Business'].includes(donorType))
@@ -1767,6 +1768,7 @@ const server = http.createServer(async (req, res) => {
 
             const entry = {
                 entryId          : `DE-${Date.now()}`,
+                year             : activeYear,
                 bookNumber       : bn,
                 receiptNumber    : rn,
                 bookType         : bType,
@@ -2200,7 +2202,8 @@ const server = http.createServer(async (req, res) => {
         const maxBooks = bType === 'Old' ? globalSettings.maxOldBooks : globalSettings.maxNewBooks;
         const SLIPS = 50;
         for (let b = 1; b <= maxBooks; b++) {
-            const used = donationEntries.filter(e => !e.deleted && e.bookNumber === b && (e.bookType || 'New') === bType).map(e => e.receiptNumber);
+            const activeYear = globalSettings.activeDonationYear || '2026-27';
+            const used = donationEntries.filter(e => !e.deleted && e.bookNumber === b && (e.bookType || 'New') === bType && e.year === activeYear).map(e => e.receiptNumber);
             const from = (b-1)*SLIPS+1, to = b*SLIPS;
             for (let r = from; r <= to; r++) {
                 if (!used.includes(r)) return sendJSON(res, 200, { bookNumber: b, receiptNumber: r });

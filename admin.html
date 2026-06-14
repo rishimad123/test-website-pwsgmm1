@@ -2528,6 +2528,19 @@ window._fmtBytesA = function(b) {
                 <!-- ═══════════ Events Section (Admin) ═══════════ -->
                 <div id="events" class="content-section">
 
+                    <!-- Active Donation Year Configuration -->
+                    <div class="admin-card" style="margin-bottom:20px;border-left:4px solid var(--primary-color);">
+                        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3><i class="fas fa-calendar-alt" style="color:var(--primary-color);margin-right:8px;"></i>Active Donation Year</h3>
+                            <button class="admin-btn" onclick="saveActiveDonationYear()" style="padding:6px 12px; font-size:0.85rem;"><i class="fas fa-save"></i> Save Year</button>
+                        </div>
+                        <p style="color:#666;font-size:0.9rem;margin:8px 0 16px;">Set the active year for new donations. Changing this will reset book/receipt numbering back to 1 for the new year, while safely preserving all previous years' data.</p>
+                        
+                        <div style="max-width: 300px;">
+                            <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;font-weight:bold;">Current Active Year</label>
+                            <input type="text" id="adminActiveDonationYear" class="admin-input" placeholder="e.g. 2026-27" style="width:100%;margin:0;font-size:1.1rem;font-weight:bold;">
+                        </div>
+                    </div>
                     
                     <!-- Receipt Format Configuration -->
                     <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #8B1A1A;">

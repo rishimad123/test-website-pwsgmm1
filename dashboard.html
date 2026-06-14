@@ -2140,7 +2140,7 @@ window.fixUrl = function(url) {
             try {
                 // Fetch all donation entries and Pauti books (across entire website)
                 const [deRes, pbRes] = await Promise.all([
-                    fetch('/api/donation-entries'),
+                    fetch('/api/donation-entries?year=' + (window._adminSelectedYear || 'active')),
                     fetch('/api/pauti-books')
                 ]);
                 const deData = await deRes.json();
@@ -3683,7 +3683,7 @@ window.fixUrl = function(url) {
         if (!tbody) return;
         tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;">Loading…</td></tr>';
         try {
-            const res  = await fetch('/api/donation-entries');
+            const res  = await fetch('/api/donation-entries?year=' + (window._adminSelectedYear || 'active'));
             const data = await res.json();
             _deAllEntriesFlat = data.entries || [];
             const searchVal = ((document.getElementById('deAllEntriesSearch') || {}).value || '').toLowerCase().trim();
@@ -3699,7 +3699,7 @@ window.fixUrl = function(url) {
     let _deVolEditBookType = 'New';
 
     function deOpenVolEdit(id) {
-        fetch('/api/donation-entries').then(r => r.json()).then(data => {
+        fetch('/api/donation-entries?year=' + (window._adminSelectedYear || 'active')).then(r => r.json()).then(data => {
             const e = (data.entries || []).find(x => x.entryId === id);
             if (!e) return;
             _deVolEditBlob = null;
@@ -4188,7 +4188,8 @@ if (originalShowSection) {
 
         try {
             const uid = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : null;
-            const url = uid ? `/api/donation-entries?userId=${encodeURIComponent(uid)}` : '/api/donation-entries';
+            const activeParam = 'year=' + (window._adminSelectedYear || 'active');
+            const url = uid ? `/api/donation-entries?userId=${encodeURIComponent(uid)}&${activeParam}` : `/api/donation-entries?${activeParam}`;
             const res = await fetch(url);
             const data = await res.json();
             let entries = (data.entries || []).filter(e => !e.deleted);
@@ -4971,7 +4972,7 @@ fetchNotifications();
     await _deUploadReceiptPreview(entryId, dn, snap.amount, snap.receiptDate, pm, rno, bno, sl);
   };
   window.de_rcg_openEditModal=function(entryId){
-    fetch("/api/donation-entries?userId="+(currentUser?currentUser.id:"")).then(function(r){return r.json();}).then(function(data){
+    fetch("/api/donation-entries?year="+(window._adminSelectedYear || 'active')+"&userId="+(currentUser?currentUser.id:"")).then(function(r){return r.json();}).then(function(data){
       var e=(data.entries||[]).find(function(x){return x.entryId===entryId;});
       if(!e){if(typeof showNotification==="function")showNotification("Entry not found.","error");return;}
       _deEditId=entryId;_deEntriesCache=data.entries||[];

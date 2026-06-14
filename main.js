@@ -408,6 +408,16 @@ async function loadSiteSettings() {
         if (s.socialYoutube)   applySocialLink('socialYoutubeLink',   s.socialYoutube);
         if (s.socialTwitter)   applySocialLink('socialTwitterLink',   s.socialTwitter);
 
+        // Guarantee hero Instagram button always matches the footer icon,
+        // even when no admin URL is set (fallback sync from footer element href).
+        const heroInstaBtn = document.getElementById('heroInstagramLink');
+        const footerInstaIcon = document.getElementById('socialInstagramLink');
+        if (heroInstaBtn && footerInstaIcon && footerInstaIcon.href) {
+            heroInstaBtn.href = footerInstaIcon.href;
+            heroInstaBtn.target = '_blank';
+            heroInstaBtn.rel = 'noopener noreferrer';
+        }
+
         // --- T-shirt Showcase Grid ---
         const tshirtGrid = document.getElementById('tshirtShowcaseGrid');
         if (tshirtGrid) {

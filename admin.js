@@ -4071,6 +4071,35 @@ if (originalShowAdminSection) {
 
 
 // ==================== RECEIPT FORMAT SETTINGS ====================
+async function saveActiveDonationYear() {
+    const yearInput = document.getElementById('adminActiveDonationYear');
+    if (!yearInput) return;
+    const year = yearInput.value.trim();
+    if (!year) {
+        alert('Please enter a valid year.');
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/settings/active-year', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ year: year })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            alert('Active Donation Year updated successfully. This change will apply to all new receipts.');
+            // Update the receipt format year field as well since the backend syncs it
+            const rfYear = document.getElementById('rfYear');
+            if (rfYear) rfYear.value = year;
+        } else {
+            alert('Error updating Active Donation Year: ' + (data.message || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Server connection error.');
+    }
+}
+
 async function saveReceiptFormat() {
     const rf = {
         receiptTopLeft: document.getElementById('rfTopLeft')?.value || '',

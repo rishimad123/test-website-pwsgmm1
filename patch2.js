@@ -2,7 +2,22 @@ const fs = require('fs');
 
 let html = fs.readFileSync('admin.html', 'utf8');
 
-const oldRenderRegex = /window\.contribRender=function\(\)\{[\s\S]*?\};\s*window\.contribAdd=async function/m;
+// 1. Replace the table header using a more flexible regex
+html = html.replace(/<table class="admin-table" id="contrib-tbl"[^>]*>[\s\S]*?<\/thead>/i, 
+`<table class="admin-table" id="contrib-tbl" style="display:none;">
+    <thead>
+        <tr>
+            <th style="min-width:30px;">#</th>
+            <th style="min-width:180px;">Contributor Name</th>
+            <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th>
+            <th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+            <th style="font-weight:bold;color:#4facfe;">Total (&#x20B9;)</th>
+            <th>Action</th>
+        </tr>
+    </thead>`);
+
+// 2. Replace contribRender
+const oldRenderRegex = /window\.contribRender=function\(\)\{[\s\S]*?\}\s*window\.contribAdd=async function/m;
 
 const newRender = `window.contribRender=function(){
   var search=((document.getElementById('contrib-search')||{}).value||'').toLowerCase().trim();
@@ -136,10 +151,7 @@ window.contribDeleteAll=async function(name){
 
 window.contribAdd=async function`;
 
-if(oldRenderRegex.test(html)) {
-  html = html.replace(oldRenderRegex, newRender);
-  fs.writeFileSync('admin.html', html, 'utf8');
-  console.log('admin.html successfully patched part 3.');
-} else {
-  console.log('Regex did not match!');
-}
+html = html.replace(oldRenderRegex, newRender);
+
+fs.writeFileSync('admin.html', html, 'utf8');
+console.log('admin.html successfully patched part 2.');

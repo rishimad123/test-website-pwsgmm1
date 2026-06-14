@@ -1,11 +1,8 @@
 const fs = require('fs');
-
 let serverJs = fs.readFileSync('server.js', 'utf8');
 
-// I will locate the corrupted bulk route and replace the whole thing cleanly.
-const regexToFind = /\/\/ \u2500\u2500 PUT \/api\/contributors-bulk \u2500\u2500[\s\S]*?\/\/ \u2500\u2500 Static file serving \u2500\u2500/m;
-
-const correctBulkRoute = `// \u2500\u2500 PUT /api/contributors-bulk \u2500\u2500
+const bulkRoute = `
+    // \u2500\u2500 PUT /api/contributors-bulk \u2500\u2500
     if (req.method === 'PUT' && pathname === '/api/contributors-bulk') {
         try {
             const body = await readBody(req);
@@ -49,13 +46,15 @@ const correctBulkRoute = `// \u2500\u2500 PUT /api/contributors-bulk \u2500\u250
             return sendJSON(res, 500, { message: 'Server error.' });
         }
     }
+`;
 
-    // \u2500\u2500 Static file serving \u2500\u2500`;
-
-// To avoid the $' issue, we can use a replacer function which doesn't interpret $ special characters.
-serverJs = serverJs.replace(regexToFind, function() {
-    return correctBulkRoute;
-});
-
-fs.writeFileSync('server.js', serverJs, 'utf8');
-console.log('Fixed server.js');
+if (!serverJs.includes('/api/contributors-bulk')) {
+    serverJs = serverJs.replace(
+        "    // \u2500\u2500 Static file serving \u2500\u2500",
+        bulkRoute + "\n    // \u2500\u2500 Static file serving \u2500\u2500"
+    );
+    fs.writeFileSync('server.js', serverJs, 'utf8');
+    console.log("server.js updated with /api/contributors-bulk route.");
+} else {
+    console.log("server.js already contains the route.");
+}
