@@ -457,37 +457,70 @@ async function loadDonationTrackingCards() {
         const data = await res.json();
         const allSlips = data.entries || [];
 
-        const withAmt = allSlips.filter(s => s.status === 'Received');
+        // Slips with Received status (for amount totals)
+        const withAmt    = allSlips.filter(s => s.status === 'Received');
+        // Slips with Balance/Pending status
         const withoutAmt = allSlips.filter(s => s.status !== 'Received' && (s.status === 'Balance' || s.paymentMode === 'Balance' || s.status === 'Pending'));
 
-        const totalRec = withAmt.reduce((sum, s) => sum + Number(s.amount || 0), 0);
+        const totalRec  = withAmt.reduce((sum, s) => sum + Number(s.amount || 0), 0);
         const totalPend = withoutAmt.reduce((sum, s) => sum + Number(s.amount || 0), 0);
 
-        const fmt = n => '₹' + Number(n).toLocaleString('en-IN');
+        // ── New Book vs Old Book breakdown ──────────────────────────────
+        // bookType is 'Old' for old books, 'New' (or absent) for new books
+        const newBookSlips = allSlips.filter(s => !s.bookType || s.bookType === 'New');
+        const oldBookSlips = allSlips.filter(s => s.bookType === 'Old');
+
+        const fmt   = n  => '₹' + Number(n).toLocaleString('en-IN');
         const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
 
+        // ── Main cards ──────────────────────────────────────────────────
         setEl('dtTotalReceived', fmt(totalRec));
-        setEl('dtReceivedCount', `${withAmt.length} slip${withAmt.length !== 1 ? 's' : ''} received`);
+        // Fix: received count = total submitted (allSlips.length) so both numbers always match
+        setEl('dtReceivedCount', `${allSlips.length} slip${allSlips.length !== 1 ? 's' : ''} submitted`);
         setEl('dtTotalPending',  fmt(totalPend));
         setEl('dtPendingCount',  `${withoutAmt.length} slip${withoutAmt.length !== 1 ? 's' : ''} pending`);
-        setEl('dtTotalSlips',    `${allSlips.length} / 2500`);
+        // Total Slips Submitted = allSlips.length (matches received count above)
+        setEl('dtTotalSlips', `${allSlips.length} / 2500`);
 
+        // ── Receipt range for total slips ───────────────────────────────
         if (allSlips.length > 0) {
-            const receipts = allSlips.map(s => Number(s.receiptNumber)).filter(n => !isNaN(n));
-            if (receipts.length > 0) {
-                const min = Math.min(...receipts);
-                const max = Math.max(...receipts);
-                setEl('dtSlipRange', `Receipt #${min} – #${max}`);
+            const nums = allSlips.map(s => Number(s.receiptNumber)).filter(n => !isNaN(n));
+            if (nums.length > 0) {
+                setEl('dtSlipRange', `Receipt #${Math.min(...nums)} – #${Math.max(...nums)}`);
             } else {
                 setEl('dtSlipRange', '');
             }
         } else {
             setEl('dtSlipRange', '');
         }
+
+        // ── New Book card ────────────────────────────────────────────────
+        setEl('dtNewBookSlips', String(newBookSlips.length));
+        if (newBookSlips.length > 0) {
+            const nbNums = newBookSlips.map(s => Number(s.receiptNumber)).filter(n => !isNaN(n));
+            setEl('dtNewBookRange', nbNums.length > 0
+                ? `Receipt #${Math.min(...nbNums)} – #${Math.max(...nbNums)}`
+                : `${newBookSlips.length} slip${newBookSlips.length !== 1 ? 's' : ''}`);
+        } else {
+            setEl('dtNewBookRange', 'No slips yet');
+        }
+
+        // ── Old Book card ────────────────────────────────────────────────
+        setEl('dtOldBookSlips', String(oldBookSlips.length));
+        if (oldBookSlips.length > 0) {
+            const obNums = oldBookSlips.map(s => Number(s.receiptNumber)).filter(n => !isNaN(n));
+            setEl('dtOldBookRange', obNums.length > 0
+                ? `Receipt #${Math.min(...obNums)} – #${Math.max(...obNums)}`
+                : `${oldBookSlips.length} slip${oldBookSlips.length !== 1 ? 's' : ''}`);
+        } else {
+            setEl('dtOldBookRange', 'No slips yet');
+        }
+
     } catch (e) {
         console.warn('Could not load donation tracking cards:', e.message);
     }
 }
+
 
 // Navigate to Balance Recovery and select a tab
 function navToBalanceRecovery(tab) {

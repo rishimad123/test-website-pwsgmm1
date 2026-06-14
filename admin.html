@@ -1747,18 +1747,44 @@ window._fmtBytesA = function(b) {
                                     <small id="dtPendingCount" style="color:#888;"></small>
                                 </div>
                             </div>
-                            <!-- Slips card -->
+                            <!-- Slips submitted card -->
                             <div class="admin-stat-card">
                                 <div class="stat-icon blue"><i class="fas fa-receipt"></i></div>
                                 <div class="stat-details">
                                     <h3 id="dtTotalSlips">0</h3>
-                                    <p>Total Slips Submitted</p>
+                                    <p>Total Slips Submitted/Received</p>
                                     <small id="dtSlipRange" style="color:#888;"></small>
                                 </div>
                             </div>
                         </div>
+                        <!-- New Book / Old Book breakdown row -->
+                        <div style="margin-top:16px;">
+                            <h4 style="font-size:.88rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">
+                                <i class="fas fa-book-open" style="color:var(--primary-color);margin-right:6px;"></i> Book-wise Slip Counts
+                            </h4>
+                            <div class="admin-stats" style="margin-top:0;">
+                                <!-- New Book card -->
+                                <div class="admin-stat-card" style="border-left:4px solid #1565C0;">
+                                    <div class="stat-icon" style="background:rgba(21,101,192,0.1);color:#1565C0;"><i class="fas fa-book"></i></div>
+                                    <div class="stat-details">
+                                        <h3 id="dtNewBookSlips" style="color:#1565C0;font-size:1.5rem;">0</h3>
+                                        <p style="font-weight:700;">New Book Slips</p>
+                                        <small id="dtNewBookRange" style="color:#888;"></small>
+                                    </div>
+                                </div>
+                                <!-- Old Book card -->
+                                <div class="admin-stat-card" style="border-left:4px solid #E65100;">
+                                    <div class="stat-icon" style="background:rgba(230,81,0,0.1);color:#E65100;"><i class="fas fa-book-open"></i></div>
+                                    <div class="stat-details">
+                                        <h3 id="dtOldBookSlips" style="color:#E65100;font-size:1.5rem;">0</h3>
+                                        <p style="font-weight:700;">Old Book Slips</p>
+                                        <small id="dtOldBookRange" style="color:#888;"></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <!-- Hint -->
-                        <p style="font-size:.82rem;color:#aaa;margin-top:4px;">&#x1F4A1; Click <strong>Received</strong> or <strong>Pending</strong> to view details in Balance Recovery.</p>
+                        <p style="font-size:.82rem;color:#aaa;margin-top:12px;">&#x1F4A1; Click <strong>Received</strong> or <strong>Pending</strong> to view details in Balance Recovery.</p>
                     </div>
                 </div>
 
