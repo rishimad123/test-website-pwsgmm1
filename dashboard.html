@@ -4373,9 +4373,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkUserInterval = setInterval(() => {
         if (typeof currentUser !== 'undefined' && currentUser !== null) {
             clearInterval(checkUserInterval);
+
+            // ── volunteer_view: strict read-only, donor search only ──────────
             if (currentUser.role === 'volunteer_view') {
                 console.log('Applying View-Only restrictions...');
-                
+
                 // Hide sidebar links except Donor Search and Logout
                 const sidebarLinks = document.querySelectorAll('.sidebar-nav ul li a');
                 sidebarLinks.forEach(link => {
@@ -4396,6 +4398,35 @@ document.addEventListener('DOMContentLoaded', () => {
                     showSection('donorSearch');
                 } else if (window.showSection) {
                     window.showSection('donorSearch');
+                }
+            }
+
+            // ── volunteer: full access but NO T-shirt section ────────────────
+            if (currentUser.role === 'volunteer') {
+                console.log('Applying standard Volunteer restrictions (no T-shirt access)...');
+
+                // Hide T-shirt sidebar link
+                document.querySelectorAll('.sidebar-nav ul li a').forEach(link => {
+                    if (link.getAttribute('href') === '#tshirtSection' ||
+                        (link.getAttribute('onclick') || '').includes('tshirtSection')) {
+                        link.parentElement.style.display = 'none';
+                    }
+                });
+
+                // Hide T-shirt overview card on the overview page
+                document.querySelectorAll('[onclick*="tshirtSection"]').forEach(el => el.style.display = 'none');
+
+                // Guard: intercept showSection to block direct navigation to tshirtSection
+                const _origShowSec = window.showSection;
+                if (typeof _origShowSec === 'function') {
+                    window.showSection = function(id) {
+                        if (id === 'tshirtSection') {
+                            console.warn('T-shirt section is not available for this role.');
+                            _origShowSec('overview');
+                            return;
+                        }
+                        _origShowSec(id);
+                    };
                 }
             }
         }

@@ -46,6 +46,14 @@ function isAdmin() {
 function isPublic() {
     return !document.getElementById('adminName') && !document.getElementById('topBarName');
 }
+/** Returns true if the current user can manage T-shirt prices, status, edit & delete.
+ *  Allowed: actual admin page, role=admin, role=volunteer_full_tshirt */
+function hasTshirtAccess() {
+    if (isAdmin()) return true; // admin.html always has access
+    const u = (typeof currentUser !== 'undefined') ? currentUser : null;
+    if (!u) return false;
+    return u.role === 'admin' || u.role === 'volunteer_full_tshirt';
+}
 
 // ════════════════════════════════════════════
 // RENDER
@@ -166,9 +174,15 @@ function renderTshirtSection() {
         const adminContainer = document.getElementById('tshirtSection');
         if (!adminContainer) return;
 
-        // 1. Update Price Settings Value if Admin or Volunteer
+        // 1. Update Price Settings Value — only for users with T-shirt management access
         const priceInput = document.getElementById('tsAdminPrice');
+        const priceForm = priceInput ? priceInput.closest('form') : null;
         if (priceInput) priceInput.value = tsPrice;
+        if (priceForm) priceForm.style.display = hasTshirtAccess() ? '' : 'none';
+
+        // Show/hide the price management card based on access
+        const priceCard = document.getElementById('tsPriceCard');
+        if (priceCard) priceCard.style.display = hasTshirtAccess() ? '' : 'none';
 
         // 2. Update Total Amount Display in Application Form
         tsUpdateTotal();
@@ -335,7 +349,7 @@ function tsOpenModal(size) {
                             <td style="padding:10px;text-align:right;color:#27ae60;font-weight:600;">&#8377;${app.totalAmount || ((app.quantity || 1) * tsPrice)}</td>
                             <td style="padding:10px;text-align:center;">
                                 <select onchange="this.style.background=this.value==='Received'?'#E8F5E9':'#FFF3E0';this.style.color=this.value==='Received'?'#1B5E20':'#E65100';tsUpdateStatus('${app.id||app._id}',this.value)"
-                                    style="padding:4px 8px;border-radius:6px;border:1px solid #ddd;font-size:.8rem;background:${app.status==='Received'?'#E8F5E9':'#FFF3E0'};color:${app.status==='Received'?'#1B5E20':'#E65100'};">
+                                    style="padding:4px 8px;border-radius:6px;border:1px solid #ddd;font-size:.8rem;background:${app.status==='Received'?'#E8F5E9':'#FFF3E0'};color:${app.status==='Received'?'#1B5E20':'#E65100'};${hasTshirtAccess() ? '' : 'pointer-events:none;opacity:0.6;'}">
                                     <option value="Pending" ${app.status!=='Received'?'selected':''}>Pending</option>
                                     <option value="Received" ${app.status==='Received'?'selected':''}>Received</option>
                                 </select>

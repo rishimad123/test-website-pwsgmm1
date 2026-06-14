@@ -821,8 +821,8 @@ async function loadUsers() {
             return;
         }
         userTableBody.innerHTML = allUsers.map(user => {
-            const roleBg  = { admin:'#EDE7F6', volunteer:'#E3F2FD', committee:'#E8F5E9' };
-            const roleClr = { admin:'#4527A0', volunteer:'#1565C0', committee:'#1B5E20' };
+            const roleBg  = { admin:'#EDE7F6', volunteer:'#E3F2FD', volunteer_view:'#F3E5F5', volunteer_full_tshirt:'#E8EAF6', committee:'#E8F5E9' };
+            const roleClr = { admin:'#4527A0', volunteer:'#1565C0', volunteer_view:'#6A1B9A', volunteer_full_tshirt:'#283593', committee:'#1B5E20' };
             const roleBadge = `<span style="padding:2px 9px;border-radius:10px;background:${roleBg[user.role]||'#f5f5f5'};color:${roleClr[user.role]||'#555'};font-size:.78rem;font-weight:700;">${(user.role||'').toUpperCase()}</span>`;
             const statusBadge = user.blocked
                 ? '<span class="badge" style="background:#FFEBEE;color:#c0392b;">🔒 Blocked</span>'
@@ -3121,8 +3121,8 @@ function volRender() {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:30px;">No users found.</td></tr>';
         return;
     }
-    const roleBg  = { admin:'#EDE7F6', volunteer:'#E3F2FD', committee:'#E8F5E9' };
-    const roleClr = { admin:'#4527A0', volunteer:'#1565C0', committee:'#1B5E20' };
+    const roleBg  = { admin:'#EDE7F6', volunteer:'#E3F2FD', volunteer_view:'#F3E5F5', volunteer_full_tshirt:'#E8EAF6', committee:'#E8F5E9' };
+    const roleClr = { admin:'#4527A0', volunteer:'#1565C0', volunteer_view:'#6A1B9A', volunteer_full_tshirt:'#283593', committee:'#1B5E20' };
     tbody.innerHTML = _volFiltered.map((u, i) => {
         const statusBadge = u.blocked
             ? '<span style="padding:3px 11px;border-radius:12px;background:#FFEBEE;color:#c0392b;font-size:.75rem;font-weight:700;">🔒 Blocked</span>'
