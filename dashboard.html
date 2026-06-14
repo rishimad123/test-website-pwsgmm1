@@ -1246,11 +1246,11 @@ window.fixUrl = function(url) {
                                 <div style="display:flex;gap:15px;align-items:center;">
                                     <label style="cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem;">
                                         <input type="radio" name="deBookType" value="New" checked onchange="dePopulateBooks(); deOnBookChange();">
-                                        New Book (50 Books)
+                                        <span id="deLblNewBooks">New Book (50 Books)</span>
                                     </label>
                                     <label style="cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem;">
                                         <input type="radio" name="deBookType" value="Old" onchange="dePopulateBooks(); deOnBookChange();">
-                                        Old Book (30 Books)
+                                        <span id="deLblOldBooks">Old Book (30 Books)</span>
                                     </label>
                                 </div>
                             </div>
@@ -2956,13 +2956,13 @@ window.fixUrl = function(url) {
         setInterval(tick, 1000);
     })();
 
-    // ── Book dropdown (Books 1–50) ──────────────────────────
+    // ── Book dropdown (Books 1–N) ──────────────────────────
     function dePopulateBooks() {
         const sel = document.getElementById('deBookNumber');
         const bType = document.querySelector('input[name="deBookType"]:checked')?.value || 'New';
         if (!sel) return;
         sel.innerHTML = '<option value="">— Select Book —</option>';
-        const maxBooks = bType === 'Old' ? 30 : 50;
+        const maxBooks = bType === 'Old' ? (window._deMaxOldBooks || 30) : (window._deMaxNewBooks || 50);
         for (let b = 1; b <= maxBooks; b++) {
             const from = (b - 1) * 50 + 1, to = b * 50;
             sel.innerHTML += `<option value="${b}">Book ${b}  (Receipts ${from}–${to})</option>`;
@@ -3030,16 +3030,27 @@ window.fixUrl = function(url) {
 
     async function deLoadDropdowns() {
         try {
-            const [aRes, saRes, bRes] = await Promise.all([
+            const [aRes, saRes, bRes, sRes] = await Promise.all([
                 fetch('/api/landmarks'),
-                fetch('/api/areas'), fetch('/api/buildings')
+                fetch('/api/areas'), fetch('/api/buildings'),
+                fetch('/api/settings')
             ]);
-            const [aData, saData, bData] = await Promise.all([
-                aRes.json(), saRes.json(), bRes.json()
+            const [aData, saData, bData, sData] = await Promise.all([
+                aRes.json(), saRes.json(), bRes.json(), sRes.json()
             ]);
             _deLandmarks = aData.landmarks || [];
             _deAreas     = saData.areas    || [];
             _deBuildings = bData.buildings || [];
+            // Store dynamic book limits globally
+            window._deMaxNewBooks = sData.maxNewBooks || 50;
+            window._deMaxOldBooks = sData.maxOldBooks || 30;
+            // Update radio labels
+            const lblNew = document.getElementById('deLblNewBooks');
+            const lblOld = document.getElementById('deLblOldBooks');
+            if (lblNew) lblNew.textContent = `New Book (${window._deMaxNewBooks} Books)`;
+            if (lblOld) lblOld.textContent = `Old Book (${window._deMaxOldBooks} Books)`;
+            // Repopulate book dropdown
+            dePopulateBooks();
         } catch(e) {
             _deLandmarks = []; _deAreas = []; _deBuildings = [];
         }

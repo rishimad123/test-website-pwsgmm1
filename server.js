@@ -77,7 +77,7 @@ const DB_NAME     = 'patelwadi';
 const mongoClient = new MongoClient(MONGODB_URI);
 let db;
 let colSettings;
-let globalSettings = { eventDate: '2026-09-07T00:00:00.000Z', tshirtPhotos: [null, null, null, null] };
+let globalSettings = { eventDate: '2026-09-07T00:00:00.000Z', tshirtPhotos: [null, null, null, null], maxNewBooks: 50, maxOldBooks: 30 };
 let colReceipts, colExpenses, colFinancials, colPautiBooks;
 let colDonations, colDonationEntries, colBuildings, colLandmarks, colAreas;
 let colCommitteeMembers, colGallery, colEvents;
@@ -88,7 +88,6 @@ let colContributors;
 
 // ─── In-memory stores (populated from MongoDB at startup) ───────────────────
 const SLIPS_PER_BOOK_DE = 50;
-const TOTAL_BOOKS_DE    = 50;
 const SLIPS_PER_BOOK    = 50;
 const TOTAL_SLIPS       = 2500;
 const MAX_BOOKS         = TOTAL_SLIPS / SLIPS_PER_BOOK; // 50
@@ -247,6 +246,8 @@ async function connectDB() {
     const settingsDoc = await colSettings.findOne({});
     if (settingsDoc) {
         globalSettings = { ...globalSettings, ...stripId(settingsDoc) };
+        if (globalSettings.maxNewBooks === undefined) globalSettings.maxNewBooks = 50;
+        if (globalSettings.maxOldBooks === undefined) globalSettings.maxOldBooks = 30;
         console.log(`✅ Loaded global settings from MongoDB`);
     }
 
@@ -1692,7 +1693,7 @@ const server = http.createServer(async (req, res) => {
         // Sort chronologically so they appear in correct order
         result.sort((a, b) => new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0));
 
-        return sendJSON(res, 200, { entries: result, total: result.length, slipsPerBook: SLIPS_PER_BOOK_DE, totalBooks: TOTAL_BOOKS_DE });
+        return sendJSON(res, 200, { entries: result, total: result.length, slipsPerBook: SLIPS_PER_BOOK_DE, maxNewBooks: globalSettings.maxNewBooks, maxOldBooks: globalSettings.maxOldBooks });
     }
 
     // ── POST /api/donation-entries  (create new entry) ────────────────────
@@ -1713,7 +1714,7 @@ const server = http.createServer(async (req, res) => {
             const bn = Number(bookNumber);
             const rn = Number(receiptNumber);
             const bType = bookType === 'Old' ? 'Old' : 'New';
-            const maxBooks = bType === 'Old' ? 30 : TOTAL_BOOKS_DE;
+            const maxBooks = bType === 'Old' ? globalSettings.maxOldBooks : globalSettings.maxNewBooks;
             if (!bn || bn < 1 || bn > maxBooks)
                 return sendJSON(res, 400, { message: `Book number must be 1–${maxBooks}.` });
             const expectedFrom = (bn - 1) * SLIPS_PER_BOOK_DE + 1;
@@ -1903,7 +1904,7 @@ const server = http.createServer(async (req, res) => {
             const newType = body.bookType !== undefined ? body.bookType : (e.bookType || 'New');
 
             if (newBook !== e.bookNumber || newReceipt !== e.receiptNumber || newType !== (e.bookType || 'New')) {
-                const maxBooks = newType === 'Old' ? 30 : TOTAL_BOOKS_DE;
+                const maxBooks = newType === 'Old' ? globalSettings.maxOldBooks : globalSettings.maxNewBooks;
                 if (!newBook || newBook < 1 || newBook > maxBooks) {
                     return sendJSON(res, 400, { message: `Book number must be 1–${maxBooks}.` });
                 }
@@ -2168,7 +2169,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/donation-entries/next-receipt') {
         const qp = new URL(`http://x${req.url}`).searchParams;
         const bType = qp.get('type') || 'New';
-        const maxBooks = bType === 'Old' ? 30 : 50;
+        const maxBooks = bType === 'Old' ? globalSettings.maxOldBooks : globalSettings.maxNewBooks;
         const SLIPS = 50;
         for (let b = 1; b <= maxBooks; b++) {
             const used = donationEntries.filter(e => !e.deleted && e.bookNumber === b && (e.bookType || 'New') === bType).map(e => e.receiptNumber);
@@ -2584,7 +2585,8 @@ const server = http.createServer(async (req, res) => {
 
     // ══════════════════════════════════════════════════════════════
 
-    // ══════════════════════════════════════════════════════════════
+
+    // ══════════════════════════════════════════════════════════════
     // ─── GALLERY API ──────────────────────────────────────────────
     // ══════════════════════════════════════════════════════════════
 
@@ -2783,6 +2785,8 @@ const server = http.createServer(async (req, res) => {
             const body = await readBody(req);
             if (body.eventDate !== undefined) globalSettings.eventDate = body.eventDate;
             if (body.eventName !== undefined) globalSettings.eventName = body.eventName;
+            if (body.maxNewBooks !== undefined) globalSettings.maxNewBooks = Number(body.maxNewBooks);
+            if (body.maxOldBooks !== undefined) globalSettings.maxOldBooks = Number(body.maxOldBooks);
             if (body.eventDesc !== undefined) globalSettings.eventDesc = body.eventDesc;
             if (body.countdownDate !== undefined) globalSettings.countdownDate = body.countdownDate;
             if (body.yearsOfService !== undefined) globalSettings.yearsOfService = body.yearsOfService;

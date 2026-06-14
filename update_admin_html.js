@@ -1,86 +1,66 @@
 const fs = require('fs');
 
-function applyAdminChanges() {
-    let content = fs.readFileSync('admin.html', 'utf8');
+let content = fs.readFileSync('admin.html', 'utf8');
 
-    // 1. Add Book Type selector UI
-    const uiOld = `                <!-- ── Section A: Receipt Details ── -->
-                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
-                    <i class="fas fa-book-open" style="margin-right:6px;"></i>Receipt Details
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">`;
-    
-    const uiNew = `                <!-- ── Section A: Receipt Details ── -->
-                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
-                    <i class="fas fa-book-open" style="margin-right:6px;"></i>Receipt Details
-                </div>
+// 1. Add Manage Books button next to Manage Buildings
+content = content.replace(
+    /<button onclick="adeBuildingModal\(\)" class="btn btn-small" style="background:#3949AB;color:#fff;"><i class="fas fa-building" style="margin-right:6px;"><\/i>Manage Buildings<\/button>/,
+    `<button onclick="adeManageBooksModal()" class="btn btn-small" style="background:#00695C;color:#fff;"><i class="fas fa-book" style="margin-right:6px;"></i>Manage Books</button>
+                <button onclick="adeBuildingModal()" class="btn btn-small" style="background:#3949AB;color:#fff;"><i class="fas fa-building" style="margin-right:6px;"></i>Manage Buildings</button>`
+);
+
+// 2. Add Manage Books Modal HTML before the ending backtick of injectDESection()
+// Since injectDESection is huge, let's find a safe insertion point.
+// We can insert it right before: `    <!-- End of Section Content -->` or just at the end of the `section.innerHTML`
+content = content.replace(
+    /        <\/div>\s*`;\s*document\.getElementById\('admin-content'\)\.appendChild\(section\);/g,
+    `        </div>
+        
+        <!-- Manage Books Modal -->
+        <div id="adeManageBooksModal" class="modal">
+            <div class="modal-content" style="max-width:500px;">
+                <span class="close" onclick="document.getElementById('adeManageBooksModal').style.display='none'">&times;</span>
+                <h3 style="margin-top:0;color:var(--dark-color);border-bottom:2px solid #eee;padding-bottom:10px;"><i class="fas fa-book"></i> Manage Books</h3>
                 
-                <div style="margin-bottom: 15px;">
-                    <label style="font-weight:600;font-size:0.85rem;color:#333;margin-bottom:8px;display:block;">Book Type</label>
-                    <div style="display:flex;gap:15px;align-items:center;">
-                        <label style="cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem;">
-                            <input type="radio" name="adeBookType" value="New" checked onchange="adePopulateBooks(); adeOnBookChange();">
-                            New Book (50 Books)
-                        </label>
-                        <label style="cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem;">
-                            <input type="radio" name="adeBookType" value="Old" onchange="adePopulateBooks(); adeOnBookChange();">
-                            Old Book (30 Books)
-                        </label>
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight:600;display:block;margin-bottom:6px;">New Books Limit</label>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <button class="btn btn-small" onclick="adeChangeBookLimit('New', -1)">-</button>
+                        <input type="number" id="adeMaxNewBooks" value="50" style="width:80px;text-align:center;font-weight:bold;padding:6px;" readonly>
+                        <button class="btn btn-small" onclick="adeChangeBookLimit('New', 1)">+</button>
                     </div>
+                    <small style="color:#777;">Adds or removes a New Book. Each book has 50 slips.</small>
                 </div>
                 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">`;
-    content = content.replace(uiOld, uiNew);
+                <div style="margin-bottom:25px;">
+                    <label style="font-weight:600;display:block;margin-bottom:6px;">Old Books Limit</label>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <button class="btn btn-small" onclick="adeChangeBookLimit('Old', -1)">-</button>
+                        <input type="number" id="adeMaxOldBooks" value="30" style="width:80px;text-align:center;font-weight:bold;padding:6px;" readonly>
+                        <button class="btn btn-small" onclick="adeChangeBookLimit('Old', 1)">+</button>
+                    </div>
+                    <small style="color:#777;">Adds or removes an Old Book. Each book has 50 slips.</small>
+                </div>
+                
+                <div style="text-align:right;">
+                    <button class="btn" onclick="document.getElementById('adeManageBooksModal').style.display='none'">Cancel</button>
+                    <button class="btn btn-primary" onclick="adeSaveBookLimits()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+        \`;
+        document.getElementById('admin-content').appendChild(section);`
+);
 
-    // 2. adePopulateBooks
-    const popOld = `    function adePopulateBooks() {
-        const sel = document.getElementById('adeBookNumber');
-        if (!sel) return;
-        sel.innerHTML = '<option value="">— Select Book —</option>';
-        for (let b = 1; b <= 50; b++) {`;
-    const popNew = `    function adePopulateBooks() {
-        const sel = document.getElementById('adeBookNumber');
-        const bType = document.querySelector('input[name="adeBookType"]:checked')?.value || 'New';
-        if (!sel) return;
-        sel.innerHTML = '<option value="">— Select Book —</option>';
-        const maxBooks = bType === 'Old' ? 30 : 50;
-        for (let b = 1; b <= maxBooks; b++) {`;
-    content = content.replace(popOld, popNew);
+// 3. Update radio button text to be dynamic
+content = content.replace(
+    /New Book \(50 Books\)/g,
+    `<span id="adeLblNewBooks">New Book (50 Books)</span>`
+);
+content = content.replace(
+    /Old Book \(30 Books\)/g,
+    `<span id="adeLblOldBooks">Old Book (30 Books)</span>`
+);
 
-    // 3. adeOnBookChange
-    const bookChangeOld = `        let used = [];
-        try {
-            const r = await fetch(\`/api/donation-entries/used-receipts/\${bn}\`);`;
-    const bookChangeNew = `        let used = [];
-        const bType = document.querySelector('input[name="adeBookType"]:checked')?.value || 'New';
-        try {
-            const r = await fetch(\`/api/donation-entries/used-receipts/\${bn}?type=\${bType}\`);`;
-    content = content.replace(bookChangeOld, bookChangeNew);
-
-    // 4. adeAutoReceipt
-    const autoOld = `    async function adeAutoReceipt() {
-        try {
-            const resp = await fetch('/api/donation-entries/next-receipt');`;
-    const autoNew = `    async function adeAutoReceipt() {
-        try {
-            const bType = document.querySelector('input[name="adeBookType"]:checked')?.value || 'New';
-            const resp = await fetch(\`/api/donation-entries/next-receipt?type=\${bType}\`);`;
-    content = content.replace(autoOld, autoNew);
-
-    // 5. Payload
-    const payloadOld = `            payload = {
-                bookNumber      : Number(getVal('adeBookNumber')),
-                receiptNumber   : Number(getVal('adeReceiptNumber')),
-                donorType,`;
-    const payloadNew = `            payload = {
-                bookNumber      : Number(getVal('adeBookNumber')),
-                receiptNumber   : Number(getVal('adeReceiptNumber')),
-                bookType        : document.querySelector('input[name="adeBookType"]:checked')?.value || 'New',
-                donorType,`;
-    content = content.replace(payloadOld, payloadNew);
-
-    fs.writeFileSync('admin.html', content, 'utf8');
-    console.log('Admin HTML updated!');
-}
-
-applyAdminChanges();
+fs.writeFileSync('admin.html', content, 'utf8');
+console.log('admin.html updated successfully.');
