@@ -1837,7 +1837,52 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
-    // ── POST /api/donation-entries  (create new entry) ────────────────────
+    // ── PUT /api/donation-years/:year  (rename year, cascade update) ──────────
+    if (req.method === 'PUT' && pathname.startsWith('/api/donation-years/')) {
+        const oldYear = decodeURIComponent(pathname.replace('/api/donation-years/', ''));
+        if (!oldYear) return sendJSON(res, 400, { message: 'Old year is required.' });
+
+        try {
+            const body   = await readBody(req);
+            const newYear = String(body.newYear || '').trim();
+            if (!newYear) return sendJSON(res, 400, { message: 'newYear is required.' });
+            if (newYear === oldYear) return sendJSON(res, 200, { success: true, message: 'No change.' });
+
+            // 1. Update allowedYears list
+            if (!globalSettings.allowedYears) globalSettings.allowedYears = [];
+            const idx = globalSettings.allowedYears.indexOf(oldYear);
+            if (idx !== -1) globalSettings.allowedYears[idx] = newYear;
+            // If oldYear was active, update active year too
+            if (globalSettings.activeDonationYear === oldYear) {
+                globalSettings.activeDonationYear = newYear;
+                if (globalSettings.receiptFormat) globalSettings.receiptFormat.receiptYear = newYear;
+            }
+            await colSettings.updateOne({}, { $set: { allowedYears: globalSettings.allowedYears, activeDonationYear: globalSettings.activeDonationYear } }, { upsert: true });
+
+            // 2. Rename in donationEntries
+            let count = 0;
+            for (const e of donationEntries) { if (e.year === oldYear) { e.year = newYear; count++; } }
+            if (count) await saveDonationEntries();
+
+            // 3. Rename in pautiBooks
+            let pbCount = 0;
+            for (const b of pautiBooks) { if (b.year === oldYear) { b.year = newYear; pbCount++; } }
+            if (pbCount) await savePautiBooks();
+
+            // 4. Rename in receipts
+            let rCount = 0;
+            for (const r of receipts) { if (r.year === oldYear) { r.year = newYear; rCount++; } }
+            if (rCount) await saveReceiptsData();
+
+            console.log(`✏️  Renamed year ${oldYear} → ${newYear} (entries: ${count}, books: ${pbCount}, receipts: ${rCount})`);
+            return sendJSON(res, 200, { success: true, message: `Year renamed to ${newYear}. ${count + pbCount + rCount} records updated.` });
+        } catch (err) {
+            console.error('Error renaming year:', err);
+            return sendJSON(res, 500, { message: 'Failed to rename year.', error: err.message });
+        }
+    }
+
+
     if (req.method === 'POST' && pathname === '/api/donation-entries') {
 
         try {

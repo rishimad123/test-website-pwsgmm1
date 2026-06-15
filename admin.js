@@ -5446,34 +5446,113 @@ function rcg_sendWhatsApp() {
 async function adminLoadYears() {
     const tbody = document.getElementById('adminYearsTbody');
     if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#aaa;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
     try {
         const r = await fetch('/api/donation-years', { credentials: 'include' });
         const data = await r.json();
         if (!data.years || data.years.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#aaa;padding:20px;">No years found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;">No years found. Add a year above.</td></tr>';
             return;
+        }
+        // Update thead to have 4 columns
+        const thead = document.querySelector('#adminYearsTable thead tr');
+        if (thead && thead.children.length < 4) {
+            thead.innerHTML = '<th>Year</th><th>Status</th><th style="text-align:center;">Edit</th><th style="text-align:center;">Delete</th>';
         }
         const active = data.activeYear || '';
         let html = '';
         data.years.forEach(y => {
             const isActive = (y === active);
             const statusBadge = isActive
-                ? '<span style="background:#E8F5E9;color:#2E7D32;padding:3px 10px;border-radius:12px;font-size:0.75rem;font-weight:700;">Active</span>'
-                : '<span style="background:#F5F5F5;color:#777;padding:3px 10px;border-radius:12px;font-size:0.75rem;font-weight:700;">Inactive</span>';
+                ? '<span style="background:#E8F5E9;color:#2E7D32;padding:4px 12px;border-radius:12px;font-size:0.75rem;font-weight:700;"><i class="fas fa-check-circle" style="margin-right:4px;"></i>Active</span>'
+                : '<span style="background:#F5F5F5;color:#777;padding:4px 12px;border-radius:12px;font-size:0.75rem;font-weight:700;">Inactive</span>';
+
+            const editBtn = `<button class="btn btn-small" style="background:#3498db;color:#fff;min-width:70px;" onclick="adminEditYear('${y}')" title="Edit / Rename Year"><i class="fas fa-edit"></i> Edit</button>`;
+
             const deleteBtn = isActive
-                ? '<button class="btn btn-small" style="background:#ccc;cursor:not-allowed;" disabled title="Cannot delete active year"><i class="fas fa-trash"></i></button>'
-                : `<button class="btn btn-small" style="background:#e74c3c;color:#fff;" onclick="adminDeleteYear('${y}')" title="Delete Year & All Entries"><i class="fas fa-trash"></i> Delete</button>`;
+                ? '<button class="btn btn-small" style="background:#ccc;color:#999;cursor:not-allowed;min-width:80px;" disabled title="Change active year first to delete this one"><i class="fas fa-lock"></i> Locked</button>'
+                : `<button class="btn btn-small" style="background:#e74c3c;color:#fff;min-width:80px;" onclick="adminDeleteYear('${y}')" title="Delete Year & All Entries"><i class="fas fa-trash"></i> Delete</button>`;
+
             html += `<tr>
-                <td style="font-weight:600;font-size:1rem;">${y}</td>
-                <td>${statusBadge}</td>
-                <td>${deleteBtn}</td>
+                <td style="font-weight:600;font-size:0.95rem;padding:12px 10px;">${y}</td>
+                <td style="padding:12px 10px;">${statusBadge}</td>
+                <td style="text-align:center;padding:12px 10px;">${editBtn}</td>
+                <td style="text-align:center;padding:12px 10px;">${deleteBtn}</td>
             </tr>`;
         });
         tbody.innerHTML = html;
     } catch (e) {
         console.error('adminLoadYears error:', e);
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#e74c3c;padding:20px;">Error loading years. Check console.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#e74c3c;padding:20px;"><i class="fas fa-exclamation-triangle"></i> Error loading years.</td></tr>';
+    }
+}
+
+function adminEditYear(oldYear) {
+    // Remove any existing modal
+    const existing = document.getElementById('editYearModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'editYearModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    modal.innerHTML = `
+        <div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:440px;width:94%;box-shadow:0 12px 40px rgba(0,0,0,0.25);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h3 style="margin:0;font-size:1.15rem;font-weight:700;color:#2c3e50;"><i class="fas fa-edit" style="color:#3498db;margin-right:8px;"></i>Edit Year</h3>
+                <span onclick="document.getElementById('editYearModal').remove()" style="font-size:1.4rem;cursor:pointer;color:#aaa;line-height:1;">&times;</span>
+            </div>
+            <p style="color:#666;font-size:0.88rem;margin:0 0 18px;">Rename <strong>${oldYear}</strong> to a new value. All donation entries, books, and receipts will be updated automatically.</p>
+            <div style="margin-bottom:20px;">
+                <label style="display:block;font-size:0.85rem;font-weight:600;color:#555;margin-bottom:6px;">New Year Name</label>
+                <input id="editYearInput" type="text" value="${oldYear}" class="admin-input" style="width:100%;box-sizing:border-box;font-size:1rem;padding:10px 12px;border:2px solid #3498db;border-radius:8px;" placeholder="e.g. 2025-26">
+            </div>
+            <div id="editYearStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:0.88rem;font-weight:600;"></div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button class="btn" style="background:#eee;color:#555;" onclick="document.getElementById('editYearModal').remove()">Cancel</button>
+                <button class="btn btn-primary" style="background:#3498db;" onclick="adminSaveEditYear('${oldYear}')"><i class="fas fa-save" style="margin-right:6px;"></i>Save Rename</button>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    setTimeout(() => {
+        const inp = document.getElementById('editYearInput');
+        if (inp) { inp.focus(); inp.select(); }
+    }, 50);
+}
+
+async function adminSaveEditYear(oldYear) {
+    const inp     = document.getElementById('editYearInput');
+    const statusEl = document.getElementById('editYearStatus');
+    const newYear = inp ? inp.value.trim() : '';
+    if (!newYear) { inp && inp.focus(); return; }
+    if (newYear === oldYear) { document.getElementById('editYearModal').remove(); return; }
+
+    const showStatus = (msg, ok) => {
+        statusEl.style.display = 'block';
+        statusEl.style.background = ok ? '#E8F5E9' : '#FFEBEE';
+        statusEl.style.color      = ok ? '#2E7D32' : '#c0392b';
+        statusEl.textContent      = msg;
+    };
+
+    try {
+        const r    = await fetch('/api/donation-years/' + encodeURIComponent(oldYear), {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newYear })
+        });
+        const data = await r.json();
+        if (r.ok) {
+            showStatus('✅ ' + (data.message || 'Year renamed successfully!'), true);
+            setTimeout(() => {
+                document.getElementById('editYearModal') && document.getElementById('editYearModal').remove();
+                adminLoadYears();
+            }, 1000);
+        } else {
+            showStatus('❌ ' + data.message, false);
+        }
+    } catch (e) {
+        showStatus('❌ Network error: ' + e.message, false);
     }
 }
 
@@ -5482,7 +5561,7 @@ async function adminAddYear() {
     const year  = (input ? input.value : '').trim();
     if (!year) return alert('Please enter a year (e.g. 2024-25)');
     try {
-        const r    = await fetch('/api/donation-years', {
+        const r = await fetch('/api/donation-years', {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -5501,15 +5580,15 @@ async function adminAddYear() {
 }
 
 async function adminDeleteYear(year) {
-    if (!confirm('WARNING: Deleting "' + year + '" will permanently remove ALL donation entries for that year.\n\nContinue?')) return;
+    if (!confirm('⚠️ WARNING\n\nDeleting "' + year + '" will permanently remove ALL donation entries, books, and receipts for that year.\n\nThis CANNOT be undone. Continue?')) return;
     try {
-        const r    = await fetch('/api/donation-years/' + encodeURIComponent(year), {
+        const r = await fetch('/api/donation-years/' + encodeURIComponent(year), {
             method: 'DELETE',
             credentials: 'include'
         });
         const data = await r.json();
         if (r.ok) {
-            alert(data.message || 'Year deleted successfully.');
+            alert('✅ ' + (data.message || 'Year deleted successfully.'));
             adminLoadYears();
         } else {
             alert('Error: ' + data.message);
