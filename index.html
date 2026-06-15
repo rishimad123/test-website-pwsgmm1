@@ -44,6 +44,14 @@
     .mobile-toggle span { background: var(--gold-lt) !important; }
     @media (max-width: 968px) {
         .nav-menu {
+            /* position:absolute avoids the backdrop-filter containing-block bug
+               that breaks position:fixed in WebKit/iOS/Chrome. The sticky navbar
+               becomes the containing block, so the menu always appears below it. */
+            position: absolute !important;
+            top: 100% !important;           /* flush below navbar, no hardcoded px */
+            left: -100vw !important;        /* off-screen to the left */
+            width: 100vw !important;        /* full viewport width */
+            height: calc(100vh - 60px) !important;
             background: rgba(15, 5, 0, 0.97) !important;
             border-top: 2px solid var(--crimson) !important;
             z-index: 99999 !important;
@@ -578,6 +586,46 @@
         </div>
     </nav>
 
+    <!-- ── MOBILE NAV TOGGLE ─────────────────────────────────────────────────
+         This inline script runs synchronously right after the nav is parsed,
+         so #mobileToggle and #navMenu are guaranteed to exist in the DOM.
+         The data-mb guard prevents double-binding with the main.js handler.
+    ──────────────────────────────────────────────────────────────────────── -->
+    <script>
+    (function () {
+        var btn  = document.getElementById('mobileToggle');
+        var menu = document.getElementById('navMenu');
+        if (!btn || !menu) return;
+
+        // Prevent double-binding if main.js also initialises the menu
+        if (btn.getAttribute('data-mb') === '1') return;
+        btn.setAttribute('data-mb', '1');
+
+        /* ── Open / close on hamburger click ── */
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var isOpen = menu.classList.toggle('active');
+            btn.classList.toggle('is-open', isOpen);
+        });
+
+        /* ── Close when tapping anywhere outside the navbar ── */
+        document.addEventListener('click', function (e) {
+            if (menu.classList.contains('active') && !e.target.closest('.navbar')) {
+                menu.classList.remove('active');
+                btn.classList.remove('is-open');
+            }
+        });
+
+        /* ── Close when a nav link is tapped ── */
+        menu.querySelectorAll('a').forEach(function (a) {
+            a.addEventListener('click', function () {
+                menu.classList.remove('active');
+                btn.classList.remove('is-open');
+            });
+        });
+    }());
+    </script>
+
     <!-- Hero Section -->
     <section class="hero">
         <!-- Floating particles -->
@@ -1057,7 +1105,7 @@
         </div>
     </footer>
 
-    <script src="main.js?v=1.0.3"></script>
+    <script src="main.js?v=1.0.4"></script>
     <script>
     // ── Floating particles ──
     (function() {

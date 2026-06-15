@@ -5,6 +5,12 @@ function _bindMobileMenu() {
 
     if (!mobileToggle || !navMenu) return; // elements not present on this page
 
+    // Guard: if the inline script in index.html already bound the menu, skip.
+    // Without this guard both listeners would fire on every click, toggling
+    // the class twice and making the menu appear to do nothing.
+    if (mobileToggle.getAttribute('data-mb') === '1') return;
+    mobileToggle.setAttribute('data-mb', '1');
+
     // Toggle open/close — stopPropagation prevents the document listener
     // from immediately closing the menu on the same click event.
     mobileToggle.addEventListener('click', function (e) {
