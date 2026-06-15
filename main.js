@@ -1,8 +1,14 @@
 // ==================== MOBILE MENU ====================
-document.addEventListener('DOMContentLoaded', function () {
+(function initMobileMenu() {
     var mobileToggle = document.getElementById('mobileToggle');
     var navMenu     = document.getElementById('navMenu');
-    if (!mobileToggle || !navMenu) return;
+    
+    if (!mobileToggle || !navMenu) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initMobileMenu);
+        }
+        return;
+    }
 
     // Toggle open/close — stopPropagation prevents the document listener
     // from immediately closing the menu on the same click event.
@@ -27,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
             mobileToggle.classList.remove('is-open');
         });
     });
-});
+})();
 
 // ==================== COUNTDOWN TIMER ====================
 let _countdownTarget = new Date('September 19, 2025 10:00:00').getTime(); // default fallback
