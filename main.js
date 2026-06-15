@@ -1,14 +1,9 @@
 // ==================== MOBILE MENU ====================
-(function initMobileMenu() {
+function _bindMobileMenu() {
     var mobileToggle = document.getElementById('mobileToggle');
-    var navMenu     = document.getElementById('navMenu');
-    
-    if (!mobileToggle || !navMenu) {
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initMobileMenu);
-        }
-        return;
-    }
+    var navMenu      = document.getElementById('navMenu');
+
+    if (!mobileToggle || !navMenu) return; // elements not present on this page
 
     // Toggle open/close — stopPropagation prevents the document listener
     // from immediately closing the menu on the same click event.
@@ -33,7 +28,14 @@
             mobileToggle.classList.remove('is-open');
         });
     });
-})();
+}
+
+// Run immediately if DOM is already ready, otherwise wait for it
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _bindMobileMenu);
+} else {
+    _bindMobileMenu();
+}
 
 // ==================== COUNTDOWN TIMER ====================
 let _countdownTarget = new Date('September 19, 2025 10:00:00').getTime(); // default fallback
