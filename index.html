@@ -43,7 +43,16 @@
     .nav-menu a::after { background: var(--gold-lt) !important; }
     .mobile-toggle span { background: var(--gold-lt) !important; }
     @media (max-width: 968px) {
-        .nav-menu { background: rgba(26,10,0,0.98) !important; border-bottom: 2px solid var(--crimson); }
+        .nav-menu {
+            background: rgba(15, 5, 0, 0.97) !important;
+            border-top: 2px solid var(--crimson) !important;
+            z-index: 99999 !important;
+        }
+        .nav-menu.active { left: 0 !important; }
+        .nav-menu li { width: 100%; }
+        .nav-menu a  { display: block; padding: 14px 20px !important; font-size: 1rem !important; color: rgba(255,248,238,0.9) !important; border-bottom: 1px solid rgba(217,119,6,0.1); }
+        .nav-menu a:hover, .nav-menu a.active { color: var(--gold-lt) !important; background: rgba(217,119,6,0.08); }
+        .nav-menu .btn-login { margin: 10px auto !important; display: inline-block !important; width: auto !important; border-bottom: none !important; }
     }
     .btn-login {
         background: linear-gradient(135deg, var(--saffron), var(--crimson)) !important;

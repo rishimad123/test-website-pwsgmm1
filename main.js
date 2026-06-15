@@ -1,19 +1,33 @@
 // ==================== MOBILE MENU ====================
-const mobileToggle = document.getElementById('mobileToggle');
-const navMenu = document.getElementById('navMenu');
+document.addEventListener('DOMContentLoaded', function () {
+    var mobileToggle = document.getElementById('mobileToggle');
+    var navMenu     = document.getElementById('navMenu');
+    if (!mobileToggle || !navMenu) return;
 
-if (mobileToggle) {
-    mobileToggle.addEventListener('click', () => {
+    // Toggle open/close — stopPropagation prevents the document listener
+    // from immediately closing the menu on the same click event.
+    mobileToggle.addEventListener('click', function (e) {
+        e.stopPropagation();
         navMenu.classList.toggle('active');
+        mobileToggle.classList.toggle('is-open');
     });
-    
-    // Close menu when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.navbar')) {
+
+    // Close when tapping outside the navbar
+    document.addEventListener('click', function (e) {
+        if (navMenu.classList.contains('active') && !e.target.closest('.navbar')) {
             navMenu.classList.remove('active');
+            mobileToggle.classList.remove('is-open');
         }
     });
-}
+
+    // Close menu when the user taps a nav link (navigates away)
+    navMenu.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+            navMenu.classList.remove('active');
+            mobileToggle.classList.remove('is-open');
+        });
+    });
+});
 
 // ==================== COUNTDOWN TIMER ====================
 let _countdownTarget = new Date('September 19, 2025 10:00:00').getTime(); // default fallback

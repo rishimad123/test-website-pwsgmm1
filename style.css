@@ -628,16 +628,18 @@ select, textarea {
     .nav-menu {
         position: fixed;
         left: -100%;
-        top: 68px;
+        top: 60px;           /* clears sticky navbar height */
         flex-direction: column;
         background: var(--white);
         width: 100%;
+        height: calc(100vh - 60px);
         text-align: center;
-        transition: 0.3s;
-        box-shadow: var(--shadow);
-        padding: 20px 0;
-        gap: 10px;
-        z-index: 999;
+        transition: left 0.3s ease;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        padding: 28px 0;
+        gap: 8px;
+        z-index: 99999;      /* must beat any stacking context, incl. backdrop-filter */
+        overflow-y: auto;
     }
     .nav-menu.active  { left: 0; }
     .mobile-toggle    { display: flex; }
@@ -729,98 +731,16 @@ select, textarea {
 
 /* ==================== ANIMATIONS ==================== */
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* ==================== RESPONSIVE ==================== */
-@media (max-width: 968px) {
-    .nav-menu {
-        position: fixed;
-        left: -100%;
-        top: 70px;
-        flex-direction: column;
-        background: var(--white);
-        width: 100%;
-        text-align: center;
-        transition: 0.3s;
-        box-shadow: var(--shadow);
-        padding: 20px 0;
-        gap: 10px;
-    }
-    
-    .nav-menu.active {
-        left: 0;
-    }
-    
-    .mobile-toggle {
-        display: flex;
-    }
-    
-    .hero-title {
-        font-size: 2.5rem;
-    }
-    
-    .hero-subtitle {
-        font-size: 1.2rem;
-    }
-    
-    .countdown {
-        gap: 15px;
-        flex-wrap: wrap;
-    }
-    
-    .countdown-item {
-        padding: 15px 20px;
-    }
-    
-    .countdown-value {
-        font-size: 2rem;
-    }
-    
-    .hero-buttons {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .about-content {
-        grid-template-columns: 1fr;
-    }
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 768px) {
-    .hero {
-        height: 70vh;
-    }
-    
-    .logo span {
-        font-size: 1rem;
-    }
-    
-    .section-header h2 {
-        font-size: 2rem;
-    }
-    
-    .stats {
-        padding: 40px 0;
-    }
+    .hero { height: 70vh; }
+    .logo span { font-size: 1rem; }
+    .section-header h2 { font-size: 2rem; }
+    .stats { padding: 40px 0; }
 }
-
-
-
-
-
-
-
-
-
-
 
 /* --- Theme Classes --- */
 .theme-hero { --primary-color: var(--theme-hero-1); --accent-color: var(--theme-hero-2); }
