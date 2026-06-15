@@ -1,24 +1,2892 @@
-document.addEventListener('DOMContentLoaded', () => {
-            if (typeof loadDonationTrackingCards === 'function') loadDonationTrackingCards(); // Initial fetch
-            const evtSource = new EventSource('/api/live-updates');
-            evtSource.onmessage = function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.type === 'donations_updated') {
-                        if (typeof loadDonationTrackingCards === 'function') {
-                            loadDonationTrackingCards();
-                        }
-                        
-                        if (typeof adeFetchData === 'function' && document.getElementById('donationDataEntry') && document.getElementById('donationDataEntry').style.display !== 'none') {
-                            adeFetchData();
-                        }
-                        
-                    }
-                } catch (e) {
-                    console.error('SSE Error:', e);
-                }
-            };
-            evtSource.onerror = function() {
-                console.log('SSE connection lost, reconnecting...');
-            };
+document.addEventListener('DOMContentLoaded', function() {
+  injectDESection();
+  var s = document.getElementById('donationEntries');
+  if (!s) return;
+  var target = document.getElementById('donationEntriesStatic');
+  if (target) target.replaceWith(s);
+});
+    // Inject the section HTML on DOM ready
+    (function injectDESection() {
+        const section = document.createElement('div');
+        section.id = 'donationEntries';
+        section.className = 'content-section';
+        section.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px;">
+            <div>
+                <h2 style="color:var(--dark-color);margin:0 0 4px;">Donation Data Entry</h2>
+                <p style="color:#777;margin:0;">All donation receipt entries — full CRUD control</p>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button onclick="adeManageBooksModal()" class="btn btn-small" style="background:#00695C;color:#fff;"><i class="fas fa-book" style="margin-right:6px;"></i>Manage Books</button>
+                <button onclick="adeBuildingModal()" class="btn btn-small" style="background:#3949AB;color:#fff;"><i class="fas fa-building" style="margin-right:6px;"></i>Manage Buildings</button>
+                <button onclick="adeLandmarkModal()" class="btn btn-small" style="background:#F59E0B;color:#fff;"><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Manage Landmarks</button>
+                <button onclick="adeManageAreasModal()" class="btn btn-small" style="background:#6A1B9A;color:#fff;"><i class="fas fa-map" style="margin-right:6px;"></i>Manage Areas</button>
+                <button onclick="adeToggleForm()" class="btn btn-small" style="background:var(--primary-color);color:#fff;"><i class="fas fa-plus" style="margin-right:6px;"></i>Record Donation</button>
+                <div style="display:inline-flex;gap:10px;">
+                    <button onclick="adeExportExcel('en')" class="btn btn-small" style="background:#1D6F42;color:#fff;"><i class="fas fa-file-excel" style="margin-right:6px;"></i>Export (EN)</button>
+                    <button onclick="adeExportExcel('mr')" class="btn btn-small" style="background:#27ae60;color:#fff;"><i class="fas fa-language" style="margin-right:6px;"></i>Export (MR)</button>
+                </div>
+                <button onclick="adeLoad()" class="btn btn-small" style="background:var(--light-color);color:#555;"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div id="adeStatus" style="display:none;padding:12px 18px;border-radius:10px;margin-bottom:16px;font-weight:600;"></div>
+
+        <!-- Collapsible donation form card -->
+        <div id="adeFormCard" class="admin-card" style="display:none;padding:24px;margin-bottom:18px;border:1.5px solid var(--primary-color);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;border-bottom:1.5px solid #eee;padding-bottom:10px;">
+                <h3 style="margin:0;color:var(--dark-color);"><i class="fas fa-file-invoice-dollar" style="color:var(--primary-color);margin-right:8px;"></i>Record New Donation Receipt</h3>
+                <button onclick="adeToggleForm()" class="btn btn-small" style="background:#eee;color:#555;"><i class="fas fa-times"></i> Close</button>
+            </div>
+            <form id="adeEntryForm" novalidate autocomplete="off">
+                <!-- ── Section A: Receipt Details ── -->
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
+                    <i class="fas fa-book-open" style="margin-right:6px;"></i>Receipt Details
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight:600;font-size:0.85rem;color:#333;margin-bottom:8px;display:block;">Book Type</label>
+                    <div style="display:flex;gap:15px;align-items:center;">
+                        <label style="cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem;">
+                            <input type="radio" name="adeBookType" value="New" checked onchange="adePopulateBooks(); adeOnBookChange();">
+                            <span id="adeLblNewBooks">New Book (50 Books)</span>
+                        </label>
+                        <label style="cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem;">
+                            <input type="radio" name="adeBookType" value="Old" onchange="adePopulateBooks(); adeOnBookChange();">
+                            <span id="adeLblOldBooks">Old Book (30 Books)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+                    <div class="form-group" style="margin:0;">
+                        <label for="adeBookNumber">Book Number <span style="color:red;">*</span> <button type="button" onclick="adeAutoReceipt()" style="margin-left:6px;padding:2px 9px;border:none;border-radius:8px;background:#E8F5E9;color:#1B5E20;font-size:.72rem;font-weight:700;cursor:pointer;"><i class="fas fa-magic"></i> Auto</button></label>
+                        <select id="adeBookNumber" class="form-control" onchange="adeOnBookChange()"></select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label for="adeReceiptNumber">Receipt Number <span style="color:red;">*</span></label>
+                        <select id="adeReceiptNumber" class="form-control" disabled>
+                            <option value="">— Select Book first —</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ── Section B: Donor Type ── -->
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
+                    <i class="fas fa-user-circle" style="margin-right:6px;"></i>Donor Type
+                </div>
+                <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+                    <label id="adeBtnInd" onclick="adeSetDonorType('Individual')" style="display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid var(--primary-color);border-radius:16px;cursor:pointer;font-weight:600;font-size:.82rem;background:var(--primary-color);color:#fff;transition:all .2s;">
+                        <i class="fas fa-user" style="font-size:.78rem;"></i> Individual
+                    </label>
+                    <label id="adeBtnBiz" onclick="adeSetDonorType('Business')" style="display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid #ddd;border-radius:16px;cursor:pointer;font-weight:600;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                        <i class="fas fa-building" style="font-size:.78rem;"></i> Business
+                    </label>
+                </div>
+                <input type="hidden" id="adeDonorType" value="Individual">
+
+                <!-- Individual name fields -->
+                <div id="adeIndFields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;">
+                    <div class="form-group" style="margin:0;">
+                        <label for="adeFirstName">First Name <span style="color:red;">*</span></label>
+                        <input type="text" id="adeFirstName" class="form-control" placeholder="FIRST" oninput="this.value=this.value.toUpperCase()" required>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label for="adeMiddleName">Middle Name</label>
+                        <input type="text" id="adeMiddleName" class="form-control" placeholder="MIDDLE" oninput="this.value=this.value.toUpperCase()" >
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label for="adeLastName">Last Name <span style="color:red;">*</span></label>
+                        <input type="text" id="adeLastName" class="form-control" placeholder="LAST" oninput="this.value=this.value.toUpperCase()" required>
+                    </div>
+                </div>
+
+                <!-- Business name field -->
+                <div id="adeBizFields" style="display:none;margin-bottom:20px;">
+                    <div class="form-group" style="margin:0;">
+                        <label for="adeBusinessName">Business Name <span style="color:red;">*</span></label>
+                        <input type="text" id="adeBusinessName" class="form-control" placeholder="BUSINESS NAME" oninput="this.value=this.value.toUpperCase()">
+                    </div>
+                </div>
+
+                <!-- ── Section C: Contact ── -->
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
+                    <i class="fas fa-address-book" style="margin-right:6px;"></i>Contact Information
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;">
+                    <div class="form-group" style="margin:0;">
+                        <label for="adeWhatsapp"><i class="fab fa-whatsapp" style="color:#25D366;"></i> WhatsApp Number</label>
+                        <input type="tel" id="adeWhatsapp" class="form-control" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label for="adeMobile"><i class="fas fa-mobile-alt" style="color:#3949AB;"></i> Mobile Number</label>
+                        <input type="tel" id="adeMobile" class="form-control" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label for="adeMail"><i class="fas fa-envelope" style="color:#E67E22;"></i> Mail ID</label>
+                        <input type="email" id="adeMail" class="form-control" placeholder="email@example.com">
+                    </div>
+                </div>
+
+                <!-- ── Section D: Location Cascade ── -->
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;flex:1;">
+                        <i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Location
+                    </div>
+                </div>
+
+                <!-- Step 1: Landmark (always visible) -->
+                <div class="form-group" id="adeLandmarkGroup" style="margin-bottom:16px;">
+                    <label for="adeLandmarkSelect" style="font-weight:700;font-size:.85rem;color:#333;display:flex;align-items:center;gap:6px;">
+                        <i class="fas fa-map-marker-alt" style="color:#E65100;font-size:.85rem;"></i>
+                        Landmark <span style="color:red;">*</span> <span style="font-size:.72rem;color:#aaa;font-weight:400;">Step 1 of 3</span>
+                    </label>
+                    <select id="adeLandmarkSelect" class="form-control" onchange="adeOnLandmarkChange()" style="font-weight:600;" required>
+                        <option value="">— Select Landmark —</option>
+                    </select>
+                </div>
+
+                <!-- Step 2: Area (slides in after landmark) -->
+                <div class="form-group" id="adeAreaGroup" style="margin-bottom:16px;display:none;">
+                    <label style="font-weight:700;font-size:.85rem;color:#333;display:flex;align-items:center;gap:6px;">
+                        <i class="fas fa-map" style="color:#2E7D32;font-size:.85rem;"></i>
+                        Area <span style="font-size:.72rem;color:#aaa;font-weight:400;">Step 2 of 3</span>
+                    </label>
+                    <select id="adeAreaSelect" class="form-control" onchange="adeOnAreaChange()" style="font-weight:600;">
+                        <option value="">— Select Area —</option>
+                    </select>
+                    <!-- Locked area badge -->
+                    <div id="adeAreaLocked" style="display:none;margin-top:8px;padding:8px 14px;background:linear-gradient(135deg,#E8F5E9,#F1F8E9);border:1.5px solid #66BB6A;border-radius:8px;align-items:center;gap:10px;">
+                        <i class="fas fa-check-circle" style="color:#2E7D32;font-size:1rem;"></i>
+                        <span id="adeAreaLockedName" style="font-weight:700;color:#1B5E20;font-size:.88rem;"></span>
+                        <button type="button" onclick="adeUnlockArea()" style="margin-left:auto;border:none;background:transparent;color:#888;cursor:pointer;font-size:.75rem;padding:2px 6px;border-radius:4px;"><i class="fas fa-times"></i> Change</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Building (slides in after area) -->
+                <div class="form-group" id="adeBuildingGroup" style="margin-bottom:16px;display:none;">
+                    <label for="adeBuildingNameSelect" style="font-weight:700;font-size:.85rem;color:#333;display:flex;align-items:center;gap:6px;">
+                        <i class="fas fa-building" style="color:#5C6BC0;font-size:.85rem;"></i>
+                        Building Name <span style="font-size:.72rem;color:#aaa;font-weight:400;">Step 3 of 3 (optional)</span>
+                    </label>
+                    <select id="adeBuildingNameSelect" class="form-control" onchange="adeOnBuildingChange()" style="font-weight:600;">
+                        <option value="">— Select Building (optional) —</option>
+                    </select>
+                    <div id="adeBuildingHint" style="display:none;font-size:.75rem;color:#888;margin-top:4px;"><i class="fas fa-info-circle"></i> No buildings linked to this area yet.</div>
+                </div>
+
+                <!-- Flat / Unit Number -->
+                <div class="form-group" id="adeFlatNumberGroup" style="margin-bottom:16px;display:none;">
+                    <label for="adeFlatNumber" style="font-weight:600;font-size:.85rem;color:#333;">
+                        <i class="fas fa-door-open" style="color:#E67E22;margin-right:5px;font-size:.8rem;"></i>
+                        Flat / Unit Number <span style="font-weight:400;color:#aaa;font-size:.75rem;">(optional)</span>
+                    </label>
+                    <input type="text" id="adeFlatNumber" class="form-control" placeholder="e.g. A-201, Flat 3B, Shop 5">
+                </div>
+
+                <!-- ── Section E: Payment ── -->
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
+                    <i class="fas fa-rupee-sign" style="margin-right:6px;"></i>Amount &amp; Payment
+                </div>
+                <div class="form-group">
+                    <label for="adeAmount">Donation Amount (₹)</label>
+                    <input type="number" id="adeAmount" class="form-control" placeholder="Enter amount" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Payment Mode <span style="color:red;">*</span></label>
+                    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+                        <label class="de-mode-btn active" id="adeModeCash" onclick="adeSetMode('Cash')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid var(--primary-color);border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:var(--primary-color);color:#fff;transition:all .2s;">
+                            <i class="fas fa-money-bill-wave" style="font-size:1.2rem;"></i>Cash
+                        </label>
+                        <label class="de-mode-btn" id="adeModeChq" onclick="adeSetMode('Cheque')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                            <i class="fas fa-file-alt" style="font-size:1.2rem;"></i>Cheque
+                        </label>
+                        <label class="de-mode-btn" id="adeModeUPI" onclick="adeSetMode('UPI')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                            <i class="fas fa-qrcode" style="font-size:1.2rem;"></i>UPI
+                        </label>
+                        <label class="de-mode-btn" id="adeModeRTGS" onclick="adeSetMode('RTGS')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                            <i class="fas fa-university" style="font-size:1.2rem;"></i>RTGS
+                        </label>
+                        <label class="de-mode-btn" id="adeModeBal" onclick="adeSetMode('Balance')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                            <i class="fas fa-hand-holding-usd" style="font-size:1.2rem;"></i>Balance
+                        </label>
+                    </div>
+                </div>
+                <input type="hidden" id="adePaymentMode" value="Cash">
+                <div class="form-group" id="adeRefGroup">
+                    <label for="adeReference" id="adeRefLabel">Reference Number <span style="color:#aaa;font-weight:400;font-size:.85rem;">(optional)</span></label>
+                    <input type="text" id="adeReference" class="form-control" placeholder="Reference / Transaction / Cheque number">
+                </div>
+
+                <!-- ── Section F: Passbook Document Upload ── -->
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;margin-top:8px;">
+                    <i class="fas fa-camera" style="margin-right:6px;"></i>Passbook Document
+                </div>
+                <div class="card" style="margin-bottom:16px;box-shadow:none;border:1.5px solid #ffe0d0;padding:18px;">
+                    <div id="apbDocStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:500;"></div>
+                    <div id="apbUploadContainer" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+                        <button type="button" id="apbCameraBtn"
+                            onclick="document.getElementById('apbDocCamera').click()"
+                            style="flex:1;min-width:140px;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                            <i class="fas fa-camera" style="font-size:1.3rem;"></i> Take Photo / Select Image
+                        </button>
+                    </div>
+                    <input type="file" id="apbDocCamera" style="display:none;" accept="image/*">
+                    <input type="file" id="apbDocCameraCapture" style="display:none;" accept="image/*" capture="environment">
+                    <div id="apbCompressStatus" style="display:none;font-size:.82rem;color:#888;margin-bottom:10px;">
+                        <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Compressing image…
+                    </div>
+                    <div id="apbDocPreview" style="display:none;margin-bottom:14px;">
+                        <img id="apbDocThumb" src="" alt="Receipt preview" style="max-width:100%;max-height:220px;border-radius:10px;border:1.5px solid #e0e0e0;object-fit:contain;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
+                            <span id="apbDocFileName" style="font-size:.83rem;color:#555;flex:1;"></span>
+                            <span id="apbDocFileSize" style="font-size:.78rem;color:#27ae60;font-weight:600;"></span>
+                            <button type="button" onclick="apbClearDoc()" style="background:none;border:none;color:#E74C3C;cursor:pointer;font-size:.85rem;"><i class="fas fa-times"></i> Remove</button>
+                        </div>
+                    </div>
+                    <p style="font-size:.78rem;color:#aaa;margin:0;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Image is automatically compressed to under 1 MB.</p>
+                </div>
+
+                <!-- Date field for receipt (before submit) -->
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label for="adeReceiptDate" style="font-weight:600;font-size:.85rem;color:#333;">
+                        <i class="fas fa-calendar-alt" style="color:var(--primary-color);margin-right:5px;"></i>
+                        Receipt Date <span style="color:#aaa;font-weight:400;font-size:.78rem;">(for receipt)</span>
+                    </label>
+                    <input type="date" id="adeReceiptDate" class="form-control">
+                </div>
+
+                <button type="submit" id="adeSubmitBtn" class="btn btn-primary" style="width:100%;max-width:360px;display:block;padding:14px 30px;font-size:1rem;border-radius:10px;margin-top:8px;">
+                    <i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry
+                </button>
+            </form>
+
+            <!-- ═══════════════════════════════════════════════════════════════
+                 LIVE RECEIPT PREVIEW — auto-fills from form above (ade_rcg_)
+                 Zero overlap with any other feature. Fully isolated.
+                 ═══════════════════════════════════════════════════════════════ -->
+            <div id="ade_rcg_wrapper" style="margin-top:28px;border-top:2px dashed #ffe0d0;padding-top:22px;display:none;">
+
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-file-invoice" style="color:#8B1A1A;font-size:1.1rem;"></i>
+                        <strong style="color:#8B1A1A;font-size:1rem;">Receipt Preview</strong>
+                        <span style="font-size:.75rem;color:#aaa;font-style:italic;">auto-updates as you type</span>
+                    </div>
+                    <button type="button" id="ade_rcg_wa_btn" onclick="ade_rcg_sendWhatsApp()"
+                        style="display:flex;align-items:center;gap:8px;padding:11px 20px;background:linear-gradient(135deg,#1A7B43,#25A55A);color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;transition:transform .2s,box-shadow .2s;"
+                        onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 18px rgba(26,123,67,.4)'"
+                        onmouseout="this.style.transform='';this.style.boxShadow=''">
+                        <i class="fab fa-whatsapp" style="font-size:1.1rem;"></i> Send Receipt via WhatsApp
+                    </button>
+                </div>
+
+                <!-- THE RECEIPT (captured as HD PNG for WhatsApp) -->
+                <div id="ade_rcg_receipt"
+                    style="font-family:'Noto Sans Devanagari','Mangal',Arial,sans-serif;
+                           background:linear-gradient(145deg,#dff0fa 0%,#f0f8ff 40%,#e8f4fc 70%,#cbe8f6 100%);
+                           border:2px solid #AACCDD;border-radius:10px;padding:20px 28px 24px;
+                           max-width:780px;margin:0 auto;box-shadow:0 4px 20px rgba(0,0,0,.13);
+                           box-sizing:border-box;position:relative;">
+
+                    <!-- Top meta row -->
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;font-size:.78rem;color:#8B1A1A;font-weight:600;">
+                        <span>स्थापना १९९१</span>
+                        <span id="ade_rcg_f_receiptTopCenter" style="text-align:center;flex:1;">॥ श्री गजानन प्रसन्न ॥</span>
+                        <span style="white-space:nowrap;"><span id="ade_rcg_f_receiptTopRightPrefix">वर्ष :</span> <span id="ade_rcg_r_year" style="color:#222;font-weight:500;">__</span></span>
+                    </div>
+
+                    <!-- Title -->
+                    <div id="ade_rcg_f_receiptTitle" style="text-align:center;font-size:1.75rem;font-weight:900;color:#8B1A1A;line-height:1.25;margin-bottom:3px;letter-spacing:.01em;">
+                        श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ
+                    </div>
+
+                    <!-- Address -->
+                    <div id="ade_rcg_f_receiptAddress" style="text-align:center;font-size:.72rem;color:#8B1A1A;margin-bottom:10px;font-weight:500;">
+                        पटेलवाडी, क्लासिक हॉटेलच्या मागे, जुना नागरदास रोड, अंधेरी (पूर्व), मुंबई - ४०००६९
+                    </div>
+
+                    <hr style="border:none;border-top:2px solid #8B1A1A;margin:6px 0 10px;">
+
+                    <!-- Receipt no + Date -->
+                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:.9rem;font-weight:700;color:#8B1A1A;margin-bottom:10px;padding:2px;">
+                        <span>पावती क्र. :
+                            <span id="ade_rcg_r_rcptno" style="font-weight:400;color:#222;border-bottom:1.5px solid #8B1A1A;min-width:80px;display:inline-block;padding:0 8px;text-align:center;">___</span>
+                        </span>
+                        <span>दिनांक :
+                            <span id="ade_rcg_r_date" style="font-weight:400;color:#222;border-bottom:1.5px solid #8B1A1A;min-width:110px;display:inline-block;padding:0 8px;text-align:center;">___________</span>
+                        </span>
+                    </div>
+
+                    <!-- Donor name row -->
+                    <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:8px;">
+                        <span id="ade_rcg_f_receiptDonorPrefix" style="font-size:.92rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">श्री/श्रीमती</span>
+                        <span id="ade_rcg_r_donor"
+                            style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:26px;font-size:1rem;color:#222;padding:0 8px;font-weight:700;text-align:center;display:flex;align-items:flex-end;justify-content:center;">
+                            <span style="color:#CCC;font-style:italic;font-weight:400;">__________________________</span>
+                        </span>
+                        <span id="ade_rcg_f_receiptDonorSuffix" style="font-size:.88rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">यांचकडून</span>
+                    </div>
+
+                    <!-- Amount in words row -->
+                    <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:8px;">
+                        <span id="ade_rcg_f_receiptAmountWordsPrefix" style="font-size:.92rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">अक्षरी रुपये</span>
+                        <span id="ade_rcg_r_words"
+                            style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:26px;font-size:.88rem;color:#333;padding:0 8px;display:flex;align-items:flex-end;">
+                            <span style="color:#CCC;font-style:italic;font-weight:400;">______________________________</span>
+                        </span>
+                    </div>
+
+                    <!-- Thank you line -->
+                    <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:6px 0 12px;">
+                        <span style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:14px;"></span>
+                        <span id="ade_rcg_f_receiptThankYouText" style="font-size:.88rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">रोख/चेक मिळाले, धन्यवाद !</span>
+                    </div>
+
+                    <!-- Amount box -->
+                    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+                        <div id="ade_rcg_r_amt"
+                            style="border:2px solid #8B1A1A;border-radius:5px;padding:7px 18px;font-size:1.15rem;font-weight:700;color:#8B1A1A;min-width:120px;text-align:center;background:rgba(255,255,255,.5);">
+                            <span style="color:#CCC;font-style:italic;font-weight:400;">₹</span>
+                        </div>
+                        <span id="ade_rcg_r_mode" style="font-size:.8rem;color:#777;font-style:italic;"></span>
+                    </div>
+
+                    <!-- Signatures -->
+                    <div style="display:flex;justify-content:space-between;border-top:1px solid #AACCDD;padding-top:10px;margin-top:4px;">
+                        <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
+                            <div id="ade_rcg_f_receiptSign1Role" style="font-size:.68rem;color:#777;font-weight:400;">अध्यक्ष</div>
+                            <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
+                            <div id="ade_rcg_f_receiptSign1Name">जयेश शिंदे</div>
+                        </div>
+                        <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
+                            <div id="ade_rcg_f_receiptSign2Role" style="font-size:.68rem;color:#777;font-weight:400;">सरचिटणीस</div>
+                            <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
+                            <div id="ade_rcg_f_receiptSign2Name"><span class="sg-marathi" translate="no">ध्रुव चीटालीय</span><span class="sg-english" translate="no" style="display:none;">Dhruv Chotaliya</span></div>
+                        </div>
+                        <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
+                            <div id="ade_rcg_f_receiptSign3Role" style="font-size:.68rem;color:#777;font-weight:400;">खजिनदार</div>
+                            <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
+                            <div id="ade_rcg_f_receiptSign3Name">रणजीत राजपूत</div>
+                        </div>
+                        <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
+                            <div id="ade_rcg_f_receiptSign4Role" style="font-size:.68rem;color:#777;font-weight:400;">वसुल करणार</div>
+                            <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
+                            <div id="ade_rcg_f_receiptSign4Name">&nbsp;</div>
+                        </div>
+                    </div>
+
+                </div><!-- /#ade_rcg_receipt -->
+
+                <p style="text-align:center;font-size:.75rem;color:#aaa;margin-top:10px;">
+                    <i class="fas fa-info-circle"></i> The WhatsApp button converts this receipt to a high-resolution image and shares it.
+                </p>
+            </div><!-- /#ade_rcg_wrapper -->
+
+        </div><!-- /#adeFormCard -->
+
+        <!-- All Submitted Entries cards -->
+        <div class="admin-card" style="padding:24px;margin-bottom:18px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #F0F0F0;">
+                <h3 style="margin:0;color:var(--dark-color);font-size:1.2rem;"><i class="fas fa-list-ul" style="color:var(--primary-color);margin-right:8px;"></i>All Submitted Entries</h3>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <span id="adeCardCount" style="font-size:.83rem;color:#888;"></span>
+                    <select id="adeYearFilter" style="display:inline-block;padding:7px 10px;border:1.5px solid var(--primary-color);border-radius:8px;font-size:.85rem;font-weight:700;color:#fff;background:var(--primary-color);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.12);" onchange="window._adeSelectedYear=this.value; adeLoad();" title="Filter by year"><option value="active">Active Year</option></select>
+                    <input type="text" id="adeCardSearch" placeholder="🔍 Search donor, landmark…"
+                        style="padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.85rem;width:180px;"
+                        oninput="adeRenderCards()">
+                    <button onclick="adeLoad()" class="btn btn-small" style="background:var(--light-color);color:#555;"><i class="fas fa-sync-alt"></i></button>
+                </div>
+            </div>
+            <div id="adeCardGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;">
+                <div style="text-align:center;color:#aaa;padding:30px;grid-column:1/-1;">Loading…</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="admin-card" style="padding:20px;margin-bottom:18px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Search Name</label>
+                    <input type="text" id="adeSearchName" class="form-control" placeholder="Donor / Business" oninput="adeFilter()" style="padding:9px 12px;">
+                </div>
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Book No.</label>
+                    <input type="number" id="adeFilterBook" class="form-control" placeholder="1–50" min="1" max="50" oninput="adeFilter()" style="padding:9px 12px;">
+                </div>
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Landmark</label>
+                    <select id="adeFilterLandmark" class="form-control" onchange="adeFilter()" style="padding:9px 12px;"><option value="">All Landmarks</option></select>
+                </div>
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Payment Mode</label>
+                    <select id="adeFilterMode" class="form-control" onchange="adeFilter()" style="padding:9px 12px;">
+                        <option value="">All Modes</option>
+                        <option>Cash</option><option>Cheque</option><option>UPI</option><option>RTGS</option><option>Balance</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Donor Type</label>
+                    <select id="adeFilterType" class="form-control" onchange="adeFilter()" style="padding:9px 12px;">
+                        <option value="">All Types</option><option>Individual</option><option>Business</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:flex-end;">
+                    <button onclick="adeClearFilters()" class="btn btn-small" style="background:#eee;color:#666;width:100%;padding:9px;">Clear Filters</button>
+                </div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:12px;font-size:.85rem;color:#777;flex-wrap:wrap;">
+                <span>Total: <strong id="adeSummaryTotal">—</strong></span>
+                <span>Filtered: <strong id="adeSummaryFiltered">—</strong></span>
+                <span>Total Amount: <strong id="adeSummaryAmt" style="color:#2E7D32;">—</strong></span>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="admin-card" style="padding:0;overflow:hidden;">
+            <div style="overflow-x:auto;">
+                <table class="admin-table" id="adeTable">
+                    <thead>
+                        <tr>
+                            <th>#</th><th>Book</th><th>Receipt</th><th>Donor</th><th>Type</th>
+                            <th>WhatsApp</th><th>Mobile</th><th>Building</th><th>Landmark</th><th>Area</th>
+                            <th>Amount</th><th>Mode</th><th>Ref No.</th><th>Landmark</th><th>Image</th><th>Submitted By</th><th>Date</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adeTbody">
+                        <tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manage Books Modal -->
+        <div id="adeManageBooksModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+            <div style="background:#fff;border-radius:16px;padding:28px 32px;max-width:480px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.25);position:relative;">
+                <h3 style="margin:0 0 20px;color:var(--dark-color);display:flex;align-items:center;gap:10px;border-bottom:2px solid #e0f2f1;padding-bottom:12px;">
+                    <i class="fas fa-book" style="color:#00695C;"></i> Manage Books
+                </h3>
+
+                <div style="display:grid;gap:20px;margin-bottom:24px;">
+                    <!-- New Books -->
+                    <div style="background:#e8f5e9;border-radius:10px;padding:16px;">
+                        <label style="font-weight:700;color:#2e7d32;display:block;margin-bottom:10px;">
+                            <i class="fas fa-book-open"></i> New Books Limit
+                        </label>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <button type="button" onclick="adeChangeBookLimit('New',-1)" style="width:38px;height:38px;border:none;border-radius:8px;background:#c8e6c9;color:#1b5e20;font-size:1.4rem;font-weight:700;cursor:pointer;line-height:1;">−</button>
+                            <input type="number" id="adeMaxNewBooksInput" min="1" value="50" style="width:70px;text-align:center;font-size:1.2rem;font-weight:700;border:2px solid #81c784;border-radius:8px;padding:6px;">
+                            <button type="button" onclick="adeChangeBookLimit('New',1)" style="width:38px;height:38px;border:none;border-radius:8px;background:#c8e6c9;color:#1b5e20;font-size:1.4rem;font-weight:700;cursor:pointer;line-height:1;">+</button>
+                        </div>
+                        <p style="margin:8px 0 0;font-size:.75rem;color:#555;">Each book contains 50 receipt slips.</p>
+                    </div>
+                    <!-- Old Books -->
+                    <div style="background:#fff3e0;border-radius:10px;padding:16px;">
+                        <label style="font-weight:700;color:#e65100;display:block;margin-bottom:10px;">
+                            <i class="fas fa-book"></i> Old Books Limit
+                        </label>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <button type="button" onclick="adeChangeBookLimit('Old',-1)" style="width:38px;height:38px;border:none;border-radius:8px;background:#ffe0b2;color:#bf360c;font-size:1.4rem;font-weight:700;cursor:pointer;line-height:1;">−</button>
+                            <input type="number" id="adeMaxOldBooksInput" min="1" value="30" style="width:70px;text-align:center;font-size:1.2rem;font-weight:700;border:2px solid #ffcc80;border-radius:8px;padding:6px;">
+                            <button type="button" onclick="adeChangeBookLimit('Old',1)" style="width:38px;height:38px;border:none;border-radius:8px;background:#ffe0b2;color:#bf360c;font-size:1.4rem;font-weight:700;cursor:pointer;line-height:1;">+</button>
+                        </div>
+                        <p style="margin:8px 0 0;font-size:.75rem;color:#555;">Each book contains 50 receipt slips.</p>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button type="button" onclick="document.getElementById('adeManageBooksModal').style.display='none'" class="btn" style="background:#eee;color:#555;">Cancel</button>
+                    <button type="button" onclick="adeSaveBookLimits()" class="btn btn-primary" style="background:#00695C;"><i class="fas fa-save" style="margin-right:6px;"></i>Save Changes</button>
+                </div>
+            </div>
+        </div>`;
+        document.querySelector('.admin-content')?.appendChild(section);
+    })();
+
+
+    // ── Lightbox for Receipt Photos ──
+    function adeOpenLightbox(url) {
+        let lb = document.getElementById('adeLightbox');
+        if (!lb) {
+            lb = document.createElement('div');
+            lb.id = 'adeLightbox';
+            lb.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;cursor:pointer;';
+            lb.onclick = () => lb.remove();
+            lb.innerHTML = '<img id="adeLightboxImg" style="max-width:100%;max-height:100%;border-radius:10px;border:3px solid #fff;"><button style="position:absolute;top:20px;right:20px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer;">&times;</button>';
+            document.body.appendChild(lb);
+        }
+        document.getElementById('adeLightboxImg').src = url;
+    }
+
+    // ── Admin Donation Entries JS ─────────────────────────────────
+    let _adeAll = [], _adeFiltered = [];
+    let _adeFormOpen = false;
+
+    // ── All Submitted Entries card renderer ──────────────────────
+    function adeRenderCards() {
+        const grid = document.getElementById('adeCardGrid');
+        if (!grid) return;
+        const q = (document.getElementById('adeCardSearch')?.value || '').toLowerCase();
+        const list = _adeAll.filter(e => {
+            if (!q) return true;
+            const donor = e.donorType === 'Business'
+                ? (e.businessName || '')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
+            return donor.toLowerCase().includes(q) || (e.landmark || '').toLowerCase().includes(q);
         });
+        const countEl = document.getElementById('adeCardCount');
+        if (countEl) countEl.textContent = list.length + ' entr' + (list.length === 1 ? 'y' : 'ies');
+        if (!list.length) {
+            grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:30px;grid-column:1/-1;">No entries found.</div>';
+            return;
+        }
+        const modeColor = { Cash:'#27AE60', Cheque:'#1565C0', UPI:'#6A1B9A', RTGS:'#F59E0B', Balance:'#E65100' };
+        grid.innerHTML = list.slice().reverse().map(e => {
+            const donor = e.donorType === 'Business'
+                ? (e.businessName || '—')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+            const amt = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '—';
+            const mode = e.paymentMode || '—';
+            const modeClr = modeColor[mode] || '#555';
+            const dtObj = new Date(e.submittedAt);
+            const dateStr = isNaN(dtObj) ? '—' : dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+            const timeStr = isNaN(dtObj) ? '' : dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
+            const photoUrl = e.photoUrl || e.receiptPreviewUrl || '';
+            const photoSection = photoUrl
+                ? `<div style="margin-top:12px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="adeOpenLightbox('${photoUrl}')">
+                       <img src="${photoUrl}?t=${Date.now()}" loading="lazy" alt="Receipt photo" style="width:100%;max-height:180px;object-fit:cover;display:block;">
+                       <div style="background:#fff8f5;padding:5px 10px;font-size:.72rem;color:#E65100;font-weight:600;display:flex;align-items:center;gap:5px;">
+                           <i class="fas fa-expand-alt"></i> Tap to view full receipt
+                       </div>
+                   </div>`
+                : `<div style="margin-top:12px;border:1.5px dashed #f0e0d0;border-radius:10px;padding:12px;text-align:center;background:#fffaf8;">
+                       <i class="fas fa-camera" style="font-size:1.3rem;color:#ddd;display:block;margin-bottom:5px;"></i>
+                       <span style="font-size:.73rem;color:#ccc;font-weight:600;">No Receipt Photo</span>
+                   </div>`;
+            return `<div style="background:var(--white);border:1.5px solid #F0F0F0;border-radius:14px;padding:18px 16px;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 4px 18px rgba(0,0,0,.11)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;">
+                    <div style="font-weight:700;font-size:.97rem;color:var(--dark-color);line-height:1.3;">${donor}</div>
+                    <button onclick="adeOpenEdit('${e.entryId}')" title="Edit" style="border:none;background:#E3F2FD;color:#1565C0;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.8rem;flex-shrink:0;"><i class="fas fa-edit"></i></button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;">
+                    <span style="background:#F3E5F5;color:#6A1B9A;font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:16px;vertical-align:middle;"><i class="fas fa-book" style="margin-right:4px;"></i>Bk ${e.bookNumber} / #${e.receiptNumber}</span> ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF8F1;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:2px;vertical-align:middle;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:2px;vertical-align:middle;">New</span>' }
+                    ${(e.landmark || e.area) ? `<span style="background:#E8F5E9;color:#1B5E20;font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:16px;"><i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>${[e.landmark, e.area].filter(Boolean).join(' - ')}</span>` : ''}
+                    ${e.landmark ? `<span style="background:#E3F2FD;color:#1565C0;font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:16px;"><i class="fas fa-location-arrow" style="margin-right:4px;"></i>${e.landmark}</span>` : ''}
+                    ${e.buildingName ? `<span style="background:#F3E5F5;color:#6A1B9A;font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:16px;"><i class="fas fa-building" style="margin-right:4px;"></i>${e.buildingName}${e.flatNumber ? ` (Flat: ${e.flatNumber})` : ''}</span>` : ''}
+                    <span style="background:#FFF8E1;color:${modeClr};font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:16px;">${mode}</span>
+                </div>
+                
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                    ${(e.editHistory && e.editHistory.length) || (e.nameHistory && e.nameHistory.length) ? `<span onclick="adeOpenEdit('${e.entryId}')" style="cursor:pointer;font-size:.7rem;font-weight:700;color:#c0392b;background:#FFEBEE;padding:3px 8px;border-radius:12px;border:1px solid #f5b7b1;"><i class="fas fa-pencil-alt" style="margin-right:4px;"></i>Edited</span>` : '<span></span>'}
+                    ${(e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received')).toLowerCase() === 'received' ? `<span style="background:#E8F5E9;color:#1B5E20;font-size:.73rem;font-weight:800;padding:3px 9px;border-radius:16px;border:1px solid #c8e6c9;">STATUS: RECEIVED</span>` : `<span style="background:#FFF8E1;color:#F57F17;font-size:.73rem;font-weight:800;padding:3px 9px;border-radius:16px;border:1px solid #ffe0b2;">STATUS: BALANCE</span>`}
+                         ${(e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received')).toLowerCase() === 'received' ? `<div style="display:flex;gap:4px;"><button onclick="ade_rcg_openEditModal('${e.entryId}')" title="Edit Receipt" style="border:none;background:linear-gradient(135deg,#8B1A1A,#B71C1C);color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fas fa-file-invoice"></i> Edit</button>` + (e.receiptPreviewUrl ? `<button onclick="window.open('${e.receiptPreviewUrl}', '_blank')" title="View HD Receipt" style="border:none;background:#FFEBEE;color:#C62828;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fas fa-eye"></i> View</button>` : '') + `</div>` : ''}
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="font-size:1.1rem;font-weight:800;color:#2E7D32;">${amt}</div>
+                    <div style="font-size:.76rem;color:#aaa;text-align:right;line-height:1.4;">${timeStr}<br>${dateStr}</div>
+                </div>
+                ${e.submittedBy ? `<div style="font-size:.75rem;color:#bbb;margin-top:7px;"><i class="fas fa-user" style="margin-right:4px;"></i>${e.submittedBy}</div>` : ''}
+                ${e.markedReceivedBy ? `<div style="font-size:.76rem;font-weight:700;color:#E65100;margin-top:6px;padding:5px 10px;background:#FFF8F1;border-radius:8px;border:1px solid #ffe0b2;"><i class="fas fa-check-circle" style="color:#2E7D32;margin-right:5px;"></i>Marked received by <strong>${e.markedReceivedBy}</strong></div>` : ''}
+                ${photoSection}
+            </div>`;
+        }).join('');
+    }
+    let _apbDocBlob = null;
+
+    function adeToggleForm() {
+        _adeFormOpen = !_adeFormOpen;
+        const el = document.getElementById('adeFormCard');
+        if (el) el.style.display = _adeFormOpen ? 'block' : 'none';
+        if (_adeFormOpen) {
+            adePopulateBooks();
+            adeLoadDropdowns();
+            checkAdeAndroidUpload();
+        }
+    }
+
+    function adePopulateBooks() {
+        const sel = document.getElementById('adeBookNumber');
+        const bType = document.querySelector('input[name="adeBookType"]:checked')?.value || 'New';
+        if (!sel) return;
+        sel.innerHTML = '<option value="">— Select Book —</option>';
+        const maxBooks = bType === 'Old' ? (window._adeMaxOldBooks || 30) : (window._adeMaxNewBooks || 50);
+        for (let b = 1; b <= maxBooks; b++) {
+            const from = (b - 1) * 50 + 1, to = b * 50;
+            sel.innerHTML += `<option value="${b}">Book ${b}  (Receipts ${from}–${to})</option>`;
+        }
+    }
+
+    async function adeOnBookChange() {
+        const bn = Number(document.getElementById('adeBookNumber')?.value);
+        const sel = document.getElementById('adeReceiptNumber');
+        if (!sel) return;
+        if (!bn) {
+            sel.innerHTML = '<option value="">— Select Book first —</option>';
+            sel.disabled = true;
+            return;
+        }
+        sel.disabled = true;
+        sel.innerHTML = '<option value="">Loading…</option>';
+        const from = (bn - 1) * 50 + 1, to = bn * 50;
+        let used = [];
+        const bType = document.querySelector('input[name="adeBookType"]:checked')?.value || 'New';
+        try {
+            const r = await fetch(`/api/donation-entries/used-receipts/${bn}?type=${bType}`);
+            const d = await r.json();
+            used = d.usedReceipts || [];
+        } catch (e) {}
+        sel.innerHTML = '<option value="">— Select Receipt —</option>';
+        for (let n = from; n <= to; n++) {
+            const taken = used.includes(n);
+            sel.innerHTML += `<option value="${n}" ${taken ? 'disabled style="color:#ccc;"' : ''}>${n}${taken ? ' (used)' : ''}</option>`;
+        }
+        sel.disabled = false;
+    }
+
+    function adeSetDonorType(type) {
+        document.getElementById('adeDonorType').value = type;
+        const indActive = type === 'Individual';
+        const activeStyle = 'display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid var(--primary-color);border-radius:16px;cursor:pointer;font-weight:600;font-size:.82rem;background:var(--primary-color);color:#fff;transition:all .2s;';
+        const inactiveStyle = 'display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid #ddd;border-radius:16px;cursor:pointer;font-weight:600;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;';
+        document.getElementById('adeBtnInd').style.cssText = indActive ? activeStyle : inactiveStyle;
+        document.getElementById('adeBtnBiz').style.cssText = !indActive ? activeStyle : inactiveStyle;
+        document.getElementById('adeIndFields').style.display = indActive ? 'grid' : 'none';
+        document.getElementById('adeBizFields').style.display = !indActive ? 'block' : 'none';
+    }
+
+    const _adeModes = { Cash: 'adeModeCash', Cheque: 'adeModeChq', UPI: 'adeModeUPI', RTGS: 'adeModeRTGS', Balance: 'adeModeBal' };
+    const _adeRefLabels = { Cash: 'Reference Number', Cheque: 'Cheque Number', UPI: 'UPI / Transaction ID', RTGS: 'RTGS Reference Number', Balance: 'Recovery Notes / Reference' };
+    
+    function adeSetMode(mode) {
+        document.getElementById('adePaymentMode').value = mode;
+        Object.entries(_adeModes).forEach(([m, id]) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const active = m === mode;
+            el.style.background = active ? 'var(--primary-color)' : '#f9f9f9';
+            el.style.color = active ? '#fff' : '#555';
+            el.style.border = active ? '2px solid var(--primary-color)' : '2px solid #ddd';
+        });
+        const lbl = document.getElementById('adeRefLabel');
+        if (lbl) lbl.innerHTML = `${_adeRefLabels[mode] || 'Reference Number'} ${(mode === 'Cheque' || mode === 'RTGS') ? '<span style="color:#e74c3c;font-weight:600;font-size:.85rem;">(required)</span>' : '<span style="color:#aaa;font-weight:400;font-size:.85rem;">(optional)</span>'}`;
+        const refGroup = document.getElementById('adeRefGroup');
+        if (refGroup) refGroup.style.display = mode === 'Balance' ? 'none' : '';
+    }
+
+    async function adeLoadDropdowns() {
+        await Promise.all([adeLoadBuildings(), adeLoadLandmarks(), adeLoadLandmarks(), aneLoadAll()]);
+    }
+
+    let _adeAllBuildings = [], _adeAllLandmarks = [], _adeAllAreas = [];
+
+    async function adeLoadBuildings() {
+        try {
+            const [rB, rL, rA] = await Promise.all([fetch('/api/buildings'), fetch('/api/landmarks'), fetch('/api/areas')]);
+            const [dB, dL, dA] = await Promise.all([rB.json(), rL.json(), rA.json()]);
+            _adeAllBuildings = dB.buildings || [];
+            _adeAllLandmarks = dL.landmarks || [];
+            _adeAllAreas     = dA.areas     || [];
+        } catch (e) {}
+        adePopulateBuildingSelect();
+    }
+
+    function adePopulateBuildingSelect(filterLandmarkId) {
+        const sel = document.getElementById('adeBuildingNameSelect');
+        if (!sel) return;
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">— Select Building —</option>';
+        const bldgs = filterLandmarkId
+            ? _adeAllBuildings.filter(function(b) { return b.landmarkId === filterLandmarkId; })
+            : _adeAllBuildings;
+        bldgs.forEach(function(b) {
+            sel.innerHTML += '<option value="' + b.name + '"' + (b.name === cur ? ' selected' : '') + '>' + b.name + '</option>';
+        });
+    }
+
+    async function adeLoadLandmarks() {
+        var sel = document.getElementById('adeLandmarkSelect');
+        if (!sel) return;
+        var cur = sel.value;
+        try {
+            var r = await fetch('/api/landmarks');
+            var d = await r.json();
+            sel.innerHTML = '<option value="">— Select Landmark —</option>';
+            (d.landmarks || []).forEach(function(l) {
+                sel.innerHTML += '<option value="' + l.name + '"' + (l.name === cur ? ' selected' : '') + '>' + l.name + '</option>';
+            });
+            _adeAllLandmarks = d.landmarks || [];
+        } catch (e) {}
+    }
+
+    async function adeLoadAreas(landmarkName) {
+        var sel = document.getElementById('adeAreaSelect');
+        if (!sel) return;
+        sel.innerHTML = '<option value="">— Select Area —</option>';
+        var areaGroup = document.getElementById('adeAreaGroup');
+        if (!landmarkName) { if (areaGroup) areaGroup.style.display = 'none'; return; }
+        try {
+            var r1 = await fetch('/api/landmarks');
+            var d1 = await r1.json();
+            var landmarkObj = (d1.landmarks || []).find(function(a) { return a.name === landmarkName; });
+            if (!landmarkObj) { if (areaGroup) areaGroup.style.display = 'none'; return; }
+            var r2 = await fetch('/api/areas');
+            var d2 = await r2.json();
+            var subs = (d2.areas || []).filter(function(s) { return s.landmarkId === landmarkObj.id; });
+            subs.forEach(function(s) {
+                sel.innerHTML += '<option value="' + s.name + '">' + s.name + '</option>';
+            });
+            if (areaGroup) { areaGroup.style.display = ''; areaGroup.style.animation = 'deSlideDown .25s ease'; }
+            // Reset locked state
+            adeUnlockArea(true);
+            sel.style.display = '';
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+        function adeOnLandmarkChange() {
+        var landmarkName = document.getElementById('adeLandmarkSelect')?.value || '';
+        // Reset area + building
+        ['adeAreaSelect','adeBuildingNameSelect','adeFlatNumber'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.value = '';
+        });
+        ['adeAreaGroup','adeBuildingGroup','adeFlatNumberGroup'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.style.display = 'none';
+        });
+        adeUnlockArea(true);
+        if (!landmarkName) return;
+        adeLoadAreas(landmarkName);
+        // Pre-fill buildings linked directly to this landmark
+        var lmObj = _adeAllLandmarks.find(function(l) { return l.name === landmarkName; });
+        adePopulateBuildingSelect(lmObj ? lmObj.id : null);
+    }
+
+    function adeOnAreaChange() {
+        var areaName = (document.getElementById('adeAreaSelect') || {}).value || '';
+        ['adeBuildingNameSelect','adeFlatNumber'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.value = '';
+        });
+        ['adeBuildingGroup','adeFlatNumberGroup'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.style.display = 'none';
+        });
+        if (!areaName) { adeUnlockArea(true); return; }
+        // LOCK the area
+        var lockedDiv  = document.getElementById('adeAreaLocked');
+        var lockedName = document.getElementById('adeAreaLockedName');
+        var areaSel    = document.getElementById('adeAreaSelect');
+        if (lockedName) lockedName.textContent = areaName;
+        if (lockedDiv)  { lockedDiv.style.display = 'flex'; }
+        if (areaSel)    areaSel.style.display = 'none';
+        // Populate buildings
+        var landmarkName = (document.getElementById('adeLandmarkSelect') || {}).value || '';
+        var lmObj  = _adeAllLandmarks.find(function(l) { return l.name === landmarkName; });
+        var saObj  = _adeAllAreas.find(function(a) { return a.name === areaName; });
+        var bldgs  = _adeAllBuildings.filter(function(b) {
+            return (saObj && b.areaId === saObj.id) ||
+                   (lmObj && b.landmarkId === lmObj.id && !b.areaId);
+        });
+        adeShowBuildings(bldgs);
+    }
+
+    function adeUnlockArea(silent) {
+        var lockedDiv = document.getElementById('adeAreaLocked');
+        var areaSel   = document.getElementById('adeAreaSelect');
+        if (lockedDiv) lockedDiv.style.display = 'none';
+        if (areaSel)  { areaSel.style.display = ''; areaSel.value = ''; }
+        if (!silent) {
+            ['adeBuildingNameSelect','adeFlatNumber'].forEach(function(id) {
+                var el = document.getElementById(id); if (el) el.value = '';
+            });
+            ['adeBuildingGroup','adeFlatNumberGroup'].forEach(function(id) {
+                var el = document.getElementById(id); if (el) el.style.display = 'none';
+            });
+        }
+    }
+
+    function adeOnBuildingChange() {
+        var building  = (document.getElementById('adeBuildingNameSelect') || {}).value || '';
+        var flatGroup = document.getElementById('adeFlatNumberGroup');
+        if (!flatGroup) return;
+        if (building) { flatGroup.style.display = 'block'; }
+        else flatGroup.style.display = 'none';
+    }
+
+    function adeShowBuildings(bldgs) {
+        var bSel  = document.getElementById('adeBuildingNameSelect');
+        var bHint = document.getElementById('adeBuildingHint');
+        var bGrp  = document.getElementById('adeBuildingGroup');
+        if (!bSel) return;
+        bSel.innerHTML = '<option value="">— Select Building (optional) —</option>';
+        bldgs.forEach(function(b) {
+            bSel.innerHTML += '<option value="' + b.name + '" data-id="' + b.id + '">' + b.name + '</option>';
+        });
+        if (bHint) bHint.style.display = bldgs.length === 0 ? '' : 'none';
+        if (bGrp)  { bGrp.style.display = ''; }
+    }
+
+    async function adeLoadLandmarks() {
+        try {
+            var r = await fetch('/api/landmarks');
+            var data = await r.json();
+            var sel = document.getElementById('adeLandmarkSelect');
+            if (!sel) return;
+            var cur = sel.value;
+            sel.innerHTML = '<option value="">— Select Landmark —</option>';
+            (data.landmarks || []).forEach(function(l) {
+                var o = document.createElement('option');
+                o.value = l.name;
+                o.textContent = l.name;
+                if (l.name === cur) o.selected = true;
+                sel.appendChild(o);
+            });
+            // Sync cache
+            _adeAllLandmarks = data.landmarks || [];
+        } catch (e) {}
+    }
+
+    async function adeAddBuildingPrompt() {
+        const name = prompt('Enter new Building Name:');
+        if (!name || !name.trim()) return;
+        try {
+            const r = await fetch('/api/buildings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name.trim() })
+            });
+            const d = await r.json();
+            if (r.ok && d.success) {
+                await adeLoadBuildings();
+                document.getElementById('adeBuildingNameSelect').value = d.building.name;
+            } else {
+                alert(d.message || 'Could not add building.');
+            }
+        } catch (e) {
+            alert('Server error.');
+        }
+    }
+
+    async function adeAddLandmarkPrompt() {
+        const name = prompt('Enter new Landmark Name:');
+        if (!name || !name.trim()) return;
+        try {
+            const r = await fetch('/api/landmarks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name.trim() })
+            });
+            const d = await r.json();
+            if (r.ok && d.success) {
+                await adeLoadLandmarks();
+                document.getElementById('adeLandmarkSelect').value = d.landmark.name;
+            } else {
+                alert(d.message || 'Could not add landmark.');
+            }
+        } catch (e) {
+            alert('Server error.');
+        }
+    }
+
+    async function adeAutoReceipt() {
+        try {
+            const bType = document.querySelector('input[name="adeBookType"]:checked')?.value || 'New';
+            const resp = await fetch(`/api/donation-entries/next-receipt?type=${bType}`);
+            const slot = await resp.json();
+            if (!slot.bookNumber) { alert('❌ All receipt numbers are used.'); return; }
+            const bookSel = document.getElementById('adeBookNumber');
+            if (bookSel) {
+                bookSel.value = slot.bookNumber;
+                bookSel.dispatchEvent(new Event('change'));
+            }
+            let attempts = 0;
+            const waitAndSet = setInterval(function() {
+                attempts++;
+                const rs = document.getElementById('adeReceiptNumber');
+                if (!rs) { clearInterval(waitAndSet); return; }
+                if (!rs.disabled && rs.options.length > 1) {
+                    rs.value = slot.receiptNumber;
+                    clearInterval(waitAndSet);
+                    adeShowStatus('✅ Auto: Book ' + slot.bookNumber + ', Receipt #' + slot.receiptNumber, 'success');
+                }
+                if (attempts > 40) clearInterval(waitAndSet);
+            }, 100);
+        } catch (e) {
+            alert('❌ Auto-receipt error: ' + e.message);
+        }
+    }
+
+    function checkAdeAndroidUpload() {
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        const apbUploadContainer = document.getElementById('apbUploadContainer');
+        if (isAndroid && apbUploadContainer) {
+            apbUploadContainer.innerHTML = `
+                <button type="button" onclick="document.getElementById('apbDocCameraCapture').click()"
+                    style="flex:1;min-width:120px;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                    <i class="fas fa-camera" style="font-size:1.3rem;"></i> Take Photo
+                </button>
+                <button type="button" onclick="document.getElementById('apbDocCamera').click()"
+                    style="flex:1;min-width:120px;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                    <i class="fas fa-images" style="font-size:1.3rem;"></i> Select Gallery
+                </button>
+            `;
+        }
+    }
+
+    function handleApbFileSelect(ev) {
+        const f = ev.target.files[0];
+        if (!f) return;
+        if (!f.type.startsWith('image/')) {
+            alert('Please select an image file.');
+            ev.target.value = '';
+            return;
+        }
+        _apbDocBlob = null;
+        const statusEl = document.getElementById('apbCompressStatus');
+        if (statusEl) statusEl.style.display = '';
+        window._compressImage(f, 950, function(blob) {
+            if (statusEl) statusEl.style.display = 'none';
+            if (!blob) {
+                alert('Could not process image.');
+                return;
+            }
+            _apbDocBlob = blob;
+            const thumb = document.getElementById('apbDocThumb');
+            const name = document.getElementById('apbDocFileName');
+            const size = document.getElementById('apbDocFileSize');
+            const prev = document.getElementById('apbDocPreview');
+            if (thumb) thumb.src = URL.createObjectURL(blob);
+            if (name) name.textContent = f.name.replace(/\.[^.]+$/, '') + '.jpg';
+            if (size) size.textContent = window._fmtBytesA(blob.size);
+            if (prev) prev.style.display = '';
+        });
+    }
+
+    function apbClearDoc() {
+        _apbDocBlob = null;
+        const inp = document.getElementById('apbDocCamera');
+        if (inp) inp.value = '';
+        const inpCap = document.getElementById('apbDocCameraCapture');
+        if (inpCap) inpCap.value = '';
+        const preEl = document.getElementById('apbDocPreview');
+        if (preEl) preEl.style.display = 'none';
+        const thumb = document.getElementById('apbDocThumb');
+        if (thumb) thumb.src = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('adeEntryForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('adeSubmitBtn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Saving…'; }
+
+            let payload;
+            try {
+                const donorType = (document.getElementById('adeDonorType')?.value || 'Individual');
+                const getVal  = id => document.getElementById(id)?.value ?? '';
+                const getTrim = id => getVal(id).trim();
+
+            const lmVal = getVal('adeLandmarkSelect');
+            if (!lmVal) throw new Error('Landmark is mandatory.');
+            const amtVal = getVal('adeAmount');
+            if (amtVal === '') throw new Error('Donation Amount is mandatory.');
+            const pMode = getVal('adePaymentMode') || 'Cash';
+            const refNum = getTrim('adeReference');
+            if (pMode === 'Cheque' && !refNum) throw new Error('Cheque number is mandatory for Cheque payments.');
+            if (pMode === 'RTGS' && !refNum) throw new Error('Transaction ID / Reference number is mandatory for RTGS payments.');
+
+            payload = {
+                    bookNumber      : Number(getVal('adeBookNumber')),
+                    receiptNumber   : Number(getVal('adeReceiptNumber')),
+                    bookType        : document.querySelector('input[name="adeBookType"]:checked')?.value || 'New',
+                    donorType,
+                    firstName       : donorType === 'Individual' ? getTrim('adeFirstName').toUpperCase()    : null,
+                    middleName      : donorType === 'Individual' ? getTrim('adeMiddleName').toUpperCase()   : null,
+                    lastName        : donorType === 'Individual' ? getTrim('adeLastName').toUpperCase()     : null,
+                    businessName    : donorType === 'Business'   ? getTrim('adeBusinessName').toUpperCase(): null,
+                    whatsappNumber  : getTrim('adeWhatsapp')  || null,
+                    mobileNumber    : getTrim('adeMobile')    || null,
+                    mailId          : getTrim('adeMail')      || null,
+                    buildingName    : getVal('adeBuildingNameSelect') || null,
+                    flatNumber      : getTrim('adeFlatNumber')        || null,
+                    landmark            : getVal('adeLandmarkSelect')         || null,
+                    area         : getVal('adeAreaSelect')      || null,
+                    landmark        : getVal('adeLandmarkSelect')     || null,
+                    amount          : getVal('adeAmount') !== '' ? Number(getVal('adeAmount')) : null,
+                    paymentMode     : getVal('adePaymentMode') || 'Cash',
+                    referenceNumber : getTrim('adeReference') || null,
+                    submittedBy     : 'Admin',
+                    submittedByUserId: 'admin'
+                };
+            } catch (buildErr) {
+                console.error('[ADE Form] Payload build error:', buildErr);
+                adeShowStatus('❌ Form error: ' + buildErr.message, 'error');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry'; }
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/donation-entries', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    if (_apbDocBlob && data.entry && data.entry.entryId) {
+                        try {
+                            const fd = new FormData();
+                            fd.append('passbook', _apbDocBlob, 'receipt.jpg');
+                            fd.append('entryId', data.entry.entryId);
+                            fd.append('userId', 'admin');
+                            await fetch('/api/upload-passbook', { method: 'POST', body: fd });
+                            apbClearDoc();
+                        } catch (_) {}
+                    }
+                    adeShowStatus(`✅ Entry saved! Book ${data.entry.bookNumber}, Receipt #${data.entry.receiptNumber}`, 'success');
+                    // Save receipt snapshot to the database
+                    try { await ade_rcg_saveSnapshot(data.entry.entryId); } catch(_) {}
+                    this.reset();
+                    adeSetDonorType('Individual');
+                    adeSetMode('Cash');
+                    const rSel = document.getElementById('adeReceiptNumber');
+                    if (rSel) { rSel.innerHTML = '<option value="">— Select Book first —</option>'; rSel.disabled = true; }
+                    await adeLoad();
+                } else {
+                    adeShowStatus('❌ ' + (data.message || 'Submission failed.'), 'error');
+                }
+            } catch (err) {
+                adeShowStatus('❌ Network error: ' + (err.message || 'Cannot reach server.'), 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry'; }
+            }
+        });
+
+        // Initialize file upload handlers
+        document.getElementById('apbDocCamera')?.addEventListener('change', handleApbFileSelect);
+        document.getElementById('apbDocCameraCapture')?.addEventListener('change', handleApbFileSelect);
+    });
+
+    async function adeExportExcel(lang = 'en') {
+        if (typeof XLSX === 'undefined') {
+            const status = document.getElementById('adeStatus');
+            if(status) { status.style.display='block'; status.style.background='#FFEBEE'; status.style.color='#c0392b'; status.textContent='Excel export library is not loaded.'; }
+            return;
+        }
+        
+        if (!_adeAll || _adeAll.length === 0) {
+            const status = document.getElementById('adeStatus');
+            if(status) { status.style.display='block'; status.style.background='#FFEBEE'; status.style.color='#c0392b'; status.textContent='No entries to export.'; }
+            return;
+        }
+        
+        // Format data following the requested structure
+        const data = _adeAll.map(e => {
+            const donorName = e.donorType === 'Business' ? (e.businessName || '') : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
+            
+            let submittedDate = '';
+            let submittedTime = '';
+            if (e.submittedAt) {
+                try {
+                    const dtObj = new Date(e.submittedAt);
+                    submittedDate = dtObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                    submittedTime = dtObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                } catch (err) {}
+            }
+            
+            const row = {};
+            if (e.bookNumber) row['Book Number'] = e.bookNumber;
+            if (e.receiptNumber) row['Receipt Number'] = e.receiptNumber;
+            if (donorName) row['Donor Name'] = donorName;
+            if (e.whatsappNumber) row['WhatsApp Number'] = e.whatsappNumber;
+            if (e.mobileNumber) row['Mobile Number'] = e.mobileNumber;
+            if (e.mailId) row['Email'] = e.mailId;
+            if (e.landmark) row['Landmark'] = e.landmark;
+            if (e.area) row['Area'] = e.area;
+            if (e.landmark) row['Common Landmark'] = e.landmark;
+            if (e.buildingName) row['Building Name'] = e.buildingName;
+            if (e.flatNumber) row['Flat Number'] = e.flatNumber;
+            if (e.amount != null) row['Amount'] = e.amount;
+            if (e.paymentMode) row['Payment Mode'] = e.paymentMode;
+            if (e.referenceNumber) row['Reference Number'] = e.referenceNumber;
+            if (submittedDate) row['Date Submitted'] = submittedDate;
+            if (submittedTime) row['Time Submitted'] = submittedTime;
+            if (e.submittedBy) row['Submitted By'] = e.submittedBy;
+            if (e.status) row['Status'] = e.status;
+            if (e.entryId) row['Entry ID'] = e.entryId;
+            
+            return row;
+        });
+        
+        let finalData = data;
+        if (lang === 'mr' && typeof translateExcelData === 'function') {
+            finalData = await translateExcelData(data);
+        }
+        
+        const ws = XLSX.utils.json_to_sheet(finalData);
+        
+        for (const cellAddress in ws) {
+            if (cellAddress[0] === '!') continue;
+            if (!ws[cellAddress].s) ws[cellAddress].s = {};
+            ws[cellAddress].s.alignment = { horizontal: "center", vertical: "center" };
+        }
+        
+        const colWidths = [
+            { wch: 12 }, { wch: 15 }, { wch: 25 }, { wch: 15 },
+            { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 20 },
+            { wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 12 },
+            { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+            { wch: 20 }, { wch: 12 }, { wch: 25 }
+        ];
+        ws['!cols'] = colWidths;
+        
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Donation Entries");
+        
+        const filename = "Donation_Data_Entry_" + new Date().toISOString().split('T')[0] + ".xlsx";
+        XLSX.writeFile(wb, filename);
+        
+        const status = document.getElementById('adeStatus');
+        if(status) { status.style.display='block'; status.style.background='#E8F5E9'; status.style.color='#1B5E20'; status.textContent='Exported to Excel successfully!'; setTimeout(()=>status.style.display='none', 3000); }
+    }
+
+    
+    // ─── Year Filter for Admin Data Entry ────────────────────────────────
+    async function adeLoadYearFilter() {
+        const sel = document.getElementById('adeYearFilter');
+        if (!sel) return;
+        sel.style.display = 'inline-block';
+        try {
+            const r = await fetch('/api/donation-years');
+            const data = await r.json();
+            if (!data.years || !data.years.length) return;
+            sel.innerHTML = '';
+            const activeYear = data.activeYear;
+            // Add "All Years" option
+            const allOpt = document.createElement('option');
+            allOpt.value = 'all';
+            allOpt.textContent = '📅 All Years';
+            sel.appendChild(allOpt);
+            
+            data.years.forEach(yr => {
+                const opt = document.createElement('option');
+                opt.value = yr;
+                opt.textContent = yr === activeYear ? '⭐ ' + yr + ' (Active)' : yr;
+                if (!window._adeSelectedYear && yr === activeYear) opt.selected = true;
+                if (window._adeSelectedYear === yr) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            if (!window._adeSelectedYear) window._adeSelectedYear = activeYear;
+        } catch(e) {
+            console.warn('Could not load donation years from API:', e);
+            if (!window._adeSelectedYear) window._adeSelectedYear = 'active';
+        }
+    }
+
+    async function adeLoad() {
+        const tbody = document.getElementById('adeTbody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">Loading…</td></tr>';
+        try {
+            const [entRes, landmarkRes, settingsRes] = await Promise.all([
+                fetch('/api/donation-entries?year=' + (window._adeSelectedYear || 'active')),
+                fetch('/api/landmarks'),
+                fetch('/api/settings')
+            ]);
+            const entData  = await entRes.json();
+            const landmarkData = await landmarkRes.json();
+            const settingsData = await settingsRes.json();
+            _adeAll = entData.entries || [];
+
+            // Store dynamic book limits globally
+            window._adeMaxNewBooks = settingsData.maxNewBooks || 50;
+            window._adeMaxOldBooks = settingsData.maxOldBooks || 30;
+
+            // Update labels
+            const lblNew = document.getElementById('adeLblNewBooks');
+            const lblOld = document.getElementById('adeLblOldBooks');
+            if (lblNew) lblNew.textContent = `New Book (${window._adeMaxNewBooks} Books)`;
+            if (lblOld) lblOld.textContent = `Old Book (${window._adeMaxOldBooks} Books)`;
+
+            // Sync modal inputs
+            const inpNew = document.getElementById('adeMaxNewBooksInput');
+            const inpOld = document.getElementById('adeMaxOldBooksInput');
+            if (inpNew) inpNew.value = window._adeMaxNewBooks;
+            if (inpOld) inpOld.value = window._adeMaxOldBooks;
+
+            // Repopulate book select if visible
+            adePopulateBooks();
+
+            // Populate landmark filter dropdown
+            const landmarkSel = document.getElementById('adeFilterLandmark');
+            if (landmarkSel) {
+                landmarkSel.innerHTML = '<option value="">All Landmarks</option>';
+                (landmarkData.landmarks || []).forEach(a => landmarkSel.innerHTML += `<option>${a.name}</option>`);
+            }
+            adeFilter();
+            adeRenderCards();
+        } catch(e) {
+            tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#c00;padding:30px;">Error loading data.</td></tr>';
+        }
+    }
+
+    // ── Book Management Modal Functions ──────────────────────────────────────
+    function adeManageBooksModal() {
+        const inpNew = document.getElementById('adeMaxNewBooksInput');
+        const inpOld = document.getElementById('adeMaxOldBooksInput');
+        if (inpNew) inpNew.value = window._adeMaxNewBooks || 50;
+        if (inpOld) inpOld.value = window._adeMaxOldBooks || 30;
+        const modal = document.getElementById('adeManageBooksModal');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function adeChangeBookLimit(type, delta) {
+        const inputId = type === 'New' ? 'adeMaxNewBooksInput' : 'adeMaxOldBooksInput';
+        const inp = document.getElementById(inputId);
+        if (!inp) return;
+        const newVal = Math.max(1, Number(inp.value) + delta);
+        inp.value = newVal;
+    }
+
+    async function adeSaveBookLimits() {
+        const inpNew = document.getElementById('adeMaxNewBooksInput');
+        const inpOld = document.getElementById('adeMaxOldBooksInput');
+        const maxNew = Number(inpNew?.value) || 50;
+        const maxOld = Number(inpOld?.value) || 30;
+        if (maxNew < 1 || maxOld < 1) { alert('Book limits must be at least 1.'); return; }
+        try {
+            const resp = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ maxNewBooks: maxNew, maxOldBooks: maxOld })
+            });
+            if (!resp.ok) throw new Error('Server error');
+            window._adeMaxNewBooks = maxNew;
+            window._adeMaxOldBooks = maxOld;
+            // Update labels
+            const lblNew = document.getElementById('adeLblNewBooks');
+            const lblOld = document.getElementById('adeLblOldBooks');
+            if (lblNew) lblNew.textContent = `New Book (${maxNew} Books)`;
+            if (lblOld) lblOld.textContent = `Old Book (${maxOld} Books)`;
+            // Repopulate book dropdowns
+            adePopulateBooks();
+            // Close modal
+            document.getElementById('adeManageBooksModal').style.display = 'none';
+            if (typeof showNotification === 'function') showNotification(`Books updated — New: ${maxNew}, Old: ${maxOld}`, 'success');
+            else alert(`✅ Saved! New Books: ${maxNew}, Old Books: ${maxOld}`);
+        } catch(err) {
+            alert('Failed to save book limits: ' + err.message);
+        }
+    }
+
+    function adeFilter() {
+        const name = (document.getElementById('adeSearchName')?.value || '').toLowerCase();
+        const book = document.getElementById('adeFilterBook')?.value;
+        const landmark = document.getElementById('adeFilterLandmark')?.value;
+        const mode = document.getElementById('adeFilterMode')?.value;
+        const type = document.getElementById('adeFilterType')?.value;
+        _adeFiltered = _adeAll.filter(e => {
+            const donor = e.donorType === 'Business'
+                ? (e.businessName || '')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
+            if (name && !donor.toLowerCase().includes(name)) return false;
+            if (book && String(e.bookNumber) !== String(book)) return false;
+            if (landmark && e.landmark !== landmark) return false;
+            if (mode && e.paymentMode !== mode) return false;
+            if (type && e.donorType !== type) return false;
+            return true;
+        });
+        adeRender();
+    }
+
+    function adeClearFilters() {
+        ['adeSearchName','adeFilterBook'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+        ['adeFilterLandmark','adeFilterMode','adeFilterType'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+        adeFilter();
+    }
+
+    function adeRender() {
+        const tbody = document.getElementById('adeTbody');
+        if (!tbody) return;
+        const totalAmt = _adeFiltered.reduce((s,e) => s + (e.amount||0), 0);
+        document.getElementById('adeSummaryTotal')    && (document.getElementById('adeSummaryTotal').textContent    = _adeAll.length);
+        document.getElementById('adeSummaryFiltered') && (document.getElementById('adeSummaryFiltered').textContent = _adeFiltered.length);
+                document.getElementById('adeSummaryAmt')      && (document.getElementById('adeSummaryAmt').textContent      = '₹' + totalAmt.toLocaleString('en-IN'));
+        
+        // Instantly update donation tracking section when data changes
+        if (typeof loadDonationTrackingCards === 'function') {
+            loadDonationTrackingCards();
+        }
+
+        if (!_adeFiltered.length) { tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">No entries found.</td></tr>'; return; }
+        tbody.innerHTML = _adeFiltered.slice().reverse().map((e, i) => {
+            const donor = e.donorType === 'Business'
+                ? (e.businessName || '—')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+            const dtObj = new Date(e.submittedAt);
+            const dtTime = dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
+            const dtDate = dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+            const dt = `<span style="font-size:.8rem;white-space:nowrap;">${dtTime}<br><span style="color:#aaa;">${dtDate}</span></span>`;
+            const amt = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '—';
+            return `<tr id="ade-row-${e.entryId}">
+                <td style="color:#aaa;font-size:.8rem;">${i+1}</td>
+                <td style="font-weight:700;vertical-align:middle;">Bk ${e.bookNumber} ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF8F1;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>' }</td>
+                <td>#${e.receiptNumber}</td>
+                <td style="font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${donor}">${donor}</td>
+                <td><span style="padding:2px 9px;border-radius:10px;font-size:.75rem;font-weight:700;background:${e.donorType==='Business'?'#E3F2FD':'#E8F5E9'};color:${e.donorType==='Business'?'#1565C0':'#1B5E20'};">${e.donorType}</span></td>
+                <td style="color:#555;font-size:.85rem;">${e.whatsappNumber||''}</td>
+                <td style="color:#555;font-size:.85rem;">${e.mobileNumber||''}</td>
+                <td style="font-size:.85rem;">${e.buildingName||''}${e.flatNumber ? `<br><span style="font-size:0.75rem;color:#777;">Flat: ${e.flatNumber}</span>` : ''}</td>
+                <td style="font-size:.85rem;">${e.landmark||''}</td>
+                <td style="font-size:.85rem;">${e.area||''}</td>
+                <td style="color:#2E7D32;font-weight:700;">${amt}</td>
+                <td><span style="padding:3px 10px;border-radius:12px;background:#FFF8F1;color:#E65100;font-size:.75rem;font-weight:700;">${e.paymentMode}</span></td>
+                <td style="font-size:.82rem;color:#777;">${e.referenceNumber||''}</td>
+                <td style="font-size:.82rem;color:#555;">${e.landmark||''}</td>
+                <td style="text-align:center;">${(e.photoUrl || e.receiptPreviewUrl) ? `<img src="${fixUrl(e.photoUrl || e.receiptPreviewUrl)}?t=${Date.now()}" style="width:50px;height:50px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openAdminLightbox(fixUrl('${e.photoUrl || e.receiptPreviewUrl}'))" title="View photo">` : '<span style="font-size:.72rem;color:#aaa;font-style:italic;">No Image</span>'}</td>
+                <td style="font-size:.82rem;color:#888;">${e.submittedBy||''}</td>
+                <td style="color:#888;font-size:.82rem;">${dt}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="btn-icon btn-edit" title="Edit" onclick="adeOpenEdit('${e.entryId}')"><i class="fas fa-edit"></i></button>
+                        <button class="btn-icon btn-delete" title="Delete" onclick="adeDelete('${e.entryId}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function adeDelete(id) {
+        if (!confirm('Delete this donation entry? This cannot be undone.')) return;
+        try {
+            const res = await fetch(`/api/donation-entries/${encodeURIComponent(id)}`, { method:'DELETE' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                adeShowStatus('✅ Entry deleted.', 'success');
+                _adeAll = _adeAll.filter(e => e.entryId !== id);
+                adeFilter();
+            } else { adeShowStatus('❌ ' + (data.message||'Delete failed.'), 'error'); }
+        } catch(e) { adeShowStatus('❌ Server error.', 'error'); }
+    }
+
+    // ── Edit modal ─────────────────────────────────────────────────
+    let _adeEditId = null;
+    function adeOpenEdit(id) {
+        const e = _adeAll.find(x => x.entryId === id);
+        if (!e) return;
+        _adeEditId = id;
+        const isDonorBiz = e.donorType === 'Business';
+        const modal = document.createElement('div');
+        modal.id = 'adeEditModal';
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
+        modal.innerHTML = `
+        <div style="background:var(--white);border-radius:16px;padding:30px 28px;max-width:680px;width:94%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h3 style="margin:0;color:var(--dark-color);"><i class="fas fa-edit" style="color:var(--primary-color);margin-right:8px;"></i>Edit Entry</h3>
+                <span onclick="document.getElementById('adeEditModal').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <div id="adeEditStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
+            <form onsubmit="adeSaveEdit(event)" autocomplete="off">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div class="form-group"><label>Book Number</label><input name="bookNumber" class="form-control" type="number" value="${e.bookNumber}" min="1" max="50" required></div>
+                    <div class="form-group"><label>Receipt Number</label><input name="receiptNumber" class="form-control" type="number" value="${e.receiptNumber}" min="1" max="2500" required></div>
+                </div>
+                <div class="form-group"><label>Donor Type</label>
+                    <select name="donorType" class="form-control" onchange="this.closest('form').querySelector('.ade-ind-grp').style.display=this.value==='Individual'?'grid':'none';this.closest('form').querySelector('.ade-biz-grp').style.display=this.value==='Business'?'block':'none';">
+                        <option ${!isDonorBiz?'selected':''}>Individual</option>
+                        <option ${isDonorBiz?'selected':''}>Business</option>
+                    </select>
+                </div>
+                <div class="ade-ind-grp" style="display:${!isDonorBiz?'grid':'none'};grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>First Name</label><input name="firstName" class="form-control" value="${e.firstName||''}" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label>Middle Name</label><input name="middleName" class="form-control" value="${e.middleName||''}" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label>Last Name</label><input name="lastName" class="form-control" value="${e.lastName||''}" oninput="this.value=this.value.toUpperCase()"></div>
+                </div>
+                <div class="ade-biz-grp" style="display:${isDonorBiz?'block':'none'};">
+                    <div class="form-group"><label>Business Name</label><input name="businessName" class="form-control" value="${e.businessName||''}" oninput="this.value=this.value.toUpperCase()"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>WhatsApp</label><input name="whatsappNumber" class="form-control" value="${e.whatsappNumber||''}" maxlength="10"></div>
+                    <div class="form-group"><label>Mobile</label><input name="mobileNumber" class="form-control" value="${e.mobileNumber||''}" maxlength="10"></div>
+                    <div class="form-group"><label>Mail ID</label><input name="mailId" class="form-control" value="${e.mailId||''}"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>Building Name</label><input name="buildingName" class="form-control" value="${e.buildingName||''}"></div>
+                    <div class="form-group"><label>Landmark</label><input name="landmark" class="form-control" value="${e.landmark||''}"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                    <div class="form-group"><label>Amount (₹)</label><input name="amount" class="form-control" type="number" value="${e.amount||''}" min="0"></div>
+                    <div class="form-group"><label>Payment Mode</label>
+                        <select name="paymentMode" class="form-control">
+                            <option ${e.paymentMode==='Cash'?'selected':''}>Cash</option>
+                            <option ${e.paymentMode==='Cheque'?'selected':''}>Cheque</option>
+                            <option ${e.paymentMode==='UPI'?'selected':''}>UPI</option>
+                            <option ${e.paymentMode==='RTGS'?'selected':''}>RTGS</option>
+                            <option ${e.paymentMode==='Balance'?'selected':''}>Balance</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Status</label>
+                        <select name="status" class="form-control">
+                            <option ${(e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received')) === 'Received' ? 'selected' : ''} value="Received">Received</option>
+                            <option ${(e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received')) === 'Balance' ? 'selected' : ''} value="Balance">Balance</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Reference No.</label><input name="referenceNumber" class="form-control" value="${e.referenceNumber||''}"></div>
+                </div>
+                <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:16px;margin-bottom:14px;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:10px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Receipt Photo</div>
+                    <div id="adeEditCurPhotoDiv" style="display:none;margin-bottom:10px;">
+                        <p style="font-size:.8rem;color:#777;margin:0 0 6px;">Current photo:</p>
+                        <img id="adeEditCurPhotoImg" src="" alt="Current" style="max-width:100%;max-height:130px;border-radius:8px;border:1.5px solid #e0e0e0;object-fit:contain;cursor:pointer;">
+                    </div>
+                    <button type="button" onclick="document.getElementById('adeEditPhotoInput').click()" style="width:100%;padding:11px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Upload / Replace Photo</button>
+                    <input type="file" id="adeEditPhotoInput" style="display:none;" accept="image/*">
+                    <div id="adeEditPhotoPreview" style="display:none;margin-top:10px;">
+                        <img id="adeEditPhotoThumb" src="" alt="Preview" style="max-width:100%;max-height:130px;border-radius:8px;border:1.5px solid #ffe0d0;object-fit:contain;">
+                        <p id="adeEditPhotoName" style="font-size:.8rem;color:#555;margin:6px 0 0;"></p>
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                    <button type="button" class="btn" style="background:#eee;color:#555;" onclick="document.getElementById('adeEditModal').remove()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="adeSaveBtnModal">Save Changes</button>
+                </div>
+            </form>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', ev => { if (ev.target === modal) modal.remove(); });
+        // Show editHistory if present (fallback to nameHistory for legacy)
+        const hist = e.editHistory || e.nameHistory;
+        if (hist && hist.length) {
+            const histDiv = document.createElement('div');
+            histDiv.style.cssText = 'margin-bottom:16px;border:1.5px solid #E3F2FD;border-radius:10px;padding:14px;background:#F8FBFF;';
+            histDiv.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#1565C0;margin-bottom:10px;"><i class="fas fa-history" style="margin-right:6px;"></i>Edit History</div>' +
+                hist.map(function(h) {
+                    const dt = new Date(h.changedAt).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+                    let nameChange = '';
+                    if (h.from !== h.to) nameChange = '<span style="color:#888;">Name:</span> <strong>' + (h.from||'—') + '</strong> &rarr; <strong>' + (h.to||'—') + '</strong><br>';
+                    let amtChange = '';
+                    if (h.fromAmount !== h.toAmount && h.fromAmount !== undefined && h.toAmount !== undefined) amtChange = '<span style="color:#888;">Amount:</span> <strong>₹' + (h.fromAmount||'0') + '</strong> &rarr; <strong>₹' + (h.toAmount||'0') + '</strong><br>';
+                    let bookChange = '';
+                    if (h.fromBook !== h.toBook && h.fromBook !== undefined && h.toBook !== undefined) bookChange = '<span style="color:#888;">Book:</span> <strong>' + (h.fromBook||'—') + '</strong> &rarr; <strong>' + (h.toBook||'—') + '</strong><br>';
+                    let recChange = '';
+                    if (h.fromReceipt !== h.toReceipt && h.fromReceipt !== undefined && h.toReceipt !== undefined) recChange = '<span style="color:#888;">Receipt:</span> <strong>' + (h.fromReceipt||'—') + '</strong> &rarr; <strong>' + (h.toReceipt||'—') + '</strong><br>';
+                    let modeChange = '';
+                    if (h.fromMode !== h.toMode && h.fromMode !== undefined && h.toMode !== undefined) modeChange = '<span style="color:#888;">Mode:</span> <strong>' + (h.fromMode||'—') + '</strong> &rarr; <strong>' + (h.toMode||'—') + '</strong><br>';
+                    let statusChange = '';
+                    if (h.fromStatus !== h.toStatus && h.fromStatus !== undefined && h.toStatus !== undefined) statusChange = '<span style="color:#888;">Status:</span> <strong>' + (h.fromStatus||'—') + '</strong> &rarr; <strong>' + (h.toStatus||'—') + '</strong><br>';
+                    
+                    let extraInfo = '<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #E3F2FD;font-size:.78rem;color:#666;">' +
+                        'Amount: <strong>' + (h.toAmount !== undefined && h.toAmount !== null ? '₹'+h.toAmount : (e.amount != null ? '₹'+e.amount : '—')) + '</strong> &nbsp;|&nbsp; ' +
+                        'Book: <strong>' + (h.toBook !== undefined && h.toBook !== null ? h.toBook : (e.bookNumber || '—')) + '</strong> &nbsp;|&nbsp; ' +
+                        'Receipt: <strong>' + (h.toReceipt !== undefined && h.toReceipt !== null ? h.toReceipt : (e.receiptNumber || '—')) + '</strong>' +
+                        '</div>';
+                        
+                    return '<div style="padding:8px 12px;background:var(--white);border-radius:8px;border:1px solid #E3F2FD;margin-bottom:6px;font-size:.82rem;">' +
+                        nameChange + amtChange + bookChange + recChange + modeChange + statusChange +
+                        '<span style="color:#888;">Reason:</span> ' + (h.reason||'—') + ' &nbsp;<span style="color:#aaa;font-size:.75rem;">' + dt + ' by ' + (h.changedBy||'—') + '</span>' +
+                        extraInfo +
+                    '</div>';
+                }).join('');
+            const form = modal.querySelector('form');
+            if (form) form.insertBefore(histDiv, form.firstChild);
+        }
+        // Populate current photo
+        const curPDiv = document.getElementById('adeEditCurPhotoDiv');
+        const curPImg = document.getElementById('adeEditCurPhotoImg');
+        if ((e.photoUrl || e.receiptPreviewUrl) && curPDiv && curPImg) {
+            curPImg.src = fixUrl(e.photoUrl || e.receiptPreviewUrl) + '?t=' + Date.now();
+            curPImg.onclick = () => openAdminLightbox(fixUrl(e.photoUrl || e.receiptPreviewUrl));
+            curPDiv.style.display = '';
+        } else if (curPDiv) { curPDiv.style.display = 'none'; }
+        const aePreview = document.getElementById('adeEditPhotoPreview');
+        if (aePreview) aePreview.style.display = 'none';
+        window._adeEditPhotoBlob = null;
+        const aeInput = document.getElementById('adeEditPhotoInput');
+        if (aeInput) {
+            aeInput.value = '';
+            aeInput.onchange = function(ev2) {
+                const f = ev2.target.files[0]; if (!f) return;
+                if (!f.type.startsWith('image/')) { alert('Please select a JPG or PNG image.'); aeInput.value=''; return; }
+                window._adeEditPhotoBlob = null;
+                window._compressImage(f, 950, function(blob) {
+                    if (!blob) { alert('Could not process image.'); return; }
+                    window._adeEditPhotoBlob = blob;
+                    const thumb = document.getElementById('adeEditPhotoThumb');
+                    const name  = document.getElementById('adeEditPhotoName');
+                    const prev  = document.getElementById('adeEditPhotoPreview');
+                    if (thumb) thumb.src = URL.createObjectURL(blob);
+                    if (name)  name.textContent = '✅ ' + f.name.replace(/\.[^.]+$/, '') + '.jpg (' + window._fmtBytesA(blob.size) + (f.size > blob.size ? ', compressed' : '') + ')';
+                    if (prev)  prev.style.display = '';
+                });
+            };
+        }
+    }
+
+    async function adeSaveEdit(ev) {
+        ev.preventDefault();
+        const form = ev.target;
+        const btn  = document.getElementById('adeSaveBtnModal');
+        if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+        const fd = new FormData(form);
+        const payload = { _isAdmin: true };
+        fd.forEach((v, k) => { payload[k] = ['bookNumber','receiptNumber','amount'].includes(k) ? Number(v) : v; });
+        try {
+            const res  = await fetch(`/api/donation-entries/${encodeURIComponent(_adeEditId)}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                document.getElementById('adeEditModal')?.remove();
+                adeShowStatus('\u2705 Entry updated successfully.', 'success');
+                // Upload photo if selected
+                if (window._adeEditPhotoBlob) {
+                    try {
+                        const fd2 = new FormData();
+                        fd2.append('passbook', window._adeEditPhotoBlob, 'receipt.jpg');
+                        fd2.append('entryId', _adeEditId);
+                        await fetch('/api/upload-passbook', { method:'POST', body:fd2 });
+                        window._adeEditPhotoBlob = null;
+                    } catch(_px) {}
+                }
+                await adeLoad();
+            } else {
+                const st = document.getElementById('adeEditStatus');
+                if (st) { st.style.display='block'; st.style.background='#FFEBEE'; st.style.color='#c00'; st.textContent = data.message||'Update failed.'; }
+            }
+        } catch(e) { alert('Server error.'); }
+        finally { if (btn) { btn.disabled=false; btn.textContent='Save Changes'; } }
+    }
+
+    // ── Building/Landmark Management modals ──────────────────────────
+    async function adeBuildingModal() {
+        const [rB, rL, rA] = await Promise.all([fetch('/api/buildings'), fetch('/api/landmarks'), fetch('/api/areas')]);
+        const [dB, dL, dA] = await Promise.all([rB.json(), rL.json(), rA.json()]);
+        const allBldgs    = dB.buildings || [];
+        const allLandmarks = dL.landmarks || [];
+        const allAreas     = dA.areas     || [];
+        // Build grouped area options: group by landmark, then ungrouped areas
+        var areaOpts = '<option value="">— Link to Area (optional) —</option>';
+        if (allLandmarks.length > 0) {
+            allLandmarks.forEach(function(lm) {
+                var lmAreas = allAreas.filter(function(a){ return a.landmarkId === lm.id; });
+                if (lmAreas.length > 0) {
+                    areaOpts += '<optgroup label="' + lm.name.replace(/"/g,'&quot;') + '">';
+                    lmAreas.forEach(function(a) {
+                        areaOpts += '<option value="' + a.id + '">' + a.name + '</option>';
+                    });
+                    areaOpts += '</optgroup>';
+                }
+            });
+            // Ungrouped areas (no landmarkId)
+            var ungrouped = allAreas.filter(function(a){ return !a.landmarkId; });
+            if (ungrouped.length > 0) {
+                areaOpts += '<optgroup label="Other">';
+                ungrouped.forEach(function(a) {
+                    areaOpts += '<option value="' + a.id + '">' + a.name + '</option>';
+                });
+                areaOpts += '</optgroup>';
+            }
+        } else {
+            // No landmarks — flat list
+            allAreas.forEach(function(a) {
+                areaOpts += '<option value="' + a.id + '">' + a.name + '</option>';
+            });
+        }
+        const modal = document.createElement('div');
+        modal.id = 'adeBldgModal';
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
+        modal.innerHTML = '<div style="background:var(--white);border-radius:16px;padding:28px;max-width:480px;width:92%;max-height:82vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2);">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">' +
+                '<h3 style="margin:0;"><i class="fas fa-building" style="color:#3949AB;margin-right:8px;"></i>Manage Buildings</h3>' +
+                '<span onclick="document.getElementById(\'adeBldgModal\').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:16px;">' +
+                '<input type="text" id="adeBldgInput" class="form-control" placeholder="Building name" style="font-size:.85rem;">' +
+                '<select id="adeBldgArea" class="form-control" style="font-size:.85rem;">' +
+                    areaOpts +
+                '</select>' +
+                '<button onclick="amAddBuilding()" class="btn btn-primary">Add Building</button>' +
+            '</div>' +
+            '<div id="adeBldgList" style="display:flex;flex-direction:column;gap:8px;">' +
+            allBldgs.map(function(b) {
+                var saName = b.areaId ? (allAreas.find(function(s){return s.id===b.areaId;})||{}).name || '' : '';
+                return '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8f9fa;border-radius:8px;">' +
+                    '<div style="flex:1;">' +
+                        '<div style="font-weight:700;font-size:.85rem;">'+b.name+'</div>' +
+                        (saName ? '<div style="font-size:.75rem;color:#888;"><i class="fas fa-map" style="margin-right:3px;"></i>'+saName+'</div>' : '') +
+                    '</div>' +
+                    '<button onclick="amDeleteBuilding(\''+b.id+'\',this)" style="border:none;background:#FFEBEE;color:#c0392b;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;"><i class="fas fa-trash"></i></button>' +
+                '</div>';
+            }).join('') +
+            (!allBldgs.length ? '<div style="color:#aaa;text-align:center;padding:12px;">No buildings yet.</div>' : '') +
+            '</div></div>';
+        window.amAddBuilding = async function() {
+            var name = (document.getElementById('adeBldgInput')||{}).value||''; name = name.trim(); if(!name) return;
+            var saId = (document.getElementById('adeBldgArea')||{}).value||null;
+            var payload = { name: name }; if(saId) payload.areaId = saId;
+            var r = await fetch('/api/buildings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+            var d = await r.json();
+            if(r.ok && d.success) { document.getElementById('adeBldgModal')?.remove(); adeBuildingModal(); adeLoadBuildings(); }
+            else alert(d.message || 'Could not add.');
+        };
+        window.amDeleteBuilding = async function(id, btn) {
+            if (!confirm('Remove this building?')) return;
+            var r = await fetch('/api/buildings/' + encodeURIComponent(id), { method:'DELETE' });
+            if (r.ok) { btn.closest('div').remove(); adeLoadBuildings(); }
+            else alert('Could not delete.');
+        };
+        document.body.appendChild(modal);
+        modal.addEventListener('click', function(ev) { if (ev.target === modal) modal.remove(); });
+    }
+
+    async function adeDeleteBldg(id, btn) {
+        if (!confirm('Remove this building?')) return;
+        const res = await fetch(`/api/buildings/${encodeURIComponent(id)}`, { method:'DELETE' });
+        if (res.ok) { btn.closest('div').remove(); }
+        else alert('Could not delete.');
+    }
+
+    async function adeLandmarkModal() {
+        const [rL, rA, rB] = await Promise.all([fetch('/api/landmarks'), fetch('/api/areas'), fetch('/api/buildings')]);
+        const [dL, dA, dB] = await Promise.all([rL.json(), rA.json(), rB.json()]);
+        let allLandmarks = dL.landmarks || [];
+        let allAreas     = dA.areas     || [];
+        let allBuildings = dB.buildings || [];
+        _adeAllLandmarks = allLandmarks;
+        _adeAllAreas     = allAreas;
+        _adeAllBuildings = allBuildings;
+
+        let selLmId   = allLandmarks.length ? allLandmarks[0].id : null;
+        let editingLm = null;
+
+        const modal = document.createElement('div');
+        modal.id = 'adeLandmarkModalEl';
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:flex-start;justify-content:center;padding-top:40px;overflow-y:auto;';
+
+        function areasForLm()    { return allAreas.filter(function(a){ return a.landmarkId === selLmId; }); }
+        function buildingsForLm(){ return allBuildings.filter(function(b){ return b.landmarkId === selLmId; }); }
+
+        function renderModal() {
+            var lm    = allLandmarks.find(function(l){ return l.id === selLmId; });
+            var areas = areasForLm();
+            var bldgs = buildingsForLm();
+            var lmName = lm ? lm.name : '';
+
+            var html = '<div style="background:#fff;border-radius:16px;padding:28px;width:96%;max-width:1000px;box-shadow:0 8px 40px rgba(0,0,0,.24);margin-bottom:40px;">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:2px solid #f0f0f0;padding-bottom:14px;">';
+            html += '<h3 style="margin:0;font-size:1.2rem;color:#1a237e;"><i class="fas fa-sitemap" style="color:#F59E0B;margin-right:10px;"></i>Manage Locations</h3>';
+            html += '<span onclick="document.getElementById(\'adeLandmarkModalEl\').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;line-height:1;">&times;</span>';
+            html += '</div>';
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;">';
+
+            // ── Col 1: Landmarks ────────────────────────────────────────────
+            html += '<div style="border-right:2px solid #f0f0f0;padding-right:18px;display:flex;flex-direction:column;gap:10px;">';
+            html += '<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#E65100;"><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>Landmarks</div>';
+            html += '<div style="display:flex;gap:6px;">';
+            html += '<input type="text" id="amLmInput" class="form-control" placeholder="New landmark name" style="flex:1;font-size:.82rem;">';
+            html += '<button onclick="amAddLandmark()" style="padding:0 14px;border:none;border-radius:8px;background:#E65100;color:#fff;font-weight:700;cursor:pointer;">+ Add</button>';
+            html += '</div>';
+            html += '<div style="overflow-y:auto;display:flex;flex-direction:column;gap:6px;max-height:360px;">';
+            allLandmarks.forEach(function(l) {
+                var isSel  = selLmId === l.id;
+                var isEdit = editingLm === l.id;
+                var bg  = isSel ? '#FFF3E0' : '#f8f9fa';
+                var bdr = isSel ? '#F59E0B' : 'transparent';
+                var clr = isSel ? '#E65100' : '#333';
+                html += '<div style="display:flex;align-items:center;gap:6px;padding:9px 12px;background:' + bg + ';border:2px solid ' + bdr + ';border-radius:8px;cursor:pointer;" onclick="amSelectLm(this)" data-lmid="' + l.id + '">';
+                if (isEdit) {
+                    html += '<input type="text" id="amRenLmInput" value="' + l.name.replace(/"/g, '&quot;') + '" style="flex:1;font-size:.82rem;border:1.5px solid #F59E0B;border-radius:6px;padding:4px 8px;" onclick="event.stopPropagation()">';
+                    html += '<button onclick="event.stopPropagation();amRenameLm(this)" data-lid="' + l.id + '" style="border:none;background:#E8F5E9;color:#2E7D32;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;"><i class="fas fa-check"></i></button>';
+                    html += '<button onclick="event.stopPropagation();amCancelRenLm()" style="border:none;background:#eee;color:#555;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;"><i class="fas fa-times"></i></button>';
+                } else {
+                    html += '<span style="flex:1;font-weight:700;font-size:.85rem;color:' + clr + ';">' + l.name + '</span>';
+                    html += '<button onclick="event.stopPropagation();amEditLm(this)" data-lid="' + l.id + '" style="border:none;background:#E3F2FD;color:#1565C0;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;" title="Rename"><i class="fas fa-pen"></i></button>';
+                    html += '<button onclick="event.stopPropagation();amDeleteLm(this)" data-lid="' + l.id + '" style="border:none;background:#FFEBEE;color:#c0392b;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;" title="Delete"><i class="fas fa-trash"></i></button>';
+                }
+                html += '</div>';
+            });
+            if (!allLandmarks.length) html += '<div style="color:#aaa;text-align:center;padding:20px;font-size:.83rem;">No landmarks yet.</div>';
+            html += '</div></div>';
+
+            // ── Col 2: Areas ────────────────────────────────────────────────
+            html += '<div style="border-right:2px solid #f0f0f0;padding-right:18px;display:flex;flex-direction:column;gap:10px;">';
+            html += '<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#1565C0;"><i class="fas fa-map" style="margin-right:5px;"></i>Areas' + (lmName ? ' <span style="font-weight:400;text-transform:none;color:#888;">under ' + lmName + '</span>' : '') + '</div>';
+            if (selLmId) {
+                html += '<div style="display:flex;gap:6px;">';
+                html += '<input type="text" id="amAreaInput" class="form-control" placeholder="New area name" style="flex:1;font-size:.82rem;">';
+                html += '<button onclick="amAddArea(this)" data-lmid="' + selLmId + '" style="padding:0 14px;border:none;border-radius:8px;background:#1565C0;color:#fff;font-weight:700;cursor:pointer;">+ Add</button>';
+                html += '</div>';
+            }
+            html += '<div style="overflow-y:auto;display:flex;flex-direction:column;gap:6px;max-height:360px;">';
+            areas.forEach(function(a) {
+                html += '<div style="display:flex;align-items:center;gap:6px;padding:9px 12px;background:#f0f4ff;border-radius:8px;">';
+                html += '<span style="flex:1;font-weight:600;font-size:.85rem;">' + a.name + '</span>';
+                html += '<button onclick="amRenameAreaPrompt(this)" data-aid="' + a.id + '" data-aname="' + a.name.replace(/"/g, '&quot;') + '" style="border:none;background:#E3F2FD;color:#1565C0;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;" title="Rename"><i class="fas fa-pen"></i></button>';
+                html += '<button onclick="amDeleteArea(this)" data-aid="' + a.id + '" style="border:none;background:#FFEBEE;color:#c0392b;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;" title="Delete"><i class="fas fa-trash"></i></button>';
+                html += '</div>';
+            });
+            if (!areas.length && selLmId) html += '<div style="color:#aaa;text-align:center;padding:20px;font-size:.83rem;">No areas yet. Add one above.</div>';
+            if (!selLmId) html += '<div style="color:#aaa;text-align:center;padding:20px;font-size:.83rem;">Select a landmark first.</div>';
+            html += '</div></div>';
+
+            // ── Col 3: Buildings ────────────────────────────────────────────
+            html += '<div style="display:flex;flex-direction:column;gap:10px;">';
+            html += '<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#2E7D32;"><i class="fas fa-building" style="margin-right:5px;"></i>Buildings' + (lmName ? ' <span style="font-weight:400;text-transform:none;color:#888;">under ' + lmName + '</span>' : '') + '</div>';
+            if (selLmId) {
+                html += '<div style="display:flex;gap:6px;">';
+                html += '<input type="text" id="amBldgInput" class="form-control" placeholder="New building name" style="flex:1;font-size:.82rem;">';
+                html += '<button onclick="amAddBuilding(this)" data-lmid="' + selLmId + '" style="padding:0 14px;border:none;border-radius:8px;background:#2E7D32;color:#fff;font-weight:700;cursor:pointer;">+ Add</button>';
+                html += '</div>';
+                html += '<div style="font-size:.72rem;color:#888;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Buildings here are linked to ' + lmName + ' and appear when it is selected in donation forms.</div>';
+            }
+            html += '<div style="overflow-y:auto;display:flex;flex-direction:column;gap:6px;max-height:360px;">';
+            bldgs.forEach(function(b) {
+                html += '<div style="display:flex;align-items:center;gap:6px;padding:9px 12px;background:#f0fff4;border-radius:8px;">';
+                html += '<span style="flex:1;font-weight:600;font-size:.85rem;">' + b.name + '</span>';
+                html += '<button onclick="amRenameBuildingPrompt(this)" data-bid="' + b.id + '" data-bname="' + b.name.replace(/"/g, '&quot;') + '" style="border:none;background:#E3F2FD;color:#1565C0;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;" title="Rename"><i class="fas fa-pen"></i></button>';
+                html += '<button onclick="amDeleteBuilding(this)" data-bid="' + b.id + '" style="border:none;background:#FFEBEE;color:#c0392b;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.75rem;" title="Delete"><i class="fas fa-trash"></i></button>';
+                html += '</div>';
+            });
+            if (!bldgs.length && selLmId) html += '<div style="color:#aaa;text-align:center;padding:20px;font-size:.83rem;">No buildings linked. Add one above.</div>';
+            if (!selLmId) html += '<div style="color:#aaa;text-align:center;padding:20px;font-size:.83rem;">Select a landmark first.</div>';
+            html += '</div></div>';
+
+            html += '</div></div>';
+            modal.innerHTML = html;
+        }
+
+        // ── Event handlers (use data-* to avoid any quote nesting) ──────────
+        window.amSelectLm = function(el) { selLmId = el.dataset.lmid; editingLm = null; renderModal(); };
+        window.amEditLm   = function(btn) { editingLm = btn.dataset.lid; renderModal(); setTimeout(function(){ var i=document.getElementById('amRenLmInput'); if(i){i.focus();i.select();} },50); };
+        window.amCancelRenLm = function() { editingLm = null; renderModal(); };
+        window.amRenameLm = async function(btn) {
+            var id  = btn.dataset.lid;
+            var val = ((document.getElementById('amRenLmInput')||{}).value||''). trim();
+            if (!val) return;
+            var r = await fetch('/api/landmarks/'+encodeURIComponent(id), { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: val }) });
+            var d = await r.json();
+            if (r.ok && d.success) { var i=allLandmarks.findIndex(function(l){return l.id===id;}); if(i>=0) allLandmarks[i].name=val; _adeAllLandmarks=allLandmarks; editingLm=null; adeLoadLandmarks(); renderModal(); }
+            else alert(d.message||'Rename failed.');
+        };
+        window.amAddLandmark = async function() {
+            var name = ((document.getElementById('amLmInput')||{}).value||'').trim(); if(!name) return;
+            var r = await fetch('/api/landmarks', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name }) });
+            var d = await r.json();
+            if (r.ok && d.success) { allLandmarks.push(d.landmark); _adeAllLandmarks=allLandmarks; selLmId=d.landmark.id; adeLoadLandmarks(); renderModal(); }
+            else alert(d.message||'Could not add.');
+        };
+        window.amDeleteLm = async function(btn) {
+            var id = btn.dataset.lid;
+            if (!confirm('Delete this landmark and all its areas?')) return;
+            var r = await fetch('/api/landmarks/'+encodeURIComponent(id), { method:'DELETE' });
+            if (r.ok) { allLandmarks=allLandmarks.filter(function(l){return l.id!==id;}); allAreas=allAreas.filter(function(a){return a.landmarkId!==id;}); allBuildings=allBuildings.filter(function(b){return b.landmarkId!==id;}); _adeAllLandmarks=allLandmarks; _adeAllAreas=allAreas; _adeAllBuildings=allBuildings; if(selLmId===id) selLmId=allLandmarks.length?allLandmarks[0].id:null; adeLoadLandmarks(); renderModal(); }
+            else alert('Could not delete.');
+        };
+        window.amAddArea = async function(btn) {
+            var landmarkId = btn.dataset.lmid;
+            var name = ((document.getElementById('amAreaInput')||{}).value||'').trim(); if(!name) return;
+            var r = await fetch('/api/areas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name, landmarkId: landmarkId }) });
+            var d = await r.json();
+            if (r.ok && d.success) { allAreas.push(d.area); _adeAllAreas=allAreas; renderModal(); }
+            else alert(d.message||'Could not add.');
+        };
+        window.amRenameAreaPrompt = async function(btn) {
+            var id   = btn.dataset.aid;
+            var name = prompt('Rename area:', btn.dataset.aname); if (!name||!name.trim()) return;
+            var r = await fetch('/api/areas/'+encodeURIComponent(id), { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name.trim() }) });
+            var d = await r.json();
+            if (r.ok && d.success) { var i=allAreas.findIndex(function(a){return a.id===id;}); if(i>=0) allAreas[i].name=name.trim(); _adeAllAreas=allAreas; renderModal(); }
+            else alert(d.message||'Rename failed.');
+        };
+        window.amDeleteArea = async function(btn) {
+            var id = btn.dataset.aid;
+            if (!confirm('Delete this area?')) return;
+            var r = await fetch('/api/areas/'+encodeURIComponent(id), { method:'DELETE' });
+            if (r.ok) { allAreas=allAreas.filter(function(a){return a.id!==id;}); _adeAllAreas=allAreas; renderModal(); }
+            else alert('Could not delete.');
+        };
+        window.amAddBuilding = async function(btn) {
+            var landmarkId = btn.dataset.lmid;
+            var name = ((document.getElementById('amBldgInput')||{}).value||'').trim(); if(!name) return;
+            var r = await fetch('/api/buildings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name, landmarkId: landmarkId }) });
+            var d = await r.json();
+            if (r.ok && d.success) { allBuildings.push(d.building); _adeAllBuildings=allBuildings; adeLoadBuildings(); renderModal(); }
+            else alert(d.message||'Could not add.');
+        };
+        window.amRenameBuildingPrompt = async function(btn) {
+            var id   = btn.dataset.bid;
+            var name = prompt('Rename building:', btn.dataset.bname); if (!name||!name.trim()) return;
+            var r = await fetch('/api/buildings/'+encodeURIComponent(id), { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name.trim() }) });
+            var d = await r.json();
+            if (r.ok && d.success) { var i=allBuildings.findIndex(function(b){return b.id===id;}); if(i>=0) allBuildings[i].name=name.trim(); _adeAllBuildings=allBuildings; adeLoadBuildings(); renderModal(); }
+            else alert(d.message||'Rename failed.');
+        };
+        window.amDeleteBuilding = async function(btn) {
+            var id = btn.dataset.bid;
+            if (!confirm('Delete this building?')) return;
+            var r = await fetch('/api/buildings/'+encodeURIComponent(id), { method:'DELETE' });
+            if (r.ok) { allBuildings=allBuildings.filter(function(b){return b.id!==id;}); _adeAllBuildings=allBuildings; adeLoadBuildings(); renderModal(); }
+            else alert('Could not delete.');
+        };
+
+        renderModal();
+        document.body.appendChild(modal);
+        modal.addEventListener('click', function(ev) { if (ev.target === modal) modal.remove(); });
+    }
+    // ── Manage Areas modal — dedicated, linked to Landmarks ─────────────────
+    async function adeManageAreasModal() {
+        var existing = document.getElementById('adeAreasMgrModal');
+        if (existing) existing.remove();
+
+        // Load fresh data
+        var [rL, rA] = await Promise.all([fetch('/api/landmarks'), fetch('/api/areas')]);
+        var [dL, dA] = await Promise.all([rL.json(), rA.json()]);
+        var allLandmarks = dL.landmarks || [];
+        var allAreas     = dA.areas     || [];
+        _adeAllLandmarks = allLandmarks;
+        _adeAllAreas     = allAreas;
+
+        var selLmId   = allLandmarks.length ? allLandmarks[0].id : null;
+        var editingAr = null; // area id being inline-edited
+
+        var overlay = document.createElement('div');
+        overlay.id = 'adeAreasMgrModal';
+        overlay.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2100;align-items:flex-start;justify-content:center;padding-top:40px;overflow-y:auto;';
+
+        function areasForLm() {
+            return allAreas.filter(function(a) { return a.landmarkId === selLmId; });
+        }
+
+        function render() {
+            var lm    = allLandmarks.find(function(l) { return l.id === selLmId; });
+            var areas = areasForLm();
+            var lmName = lm ? lm.name : '';
+
+            var h = '<div style="background:#fff;border-radius:16px;padding:28px;width:96%;max-width:820px;box-shadow:0 8px 40px rgba(0,0,0,.25);margin-bottom:40px;">';
+
+            // ── Header ──────────────────────────────────────────────────────
+            h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:2px solid #f0f0f0;padding-bottom:14px;">';
+            h += '<div>';
+            h += '<h3 style="margin:0 0 4px;font-size:1.15rem;color:#1a237e;"><i class="fas fa-map" style="color:#6A1B9A;margin-right:10px;"></i>Manage Areas</h3>';
+            h += '<p style="margin:0;font-size:.75rem;color:#888;">Areas are linked to Landmarks. Select a Landmark to manage its Areas.</p>';
+            h += '</div>';
+            h += '<span onclick="document.getElementById(\'adeAreasMgrModal\').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;line-height:1;">&times;</span>';
+            h += '</div>';
+
+            h += '<div style="display:grid;grid-template-columns:240px 1fr;gap:20px;">';
+
+            // ── Left col: Landmarks (selector) ──────────────────────────────
+            h += '<div style="border-right:2px solid #f0f0f0;padding-right:18px;display:flex;flex-direction:column;gap:8px;">';
+            h += '<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#E65100;margin-bottom:4px;"><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>Landmark</div>';
+            h += '<div style="font-size:.73rem;color:#aaa;margin-bottom:6px;">Click a landmark to manage its areas</div>';
+            h += '<div style="overflow-y:auto;display:flex;flex-direction:column;gap:6px;max-height:380px;">';
+            allLandmarks.forEach(function(l) {
+                var isSel = l.id === selLmId;
+                h += '<div onclick="amArSelLm(this)" data-lid="' + l.id + '" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:' + (isSel ? '#FFF3E0' : '#f8f9fa') + ';border:2px solid ' + (isSel ? '#F59E0B' : 'transparent') + ';border-radius:8px;cursor:pointer;">';
+                h += '<i class="fas fa-map-marker-alt" style="color:' + (isSel ? '#E65100' : '#ccc') + ';font-size:.8rem;"></i>';
+                h += '<span style="font-weight:' + (isSel ? '700' : '500') + ';font-size:.85rem;color:' + (isSel ? '#E65100' : '#444') + ';flex:1;">' + l.name + '</span>';
+                if (isSel) h += '<i class="fas fa-chevron-right" style="color:#F59E0B;font-size:.7rem;"></i>';
+                h += '</div>';
+            });
+            if (!allLandmarks.length) h += '<div style="color:#aaa;text-align:center;padding:20px;font-size:.82rem;">No landmarks yet.<br><a href="#" onclick="event.preventDefault();document.getElementById(\'adeAreasMgrModal\').remove();adeLandmarkModal();" style="color:#E65100;">Manage Landmarks</a></div>';
+            h += '</div>';
+            h += '</div>';
+
+            // ── Right col: Areas for selected Landmark ───────────────────────
+            h += '<div style="display:flex;flex-direction:column;gap:10px;">';
+
+            if (!selLmId) {
+                h += '<div style="color:#aaa;text-align:center;padding:40px 20px;font-size:.85rem;"><i class="fas fa-hand-point-left" style="font-size:1.5rem;display:block;margin-bottom:8px;"></i>Select a Landmark on the left</div>';
+            } else {
+                // Section header
+                h += '<div style="display:flex;align-items:center;gap:10px;padding-bottom:10px;border-bottom:2px solid #f0f0f0;">';
+                h += '<i class="fas fa-map" style="color:#6A1B9A;"></i>';
+                h += '<span style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#6A1B9A;">Areas under ' + lmName + '</span>';
+                h += '<span style="margin-left:auto;font-size:.73rem;color:#888;">' + areas.length + ' area(s)' + '</span>';
+                h += '</div>';
+
+                // Add new area row
+                h += '<div style="display:flex;gap:8px;align-items:center;">';
+                h += '<input type="text" id="amArNewInput" class="form-control" placeholder="Type new area name and click Add..." style="flex:1;font-size:.85rem;">';
+                h += '<button onclick="amArAddArea(this)" data-lmid="' + selLmId + '" style="padding:0 16px;height:38px;border:none;border-radius:8px;background:#6A1B9A;color:#fff;font-weight:700;cursor:pointer;white-space:nowrap;"><i class="fas fa-plus" style="margin-right:5px;"></i>Add</button>';
+                h += '</div>';
+
+                // Areas list
+                h += '<div style="overflow-y:auto;display:flex;flex-direction:column;gap:6px;max-height:300px;">';
+                if (!areas.length) {
+                    h += '<div style="color:#aaa;text-align:center;padding:24px;font-size:.83rem;border:2px dashed #e0e0e0;border-radius:10px;">No areas yet for ' + lmName + '.<br>Type a name above and click Add.</div>';
+                } else {
+                    areas.forEach(function(a) {
+                        var isEditing = editingAr === a.id;
+                        h += '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f8f0ff;border:1.5px solid ' + (isEditing ? '#6A1B9A' : '#EDE7F6') + ';border-radius:8px;">';
+                        if (isEditing) {
+                            h += '<i class="fas fa-map" style="color:#6A1B9A;font-size:.8rem;"></i>';
+                            h += '<input type="text" id="amArEditInput_' + a.id + '" value="' + a.name.replace(/"/g,'&quot;') + '" style="flex:1;font-size:.85rem;border:1.5px solid #6A1B9A;border-radius:6px;padding:5px 10px;" autofocus>';
+                            h += '<button onclick="amArSaveEdit(this)" data-aid="' + a.id + '" style="border:none;background:#E8F5E9;color:#2E7D32;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.78rem;font-weight:600;"><i class="fas fa-check" style="margin-right:3px;"></i>Save</button>';
+                            h += '<button onclick="amArCancelEdit()" style="border:none;background:#eee;color:#555;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.78rem;"><i class="fas fa-times"></i></button>';
+                        } else {
+                            h += '<i class="fas fa-map" style="color:#9C27B0;font-size:.8rem;"></i>';
+                            h += '<span style="flex:1;font-weight:600;font-size:.87rem;color:#4A148C;">' + a.name + '</span>';
+                            h += '<span style="font-size:.72rem;color:#aaa;margin-right:4px;">linked to ' + lmName + '</span>';
+                            h += '<button onclick="amArStartEdit(this)" data-aid="' + a.id + '" style="border:none;background:#EDE7F6;color:#6A1B9A;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.78rem;font-weight:600;" title="Edit/Rename"><i class="fas fa-pen" style="margin-right:3px;"></i>Edit</button>';
+                            h += '<button onclick="amArDelete(this)" data-aid="' + a.id + '" style="border:none;background:#FFEBEE;color:#c0392b;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.78rem;" title="Delete"><i class="fas fa-trash"></i></button>';
+                        }
+                        h += '</div>';
+                    });
+                }
+                h += '</div>';
+            }
+
+            h += '</div>';
+            h += '</div>';
+
+            // Footer note
+            h += '<div style="margin-top:16px;padding-top:12px;border-top:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center;">';
+            h += '<span style="font-size:.73rem;color:#aaa;"><i class="fas fa-link" style="margin-right:4px;"></i>Areas are automatically available in the volunteer donation form when their Landmark is selected.</span>';
+            h += '<button onclick="document.getElementById(\'adeAreasMgrModal\').remove();adeLandmarkModal();" style="padding:6px 14px;border:none;border-radius:8px;background:#FFF3E0;color:#E65100;font-weight:700;cursor:pointer;font-size:.78rem;"><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>Manage Landmarks</button>';
+            h += '</div>';
+
+            h += '</div>';
+            overlay.innerHTML = h;
+        }
+
+        // ── Actions ──────────────────────────────────────────────────────────
+        window.amArSelLm = function(el) { selLmId = el.dataset.lid; editingAr = null; render(); };
+
+        window.amArAddArea = async function(btn) {
+            var lmid = btn.dataset.lmid;
+            var name = ((document.getElementById('amArNewInput')||{}).value||'').trim();
+            if (!name) { alert('Please enter an area name.'); return; }
+            var r = await fetch('/api/areas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name, landmarkId: lmid }) });
+            var d = await r.json();
+            if (r.ok && d.success) {
+                allAreas.push(d.area);
+                _adeAllAreas = allAreas;
+                await adeLoadDropdownsIfNeeded();
+                editingAr = null;
+                render();
+            } else { alert(d.message || 'Could not add area.'); }
+        };
+
+        window.amArStartEdit = function(btn) { editingAr = btn.dataset.aid; render(); setTimeout(function(){ var inp = document.getElementById('amArEditInput_' + editingAr); if (inp) { inp.focus(); inp.select(); } }, 40); };
+        window.amArCancelEdit = function() { editingAr = null; render(); };
+
+        window.amArSaveEdit = async function(btn) {
+            var id  = btn.dataset.aid;
+            var inp = document.getElementById('amArEditInput_' + id);
+            var nm  = inp ? inp.value.trim() : '';
+            if (!nm) { alert('Area name cannot be empty.'); return; }
+            var r = await fetch('/api/areas/'+encodeURIComponent(id), { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: nm }) });
+            var d = await r.json();
+            if (r.ok && d.success) {
+                var i = allAreas.findIndex(function(a){return a.id===id;});
+                if (i >= 0) allAreas[i].name = nm;
+                _adeAllAreas = allAreas;
+                await adeLoadDropdownsIfNeeded();
+                editingAr = null;
+                render();
+            } else { alert(d.message || 'Rename failed.'); }
+        };
+
+        window.amArDelete = async function(btn) {
+            var id = btn.dataset.aid;
+            if (!confirm('Delete this area? This cannot be undone.')) return;
+            var r = await fetch('/api/areas/'+encodeURIComponent(id), { method:'DELETE' });
+            if (r.ok) {
+                allAreas = allAreas.filter(function(a){return a.id!==id;});
+                _adeAllAreas = allAreas;
+                await adeLoadDropdownsIfNeeded();
+                editingAr = null;
+                render();
+            } else { alert('Could not delete area.'); }
+        };
+
+        // Helper: reload the form dropdowns so changes are reflected immediately
+        async function adeLoadDropdownsIfNeeded() {
+            if (typeof adeLoadAreas === 'function') {
+                var lm = allLandmarks.find(function(l){return l.id===selLmId;});
+                if (lm) await adeLoadAreas(lm.name);
+            }
+        }
+
+        render();
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', function(ev) { if (ev.target === overlay) overlay.remove(); });
+    }
+
+        function adeShowStatus(msg, type) {
+        const el = document.getElementById('adeStatus');
+        if (!el) return;
+        el.textContent = msg;
+        el.style.display = 'block';
+        el.style.background = type === 'success' ? '#D5F4E6' : '#FFEBEE';
+        el.style.color      = type === 'success' ? '#1a7a45' : '#c0392b';
+        el.style.border     = type === 'success' ? '1px solid #a3e6c1' : '1px solid #f5b7b1';
+        setTimeout(() => el.style.display = 'none', 5000);
+    }
+
+    // ── Admin lightbox ───────────────────────────────────────────────────────
+    function openAdminLightbox(src) {
+        let lb = document.getElementById('adminLightbox');
+        if (!lb) {
+            lb = document.createElement('div');
+            lb.id = 'adminLightbox';
+            lb.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;cursor:zoom-out;';
+            lb.innerHTML = '<img id="adminLbImg" style="max-width:92vw;max-height:92vh;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.6);">';
+            lb.onclick = () => lb.style.display = 'none';
+            document.body.appendChild(lb);
+        }
+        document.getElementById('adminLbImg').src = src;
+        lb.style.display = 'flex';
+    }
+
+    // ── Admin New Entry Form ─────────────────────────────────────────────────
+    (function injectAdminNewEntryForm() {
+        const sec = document.getElementById('donationEntriesStatic');
+        if (!sec) return;
+        const formCard = document.createElement('div');
+        formCard.style.cssText = 'background:var(--white);border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:22px;overflow:hidden;';
+        formCard.innerHTML = `
+        <div id="aneToggleBar" onclick="aneToggle()" style="display:flex;align-items:center;justify-content:space-between;padding:16px 22px;cursor:pointer;background:linear-gradient(135deg,#1a237e,#3949AB);color:#fff;">
+            <span style="font-weight:700;font-size:1rem;"><i class="fas fa-plus-circle" style="margin-right:8px;"></i>New Donation Entry (Admin)</span>
+            <i id="aneChevron" class="fas fa-chevron-down" style="transition:transform .3s;"></i>
+        </div>
+        <div id="aneFormBody" style="display:none;padding:24px 22px;">
+            <div id="aneStatus" style="display:none;padding:10px 16px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
+            <form id="aneForm" onsubmit="aneSave(event)" autocomplete="off">
+                <div style="margin-bottom: 14px;">
+                    <label style="font-weight:600;font-size:0.85rem;color:#333;margin-bottom:8px;display:block;">Book Type</label>
+                    <div style="display:flex;gap:15px;align-items:center;">
+                        <label style="cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem;">
+                            <input type="radio" name="aneBookType" value="New" checked onchange="anePopulateBooks(); aneBookChange();">
+                            <span id="aneLblNewBooks">New Book (50 Books)</span>
+                        </label>
+                        <label style="cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem;">
+                            <input type="radio" name="aneBookType" value="Old" onchange="anePopulateBooks(); aneBookChange();">
+                            <span id="aneLblOldBooks">Old Book (30 Books)</span>
+                        </label>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;"><label>Book Number</label><select id="aneBook" class="form-control" onchange="aneBookChange()"><option value="">— Select —</option></select></div>
+                    <div class="form-group" style="margin:0;"><label>Receipt Number <button type="button" onclick="aneAutoReceipt()" style="margin-left:8px;padding:2px 10px;border:none;border-radius:8px;background:#E8F5E9;color:#1B5E20;font-size:.75rem;font-weight:700;cursor:pointer;"><i class="fas fa-magic"></i> Auto</button></label><select id="aneReceipt" class="form-control" disabled><option>— Select Book first —</option></select></div>
+                </div>
+                <!-- Donor Type -->
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label>Donor Type</label>
+                  <div style="display:flex;gap:10px;margin-top:6px;">
+                    <button type="button" id="aneBtnInd" onclick="aneSetType('Individual')" style="padding:7px 20px;border:2px solid var(--primary-color);border-radius:16px;background:var(--primary-color);color:#fff;font-weight:700;cursor:pointer;">Individual</button>
+                    <button type="button" id="aneBtnBiz" onclick="aneSetType('Business')" style="padding:7px 20px;border:2px solid #ddd;border-radius:16px;background:#f9f9f9;color:#555;font-weight:700;cursor:pointer;">Business</button>
+                    <input type="hidden" id="aneDonorType" value="Individual">
+                  </div>
+                </div>
+                <!-- Individual fields -->
+                <div id="aneIndFields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;"><label>First Name</label><input id="aneFirst" class="form-control" placeholder="FIRST" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group" style="margin:0;"><label>Middle Name</label><input id="aneMid" class="form-control" placeholder="MIDDLE" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group" style="margin:0;"><label>Last Name</label><input id="aneLast" class="form-control" placeholder="LAST" oninput="this.value=this.value.toUpperCase()"></div>
+                </div>
+                <!-- Business fields -->
+                <div id="aneBizFields" style="display:none;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;"><label>Business Name</label><input id="aneBizName" class="form-control" placeholder="BUSINESS NAME" oninput="this.value=this.value.toUpperCase()"></div>
+                </div>
+                <!-- Contact fields (both types) -->
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;"><label>WhatsApp Number</label><input id="aneWA" class="form-control" placeholder="10 digits" maxlength="10"></div>
+                    <div class="form-group" style="margin:0;"><label>Mobile Number</label><input id="aneMobile" class="form-control" placeholder="10 digits" maxlength="10"></div>
+                    <div class="form-group" style="margin:0;"><label>Email ID</label><input id="aneEmail" class="form-control" placeholder="name" oninput="aneEmailHint(this)"><small id="aneEmailHint" style="color:#888;font-size:.78rem;"></small></div>
+                </div>
+                <!-- Location Cascade: Landmark → Landmark → Area → Building → Flat -->
+                <div style="border:1.5px dashed #ffe0d0;border-radius:12px;padding:16px;margin-bottom:14px;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--primary-color);margin-bottom:14px;letter-spacing:.07em;"><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Location</div>
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label style="font-weight:600;font-size:.85rem;color:#333;"><i class="fas fa-landmark" style="color:var(--primary-color);margin-right:5px;font-size:.8rem;"></i> Landmark <span style="font-size:.75rem;font-weight:400;color:#888;">(Select first)</span></label>
+                        <div style="display:flex;gap:8px;">
+                            <select id="aneLandmark" class="form-control" style="flex:1;" onchange="aneOnLandmarkChange()"><option value="">&#x2014; Select Landmark &#x2014;</option></select>
+                            <button type="button" onclick="adeLandmarkModal()" style="padding:0 14px;border:none;border-radius:8px;background:#f3e5f5;color:#6A1B9A;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;"><i class="fas fa-cog"></i> Manage</button>
+                        </div>
+                    </div>
+                    <div id="aneLandmarkGroup" style="display:none;margin-bottom:12px;">
+                        <label style="font-weight:600;font-size:.85rem;color:#1565C0;"><i class="fas fa-map-pin" style="margin-right:5px;font-size:.8rem;"></i> Landmark</label>
+                        <select id="aneLandmark" class="form-control" onchange="aneOnLandmarkChange()"><option value="">&#x2014; Select Landmark &#x2014;</option></select>
+                    </div>
+                    <div id="aneAreaGroup" style="display:none;margin-bottom:12px;">
+                        <label style="font-weight:600;font-size:.85rem;color:#2E7D32;"><i class="fas fa-map" style="margin-right:5px;font-size:.8rem;"></i> Area</label>
+                        <select id="aneArea" class="form-control" onchange="aneOnAreaChange()"><option value="">&#x2014; Select Area &#x2014;</option></select>
+                    </div>
+                    <div id="aneBuildingGroup" style="display:none;margin-bottom:12px;">
+                        <label style="font-weight:600;font-size:.85rem;color:#3949AB;"><i class="fas fa-building" style="margin-right:5px;font-size:.8rem;"></i> Building Name</label>
+                        <div style="display:flex;gap:8px;">
+                            <select id="aneBuilding" class="form-control" style="flex:1;" onchange="aneOnBuildingChange()"><option value="">&#x2014; Select Building &#x2014;</option></select>
+                            <button type="button" onclick="adeBuildingModal()" style="padding:0 14px;border:none;border-radius:8px;background:#E3F2FD;color:#1565C0;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;"><i class="fas fa-cog"></i> Manage</button>
+                        </div>
+                    </div>
+                    <div id="aneFlatNumberGroup" style="display:none;margin-bottom:4px;">
+                        <label style="font-weight:600;font-size:.85rem;color:#E67E22;"><i class="fas fa-door-open" style="margin-right:5px;font-size:.8rem;"></i> Flat / Unit Number</label>
+                        <input type="text" id="aneFlatNumber" class="form-control" placeholder="e.g. A-201, Flat 3B">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;"><label>Amount (&#8377;)</label><input type="number" id="aneAmount" class="form-control" min="0" placeholder="0"></div>
+                    <div class="form-group" style="margin:0;"><label>Reference No. <span style="color:#aaa;font-size:.8rem;">(optional)</span></label><input id="aneRef" class="form-control" placeholder=""></div>
+                </div>
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label style="font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:#555;">Payment Mode <span style="color:red;">*</span></label>
+                    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px;">
+                        <label id="aneModeCash" onclick="aneSetMode('Cash')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border:2px solid var(--primary-color);border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:var(--primary-color);color:#fff;transition:all .2s;user-select:none;">
+                            <i class="fas fa-money-bill-wave" style="font-size:1.1rem;"></i>Cash
+                        </label>
+                        <label id="aneModeChq" onclick="aneSetMode('Cheque')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;user-select:none;">
+                            <i class="fas fa-file-alt" style="font-size:1.1rem;"></i>Cheque
+                        </label>
+                        <label id="aneModeUPI" onclick="aneSetMode('UPI')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;user-select:none;">
+                            <i class="fas fa-qrcode" style="font-size:1.1rem;"></i>UPI
+                        </label>
+                        <label id="aneModeRTGS" onclick="aneSetMode('RTGS')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;user-select:none;">
+                            <i class="fas fa-university" style="font-size:1.1rem;"></i>RTGS
+                        </label>
+                        <label id="aneModeBal" onclick="aneSetMode('Balance')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:11px 6px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;user-select:none;">
+                            <i class="fas fa-clock" style="font-size:1.1rem;"></i>Balance
+                        </label>
+                    </div>
+                    <input type="hidden" id="anePaymentMode" value="Cash">
+                </div>
+                <div id="aneRefGroup" style="margin-bottom:14px;">
+                    <label id="aneRefLabel" class="form-group" style="display:block;"><span style="font-weight:700;font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:#555;">Reference No. <span style="color:#aaa;font-size:.8rem;font-weight:400;">(optional)</span></span><input id="aneRef" class="form-control" placeholder="Ref / Transaction / Cheque number" style="margin-top:6px;"></label>
+                </div>
+                <div style="border:1.5px dashed #ffe0d0;border-radius:12px;padding:16px;margin-bottom:16px;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:12px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Receipt Photo <span style="color:#aaa;font-weight:400;">(optional)</span></div>
+                    <button type="button" onclick="document.getElementById('anePhotoInput').click()" style="flex:1;width:100%;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                        <i class="fas fa-camera" style="font-size:1.3rem;"></i> Take Photo / Select Image
+                    </button>
+                    <input type="file" id="anePhotoInput" style="display:none;" accept="image/*">
+                    <div id="anePhotoPreview" style="display:none;margin-top:10px;">
+                        <img id="anePhotoThumb" src="" alt="Preview" style="max-width:100%;max-height:180px;border-radius:10px;border:1.5px solid #e0e0e0;object-fit:contain;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
+                            <span id="anePhotoName" style="font-size:.83rem;color:#555;flex:1;"></span>
+                            <button type="button" onclick="aneClearPhoto()" style="background:none;border:none;color:#E74C3C;cursor:pointer;font-size:.85rem;"><i class="fas fa-times"></i> Remove</button>
+                        </div>
+                    </div>
+                    <p style="font-size:.78rem;color:#aaa;margin:10px 0 0;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Image is automatically compressed to under 1 MB. Works on Android, iOS, and desktop.</p>
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button type="button" class="btn" style="background:#eee;color:#555;" onclick="aneReset()">Reset</button>
+                    <button type="submit" class="btn btn-primary" id="aneSaveBtn"><i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry</button>
+                </div>
+            </form>
+        </div>
+        `;
+        sec.insertBefore(formCard, sec.firstChild);
+    })();
+
+    let _aneOpen = false;
+    let _anePhotoFile = null;
+
+    /* ── Payment mode tile toggle ─────────────────────────────────────── */
+    const _aneModeTiles = { Cash:'aneModeCash', Cheque:'aneModeChq', UPI:'aneModeUPI', RTGS:'aneModeRTGS', Balance:'aneModeBal' };
+    const _aneModeColors = {
+        Cash    : { bg:'var(--primary-color)', border:'var(--primary-color)', color:'#fff' },
+        Cheque  : { bg:'#1565C0',             border:'#1565C0',              color:'#fff' },
+        UPI     : { bg:'#6A1B9A',             border:'#6A1B9A',              color:'#fff' },
+        RTGS    : { bg:'#F59E0B',             border:'#F59E0B',              color:'#fff' },
+        Balance : { bg:'#4527A0',             border:'#4527A0',              color:'#fff' },
+    };
+    function aneSetMode(mode) {
+        document.getElementById('anePaymentMode').value = mode;
+        Object.keys(_aneModeTiles).forEach(function(m) {
+            const el = document.getElementById(_aneModeTiles[m]);
+            if (!el) return;
+            if (m === mode) {
+                const c = _aneModeColors[m];
+                el.style.background = c.bg;
+                el.style.borderColor = c.border;
+                el.style.color = c.color;
+            } else {
+                el.style.background = '#f9f9f9';
+                el.style.borderColor = '#ddd';
+                el.style.color = '#555';
+            }
+        });
+        // Show/hide reference field (Balance needs no ref by default)
+        const rg = document.getElementById('aneRefGroup');
+        if (rg) rg.style.display = mode === 'Balance' ? 'none' : '';
+    }
+
+    function aneClearPhoto() {
+        window._anePhotoFile = null;
+        const inp = document.getElementById('anePhotoInput'); if (inp) inp.value = '';
+        const prev = document.getElementById('anePhotoPreview'); if (prev) prev.style.display = 'none';
+        const thumb = document.getElementById('anePhotoThumb'); if (thumb) thumb.src = '';
+        const name = document.getElementById('anePhotoName'); if (name) name.textContent = '';
+    }
+
+    function aneToggle() {
+        _aneOpen = !_aneOpen;
+        document.getElementById('aneFormBody').style.display = _aneOpen ? '' : 'none';
+        const ch = document.getElementById('aneChevron');
+        if (ch) ch.style.transform = _aneOpen ? 'rotate(180deg)' : '';
+        if (_aneOpen) { anePopulateBooks(); aneLoadLandmarks(); }
+    }
+    function anePopulateBooks() {
+        const sel = document.getElementById('aneBook'); if (!sel) return;
+        const bType = document.querySelector('input[name="aneBookType"]:checked')?.value || 'New';
+        const maxBooks = bType === 'Old' ? (window._adeMaxOldBooks || 30) : (window._adeMaxNewBooks || 50);
+        sel.innerHTML = '<option value="">— Select —</option>';
+        for (let b=1;b<=maxBooks;b++) { const o=document.createElement('option'); o.value=b; o.textContent=`Book ${b}  (${(b-1)*50+1}–${b*50})`; sel.appendChild(o); }
+    }
+    document.getElementById('anePhotoInput')?.addEventListener('change', function(ev) {
+        const f=ev.target.files[0]; if(!f) return;
+        if(!f.type.startsWith('image/')){ alert('Please select an image.'); ev.target.value=''; return; }
+        window._anePhotoFile=null;
+        window._compressImage(f, 950, function(blob) {
+            if(!blob){ alert('Could not process image.'); return; }
+            window._anePhotoFile=blob;
+            const t=document.getElementById('anePhotoThumb'); if(t) t.src=URL.createObjectURL(blob);
+            const n=document.getElementById('anePhotoName'); if(n) n.textContent='✅ '+f.name.replace(/\.[^.]+$/,'')+'.jpg ('+window._fmtBytesA(blob.size)+')';
+            const p=document.getElementById('anePhotoPreview'); if(p) p.style.display='';
+        });
+    });
+    
+    // ── ANE form: cached data ────────────────────────────────────────────────
+    var _aneLandmarks = [], _aneLandmarks = [], _aneAreas = [], _aneBuildings = [];
+
+    async function aneLoadAll() {
+        try {
+            var rs = await Promise.all([fetch('/api/landmarks'),fetch('/api/landmarks'),fetch('/api/areas'),fetch('/api/buildings')]);
+            var ds = await Promise.all(rs.map(function(r){return r.json();}));
+            _aneLandmarks = ds[0].landmarks || [];
+            _aneLandmarks     = ds[1].landmarks     || [];
+            _aneAreas  = ds[2].areas  || [];
+            _aneBuildings = ds[3].buildings || [];
+        } catch(e) { _aneLandmarks=[]; _aneLandmarks=[]; _aneAreas=[]; _aneBuildings=[]; }
+
+        // Populate Landmark dropdown
+        var lSel = document.getElementById('aneLandmark');
+        if (lSel) {
+            var cur = lSel.value;
+            lSel.innerHTML = '<option value="">— Select Landmark —</option>';
+            _aneLandmarks.forEach(function(l) {
+                lSel.innerHTML += '<option value="'+l.name+'"'+(l.name===cur?' selected':'')+'>'+l.name+'</option>';
+            });
+        }
+        // Reset cascade
+        ['aneLandmarkGroup','aneAreaGroup','aneBuildingGroup','aneFlatNumberGroup'].forEach(function(id){
+            var el=document.getElementById(id); if(el) el.style.display='none';
+        });
+    }
+
+    function aneOnLandmarkChange() {
+        var lmName = (document.getElementById('aneLandmark')||{}).value||'';
+        // Reset downstream
+        ['aneLandmark','aneArea','aneBuilding'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+        ['aneLandmarkGroup','aneAreaGroup','aneBuildingGroup','aneFlatNumberGroup'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+        if (!lmName) return;
+        var lmObj = _aneLandmarks.find(function(l){return l.name===lmName;});
+        var filtLandmarks = lmObj ? _aneLandmarks.filter(function(a){return !a.landmarkId||a.landmarkId===lmObj.id;}) : _aneLandmarks;
+        var landmarkSel = document.getElementById('aneLandmark');
+        if (!landmarkSel) return;
+        landmarkSel.innerHTML = '<option value="">— Select Landmark —</option>';
+        filtLandmarks.forEach(function(a){ landmarkSel.innerHTML += '<option value="'+a.name+'" data-id="'+a.id+'">'+a.name+'</option>'; });
+        var g=document.getElementById('aneLandmarkGroup'); if(g) g.style.display='';
+    }
+
+    function aneOnLandmarkChange() {
+        var landmarkName = (document.getElementById('aneLandmark')||{}).value||'';
+        ['aneArea','aneBuilding'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+        ['aneAreaGroup','aneBuildingGroup','aneFlatNumberGroup'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+        if (!landmarkName) return;
+        var landmarkObj = _aneLandmarks.find(function(a){return a.name===landmarkName;});
+        var subs = landmarkObj ? _aneAreas.filter(function(s){return s.landmarkId===landmarkObj.id;}) : [];
+        var subSel = document.getElementById('aneArea');
+        if (!subSel) return;
+        subSel.innerHTML = '<option value="">— Select Area —</option>';
+        subs.forEach(function(s){ subSel.innerHTML += '<option value="'+s.name+'" data-id="'+s.id+'">'+s.name+'</option>'; });
+        var g=document.getElementById('aneAreaGroup'); if(g) g.style.display='';
+    }
+
+    function aneOnAreaChange() {
+        var saName = (document.getElementById('aneArea')||{}).value||'';
+        var el=document.getElementById('aneBuilding'); if(el) el.value='';
+        ['aneBuildingGroup','aneFlatNumberGroup'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+        if (!saName) return;
+        var saObj = _aneAreas.find(function(s){return s.name===saName;});
+        var bldgs = saObj ? _aneBuildings.filter(function(b){return !b.areaId||b.areaId===saObj.id;}) : _aneBuildings;
+        var bSel = document.getElementById('aneBuilding');
+        if (!bSel) return;
+        bSel.innerHTML = '<option value="">— Select Building —</option>';
+        bldgs.forEach(function(b){ bSel.innerHTML += '<option value="'+b.name+'">'+b.name+'</option>'; });
+        var g=document.getElementById('aneBuildingGroup'); if(g) g.style.display='';
+    }
+
+    function aneOnBuildingChange() {
+        var b = (document.getElementById('aneBuilding')||{}).value||'';
+        var g=document.getElementById('aneFlatNumberGroup'); if(g) g.style.display=b?'':'none';
+    }
+
+    // Legacy stubs (kept for backward compat calls)
+    async function aneLoadLandmarks() { await aneLoadAll(); }
+    async function aneLoadBuildings() { await aneLoadAll(); }
+    async function aneLoadLandmarks() { await aneLoadAll(); }
+
+    function aneShowStatus(msg, type) {
+        var el=document.getElementById('aneStatus'); if(!el) return;
+        el.style.display=''; el.textContent=msg;
+        el.style.background=type==='success'?'#D5F4E6':'#FFEBEE';
+        el.style.color=type==='success'?'#1a7a45':'#c0392b';
+        el.style.border=type==='success'?'1px solid #a3e6c1':'1px solid #f5b7b1';
+    }
+
+    function aneReset() {
+        document.getElementById('aneForm')?.reset();
+        document.getElementById('aneBook').value='';
+        var rs=document.getElementById('aneReceipt'); if(rs){rs.innerHTML='<option>\u2014 Select Book first \u2014</option>';rs.disabled=true;}
+        var pp=document.getElementById('anePhotoPreview'); if(pp) pp.style.display='none';
+        window._anePhotoFile=null;
+        document.getElementById('anePhotoInput').value='';
+        document.getElementById('aneStatus').style.display='none';
+        aneSetMode('Cash');
+        // Reset location cascade
+        ['aneLandmark','aneLandmark','aneArea','aneBuilding'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+        ['aneLandmarkGroup','aneAreaGroup','aneBuildingGroup','aneFlatNumberGroup'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+    }
+
+
+    // ── Manage Landmarks modal ───────────────────────────────────────────────
+    // (duplicate adeLandmarkModal removed — using the full 3-column version above)
+
+    // ── Override aneToggle to also load buildings + landmarks ───────────────
+    const _origAneToggle = window.aneToggle;
+    window.aneToggle = function() {
+        _origAneToggle && _origAneToggle();
+        aneLoadBuildings();
+        aneLoadLandmarks();
+    };
+
+    // ── Override aneSave to include new fields ──────────────────────────────
+    window.aneSave = async function(ev) {
+        ev.preventDefault();
+        const btn = document.getElementById('aneSaveBtn');
+        if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Saving…';}
+        const aneShowStatus = function(msg,type){
+            const el=document.getElementById('aneStatus');if(!el)return;
+            el.style.display='';el.textContent=msg;
+            el.style.background=type==='success'?'#D5F4E6':'#FFEBEE';
+            el.style.color=type==='success'?'#1a7a45':'#c0392b';
+            el.style.border=type==='success'?'1px solid #a3e6c1':'1px solid #f5b7b1';
+        };
+        const donorType = document.getElementById('aneDonorType')?.value || 'Individual';
+        const bn = Number(document.getElementById('aneBook').value);
+        const rn = Number(document.getElementById('aneReceipt').value);
+        const fn = (document.getElementById('aneFirst')?.value||'').trim().toUpperCase();
+        const mn = (document.getElementById('aneMid')?.value||'').trim().toUpperCase();
+        const ln = (document.getElementById('aneLast')?.value||'').trim().toUpperCase();
+        const biz = (document.getElementById('aneBizName')?.value||'').trim().toUpperCase();
+        const emailRaw = (document.getElementById('aneEmail')?.value||'').trim();
+        const emailFull = emailRaw ? (emailRaw.includes('@') ? emailRaw : emailRaw+'@gmail.com') : null;
+        if(!bn||!rn){aneShowStatus('❌ Select Book and Receipt Number.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
+        if(donorType==='Individual'&&(!fn||!mn||!ln)){aneShowStatus('❌ First, Middle, and Last Name are required.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
+        if(donorType==='Business'&&!biz){aneShowStatus('❌ Business Name is required.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser')||'null');
+        const payload = {
+            bookNumber:bn, receiptNumber:rn, donorType,
+            firstName:donorType==='Individual'?fn:null, middleName:donorType==='Individual'?mn:null, lastName:donorType==='Individual'?ln:null,
+            businessName:donorType==='Business'?biz:null,
+            whatsappNumber:document.getElementById('aneWA')?.value.trim()||null,
+            mobileNumber:document.getElementById('aneMobile')?.value.trim()||null,
+            mailId:emailFull,
+            buildingName:document.getElementById('aneBuilding')?.value||null,
+            landmark:document.getElementById('aneLandmark').value||null,landmark:document.getElementById('aneLandmark')?.value||null,buildingName:document.getElementById('aneBuilding')?.value||null,
+            area:document.getElementById('aneArea')?.value||null,
+            landmark:document.getElementById('aneLandmark')?.value||null,
+            amount:document.getElementById('aneAmount').value!==''?Number(document.getElementById('aneAmount').value):null,
+            paymentMode:document.getElementById('anePaymentMode')?.value||document.getElementById('aneMode')?.value||'Cash',
+            referenceNumber:document.getElementById('aneRef')?.value.trim()||null,
+            submittedBy:currentUser?currentUser.name:'Admin',
+            submittedByUserId:currentUser?currentUser.id:null
+        };
+        try {
+            const res=await fetch('/api/donation-entries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            const data=await res.json();
+            if(res.ok&&data.success){
+                if(window._anePhotoFile&&data.entry&&data.entry.entryId){
+                    try{
+                        const fd=new FormData();fd.append('passbook',window._anePhotoFile,'receipt.jpg');
+                        fd.append('entryId',data.entry.entryId);fd.append('userId',currentUser?String(currentUser.id):'');
+                        await fetch('/api/upload-passbook',{method:'POST',body:fd});
+                    }catch(_px){}
+                }
+                aneShowStatus('✅ Entry saved! Book '+data.entry.bookNumber+', Receipt #'+data.entry.receiptNumber,'success');
+                aneReset();await adeLoad();
+            } else { aneShowStatus('❌ '+(data.message||'Submission failed.'),'error'); }
+        } catch(err){ aneShowStatus('❌ '+err.message,'error'); }
+        finally{ if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';} }
+    };
+
+    // ── Committee Members section ────────────────────────────────────────────
+    (function injectCommitteeSection() {
+        const container = document.querySelector('.admin-content');
+        if (!container || document.getElementById('committeeMembers')) return;
+        const sec = document.createElement('div');
+        sec.id = 'committeeMembers';
+        sec.className = 'content-section';
+        sec.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px;">
+            <div><h2 style="color:var(--dark-color);margin:0 0 4px;">Committee Members</h2><p style="color:#777;margin:0;">Manage committee — visible to all volunteers and on public page</p></div>
+            <button onclick="cmOpenAdd()" class="btn btn-primary"><i class="fas fa-plus" style="margin-right:6px;"></i>Add Member</button>
+        </div>
+        <div id="cmStatus" style="display:none;padding:12px 18px;border-radius:10px;margin-bottom:16px;font-weight:600;"></div>
+        <div id="cmGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;">
+            <div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">Loading…</div>
+        </div>`;
+        container.appendChild(sec);
+    })();
+
+    let _cmAll = [];
+    async function cmLoad() {
+        const grid = document.getElementById('cmGrid'); if(!grid) return;
+        grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--primary-color);margin-bottom:8px;"></i><br>Loading…</div>';
+        try {
+            const r = await fetch('/api/committee-members'); const d = await r.json();
+            _cmAll = d.members || [];
+            if(!_cmAll.length){grid.innerHTML='<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">No members yet. Click Add Member.</div>';return;}
+            grid.innerHTML = _cmAll.map(m => `<div style="background:var(--white);border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;text-align:center;display:flex;flex-direction:column;justify-content:space-between;border:1px solid #eee;">
+                <div>
+                    ${m.photoUrl?
+                        `<img src="${fixUrl(m.photoUrl)}" style="width:100%;height:180px;object-fit:cover;" onclick="openAdminLightbox('${fixUrl(m.photoUrl)}')">`:
+                        `<div style="width:100%;height:180px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="font-size:3rem;color:#fff;opacity:.5;"></i></div>`}
+                    <div style="padding:14px 12px 6px;">
+                        <div style="font-weight:700;font-size:1.05rem;margin-bottom:4px;color:var(--dark-color);">${m.name}</div>
+                        <div style="font-size:.82rem;color:var(--primary-color);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">${m.role||m.department||'Member'}</div>
+                        <div style="font-size:.78rem;color:#555;margin-bottom:4px;font-weight:600;">Seq: ${m.sequence||'—'}</div>
+                        ${m.memberId?'<div style="font-size:.78rem;color:#999;margin-bottom:8px;">ID: '+m.memberId+'</div>':''}
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:10px;">
+                            ${m.phone?'<div style="font-size:.82rem;color:#555;"><i class="fas fa-phone" style="margin-right:6px;color:var(--primary-color);"></i>'+m.phone+'</div>':''}
+                            ${m.whatsapp?'<div style="font-size:.82rem;color:#2e7d32;"><i class="fab fa-whatsapp" style="margin-right:6px;color:#25d366;font-weight:bold;"></i>'+m.whatsapp+'</div>':''}
+                        </div>
+                    </div>
+                </div>
+                <div style="padding:0 12px 16px 12px;">
+                    <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;border-top:1px solid #f5f5f5;padding-top:12px;">
+                        <button onclick="cmOpenEdit('${m.id}')" class="btn-icon btn-edit" title="Edit Member" style="background:#E3F2FD;color:#1565C0;"><i class="fas fa-edit"></i></button>
+                        <button onclick="cmDelete('${m.id}')" class="btn-icon btn-delete" title="Delete Member" style="background:#FFEBEE;color:#c0392b;"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>`).join('');
+        } catch(e) { grid.innerHTML='<div style="text-align:center;color:#c00;padding:40px;grid-column:1/-1;">⚠ Cannot load members.</div>'; }
+    }
+
+    function cmShowStatus(msg,type){
+        const el=document.getElementById('cmStatus');if(!el)return;
+        el.style.display='';el.textContent=msg;
+        el.style.background=type==='success'?'#D5F4E6':'#FFEBEE';
+        el.style.color=type==='success'?'#1a7a45':'#c0392b';
+        el.style.border=type==='success'?'1px solid #a3e6c1':'1px solid #f5b7b1';
+        setTimeout(()=>el.style.display='none',5000);
+    }
+
+    function cmOpenAdd() { cmOpenModal(null); }
+    function cmOpenEdit(id) { cmOpenModal(_cmAll.find(m=>m.id===id)); }
+    let _cmPhotoFile = null;
+    function cmOpenModal(member) {
+        _cmPhotoFile = null;
+        const isEdit = !!member;
+        const modal = document.createElement('div');
+        modal.id = 'cmModal';
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
+        modal.innerHTML = `<div style="background:var(--white);border-radius:16px;padding:28px 24px;max-width:480px;width:94%;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;font-weight:600;font-size:1.25rem;color:var(--dark-color);">${isEdit?'Edit':'Add'} Committee Member</h3>
+                <span onclick="document.getElementById('cmModal').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <div id="cmModalStatus" style="display:none;padding:10px;border-radius:8px;margin-bottom:12px;font-weight:600;"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Display Sequence (Order)</label><input id="cmSequence" type="number" class="admin-input" style="width:100%;box-sizing:border-box;" placeholder="e.g. 1" value="${member&&member.sequence!==undefined&&member.sequence!==null?member.sequence:''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Full Name *</label><input id="cmName" class="admin-input" style="width:100%;box-sizing:border-box;" value="${member?member.name:''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Member ID</label><input id="cmMemberId" class="admin-input" style="width:100%;box-sizing:border-box;" value="${member?member.memberId:''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Phone / Contact Number</label><input id="cmPhone" class="admin-input" style="width:100%;box-sizing:border-box;" maxlength="10" value="${member?member.phone||'':''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">WhatsApp Number</label><input id="cmWhatsapp" class="admin-input" style="width:100%;box-sizing:border-box;" maxlength="10" value="${member?member.whatsapp||'':''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Department</label><input id="cmDept" class="admin-input" style="width:100%;box-sizing:border-box;" placeholder="e.g. Executive" value="${member?member.department||'':''}"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Role / Position</label><input id="cmRole" class="admin-input" style="width:100%;box-sizing:border-box;" placeholder="e.g. President" value="${member?member.role||'':''}"></div>
+            <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:14px;margin-bottom:16px;">
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:10px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Member Photo</div>
+                ${member&&member.photoUrl?`<div style="text-align:center;"><img src="${fixUrl(member.photoUrl)}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;margin-bottom:10px;"></div>`:''}
+                <button type="button" onclick="document.getElementById('cmPhotoInput').click()" style="width:100%;padding:10px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s;" onmouseover="this.style.borderColor='#E65100'" onmouseout="this.style.borderColor='#ddd'"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Select & Compress Photo</button>
+                <input type="file" id="cmPhotoInput" style="display:none;" accept="image/*">
+                <div id="cmPhotoPreview" style="display:none;margin-top:10px;text-align:center;background:var(--white);border-radius:8px;padding:10px;border:1px solid #eee;">
+                    <img id="cmPhotoThumb" src="" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;">
+                    <div id="cmPhotoName" style="font-size:.78rem;color:#555;margin-top:6px;word-break:break-all;"></div>
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+                <button class="btn" style="background:#eee;color:#555;" onclick="document.getElementById('cmModal').remove()">Cancel</button>
+                <button class="btn btn-primary" onclick="cmSave('${member?member.id:''}')"><i class="fas fa-save" style="margin-right:6px;"></i>Save</button>
+            </div>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', ev => { if(ev.target===modal) modal.remove(); });
+        document.getElementById('cmPhotoInput').onchange = function(ev) {
+            const f = ev.target.files[0]; if(!f) return;
+            window._compressImage(f, 950, function(blob) {
+                if(!blob){ alert('Could not compress image.'); return; }
+                _cmPhotoFile = blob;
+                const r = new FileReader();
+                r.onload = function(re) {
+                    document.getElementById('cmPhotoThumb').src = re.target.result;
+                    document.getElementById('cmPhotoName').innerHTML = `<i class="fas fa-check-circle" style="color:#2e7d32;"></i> Compressed: ${f.name.substring(0,20)}... (${window._fmtBytesA(blob.size)})`;
+                    document.getElementById('cmPhotoPreview').style.display = '';
+                };
+                r.readAsDataURL(blob);
+            });
+        };
+    }
+
+    async function cmSave(editId) {
+        const name = document.getElementById('cmName')?.value.trim();
+        if(!name){alert('Name is required.');return;}
+        const payload = {
+            name, 
+            memberId:document.getElementById('cmMemberId')?.value.trim()||'',
+            phone:document.getElementById('cmPhone')?.value.trim()||'',
+            whatsapp:document.getElementById('cmWhatsapp')?.value.trim()||'',
+            department:document.getElementById('cmDept')?.value.trim()||'',
+            role:document.getElementById('cmRole')?.value.trim()||'',
+            sequence:document.getElementById('cmSequence')?.value.trim()||''
+        };
+        try {
+            let res, d;
+            if(editId){
+                res=await fetch(`/api/committee-members/${encodeURIComponent(editId)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            } else {
+                res=await fetch('/api/committee-members',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            }
+            d=await res.json();
+            if(!res.ok||!d.success){alert(d.message||'Save failed.');return;}
+            const memberId = d.member.id;
+            if(_cmPhotoFile){
+                try{
+                    const fd=new FormData();fd.append('photo',_cmPhotoFile,'member.jpg');fd.append('memberId',memberId);
+                    await fetch('/api/upload-committee-photo',{method:'POST',body:fd});
+                }catch(_px){}
+            }
+            document.getElementById('cmModal').remove();
+            cmShowStatus('✅ Member saved!','success');
+            await cmLoad();
+        } catch(err){alert('Error: '+err.message);}
+    }
+
+    async function cmDelete(id) {
+        if(!confirm('Delete this committee member?')) return;
+        try {
+            const res=await fetch(`/api/committee-members/${encodeURIComponent(id)}`,{method:'DELETE'});
+            const d=await res.json();
+            if(res.ok&&d.success){cmShowStatus('✅ Member deleted.','success');await cmLoad();}
+            else alert(d.message||'Delete failed.');
+        }catch(e){alert('Server error.');}
+    }
+
+
+    // ── Volunteer Cards public display section ──────────────────────────────
+    let _vcAll = [];
+    async function vcLoad() {
+        const grid = document.getElementById('vcGrid'); if(!grid) return;
+        grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--primary-color);margin-bottom:8px;"></i><br>Loading public volunteer cards...</div>';
+        try {
+            const r = await fetch('/api/volunteer-cards'); const d = await r.json();
+            _vcAll = d.cards || [];
+            if(!_vcAll.length){grid.innerHTML='<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">No volunteer public cards set up yet. Click Add Volunteer Card.</div>';return;}
+            grid.innerHTML = _vcAll.map(v => `<div style="background:var(--white);border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;text-align:center;display:flex;flex-direction:column;justify-content:space-between;border:1px solid #eee;">
+                <div>
+                    ${v.photoUrl?
+                        `<img src="${fixUrl(v.photoUrl)}" style="width:100%;height:180px;object-fit:cover;" onclick="openAdminLightbox('${fixUrl(v.photoUrl)}')">`:
+                        `<div style="width:100%;height:180px;background:linear-gradient(135deg,var(--primary-color),var(--accent-color));display:flex;align-items:center;justify-content:center;"><i class="fas fa-user-circle" style="font-size:3rem;color:#fff;opacity:.5;"></i></div>`}
+                    <div style="padding:14px 12px 6px;">
+                        <div style="font-weight:700;font-size:1.05rem;margin-bottom:4px;color:var(--dark-color);">${v.name}</div>
+                        <div style="font-size:.82rem;color:var(--primary-color);font-weight:600;margin-bottom:10px;text-transform:uppercase;">${v.position||'Active Volunteer'}</div>
+                        <div style="font-size:.78rem;color:#555;margin-bottom:4px;font-weight:600;">Seq: ${v.sequence||'—'}</div>
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:10px;">
+                            ${v.phone?'<div style="font-size:.82rem;color:#555;"><i class="fas fa-phone" style="margin-right:6px;color:var(--primary-color);"></i>'+v.phone+'</div>':''}
+                            ${v.phone?'<div style="font-size:.82rem;color:#2e7d32;"><i class="fab fa-whatsapp" style="margin-right:6px;color:#25d366;font-weight:bold;"></i>wa.me/91'+v.phone+'</div>':''}
+                        </div>
+                    </div>
+                </div>
+                <div style="padding:0 12px 16px 12px;">
+                    <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;border-top:1px solid #f5f5f5;padding-top:12px;">
+                        <button onclick="vcOpenEdit('${v.id}')" class="btn-icon btn-edit" title="Edit Card" style="background:#E3F2FD;color:#1565C0;"><i class="fas fa-edit"></i></button>
+                        <button onclick="vcDelete('${v.id}')" class="btn-icon btn-delete" title="Delete Card" style="background:#FFEBEE;color:#c0392b;"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>`).join('');
+        } catch(e) { grid.innerHTML='<div style="text-align:center;color:#c00;padding:40px;grid-column:1/-1;">⚠ Cannot load volunteer cards.</div>'; }
+    }
+
+    function vcShowStatus(msg,type){
+        const el=document.getElementById('vcStatus');if(!el)return;
+        el.style.display='';el.textContent=msg;
+        el.style.background=type==='success'?'#D5F4E6':'#FFEBEE';
+        el.style.color=type==='success'?'#1a7a45':'#c0392b';
+        el.style.border=type==='success'?'1px solid #a3e6c1':'1px solid #f5b7b1';
+        setTimeout(()=>el.style.display='none',5000);
+    }
+
+    function vcOpenAdd() { vcOpenModal(null); }
+    function vcOpenEdit(id) { vcOpenModal(_vcAll.find(v=>v.id===id)); }
+    let _vcPhotoFile = null;
+    function vcOpenModal(card) {
+        _vcPhotoFile = null;
+        const isEdit = !!card;
+        const modal = document.createElement('div');
+        modal.id = 'vcModal';
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
+        modal.innerHTML = `<div style="background:var(--white);border-radius:16px;padding:28px 24px;max-width:480px;width:94%;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;font-weight:600;font-size:1.25rem;color:var(--dark-color);">${isEdit?'Edit':'Add'} Volunteer Card</h3>
+                <span onclick="document.getElementById('vcModal').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <div id="vcModalStatus" style="display:none;padding:10px;border-radius:8px;margin-bottom:12px;font-weight:600;"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Display Sequence (Order)</label><input id="vcSequence" type="number" class="admin-input" style="width:100%;box-sizing:border-box;" placeholder="e.g. 1" value="${card&&card.sequence!==undefined&&card.sequence!==null?card.sequence:''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Full Name *</label><input id="vcName" class="admin-input" style="width:100%;box-sizing:border-box;" placeholder="e.g. Ramesh Patel" value="${card?card.name:''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Position / Department</label><input id="vcPosition" class="admin-input" style="width:100%;box-sizing:border-box;" placeholder="e.g. Lead Coordinator" value="${card?card.position||'':''}"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Contact / Phone Number</label><input id="vcPhone" class="admin-input" style="width:100%;box-sizing:border-box;" maxlength="10" placeholder="10-digit mobile" value="${card?card.phone||'':''}"></div>
+            <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:14px;margin-bottom:16px;">
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:10px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Volunteer Photo</div>
+                ${card&&card.photoUrl?`<div style="text-align:center;"><img src="${fixUrl(card.photoUrl)}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;margin-bottom:10px;"></div>`:''}
+                <button type="button" onclick="document.getElementById('vcPhotoInput').click()" style="width:100%;padding:10px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s;" onmouseover="this.style.borderColor='#E65100'" onmouseout="this.style.borderColor='#ddd'"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Select & Compress Photo</button>
+                <input type="file" id="vcPhotoInput" style="display:none;" accept="image/*">
+                <div id="vcPhotoPreview" style="display:none;margin-top:10px;text-align:center;background:var(--white);border-radius:8px;padding:10px;border:1px solid #eee;">
+                    <img id="vcPhotoThumb" src="" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;">
+                    <div id="vcPhotoName" style="font-size:.78rem;color:#555;margin-top:6px;word-break:break-all;"></div>
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+                <button class="btn" style="background:#eee;color:#555;" onclick="document.getElementById('vcModal').remove()">Cancel</button>
+                <button class="btn btn-primary" onclick="vcSave('${card?card.id:''}')"><i class="fas fa-save" style="margin-right:6px;"></i>Save Card</button>
+            </div>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', ev => { if(ev.target===modal) modal.remove(); });
+        document.getElementById('vcPhotoInput').onchange = function(ev) {
+            const f = ev.target.files[0]; if(!f) return;
+            window._compressImage(f, 950, function(blob) {
+                if(!blob){ alert('Could not compress image.'); return; }
+                _vcPhotoFile = blob;
+                const r = new FileReader();
+                r.onload = function(re) {
+                    document.getElementById('vcPhotoThumb').src = re.target.result;
+                    document.getElementById('vcPhotoName').innerHTML = `<i class="fas fa-check-circle" style="color:#2e7d32;"></i> Compressed: ${f.name.substring(0,20)}... (${window._fmtBytesA(blob.size)})`;
+                    document.getElementById('vcPhotoPreview').style.display = '';
+                };
+                r.readAsDataURL(blob);
+            });
+        };
+    }
+
+    async function vcSave(editId) {
+        const name = document.getElementById('vcName')?.value.trim();
+        if(!name){alert('Name is required.');return;}
+        const payload = {
+            name, 
+            position:document.getElementById('vcPosition')?.value.trim()||'',
+            phone:document.getElementById('vcPhone')?.value.trim()||'',
+            sequence:document.getElementById('vcSequence')?.value.trim()||''
+        };
+        try {
+            let res, d;
+            if(editId){
+                res=await fetch(`/api/volunteer-cards/${encodeURIComponent(editId)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            } else {
+                res=await fetch('/api/volunteer-cards',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            }
+            d=await res.json();
+            if(!res.ok||!d.success){alert(d.message||'Save failed.');return;}
+            const id = d.card.id;
+            if(_vcPhotoFile){
+                try{
+                    const fd=new FormData();fd.append('photo',_vcPhotoFile,'volunteer.jpg');fd.append('volunteerId',id);
+                    await fetch('/api/upload-volunteer-photo',{method:'POST',body:fd});
+                }catch(_px){}
+            }
+            document.getElementById('vcModal').remove();
+            vcShowStatus('✅ Volunteer card saved!','success');
+            await vcLoad();
+        } catch(err){alert('Error: '+err.message);}
+    }
+
+    async function vcDelete(id) {
+        if(!confirm('Delete this volunteer card?')) return;
+        try {
+            const res=await fetch(`/api/volunteer-cards/${encodeURIComponent(id)}`,{method:'DELETE'});
+            const d=await res.json();
+            if(res.ok&&d.success){vcShowStatus('✅ Volunteer card deleted.','success');await vcLoad();}
+            else alert(d.message||'Delete failed.');
+        }catch(e){alert('Server error.');}
+    }
+
+    function switchVolTab(tab) {
+        const tabCards = document.getElementById('volTabCards');
+        const tabAccounts = document.getElementById('volTabAccounts');
+        const panelCards = document.getElementById('volPanelCards');
+        const panelAccounts = document.getElementById('volPanelAccounts');
+        const activeStyle   = `padding:10px 24px;border:none;background:none;font-size:.92rem;font-weight:600;color:var(--primary-color);border-bottom:3px solid var(--primary-color);cursor:pointer;transition:all .2s;`;
+        const inactiveStyle = `padding:10px 24px;border:none;background:none;font-size:.92rem;font-weight:600;color:#999;border-bottom:3px solid transparent;cursor:pointer;transition:all .2s;`;
+        
+        if (tab === 'cards') {
+            if (tabCards) tabCards.style.cssText = activeStyle;
+            if (tabAccounts) tabAccounts.style.cssText = inactiveStyle;
+            if (panelCards) panelCards.style.display = '';
+            if (panelAccounts) panelAccounts.style.display = 'none';
+            vcLoad();
+        } else {
+            if (tabCards) tabCards.style.cssText = inactiveStyle;
+            if (tabAccounts) tabAccounts.style.cssText = activeStyle;
+            if (panelCards) panelCards.style.display = 'none';
+            if (panelAccounts) panelAccounts.style.display = '';
+            loadVolunteers();
+        }
+    }
+
+
+
+
+    let _ccAll = [];
+    async function ccLoad() {
+        const grid = document.getElementById('ccGrid'); if(!grid) return;
+        grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--primary-color);margin-bottom:8px;"></i><br>Loading Contact Slots...</div>';
+        try {
+            const r = await fetch('/api/contact-cards'); const d = await r.json();
+            _ccAll = d.cards || [];
+            if(!_ccAll.length){
+                grid.innerHTML='<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">No contact slots available. Contact Server administrator.</div>';
+                return;
+            }
+            grid.innerHTML = _ccAll.map((c, i) => {
+                const title = c.title || `Representative Slot ${c.slot}`;
+                const subtitle = c.subtitle || (i === 0 ? 'General Inquiries' : i === 1 ? 'Donations Desk' : i === 2 ? 'Cultural Events' : i === 3 ? 'Public Relations' : 'Volunteer Management');
+                
+                return `<div style="background:var(--white);border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;border:1px solid #eee;display:flex;flex-direction:column;justify-content:space-between;position:relative;">
+                    <span style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.65);color:#fff;padding:3px 9px;border-radius:30px;font-size:0.75rem;font-weight:600;z-index:2;">Slot ${c.slot}</span>
+                    <div>
+                        ${c.photoUrl?
+                            `<img src="${fixUrl(c.photoUrl)}" style="width:100%;height:180px;object-fit:cover;" onclick="openAdminLightbox('${fixUrl(c.photoUrl)}')">`:
+                            `<div style="width:100%;height:180px;background:linear-gradient(135deg,var(--primary-color),var(--accent-color));display:flex;align-items:center;justify-content:center;"><i class="fas fa-id-card" style="font-size:3rem;color:#fff;opacity:.5;"></i></div>`}
+                        <div style="padding:16px 14px 6px;">
+                            <div style="font-weight:700;font-size:1.1rem;margin-bottom:4px;color:var(--dark-color);">${title}</div>
+                            <div style="font-size:.82rem;color:var(--primary-color);font-weight:600;margin-bottom:10px;text-transform:uppercase;">${subtitle}</div>
+                            <div style="display:flex;flex-direction:column;gap:4px;margin-top:12px;">
+                                ${c.phone?'<div style="font-size:.82rem;color:#555;"><i class="fas fa-phone" style="margin-right:6px;color:var(--primary-color);"></i>'+c.phone+'</div>':`<div style="font-size:.8rem;color:#999;font-style:italic;">No phone number configured</div>`}
+                                ${c.whatsapp?'<div style="font-size:.82rem;color:#2e7d32;"><i class="fab fa-whatsapp" style="margin-right:6px;color:#25d366;font-weight:bold;"></i>+91 '+c.whatsapp+'</div>':''}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="padding:0 14px 16px 14px;">
+                        <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;border-top:1px solid #f5f5f5;padding-top:12px;">
+                            <button onclick="ccOpenEdit(${c.slot})" class="btn btn-primary btn-small" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;"><i class="fas fa-cog"></i> Configure Slot ${c.slot}</button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        } catch(e) { grid.innerHTML='<div style="text-align:center;color:#c00;padding:40px;grid-column:1/-1;">⚠ Cannot load contact slots.</div>'; }
+    }
+
+    function ccShowStatus(msg,type){
+        const el=document.getElementById('ccStatus');if(!el)return;
+        el.style.display='';el.textContent=msg;
+        el.style.background=type==='success'?'#D5F4E6':'#FFEBEE';
+        el.style.color=type==='success'?'#1a7a45':'#c0392b';
+        el.style.border=type==='success'?'1px solid #a3e6c1':'1px solid #f5b7b1';
+        setTimeout(()=>el.style.display='none',5000);
+    }
+
+    let _ccPhotoFile = null;
+    function ccOpenEdit(slotNum) {
+        _ccPhotoFile = null;
+        const card = _ccAll.find(c=>c.slot===slotNum);
+        const modal = document.createElement('div');
+        modal.id = 'ccModal';
+        modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;align-items:center;justify-content:center;';
+        
+        // Slot fallback info to help admin understand the default slots
+        const defaultRole = slotNum === 1 ? 'General Inquiries' : slotNum === 2 ? 'Donations Desk' : slotNum === 3 ? 'Cultural Events' : slotNum === 4 ? 'Public Relations' : 'Volunteer Management';
+        
+        modal.innerHTML = `<div style="background:var(--white);border-radius:16px;padding:28px 24px;max-width:480px;width:94%;max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;font-weight:600;font-size:1.25rem;color:var(--dark-color);">Configure Slot ${slotNum}</h3>
+                <span onclick="document.getElementById('ccModal').remove()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <p style="color:#777;font-size:0.83rem;margin: -8px 0 16px 0;">Configure custom name, role, and contact for Slot ${slotNum}. Leaving fields blank falls back to system defaults.</p>
+            <div id="ccModalStatus" style="display:none;padding:10px;border-radius:8px;margin-bottom:12px;font-weight:600;"></div>
+            
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Representative Name / Title</label><input id="ccTitle" class="admin-input" style="width:100%;box-sizing:border-box;" placeholder="e.g. Rajesh Shah" value="${card?card.title||'':''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Subtitle / Role Description</label><input id="ccSubtitle" class="admin-input" style="width:100%;box-sizing:border-box;" placeholder="Default: ${defaultRole}" value="${card?card.subtitle||'':''}"></div>
+            <div class="form-group" style="margin-bottom:12px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">Phone / Contact Number</label><input id="ccPhone" class="admin-input" style="width:100%;box-sizing:border-box;" maxlength="10" placeholder="10-digit mobile" value="${card?card.phone||'':''}"></div>
+            <div class="form-group" style="margin-bottom:14px;"><label style="display:block;font-size:.85rem;font-weight:600;margin-bottom:4px;color:#555;">WhatsApp Number</label><input id="ccWhatsapp" class="admin-input" style="width:100%;box-sizing:border-box;" maxlength="10" placeholder="WhatsApp number" value="${card?card.whatsapp||'':''}"></div>
+            
+            <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:14px;margin-bottom:16px;">
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#E65100;margin-bottom:10px;"><i class="fas fa-camera" style="margin-right:6px;"></i>Representative Photo</div>
+                ${card&&card.photoUrl?`<div style="text-align:center;"><img src="${fixUrl(card.photoUrl)}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;margin-bottom:10px;"></div>`:''}
+                <button type="button" onclick="document.getElementById('ccPhotoInput').click()" style="width:100%;padding:10px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s;" onmouseover="this.style.borderColor='#E65100'" onmouseout="this.style.borderColor='#ddd'"><i class="fas fa-upload" style="margin-right:6px;color:#E65100;"></i>Select & Compress Photo</button>
+                <input type="file" id="ccPhotoInput" style="display:none;" accept="image/*">
+                <div id="ccPhotoPreview" style="display:none;margin-top:10px;text-align:center;background:var(--white);border-radius:8px;padding:10px;border:1px solid #eee;">
+                    <img id="ccPhotoThumb" src="" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid #ffe0d0;">
+                    <div id="ccPhotoName" style="font-size:.78rem;color:#555;margin-top:6px;word-break:break-all;"></div>
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+                <button class="btn" style="background:#eee;color:#555;" onclick="document.getElementById('ccModal').remove()">Cancel</button>
+                <button class="btn btn-primary" onclick="ccSave(${slotNum})"><i class="fas fa-save" style="margin-right:6px;"></i>Save Slot Config</button>
+            </div>
+        </div>`;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', ev => { if(ev.target===modal) modal.remove(); });
+        document.getElementById('ccPhotoInput').onchange = function(ev) {
+            const f = ev.target.files[0]; if(!f) return;
+            window._compressImage(f, 950, function(blob) {
+                if(!blob){ alert('Could not compress image.'); return; }
+                _ccPhotoFile = blob;
+                const r = new FileReader();
+                r.onload = function(re) {
+                    document.getElementById('ccPhotoThumb').src = re.target.result;
+                    document.getElementById('ccPhotoName').innerHTML = `<i class="fas fa-check-circle" style="color:#2e7d32;"></i> Compressed: ${f.name.substring(0,20)}... (${window._fmtBytesA(blob.size)})`;
+                    document.getElementById('ccPhotoPreview').style.display = '';
+                };
+                r.readAsDataURL(blob);
+            });
+        };
+    }
+
+    async function ccSave(slotNum) {
+        const payload = {
+            title: document.getElementById('ccTitle')?.value.trim()||'',
+            subtitle: document.getElementById('ccSubtitle')?.value.trim()||'',
+            phone: document.getElementById('ccPhone')?.value.trim()||'',
+            whatsapp: document.getElementById('ccWhatsapp')?.value.trim()||''
+        };
+        try {
+            const res = await fetch(`/api/contact-cards/${slotNum}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const d = await res.json();
+            if (!res.ok || !d.success) { alert(d.message || 'Save failed.'); return; }
+            if (_ccPhotoFile) {
+                try {
+                    const fd = new FormData();
+                    fd.append('photo', _ccPhotoFile, 'contact.jpg');
+                    fd.append('slot', String(slotNum));
+                    await fetch('/api/upload-contact-photo', { method: 'POST', body: fd });
+                } catch (_px) {}
+            }
+            document.getElementById('ccModal').remove();
+            ccShowStatus(`✅ Slot ${slotNum} updated!`, 'success');
+            await ccLoad();
+        } catch (err) { alert('Error: ' + err.message); }
+    }
+
+
+    // ── Hook into admin section switcher ────────────────────────────────────
+    // Hook into admin section switcher so we auto-load on navigate
+    const _origShowAdmin = window.showAdminSection;
+    window.showAdminSection = function(id) {
+        if (typeof _origShowAdmin === 'function') _origShowAdmin(id);
+        if (id === 'donationEntries') { adeLoadYearFilter().then(() => adeLoad()); }
+        if (id === 'committeeMembers') { if(typeof cmLoad==='function') cmLoad(); }
+        if (id === 'volunteers') { if(typeof switchVolTab==='function') switchVolTab('cards'); }
+        if (id === 'events') { if(typeof adminLoadYears === 'function') adminLoadYears(); }
+        
+    };

@@ -2,7 +2,7 @@
     'use strict';
 
     // ── Amount → English words (Indian system) ─────────────────────────────
-    function ade_rcg_amtToWords(num) {
+    function de_rcg_amtToWords(num) {
         if (!num || isNaN(num) || num <= 0) return '';
         num = Math.round(num);
         const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
@@ -22,44 +22,44 @@
         r += h(n);
         return r.trim() + ' Only';
     }
-    // Expose to window so the receipt uploader IIFE can use it
-    window.ade_rcg_amtToWords = ade_rcg_amtToWords;
+    // Expose to window so the second IIFE (receipt uploader) can use it
+    window.de_rcg_amtToWords = de_rcg_amtToWords;
 
     // ── Set a receipt field ─────────────────────────────────────────────────
-    function ade_rcg_set(id, html) {
+    function de_rcg_set(id, html) {
         var el = document.getElementById(id);
         if (el) el.innerHTML = html;
     }
 
     // ── Master sync — reads all form fields and paints the receipt ──────────
-    window.ade_rcg_liveSync = function() {
-        var wrapper = document.getElementById('ade_rcg_wrapper');
+    window.de_rcg_liveSync = function() {
+        var wrapper = document.getElementById('de_rcg_wrapper');
         if (!wrapper) return;
 
         // Donor name
-        var donorType = document.getElementById('adeDonorType')?.value || 'Individual';
+        var donorType = document.getElementById('deDonorType')?.value || 'Individual';
         var name = '';
         if (donorType === 'Business') {
-            name = (document.getElementById('adeBusinessName')?.value || '').trim();
+            name = (document.getElementById('deBusinessName')?.value || '').trim();
         } else {
-            var fn = (document.getElementById('adeFirstName')?.value   || '').trim();
-            var mn = (document.getElementById('adeMiddleName')?.value  || '').trim();
-            var ln = (document.getElementById('adeLastName')?.value    || '').trim();
+            var fn = (document.getElementById('deFirstName')?.value   || '').trim();
+            var mn = (document.getElementById('deMiddleName')?.value  || '').trim();
+            var ln = (document.getElementById('deLastName')?.value    || '').trim();
             name = [fn, mn, ln].filter(Boolean).join(' ');
         }
 
-        var amount    = parseFloat(document.getElementById('adeAmount')?.value) || 0;
-        var rcptNo    = document.getElementById('adeReceiptNumber')?.value || '';
-        var bookNo    = document.getElementById('adeBookNumber')?.value || '';
-        var payMode   = document.getElementById('adePaymentMode')?.value || 'Cash';
-        var dateRaw   = document.getElementById('adeReceiptDate')?.value || '';
+        var amount    = parseFloat(document.getElementById('deAmount')?.value) || 0;
+        var rcptNo    = document.getElementById('deReceiptNumber')?.value || '';
+        var bookNo    = document.getElementById('deBookNumber')?.value || '';
+        var payMode   = document.getElementById('dePaymentMode')?.value || 'Cash';
+        var dateRaw   = document.getElementById('deReceiptDate')?.value || '';
 
         // Show the wrapper only when at least a name or amount is entered
         var hasData = name || amount > 0;
         wrapper.style.display = hasData ? 'block' : 'none';
         if (!hasData) return;
 
-        // Year from date (overridden by admin receipt format setting if set)
+        // Year from date
         var yearStr = '';
         var formattedDate = '';
         if (dateRaw) {
@@ -67,17 +67,15 @@
             if (parts.length === 3) {
                 var yy = parts[0], mm = parts[1], dd = parts[2];
                 formattedDate = dd + '/' + mm + '/' + yy;
+                // Fiscal year e.g. 2025-26
+                var yr = parseInt(yy, 10);
+                var mo = parseInt(mm, 10);
                 if (window._receiptYear) {
                     yearStr = window._receiptYear;
+                } else if (mo >= 4) {
+                    yearStr = yr + '-' + String(yr + 1).slice(2);
                 } else {
-                    // Fiscal year e.g. 2025-26
-                    var yr = parseInt(yy, 10);
-                    var mo = parseInt(mm, 10);
-                    if (mo >= 4) {
-                        yearStr = yr + '-' + String(yr + 1).slice(2);
-                    } else {
-                        yearStr = (yr - 1) + '-' + String(yr).slice(2);
-                    }
+                    yearStr = (yr - 1) + '-' + String(yr).slice(2);
                 }
             }
         }
@@ -89,147 +87,156 @@
         else if (bookNo)      rcptLabel = bookNo;
 
         // Amount words
-        var words = amount > 0 ? ade_rcg_amtToWords(amount) : '';
+        var words = amount > 0 ? de_rcg_amtToWords(amount) : '';
         var amtFmt = amount > 0 ? ('₹\u00a0' + Number(amount).toLocaleString('en-IN')) : '';
 
         // Paint receipt fields
-        ade_rcg_set('ade_rcg_r_year',   yearStr   || '<span style="color:#CCC;font-style:italic;">__</span>');
-        ade_rcg_set('ade_rcg_r_rcptno', rcptLabel || '<span style="color:#CCC;font-style:italic;">___</span>');
-        ade_rcg_set('ade_rcg_r_date',   formattedDate || '<span style="color:#CCC;font-style:italic;">___________</span>');
-        ade_rcg_set('ade_rcg_r_donor',  name
+        de_rcg_set('de_rcg_r_year',   yearStr   || '<span style="color:#CCC;font-style:italic;">__</span>');
+        de_rcg_set('de_rcg_r_rcptno', rcptLabel || '<span style="color:#CCC;font-style:italic;">___</span>');
+        de_rcg_set('de_rcg_r_date',   formattedDate || '<span style="color:#CCC;font-style:italic;">___________</span>');
+        de_rcg_set('de_rcg_r_donor',  name
             ? '<span style="font-weight:700;color:#111;">'+name+'</span>'
             : '<span style="color:#CCC;font-style:italic;font-weight:400;">__________________________</span>');
-        ade_rcg_set('ade_rcg_r_words',  words
+        de_rcg_set('de_rcg_r_words',  words
             ? '<span style="color:#222;">'+words+'</span>'
             : '<span style="color:#CCC;font-style:italic;font-weight:400;">______________________________</span>');
-        ade_rcg_set('ade_rcg_r_amt',    amtFmt
+        de_rcg_set('de_rcg_r_amt',    amtFmt
             ? '<span style="font-weight:700;color:#8B1A1A;">'+amtFmt+'</span>'
             : '<span style="color:#CCC;font-style:italic;font-weight:400;">₹</span>');
 
-        var modeEl = document.getElementById('ade_rcg_r_mode');
+        var modeEl = document.getElementById('de_rcg_r_mode');
         if (modeEl) modeEl.textContent = payMode ? ('(' + payMode + ')') : '';
     };
 
     // ── Wire all form fields to trigger live sync ───────────────────────────
-    function ade_rcg_wireListeners() {
-        var ids = ['adeFirstName','adeMiddleName','adeLastName','adeBusinessName',
-                   'adeAmount','adeReceiptNumber','adeBookNumber','adeReceiptDate'];
+    function de_rcg_wireListeners() {
+        var ids = ['deFirstName','deMiddleName','deLastName','deBusinessName',
+                   'deAmount','deReceiptNumber','deBookNumber','deReceiptDate'];
         ids.forEach(function(id) {
             var el = document.getElementById(id);
-            if (el && !el._ade_rcg_bound) {
-                el._ade_rcg_bound = true;
-                el.addEventListener('input',  window.ade_rcg_liveSync);
-                el.addEventListener('change', window.ade_rcg_liveSync);
+            if (el && !el._de_rcg_bound) {
+                el._de_rcg_bound = true;
+                el.addEventListener('input',  window.de_rcg_liveSync);
+                el.addEventListener('change', window.de_rcg_liveSync);
             }
         });
 
         // Payment mode buttons — they update a hidden input, so watch that too
-        var pmEl = document.getElementById('adePaymentMode');
-        if (pmEl && !pmEl._ade_rcg_bound) {
-            pmEl._ade_rcg_bound = true;
+        var pmEl = document.getElementById('dePaymentMode');
+        if (pmEl && !pmEl._de_rcg_bound) {
+            pmEl._de_rcg_bound = true;
             // MutationObserver for value changes on hidden input
-            var obs = new MutationObserver(window.ade_rcg_liveSync);
+            var obs = new MutationObserver(window.de_rcg_liveSync);
             obs.observe(pmEl, { attributes: true, attributeFilter: ['value'] });
-            // Also intercept the existing adeSetMode clicks
-            var origSetMode = window.adeSetMode;
+            // Also intercept the existing deSetMode clicks
+            var origSetMode = window.deSetMode;
             if (typeof origSetMode === 'function') {
-                window.adeSetMode = function(mode) {
+                window.deSetMode = function(mode) {
                     origSetMode(mode);
-                    window.ade_rcg_liveSync();
+                    window.de_rcg_liveSync();
                 };
             }
         }
 
         // Donor type change — also triggers sync
-        var dtEl = document.getElementById('adeDonorType');
-        if (dtEl && !dtEl._ade_rcg_bound_dt) {
-            dtEl._ade_rcg_bound_dt = true;
-            var origSetDonorType = window.adeSetDonorType;
+        var dtEl = document.getElementById('deDonorType');
+        if (dtEl && !dtEl._de_rcg_bound_dt) {
+            dtEl._de_rcg_bound_dt = true;
+            var origSetDonorType = window.deSetDonorType;
             if (typeof origSetDonorType === 'function') {
-                window.adeSetDonorType = function(type) {
+                window.deSetDonorType = function(type) {
                     origSetDonorType(type);
-                    window.ade_rcg_liveSync();
+                    window.de_rcg_liveSync();
                 };
             }
         }
 
         // Set today as default date if blank
-        var dateEl = document.getElementById('adeReceiptDate');
+        var dateEl = document.getElementById('deReceiptDate');
         if (dateEl && !dateEl.value) {
             var t = new Date();
             dateEl.value = t.getFullYear() + '-'
                 + String(t.getMonth()+1).padStart(2,'0') + '-'
                 + String(t.getDate()).padStart(2,'0');
-            window.ade_rcg_liveSync();
+            window.de_rcg_liveSync();
         }
     }
 
-    // ── Re-wire every time the form card becomes visible ────────────────────
-    // (form card is hidden by default and toggled by adeToggleForm)
-    var _origToggle = window.adeToggleForm;
+    // ── Re-wire every time the form section becomes visible ────────────────────
+    var _origShowSection = window.showSection;
     document.addEventListener('DOMContentLoaded', function() {
-        // Try to wrap adeToggleForm if it exists
+        // Try to wrap showSection if it exists
         function tryWrapToggle() {
-            if (typeof window.adeToggleForm === 'function' && window.adeToggleForm !== _patchedToggle) {
-                var _prev = window.adeToggleForm;
-                window.adeToggleForm = _patchedToggle = function() {
-                    _prev();
-                    setTimeout(ade_rcg_wireListeners, 100);
+            if (typeof window.showSection === 'function' && window.showSection !== _patchedShowSection) {
+                var _prev = window.showSection;
+                window.showSection = _patchedShowSection = function(secId) {
+                    _prev(secId);
+                    if(secId === 'donationEntry') {
+                        setTimeout(de_rcg_wireListeners, 100);
+                    }
                 };
             }
         }
-        var _patchedToggle = null;
+        var _patchedShowSection = null;
         tryWrapToggle();
-        // Also wire via MutationObserver on adeFormCard visibility
-        var formCard = document.getElementById('adeFormCard');
+        
+        // Also wire via MutationObserver on donationEntry visibility
+        var formCard = document.getElementById('donationEntry');
         if (formCard) {
             var obs = new MutationObserver(function(muts) {
                 muts.forEach(function(m) {
                     if (m.attributeName === 'style' && formCard.style.display !== 'none') {
-                        ade_rcg_wireListeners();
+                        de_rcg_wireListeners();
                     }
                 });
             });
             obs.observe(formCard, { attributes: true, attributeFilter: ['style'] });
         }
-        // Retry wrapping adeToggleForm (it may be defined after DOMContentLoaded)
+        // Retry wrapping showSection (it may be defined after DOMContentLoaded)
         setTimeout(tryWrapToggle, 500);
         setTimeout(tryWrapToggle, 1500);
+        
+        // Ensure it's wired if already visible on load
+        if(formCard && formCard.style.display !== 'none') {
+            setTimeout(de_rcg_wireListeners, 100);
+        }
     });
 
     // ── HD WhatsApp send ────────────────────────────────────────────────────
-    window.ade_rcg_sendWhatsApp = function() {
+    window.de_rcg_sendWhatsApp = function() {
         var name = '';
-        var donorType = document.getElementById('adeDonorType')?.value || 'Individual';
+        var donorType = document.getElementById('deDonorType')?.value || 'Individual';
         if (donorType === 'Business') {
-            name = (document.getElementById('adeBusinessName')?.value || '').trim();
+            name = (document.getElementById('deBusinessName')?.value || '').trim();
         } else {
-            var fn = (document.getElementById('adeFirstName')?.value  || '').trim();
-            var mn = (document.getElementById('adeMiddleName')?.value || '').trim();
-            var ln = (document.getElementById('adeLastName')?.value   || '').trim();
+            var fn = (document.getElementById('deFirstName')?.value  || '').trim();
+            var mn = (document.getElementById('deMiddleName')?.value || '').trim();
+            var ln = (document.getElementById('deLastName')?.value   || '').trim();
             name = [fn, mn, ln].filter(Boolean).join(' ');
         }
-        var amount  = parseFloat(document.getElementById('adeAmount')?.value) || 0;
-        var rcptNo  = document.getElementById('adeReceiptNumber')?.value || '';
-        var bookNo  = document.getElementById('adeBookNumber')?.value || '';
-        var dateRaw = document.getElementById('adeReceiptDate')?.value || '';
-        var payMode = document.getElementById('adePaymentMode')?.value || 'Cash';
+        var amount  = parseFloat(document.getElementById('deAmount')?.value) || 0;
+        var rcptNo  = document.getElementById('deReceiptNumber')?.value || '';
+        var bookNo  = document.getElementById('deBookNumber')?.value || '';
+        var dateRaw = document.getElementById('deReceiptDate')?.value || '';
+        var payMode = document.getElementById('dePaymentMode')?.value || 'Cash';
         // Prefer WhatsApp number, fallback to mobile
-        var phone   = (document.getElementById('adeWhatsapp')?.value || '').replace(/\D/g,'');
-        if (!phone) phone = (document.getElementById('adeMobile')?.value || '').replace(/\D/g,'');
+        var phone   = (document.getElementById('deWhatsapp')?.value || '').replace(/\D/g,'');
+        if (!phone) phone = (document.getElementById('deMobile')?.value || '').replace(/\D/g,'');
         if (phone.length === 10) phone = '91' + phone; // prefix India code
 
         if (!name && amount <= 0) {
             if (typeof showNotification === 'function')
                 showNotification('Please fill in at least the donor name and amount.', 'error');
+            else
+                alert('Please fill in at least the donor name and amount.');
             return;
         }
 
-        var btn = document.getElementById('ade_rcg_wa_btn');
+        var btn = document.getElementById('de_rcg_wa_btn');
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating HD Image…'; }
 
         function doCapture() {
-            var el = document.getElementById('ade_rcg_receipt');
+            var el = document.getElementById('de_rcg_receipt');
             if (!el) { if (btn) { btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp"></i> Send Receipt via WhatsApp'; } return; }
 
             html2canvas(el, {
@@ -279,9 +286,11 @@
 
                 if (btn) { btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp" style="font-size:1.1rem;"></i> Send Receipt via WhatsApp'; }
             }).catch(function(err) {
-                console.error('[ade_rcg] html2canvas error:', err);
+                console.error('[de_rcg] html2canvas error:', err);
                 if (typeof showNotification === 'function')
                     showNotification('Could not render receipt image. Please try again.', 'error');
+                else
+                    alert('Could not render receipt image.');
                 if (btn) { btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp" style="font-size:1.1rem;"></i> Send Receipt via WhatsApp'; }
             });
         }
@@ -296,6 +305,8 @@
             s.onerror = function() {
                 if (typeof showNotification === 'function')
                     showNotification('Could not load image library. Check internet connection.', 'error');
+                else
+                    alert('Could not load image library.');
                 if (btn) { btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp" style="font-size:1.1rem;"></i> Send Receipt via WhatsApp'; }
             };
             document.head.appendChild(s);

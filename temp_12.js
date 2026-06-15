@@ -12,7 +12,7 @@ async function fetchNotifications() {
             renderNotifList();
         }
     } catch(e) { 
-        const errList = document.getElementById('adminNotifList');
+        const errList = document.getElementById('dashNotifList');
         if (errList) errList.innerHTML = '<li class="notification-empty">Could not load notifications.</li>';
         console.error('Failed to fetch notifications', e); 
     }
@@ -26,7 +26,7 @@ function updateNotifBadge() {
         unreadCount = currentNotifications.length;
     }
     
-    const badge = document.getElementById('adminNotifBadge');
+    const badge = document.getElementById('dashNotifBadge');
     if (badge) {
         if (unreadCount > 0) {
             badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
@@ -38,10 +38,11 @@ function updateNotifBadge() {
 }
 
 function renderNotifList() {
-    const list = document.getElementById('adminNotifList');
+    const list = document.getElementById('dashNotifList');
     if (!list) return;
+    
     if (currentNotifications.length === 0) {
-        list.innerHTML = '<li class="notification-empty">No notifications yet.</li>';
+        list.innerHTML = '<li class="notification-empty">No new notifications.</li>';
         return;
     }
     
@@ -60,22 +61,24 @@ function renderNotifList() {
 
 window.toggleNotifDropdown = function(e) {
     if (e) e.stopPropagation();
-    const dropdown = document.getElementById('adminNotifDropdown');
-    if (!dropdown) return;
-    dropdown.classList.toggle('show');
-    if (dropdown.classList.contains('show')) {
-        if (currentNotifications.length > 0) {
-            lastSeenNotifTime = currentNotifications[0].timestamp;
-            localStorage.setItem('lastSeenNotifTime', lastSeenNotifTime);
-            updateNotifBadge();
+    const dropdown = document.querySelector('.notification-dropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('show');
+        if (dropdown.classList.contains('show')) {
+            // Update last seen
+            if (currentNotifications.length > 0) {
+                lastSeenNotifTime = currentNotifications[0].timestamp;
+                localStorage.setItem('lastSeenNotifTime', lastSeenNotifTime);
+                updateNotifBadge();
+            }
         }
     }
 };
 
 // Close dropdown when clicking outside
 document.addEventListener('click', function(e) {
-    const dropdown = document.getElementById('adminNotifDropdown');
-    const container = document.getElementById('adminNotifContainer');
+    const dropdown = document.querySelector('.notification-dropdown');
+    const container = document.querySelector('.notification-container');
     if (dropdown && dropdown.classList.contains('show') && container && !container.contains(e.target)) {
         dropdown.classList.remove('show');
     }
@@ -88,5 +91,5 @@ document.addEventListener('visibilitychange', function() {
     if (!document.hidden) fetchNotifications();
 });
 
-// Fetch immediately
+// Fetch immediately (script is at bottom of body, DOM is already ready)
 fetchNotifications();

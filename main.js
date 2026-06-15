@@ -5,12 +5,6 @@ function _bindMobileMenu() {
 
     if (!mobileToggle || !navMenu) return; // elements not present on this page
 
-    // Guard: if the inline script in index.html already bound the menu, skip.
-    // Without this guard both listeners would fire on every click, toggling
-    // the class twice and making the menu appear to do nothing.
-    if (mobileToggle.getAttribute('data-mb') === '1') return;
-    mobileToggle.setAttribute('data-mb', '1');
-
     // Toggle open/close — stopPropagation prevents the document listener
     // from immediately closing the menu on the same click event.
     mobileToggle.addEventListener('click', function (e) {
@@ -409,7 +403,7 @@ async function loadSiteSettings() {
             if (!formattedUrl) return;
             
             // Apply to all elements with this ID
-            const els = document.querySelectorAll(\`[id="\${id}"]\`);
+            const els = document.querySelectorAll(`[id="${id}"]`);
             els.forEach(el => {
                 el.href = formattedUrl;
                 el.target = '_blank';
@@ -424,7 +418,7 @@ async function loadSiteSettings() {
                     socialYoutubeLink: 'fa-youtube',
                     socialTwitterLink: 'fa-twitter'
                 }[id];
-                const icons = document.querySelectorAll(\`.social-links a i.\${iconClass}\`);
+                const icons = document.querySelectorAll(`.social-links a i.${iconClass}`);
                 icons.forEach(icon => {
                     const el = icon.parentElement;
                     if (el) {

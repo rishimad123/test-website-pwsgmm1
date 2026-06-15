@@ -1,95 +1,66 @@
-// --- SYSTEM WIDE NOTIFICATIONS LOGIC ---
-let lastSeenNotifTime = localStorage.getItem('lastSeenNotifTime') || null;
-let currentNotifications = [];
+// VOLUNTEER VIEW ONLY RESTRICTIONS
+document.addEventListener('DOMContentLoaded', () => {
+    // We need to wait for currentUser to be populated
+    const checkUserInterval = setInterval(() => {
+        if (typeof currentUser !== 'undefined' && currentUser !== null) {
+            clearInterval(checkUserInterval);
 
-async function fetchNotifications() {
-    try {
-        const res = await fetch('/api/notifications');
-        if (res.ok) {
-            const data = await res.json();
-            currentNotifications = data.notifications || [];
-            updateNotifBadge();
-            renderNotifList();
-        }
-    } catch(e) { 
-        const errList = document.getElementById('dashNotifList');
-        if (errList) errList.innerHTML = '<li class="notification-empty">Could not load notifications.</li>';
-        console.error('Failed to fetch notifications', e); 
-    }
-}
+            // ── volunteer_view: strict read-only, donor search only ──────────
+            deLoadYearFilter();
+            if (currentUser.role === 'volunteer_view') {
+                console.log('Applying View-Only restrictions...');
 
-function updateNotifBadge() {
-    let unreadCount = 0;
-    if (lastSeenNotifTime) {
-        unreadCount = currentNotifications.filter(n => new Date(n.timestamp) > new Date(lastSeenNotifTime)).length;
-    } else {
-        unreadCount = currentNotifications.length;
-    }
-    
-    const badge = document.getElementById('dashNotifBadge');
-    if (badge) {
-        if (unreadCount > 0) {
-            badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
-            badge.style.display = 'block';
-        } else {
-            badge.style.display = 'none';
-        }
-    }
-}
+                // Hide sidebar links except Donor Search and Logout
+                const sidebarLinks = document.querySelectorAll('.sidebar-nav ul li a');
+                sidebarLinks.forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href !== '#donorSearch' && href !== '#logout' && !link.onclick?.toString().includes('logout')) {
+                        link.parentElement.style.display = 'none';
+                    }
+                });
 
-function renderNotifList() {
-    const list = document.getElementById('dashNotifList');
-    if (!list) return;
-    
-    if (currentNotifications.length === 0) {
-        list.innerHTML = '<li class="notification-empty">No new notifications.</li>';
-        return;
-    }
-    
-    list.innerHTML = currentNotifications.map(n => {
-        const d = new Date(n.timestamp);
-        const timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        const dateStr = d.toLocaleDateString();
-        return `
-            <li class="notification-item">
-                <div class="notification-message"><i class="fas fa-sign-in-alt" style="color:var(--primary-color);margin-right:6px;"></i>${n.message}</div>
-                <div class="notification-time">${dateStr} ${timeStr}</div>
-            </li>
-        `;
-    }).join('');
-}
+                // Hide dashboard overview cards
+                document.querySelectorAll('[onclick*="tshirtSection"]').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('[onclick*="donationEntry"]').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('[onclick*="donations"]').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('[onclick*="balanceRecovery"]').forEach(el => el.style.display = 'none');
 
-window.toggleNotifDropdown = function(e) {
-    if (e) e.stopPropagation();
-    const dropdown = document.querySelector('.notification-dropdown');
-    if (dropdown) {
-        dropdown.classList.toggle('show');
-        if (dropdown.classList.contains('show')) {
-            // Update last seen
-            if (currentNotifications.length > 0) {
-                lastSeenNotifTime = currentNotifications[0].timestamp;
-                localStorage.setItem('lastSeenNotifTime', lastSeenNotifTime);
-                updateNotifBadge();
+                // Force view to Donor Search
+                if (typeof showSection === 'function') {
+                    showSection('donorSearch');
+                } else if (window.showSection) {
+                    window.showSection('donorSearch');
+                }
+            }
+
+            // ── volunteer: full access but NO T-shirt section ────────────────
+            if (currentUser.role === 'volunteer') {
+                console.log('Applying standard Volunteer restrictions (no T-shirt access)...');
+
+                // Hide T-shirt sidebar link
+                document.querySelectorAll('.sidebar-nav ul li a').forEach(link => {
+                    if (link.getAttribute('href') === '#tshirtSection' ||
+                        (link.getAttribute('onclick') || '').includes('tshirtSection')) {
+                        link.parentElement.style.display = 'none';
+                    }
+                });
+
+                // Hide T-shirt overview card on the overview page
+                document.querySelectorAll('[onclick*="tshirtSection"]').forEach(el => el.style.display = 'none');
+
+                // Guard: intercept showSection to block direct navigation to tshirtSection
+                const _origShowSec = window.showSection;
+                if (typeof _origShowSec === 'function') {
+                    window.showSection = function(id) {
+                        if (id === 'tshirtSection') {
+                            console.warn('T-shirt section is not available for this role.');
+                            _origShowSec('overview');
+                            return;
+                        }
+                        _origShowSec(id);
+                    };
+                }
             }
         }
-    }
-};
-
-// Close dropdown when clicking outside
-document.addEventListener('click', function(e) {
-    const dropdown = document.querySelector('.notification-dropdown');
-    const container = document.querySelector('.notification-container');
-    if (dropdown && dropdown.classList.contains('show') && container && !container.contains(e.target)) {
-        dropdown.classList.remove('show');
-    }
+    }, 100);
 });
-
-// Poll every 5 seconds for near real-time
-setInterval(fetchNotifications, 5000);
-// Re-fetch when tab becomes active (e.g. after logging in on another tab)
-document.addEventListener('visibilitychange', function() {
-    if (!document.hidden) fetchNotifications();
-});
-
-// Fetch immediately (script is at bottom of body, DOM is already ready)
-fetchNotifications();
