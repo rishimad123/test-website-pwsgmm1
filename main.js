@@ -38,7 +38,7 @@ if (document.readyState === 'loading') {
 }
 
 // ==================== COUNTDOWN TIMER ====================
-let _countdownTarget = new Date('September 19, 2025 10:00:00').getTime(); // default fallback
+let _countdownTarget = new Date('August 23, 2026 10:00:00').getTime(); // default fallback – Ganesh Chaturthi 2026
 
 function updateCountdown() {
     const now = new Date().getTime();
@@ -313,19 +313,27 @@ async function loadSiteSettings() {
         const s = await res.json();
 
         // --- Years of Service stat ---
+        // Only override the HTML default when the admin has set a real (> 0) value.
         const yosEl = document.getElementById('statYearsOfService');
         if (yosEl && s.yearsOfService !== undefined) {
             const val = parseInt(s.yearsOfService) || 0;
-            yosEl.setAttribute('data-target', val);
-            yosEl.textContent = val.toLocaleString();
+            if (val > 0) {
+                yosEl.setAttribute('data-target', val);
+                yosEl.textContent = val.toLocaleString();
+            }
+            // val === 0 → keep the hardcoded HTML default (data-target="25")
         }
 
         // --- Active Volunteers stat ---
+        // Only override the HTML default when the admin has set a real (> 0) value.
         const avEl = document.getElementById('statActiveVolunteers');
         if (avEl && s.activeVolunteers !== undefined) {
             const val = parseInt(s.activeVolunteers) || 0;
-            avEl.setAttribute('data-target', val);
-            avEl.textContent = val.toLocaleString();
+            if (val > 0) {
+                avEl.setAttribute('data-target', val);
+                avEl.textContent = val.toLocaleString();
+            }
+            // val === 0 → keep the hardcoded HTML default (data-target="150")
         }
 
         // --- About Section text (index.html) ---
