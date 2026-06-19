@@ -1556,7 +1556,19 @@ const server = http.createServer(async (req, res) => {
     // ── GET /api/donations ────────────────────────────────────────────────────
     if (req.method === 'GET' && pathname === '/api/donations') {
         const visible = donationsStore.records.filter(r => !r._deleted);
-        return sendJSON(res, 200, { columns: donationsStore.columns, records: visible, total: visible.length });
+        // Return columns in canonical order (matching the Excel format)
+        const CANONICAL = [
+            'Receipt No','Date','Receipt Type','Name','Location/ Area',
+            'Current Year Amount','Balance Pending','Balance Receipt Amount',
+            'Balance Recovered','Balance Received Date','Comments',
+            'Balance Difference','Common Location'
+        ];
+        const storedCols = donationsStore.columns;
+        const ordered = [
+            ...CANONICAL.filter(c => storedCols.includes(c)),
+            ...storedCols.filter(c => !CANONICAL.includes(c) && !c.startsWith('_'))
+        ];
+        return sendJSON(res, 200, { columns: ordered, records: visible, total: visible.length });
     }
 
     // ── POST /api/donations/upload  (append rows from client-parsed Excel) ────

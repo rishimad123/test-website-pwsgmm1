@@ -143,7 +143,6 @@ async function handleQuickUpload(event) {
 
     const statusEl  = document.getElementById('quickUploadStatus');
     const badgeEl   = document.getElementById('quickUploadBadge');
-    const cardEl    = document.getElementById('quickUploadCard');
 
     const setStatus = (msg, ok) => {
         if (!statusEl) return;
@@ -168,19 +167,43 @@ async function handleQuickUpload(event) {
             return;
         }
         const buf  = await file.arrayBuffer();
-        const wb   = XLSX.read(buf, { type: 'array', cellDates: true });
+        // Parse with raw:false to preserve formatted values, dateNF for DD-MM-YYYY
+        const wb   = XLSX.read(buf, { type: 'array', cellDates: false, raw: false, dateNF: 'DD-MM-YYYY' });
         const ws   = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false, dateNF: 'DD-MM-YYYY' });
+        const rowsRaw = XLSX.utils.sheet_to_json(ws, { defval: '', raw: true });
         if (rows.length === 0) { setStatus('❌ Sheet is empty.', false); return; }
+
+        // Determine numeric columns and merge formatted + raw values
+        const numericCols = new Set();
+        if (rowsRaw.length > 0) {
+            for (const key of Object.keys(rowsRaw[0])) {
+                if (rowsRaw.some(r => typeof r[key] === 'number')) numericCols.add(key);
+            }
+        }
+        const mergedRows = rows.map((r, i) => {
+            const merged = { ...r };
+            if (rowsRaw[i]) {
+                for (const k of numericCols) {
+                    if (k in rowsRaw[i] && typeof rowsRaw[i][k] === 'number') merged[k] = rowsRaw[i][k];
+                }
+            }
+            return merged;
+        });
+
+        // Normalise to canonical column names + DD-MM-YYYY dates
+        const normRows = typeof _donNormaliseRow === 'function'
+            ? mergedRows.map(_donNormaliseRow)
+            : mergedRows;
 
         const mode     = document.querySelector('input[name="quickUploadMode"]:checked')?.value || 'append';
         const endpoint = mode === 'replace' ? '/api/donations/replace' : '/api/donations/upload';
 
-        if (badgeEl) badgeEl.textContent = `Uploading ${rows.length} rows…`;
+        if (badgeEl) badgeEl.textContent = `Uploading ${normRows.length} rows…`;
         const res  = await fetch(`${endpoint}`, {
             method : 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body   : JSON.stringify({ records: rows })
+            body   : JSON.stringify({ records: normRows })
         });
         const data = await res.json();
         if (res.ok && data.success) {

@@ -1,7 +1,155 @@
-﻿// =====================================================================
+// =====================================================================
 // DONATION EXPLORER MODULE  (donations.js)
 // Loaded after admin.js via <script src="donations.js">
 // =====================================================================
+
+// ── CANONICAL COLUMN ORDER (must match the Excel format exactly) ──────────
+const DON_CANONICAL_COLS = [
+    'Receipt No',
+    'Date',
+    'Receipt Type',
+    'Name',
+    'Location/ Area',
+    'Current Year Amount',
+    'Balance Pending',
+    'Balance Receipt Amount',
+    'Balance Recovered',
+    'Balance Received Date',
+    'Comments',
+    'Balance Difference',
+    'Common Location'
+];
+
+// ── Helper: detect which canonical col a stored col maps to ───────────────
+function _donMapToCanonical(colName) {
+    const cn = (colName || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    const canonMap = {
+        'receipt no'            : 'Receipt No',
+        'receipt no.'           : 'Receipt No',
+        'receipt number'        : 'Receipt No',
+        'receipt_no'            : 'Receipt No',
+        'date'                  : 'Date',
+        'receipt type'          : 'Receipt Type',
+        'type'                  : 'Receipt Type',
+        'receipt_type'          : 'Receipt Type',
+        'name'                  : 'Name',
+        'donor name'            : 'Name',
+        'donor'                 : 'Name',
+        'location/ area'        : 'Location/ Area',
+        'location/area'         : 'Location/ Area',
+        'location area'         : 'Location/ Area',
+        'location'              : 'Location/ Area',
+        'area'                  : 'Location/ Area',
+        'current year amount'   : 'Current Year Amount',
+        'current year amt'      : 'Current Year Amount',
+        'amount'                : 'Current Year Amount',
+        'amt'                   : 'Current Year Amount',
+        'balance pending'       : 'Balance Pending',
+        'balance'               : 'Balance Pending',
+        'balance receipt amount': 'Balance Receipt Amount',
+        'balance receipt amt'   : 'Balance Receipt Amount',
+        'balance rcpt amount'   : 'Balance Receipt Amount',
+        'balance recovered'     : 'Balance Recovered',
+        'bal recovered'         : 'Balance Recovered',
+        'bal. recovered'        : 'Balance Recovered',
+        'balance received date' : 'Balance Received Date',
+        'bal received date'     : 'Balance Received Date',
+        'bal. recd date'        : 'Balance Received Date',
+        'bal recd date'         : 'Balance Received Date',
+        'comments'              : 'Comments',
+        'comment'               : 'Comments',
+        'remarks'               : 'Comments',
+        'balance difference'    : 'Balance Difference',
+        'bal difference'        : 'Balance Difference',
+        'bal. difference'       : 'Balance Difference',
+        'common location'       : 'Common Location',
+        'common loc'            : 'Common Location',
+    };
+    return canonMap[cn] || null;
+}
+
+// ── Helper: format a cell value for date columns (ensure DD-MM-YYYY) ──────
+function _donFormatDate(val) {
+    if (!val && val !== 0) return '';
+    // Already a formatted string in expected pattern?
+    if (typeof val === 'string') {
+        // Already DD-MM-YYYY
+        if (/^\d{2}-\d{2}-\d{4}$/.test(val.trim())) return val.trim();
+        // Try YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(val.trim())) {
+            const [y, m, d] = val.trim().split('-');
+            return `${d}-${m}-${y}`;
+        }
+        // Try DD/MM/YYYY
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(val.trim())) {
+            const [d, m, y] = val.trim().split('/');
+            return `${d}-${m}-${y}`;
+        }
+        // Try MM/DD/YYYY
+        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(val.trim())) {
+            const parts = val.trim().split('/');
+            return `${String(parts[1]).padStart(2,'0')}-${String(parts[0]).padStart(2,'0')}-${parts[2]}`;
+        }
+        return val;
+    }
+    // SheetJS Date object
+    if (val instanceof Date) {
+        const d = String(val.getDate()).padStart(2, '0');
+        const m = String(val.getMonth() + 1).padStart(2, '0');
+        const y = val.getFullYear();
+        return `${d}-${m}-${y}`;
+    }
+    // Excel serial date number (SheetJS sometimes passes these as numbers)
+    if (typeof val === 'number' && val > 25569 && val < 60000) {
+        // Convert Excel serial to JS Date (Excel epoch = 1900-01-01, JS offset 25569 days)
+        const date = new Date(Math.round((val - 25569) * 86400 * 1000));
+        const d = String(date.getUTCDate()).padStart(2, '0');
+        const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const y = date.getUTCFullYear();
+        return `${d}-${m}-${y}`;
+    }
+    return String(val);
+}
+
+// ── Helper: normalise a row to canonical column names ─────────────────────
+function _donNormaliseRow(rawRow) {
+    const result = {};
+    const dateColKeys = ['Date', 'Balance Received Date'];
+
+    // First pass: map known canonical columns
+    for (const [origKey, origVal] of Object.entries(rawRow)) {
+        if (origKey.startsWith('_')) { result[origKey] = origVal; continue; }
+        const canonical = _donMapToCanonical(origKey);
+        if (canonical) {
+            if (dateColKeys.includes(canonical)) {
+                result[canonical] = _donFormatDate(origVal);
+            } else {
+                result[canonical] = origVal;
+            }
+        }
+    }
+
+    // Second pass: copy unmapped columns as-is (they may be extra columns)
+    for (const [origKey, origVal] of Object.entries(rawRow)) {
+        if (origKey.startsWith('_')) continue;
+        const canonical = _donMapToCanonical(origKey);
+        if (!canonical && !(origKey in result)) {
+            result[origKey] = origVal;
+        }
+    }
+
+    return result;
+}
+
+// ── Build the effective column order for display/export ───────────────────
+function _donBuildColOrder(columns) {
+    // Start with canonical columns that exist in data
+    const present = new Set(columns);
+    const ordered = DON_CANONICAL_COLS.filter(c => present.has(c));
+    // Append any extra columns not in canonical list
+    columns.forEach(c => { if (!DON_CANONICAL_COLS.includes(c) && !c.startsWith('_')) ordered.push(c); });
+    return ordered;
+}
 
 let _donAllRecords   = [];   // all records from server
 let _donColumns      = [];   // column names
@@ -70,18 +218,52 @@ async function donParseAndUpload(file) {
             return;
         }
 
-        const wb   = XLSX.read(buf, { type: 'array', cellDates: true });
+        // Read workbook — do NOT use cellDates:true so we can handle dates ourselves
+        // Use raw:false to get formatted cell values (preserves number & date formatting)
+        const wb   = XLSX.read(buf, { type: 'array', cellDates: false, raw: false, dateNF: 'DD-MM-YYYY' });
         const ws   = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-        if (rows.length === 0) {
+        // Use sheet_to_json with raw:false to get formatted strings (as displayed in Excel)
+        // This preserves number formatting and date formatting from the source file
+        const rawRows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false, dateNF: 'DD-MM-YYYY' });
+
+        // Also get raw rows to detect actual numeric values for numeric columns
+        const rawRowsNumeric = XLSX.utils.sheet_to_json(ws, { defval: '', raw: true });
+
+        if (rawRows.length === 0) {
             setStatus('Sheet is empty — no data rows found.', false);
             if (progWrap) progWrap.style.display = 'none';
             return;
         }
 
+        // Merge: use formatted strings but keep actual numbers for numeric cols
+        const numericCols = new Set();
+        if (rawRowsNumeric.length > 0) {
+            for (const key of Object.keys(rawRowsNumeric[0])) {
+                // If any value in this column is a real number, mark it numeric
+                const hasNum = rawRowsNumeric.some(r => typeof r[key] === 'number');
+                if (hasNum) numericCols.add(key);
+            }
+        }
+
+        const rows = rawRows.map((r, i) => {
+            const merged = { ...r };
+            // For numeric columns, use the raw numeric value from rawRowsNumeric
+            if (rawRowsNumeric[i]) {
+                for (const k of numericCols) {
+                    if (k in rawRowsNumeric[i] && typeof rawRowsNumeric[i][k] === 'number') {
+                        merged[k] = rawRowsNumeric[i][k];
+                    }
+                }
+            }
+            return merged;
+        });
+
+        // Normalise all rows to canonical column names and DD-MM-YYYY dates
+        const normalisedRows = rows.map(_donNormaliseRow);
+
         if (progBar) progBar.style.width = '70%';
-        if (progLbl) progLbl.textContent = `Uploading ${rows.length} records\u2026`;
+        if (progLbl) progLbl.textContent = `Uploading ${normalisedRows.length} records\u2026`;
 
         const mode     = document.querySelector('input[name="uploadMode"]:checked')?.value || 'append';
         const endpoint = mode === 'replace' ? '/api/donations/replace' : '/api/donations/upload';
@@ -89,7 +271,7 @@ async function donParseAndUpload(file) {
         const res  = await fetch(`${endpoint}`, {
             method : 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body   : JSON.stringify({ records: rows })
+            body   : JSON.stringify({ records: normalisedRows })
         });
         const data = await res.json();
         if (progBar) progBar.style.width = '100%';
@@ -123,10 +305,11 @@ async function donParseAndUpload(file) {
 
 // ── Auto-detect special columns from headers ─────────────────────────────────
 function _donDetectColumns() {
-    const amtKw   = /amount|amt|donation|don|rupee|\brs\b|inr/i;
+    // Prefer canonical column names for detection
+    const amtKw   = /current year amount|amount|amt|donation|don|rupee|\brs\b|inr/i;
     const yearKw  = /year|yr|varshe|वर्ष/i;
-    const locKw   = /road|area|street|ward|locality|location|address|addr|nagar|galli|lane|plot|flat|house|sector/i;
-    const landKw  = /landmark|building|bldg|society|chawl|complex|tower|apt|appartment|apartment|opposite|near/i;
+    const locKw   = /location|area|road|street|ward|locality|address|addr|nagar|galli|lane|plot|flat|house|sector/i;
+    const landKw  = /common location|landmark|building|bldg|society|chawl|complex|tower|apt|appartment|apartment|opposite|near/i;
 
     _donAmountCol = _donColumns.find(c => amtKw.test(c))  || null;
     _donYearCol   = _donColumns.find(c => yearKw.test(c)) || null;
@@ -284,9 +467,8 @@ function donRenderTable() {
     const tbody = document.getElementById('donTbody');
     if (!thead || !tbody) return;
 
-    // Define columns to display: only Name, Address, Landmark, Amount + all others
-    // Admin sees ALL columns (no restriction)
-    const colsToShow = _donColumns;
+    // Build ordered column list (canonical order + extras)
+    const colsToShow = _donBuildColOrder(_donColumns);
 
     thead.innerHTML = '<tr>' +
         colsToShow.map(c => `<th style="white-space:nowrap;font-size:.82rem;">${_escHtmlDon(c)}</th>`).join('') +
@@ -333,6 +515,7 @@ function donRenderTable() {
         const cells = colsToShow.map(col => {
             const val     = r[col] ?? '';
             const isAmt   = col === _donAmountCol;
+            // Highlight numeric amount columns in green, keep dates as-is text
             const display = isAmt && val !== ''
                 ? `<strong style="color:#27AE60;">\u20b9${Number(val).toLocaleString('en-IN')}</strong>`
                 : _escHtmlDon(String(val));
@@ -410,7 +593,8 @@ function openEditDonModal(id) {
     _donEditId = id;
     const fieldsEl = document.getElementById('editDonFields');
     if (!fieldsEl) return;
-    fieldsEl.innerHTML = _donColumns.map(col => {
+    const colsToEdit = _donBuildColOrder(_donColumns);
+    fieldsEl.innerHTML = colsToEdit.map(col => {
         const val     = record[col] ?? '';
         const safeCol = col.replace(/\W/g,'_');
         return `
@@ -432,7 +616,8 @@ async function saveEditDon(ev) {
     ev.preventDefault();
     if (!_donEditId) return;
     const payload = {};
-    _donColumns.forEach(col => {
+    const colsToEdit = _donBuildColOrder(_donColumns);
+    colsToEdit.forEach(col => {
         const el = document.getElementById(`editDonField_${col.replace(/\W/g,'_')}`);
         if (el) payload[col] = el.value.trim();
     });
@@ -461,15 +646,215 @@ async function saveEditDon(ev) {
     }
 }
 
-// ── Export filtered rows as CSV ──────────────────────────────────────────────
+// ── Export filtered rows as Excel (matching the exact column order & formatting) ────
+function donExportExcel() {
+    if (_donFiltered.length === 0) {
+        if (typeof showNotification === 'function') showNotification('No data to export.', 'error');
+        return;
+    }
+
+    if (typeof XLSX === 'undefined') {
+        if (typeof showNotification === 'function') showNotification('SheetJS library not loaded — cannot export.', 'error');
+        return;
+    }
+
+    // Build ordered columns for export
+    const exportCols = _donBuildColOrder(_donColumns);
+
+    // ── Date columns: must stay as text strings in DD-MM-YYYY ────────────────
+    const dateColSet = new Set(['Date', 'Balance Received Date']);
+
+    // ── Numeric columns: must be stored as real numbers ───────────────────────
+    const numericColSet = new Set([
+        'Current Year Amount', 'Balance Pending', 'Balance Receipt Amount',
+        'Balance Recovered', 'Balance Difference', 'Receipt No'
+    ]);
+
+    // Build worksheet data array (header row + data rows)
+    const wsData = [];
+
+    // Header row
+    wsData.push(exportCols);
+
+    // Data rows
+    _donFiltered.forEach(record => {
+        const row = exportCols.map(col => {
+            const val = record[col] ?? '';
+            if (val === '' || val === null || val === undefined) return '';
+
+            // Date columns: always output as text string DD-MM-YYYY
+            if (dateColSet.has(col)) {
+                return _donFormatDate(val);
+            }
+
+            // Numeric columns: return as number if parseable
+            if (numericColSet.has(col)) {
+                const num = parseFloat(String(val).replace(/,/g, ''));
+                return isNaN(num) ? val : num;
+            }
+
+            // All others: return as-is (string)
+            return val;
+        });
+        wsData.push(row);
+    });
+
+    // Create worksheet from array of arrays
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // ── Apply cell types: force date columns to text so Excel doesn't re-format ──
+    const dateColIndices = exportCols
+        .map((c, i) => dateColSet.has(c) ? i : -1)
+        .filter(i => i >= 0);
+
+    // Force date cells to text type (type 's')
+    for (let r = 1; r < wsData.length; r++) {
+        for (const ci of dateColIndices) {
+            const cellAddr = XLSX.utils.encode_cell({ r, c: ci });
+            if (ws[cellAddr]) {
+                ws[cellAddr].t = 's'; // force text type
+                ws[cellAddr].z = '@'; // format as text
+            }
+        }
+    }
+
+    // ── Set column widths ─────────────────────────────────────────────────────
+    const colWidths = exportCols.map(col => {
+        const maxLen = Math.max(
+            col.length,
+            ..._donFiltered.map(r => String(r[col] ?? '').length)
+        );
+        return { wch: Math.min(Math.max(maxLen + 2, 10), 40) };
+    });
+    ws['!cols'] = colWidths;
+
+    // ── Apply header styling if xlsx-js-style is available ───────────────────
+    const headerStyle = {
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { patternType: 'solid', fgColor: { rgb: '1D6F42' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: {
+            top:    { style: 'thin', color: { rgb: '000000' } },
+            bottom: { style: 'thin', color: { rgb: '000000' } },
+            left:   { style: 'thin', color: { rgb: '000000' } },
+            right:  { style: 'thin', color: { rgb: '000000' } }
+        }
+    };
+    const dataStyle = {
+        alignment: { vertical: 'center', wrapText: false },
+        border: {
+            top:    { style: 'hair', color: { rgb: 'CCCCCC' } },
+            bottom: { style: 'hair', color: { rgb: 'CCCCCC' } },
+            left:   { style: 'hair', color: { rgb: 'CCCCCC' } },
+            right:  { style: 'hair', color: { rgb: 'CCCCCC' } }
+        }
+    };
+    const numStyle = {
+        ...dataStyle,
+        numFmt: '#,##0',
+        alignment: { horizontal: 'right', vertical: 'center' }
+    };
+    const dateStyle = {
+        ...dataStyle,
+        numFmt: '@',
+        alignment: { horizontal: 'center', vertical: 'center' }
+    };
+
+    // Style header row
+    for (let c = 0; c < exportCols.length; c++) {
+        const addr = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws[addr]) ws[addr].s = headerStyle;
+    }
+
+    // Style data rows
+    for (let r = 1; r < wsData.length; r++) {
+        const isAltRow = r % 2 === 0;
+        for (let c = 0; c < exportCols.length; c++) {
+            const addr = XLSX.utils.encode_cell({ r, c });
+            if (!ws[addr]) continue;
+            const colName = exportCols[c];
+            if (dateColSet.has(colName)) {
+                ws[addr].s = { ...dateStyle };
+            } else if (numericColSet.has(colName) && ws[addr].t === 'n') {
+                ws[addr].s = { ...numStyle };
+                if (isAltRow) ws[addr].s.fill = { patternType: 'solid', fgColor: { rgb: 'F0FFF4' } };
+            } else {
+                ws[addr].s = { ...dataStyle };
+                if (isAltRow) ws[addr].s.fill = { patternType: 'solid', fgColor: { rgb: 'F7F9FC' } };
+            }
+        }
+    }
+
+    // Set row height for header
+    ws['!rows'] = [{ hpt: 30 }];
+
+    // ── Create workbook with two sheets ──────────────────────────────────────
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Donation list');
+
+    // Second sheet: descending order by Receipt No or first column
+    const sortedData = [..._donFiltered].sort((a, b) => {
+        const aVal = a['Receipt No'] ?? a[exportCols[0]] ?? '';
+        const bVal = b['Receipt No'] ?? b[exportCols[0]] ?? '';
+        const aNum = parseFloat(aVal);
+        const bNum = parseFloat(bVal);
+        if (!isNaN(aNum) && !isNaN(bNum)) return bNum - aNum;
+        return String(bVal).localeCompare(String(aVal));
+    });
+
+    const wsData2 = [exportCols, ...sortedData.map(record =>
+        exportCols.map(col => {
+            const val = record[col] ?? '';
+            if (val === '' || val === null) return '';
+            if (dateColSet.has(col)) return _donFormatDate(val);
+            if (numericColSet.has(col)) {
+                const num = parseFloat(String(val).replace(/,/g, ''));
+                return isNaN(num) ? val : num;
+            }
+            return val;
+        })
+    )];
+    const ws2 = XLSX.utils.aoa_to_sheet(wsData2);
+
+    // Force date cells to text in sheet 2
+    for (let r2 = 1; r2 < wsData2.length; r2++) {
+        for (const ci of dateColIndices) {
+            const cellAddr = XLSX.utils.encode_cell({ r: r2, c: ci });
+            if (ws2[cellAddr]) { ws2[cellAddr].t = 's'; ws2[cellAddr].z = '@'; }
+        }
+    }
+    ws2['!cols'] = colWidths;
+
+    // Style sheet 2 headers
+    for (let c = 0; c < exportCols.length; c++) {
+        const addr = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws2[addr]) ws2[addr].s = headerStyle;
+    }
+
+    XLSX.utils.book_append_sheet(wb, ws2, 'Descending Order');
+
+    // ── Write and trigger download ────────────────────────────────────────────
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+    const fileName = `donations_${dd}-${mm}-${yyyy}.xlsx`;
+
+    XLSX.writeFile(wb, fileName);
+    if (typeof showNotification === 'function')
+        showNotification(`\u2705 Exported ${_donFiltered.length} records to ${fileName}`, 'success');
+}
+
+// ── Legacy CSV export (kept for backward compatibility) ──────────────────────
 function donExportCSV() {
     if (_donFiltered.length === 0) {
         if (typeof showNotification === 'function') showNotification('No data to export.', 'error');
         return;
     }
+    const exportCols = _donBuildColOrder(_donColumns);
     const q   = v => `"${String(v ?? '').replace(/"/g,'""')}"`;
-    const hdr = _donColumns.map(q).join(',');
-    const rows = _donFiltered.map(r => _donColumns.map(c => q(r[c])).join(','));
+    const hdr = exportCols.map(q).join(',');
+    const rows = _donFiltered.map(r => exportCols.map(c => q(r[c])).join(','));
     const csv  = '\uFEFF' + [hdr, ...rows].join('\r\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
