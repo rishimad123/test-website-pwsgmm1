@@ -3397,70 +3397,61 @@ window.exportAdminDonationEntriesToExcel = exportAdminDonationEntriesToExcel;
 window.saveSiteSettingsForm = saveSiteSettingsForm;
 
 async function exportAdminDonationEntriesToExcel(lang = 'en') {
-    if (typeof XLSX === 'undefined') {
-        showNotification('Excel export library is not loaded.', 'error');
-        return;
-    }
-    
-    if (!_deAdmAllEntries || _deAdmAllEntries.length === 0) {
-        showNotification('No entries to export.', 'error');
-        return;
-    }
-    
-    // Format data following the requested structure
-    const data = _deAdmAllEntries.map(e => {
-        const donorName = e.donorType === 'Business' ? (e.businessName || '') : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
-        
-        let submittedDate = '';
-        let submittedTime = '';
-        if (e.submittedAt) {
-            try {
-                const dtObj = new Date(e.submittedAt);
-                submittedDate = dtObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                submittedTime = dtObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-            } catch (err) {}
-        }
-        
+    if (typeof XLSX === 'undefined') { showNotification('Excel export library is not loaded.', 'error'); return; }
+    if (!_deAdmAllEntries || _deAdmAllEntries.length === 0) { showNotification('No entries to export.', 'error'); return; }
+    const fmtDate = (val) => {
+        if (!val) return '';
+        try { const d = new Date(val); if (isNaN(d)) return String(val);
+            return String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear();
+        } catch(_) { return String(val); }
+    };
+    const COLS = ['Receipt No','Date','Receipt Type','Name','Location/ Area','Current Year Amount','Balance Pending','Balance Receipt Amount','Balance Recovered','Balance Received Date','Comments','Balance Difference','Common Location'];
+    const rows = _deAdmAllEntries.map(e => {
+        const donorName = e.donorType === 'Business' ? (e.businessName||'') : [e.firstName,e.middleName,e.lastName].filter(Boolean).join(' ');
+        const receiptNo = (e.bookNumber && e.receiptNumber) ? (e.bookNumber+'/'+e.receiptNumber) : (e.receiptNumber||'');
+        const currentAmt = (e.amount!=null && !isNaN(Number(e.amount))) ? Number(e.amount) : '';
+        const isBalance = String(e.paymentMode||'').toLowerCase() === 'balance';
+        const isReceived = e.markedReceivedBy || String(e.status||'').toLowerCase() === 'received';
+        const balPend = isBalance ? (currentAmt||0) : 0;
+        const balRec = isReceived ? (currentAmt||0) : 0;
         return {
-            'Book Number': e.bookNumber || '',
-            'Book Type': e.bookType || 'New',
-            'Receipt Number': e.receiptNumber || '',
-            'Donor Name': donorName || '',
-            'Landmark': e.landmark || e.buildingName || '',
-            'Location': e.location || e.area || '',
-            'Common Landmark': e.commonLandmark || '',
-            'Amount': e.amount || 0,
-            'Payment Mode': e.paymentMode || '',
-            'Submitted By': e.submittedBy || '',
-            'Date Submitted': submittedDate,
-            'Time Submitted': submittedTime,
-            'Status': e.status || '',
-            'Reference Number': e.referenceNumber || '',
-            'Entry ID': e.entryId || ''
+            'Receipt No':receiptNo, 'Date':fmtDate(e.submittedAt||e.receiptDate||''),
+            'Receipt Type':e.paymentMode||'', 'Name':donorName,
+            'Location/ Area':[e.landmark,e.area].filter(Boolean).join(', ')||'',
+            'Current Year Amount':currentAmt, 'Balance Pending':balPend,
+            'Balance Receipt Amount':!isBalance?(currentAmt||0):0,
+            'Balance Recovered':balRec,
+            'Balance Received Date':e.markedReceivedAt?fmtDate(e.markedReceivedAt):'',
+            'Comments':e.referenceNumber||e.remarks||'',
+            'Balance Difference':balPend-balRec,
+            'Common Location':e.commonLandmark||e.landmark||e.buildingName||''
         };
     });
-    
-    let finalData = data;
-    if (lang === 'mr') {
-        finalData = await translateExcelData(data);
+    let finalRows = rows;
+    if (lang === 'mr') finalRows = await translateExcelData(rows);
+    const wsData = [COLS, ...finalRows.map(r => COLS.map(c => r[c]!==undefined?r[c]:''))];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    for (let ri=1; ri<wsData.length; ri++) {
+        for (const ci of [1,9]) { const a=XLSX.utils.encode_cell({r:ri,c:ci}); if(ws[a]){ws[a].t='s';ws[a].z='@';} }
     }
-    
-    const ws = XLSX.utils.json_to_sheet(finalData);
-    
-    const colWidths = [
-        { wch: 12 }, { wch: 15 }, { wch: 25 }, { wch: 20 },
-        { wch: 20 }, { wch: 20 }, { wch: 12 }, { wch: 15 },
-        { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 12 },
-        { wch: 20 }, { wch: 25 }
-    ];
-    ws['!cols'] = colWidths;
-    
+    const hStyle={font:{bold:true,color:{rgb:'FFFFFF'}},fill:{patternType:'solid',fgColor:{rgb:'1D6F42'}},alignment:{horizontal:'center',vertical:'center',wrapText:true},border:{top:{style:'thin',color:{rgb:'000000'}},bottom:{style:'thin',color:{rgb:'000000'}},left:{style:'thin',color:{rgb:'000000'}},right:{style:'thin',color:{rgb:'000000'}}}};
+    const numIdx=new Set([5,6,7,8,11]);
+    for (let c=0;c<COLS.length;c++){const a=XLSX.utils.encode_cell({r:0,c});if(ws[a])ws[a].s=hStyle;}
+    for (let ri=1;ri<wsData.length;ri++){const fg=ri%2===0?'F0FFF4':'FFFFFF';for(let c=0;c<COLS.length;c++){const a=XLSX.utils.encode_cell({r:ri,c});if(!ws[a])continue;ws[a].s=numIdx.has(c)&&ws[a].t==='n'?{numFmt:'#,##0',fill:{patternType:'solid',fgColor:{rgb:fg}},alignment:{horizontal:'right',vertical:'center'},border:{top:{style:'hair',color:{rgb:'CCCCCC'}},bottom:{style:'hair',color:{rgb:'CCCCCC'}},left:{style:'hair',color:{rgb:'CCCCCC'}},right:{style:'hair',color:{rgb:'CCCCCC'}}}}:{fill:{patternType:'solid',fgColor:{rgb:fg}},alignment:{vertical:'center'},border:{top:{style:'hair',color:{rgb:'CCCCCC'}},bottom:{style:'hair',color:{rgb:'CCCCCC'}},left:{style:'hair',color:{rgb:'CCCCCC'}},right:{style:'hair',color:{rgb:'CCCCCC'}}}}; }}
+    ws['!cols']=[{wch:14},{wch:14},{wch:15},{wch:28},{wch:22},{wch:18},{wch:16},{wch:22},{wch:18},{wch:22},{wch:20},{wch:18},{wch:22}];
+    ws['!rows']=[{hpt:30}];
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Donation Entries");
-    
-    const filename = "Donation_Data_Entry_" + new Date().toISOString().split('T')[0] + ".xlsx";
-    XLSX.writeFile(wb, filename);
-    showNotification('Exported to Excel successfully!', 'success');
+    XLSX.utils.book_append_sheet(wb, ws, 'Donation list');
+    const sorted=[...finalRows].sort((a,b)=>{const[aBk,aRc]=String(a['Receipt No']||'').split('/').map(Number);const[bBk,bRc]=String(b['Receipt No']||'').split('/').map(Number);if(!isNaN(aBk)&&!isNaN(bBk)&&aBk!==bBk)return bBk-aBk;return(bRc||0)-(aRc||0);});
+    const wsData2=[COLS,...sorted.map(r=>COLS.map(c=>r[c]!==undefined?r[c]:''))];
+    const ws2=XLSX.utils.aoa_to_sheet(wsData2);
+    for(let ri=1;ri<wsData2.length;ri++){for(const ci of[1,9]){const a=XLSX.utils.encode_cell({r:ri,c:ci});if(ws2[a]){ws2[a].t='s';ws2[a].z='@';}}}
+    for(let c=0;c<COLS.length;c++){const a=XLSX.utils.encode_cell({r:0,c});if(ws2[a])ws2[a].s=hStyle;}
+    ws2['!cols']=ws['!cols'];ws2['!rows']=[{hpt:30}];
+    XLSX.utils.book_append_sheet(wb,ws2,'Descending Order');
+    const t=new Date();const dd=String(t.getDate()).padStart(2,'0');const mm=String(t.getMonth()+1).padStart(2,'0');
+    XLSX.writeFile(wb,'Donation_Entries_'+dd+'-'+mm+'-'+t.getFullYear()+'.xlsx');
+    showNotification('Exported '+_deAdmAllEntries.length+' entries to Excel','success');
 }
 
 // ==================== GALLERY MANAGEMENT ====================
