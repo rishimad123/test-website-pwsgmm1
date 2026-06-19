@@ -3926,22 +3926,6 @@ window.fixUrl = function(url) {
         }
     }
 
-    async function deLoadMyEntries() {
-        const tbody = document.getElementById('deMyEntriesTbody');
-        if (!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;">Loading…</td></tr>';
-        try {
-            const res  = await fetch('/api/donation-entries?year=' + (window._deSelectedYear || 'active'));
-            const data = await res.json();
-            _deAllEntriesFlat = data.entries || [];
-            const searchVal = ((document.getElementById('deAllEntriesSearch') || {}).value || '').toLowerCase().trim();
-            deRenderAllEntries(_deAllEntriesFlat, searchVal);
-        } catch(err) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#c00;">Error loading entries.</td></tr>';
-        }
-    }
-
-
     // ── Volunteer Edit Modal ────────────────────────────────
     let _deVolEditBlob = null;
     let _deVolEditBookType = 'New';
