@@ -4299,13 +4299,20 @@ if (originalShowSection) {
                     const dtStr = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()
                                 + '\n' + dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
                     const dtParts = dtStr.split('\n');
-                    const photoSection = (e.photoUrl || e.receiptPreviewUrl)
-                        ? `<div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.photoUrl || e.receiptPreviewUrl)}')">
-                               <img src="${fixUrl(e.photoUrl || e.receiptPreviewUrl)}?t=${Date.now()}" loading="lazy" alt="Receipt photo"
-                                   style="width:100%;max-height:200px;object-fit:cover;display:block;">
-                               <div style="background:#fff8f5;padding:5px 10px;font-size:.72rem;color:#E65100;font-weight:600;display:flex;align-items:center;gap:5px;">
-                                   <i class="fas fa-expand-alt"></i> Tap to view full receipt
-                               </div>
+                    // Show BOTH uploaded photo AND digital receipt preview
+                    const _vHp = !!e.photoUrl, _vHpv = !!e.receiptPreviewUrl, _vTs = Date.now();
+                    const photoSection = (_vHp || _vHpv)
+                        ? `<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+                               ${_vHp ? `<div style="border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')">
+                                   <div style="background:#FFF3E0;padding:3px 10px;font-size:.68rem;color:#E65100;font-weight:700;display:flex;align-items:center;gap:5px;"><i class="fas fa-camera"></i>&nbsp;Uploaded Receipt Photo</div>
+                                   <img src="${fixUrl(e.photoUrl)}?t=${_vTs}" loading="lazy" alt="Receipt photo" style="width:100%;max-height:200px;object-fit:cover;display:block;">
+                                   <div style="background:#fff8f5;padding:3px 10px;font-size:.68rem;color:#E65100;font-weight:600;display:flex;align-items:center;gap:5px;"><i class="fas fa-expand-alt"></i>&nbsp;Tap to view full image</div>
+                               </div>` : ''}
+                               ${_vHpv ? `<div style="border-radius:10px;overflow:hidden;border:1.5px solid #90CAF9;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.receiptPreviewUrl)}')">
+                                   <div style="background:#E3F2FD;padding:3px 10px;font-size:.68rem;color:#1565C0;font-weight:700;display:flex;align-items:center;gap:5px;"><i class="fas fa-file-invoice"></i>&nbsp;Digital Receipt Preview</div>
+                                   <img src="${fixUrl(e.receiptPreviewUrl)}?t=${_vTs}" loading="lazy" alt="Digital receipt" style="width:100%;max-height:200px;object-fit:cover;display:block;">
+                                   <div style="background:#EBF5FF;padding:3px 10px;font-size:.68rem;color:#1565C0;font-weight:600;display:flex;align-items:center;gap:5px;"><i class="fas fa-expand-alt"></i>&nbsp;Tap to view full preview</div>
+                               </div>` : ''}
                            </div>`
                         : `<div style="margin-top:10px;border:1.5px dashed #f0e0d0;border-radius:10px;padding:14px;text-align:center;background:#fffaf8;">
                                <i class="fas fa-camera" style="font-size:1.4rem;color:#ddd;display:block;margin-bottom:6px;"></i>
