@@ -3476,21 +3476,71 @@ async function exportAdminDonationEntriesToExcel(lang = 'en') {
         };
     });
 
-    // Sort: Receipt Book ASC → Receipt No ASC (sequential 1,2,3... within each book)
-    rows.sort((a, b) => {
-        const bkA = Number(a['Receipt Book']) || 0;
-        const bkB = Number(b['Receipt Book']) || 0;
-        if (bkA !== bkB) return bkA - bkB;
-        return (Number(a['Receipt No']) || 0) - (Number(b['Receipt No']) || 0);
+    // ── GROUP by Common Location ──────────────────────────────────────────────
+    // Preserve original entry order; just group so all entries for a landmark appear together.
+    // Build an ordered list of unique landmarks in the order they first appear.
+    const landmarkOrder = [];
+    const landmarkGroups = {};
+    rows.forEach(r => {
+        const lm = String(r['Common Location'] || '').trim() || '(No Landmark)';
+        if (!landmarkGroups[lm]) {
+            landmarkGroups[lm] = [];
+            landmarkOrder.push(lm);
+        }
+        landmarkGroups[lm].push(r);
     });
+
+    // Flatten: for each landmark produce a landmark header row + its entries
+    function buildGroupedRows(groups, order) {
+        const out = [];
+        order.forEach(lm => {
+            // Landmark header row — fill every column with empty except last one gets the name
+            const headerRow = COLS.map((c, i) => i === 0 ? lm : '');
+            headerRow._isLandmarkHeader = true;
+            out.push(headerRow);
+            groups[lm].forEach(r => {
+                out.push(COLS.map(c => {
+                    const v = r[c];
+                    return (v !== undefined && v !== null && v !== '') ? v : '';
+                }));
+            });
+        });
+        return out;
+    }
 
     let finalRows = rows;
     if (lang === 'mr') finalRows = await translateExcelData(rows);
 
-    // ── Helper to apply styling to a worksheet ────────────────────────────────
+    // Re-group finalRows (may be translated) using same landmark order
+    const finalLandmarkGroups = {};
+    finalRows.forEach(r => {
+        const lm = String(r['Common Location'] || '').trim() || '(No Landmark)';
+        if (!finalLandmarkGroups[lm]) finalLandmarkGroups[lm] = [];
+        finalLandmarkGroups[lm].push(r);
+    });
+
+    // ── Helper: build flat aoa data (header row + grouped data rows) ──────────
+    function buildAoaData(groups, order) {
+        const data = [COLS];
+        order.forEach(lm => {
+            // Landmark separator row: landmark name in col A, rest empty
+            const sepRow = COLS.map((_, i) => i === 0 ? '▶  ' + lm : '');
+            sepRow._isLandmarkHeader = true;
+            data.push(sepRow);
+            (groups[lm] || []).forEach(r => {
+                data.push(COLS.map(c => {
+                    const v = r[c];
+                    return (v !== undefined && v !== null && v !== '') ? v : '';
+                }));
+            });
+        });
+        return data;
+    }
+
+    // ── Helper: apply all styling to a worksheet ──────────────────────────────
     function styleWorksheet(ws, wsData) {
-        // Header style: dark green background, white bold text
-        const hStyle = {
+        // Column header style (row 0) — dark green
+        const colHdrStyle = {
             font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 10 },
             fill: { patternType: 'solid', fgColor: { rgb: '1D6F42' } },
             alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
@@ -3501,20 +3551,53 @@ async function exportAdminDonationEntriesToExcel(lang = 'en') {
                 right:  { style: 'thin', color: { rgb: '000000' } }
             }
         };
+        // Landmark group header style — orange / amber background, bold
+        const lmHdrStyle = {
+            font: { bold: true, color: { rgb: '7B3F00' }, sz: 10, italic: false },
+            fill: { patternType: 'solid', fgColor: { rgb: 'FFE0B2' } },
+            alignment: { horizontal: 'left', vertical: 'center' },
+            border: {
+                top:    { style: 'thin', color: { rgb: 'E65100' } },
+                bottom: { style: 'thin', color: { rgb: 'E65100' } },
+                left:   { style: 'thin', color: { rgb: 'E65100' } },
+                right:  { style: 'thin', color: { rgb: 'E65100' } }
+            }
+        };
 
-        // Numeric column indices (0-based): Current Year AMT(6), BAL PENDING(7), BAL RCPT AMT(8), BAL RECOVERED(9), BAL DIFF(12)
-        const numIdx = new Set([6, 7, 8, 9, 12]);
+        const numIdx = new Set([6, 7, 8, 9, 12]); // AMT cols
 
-        // Apply header styling
+        // Track which rows are landmark headers
+        const lmHeaderRows = new Set();
+        wsData.forEach((row, ri) => {
+            if (row._isLandmarkHeader) lmHeaderRows.add(ri);
+        });
+
+        // Row 0: column header
         for (let c = 0; c < COLS.length; c++) {
             const addr = XLSX.utils.encode_cell({ r: 0, c });
-            if (ws[addr]) ws[addr].s = hStyle;
+            if (ws[addr]) ws[addr].s = colHdrStyle;
         }
 
-        // Apply data row styling
+        // Data rows
+        let dataRowIdx = 0; // for alternating color (ignores landmark header rows)
         for (let ri = 1; ri < wsData.length; ri++) {
-            const isAlt = ri % 2 === 0;
-            const defaultBg = isAlt ? 'F5F5F5' : 'FFFFFF';
+            if (lmHeaderRows.has(ri)) {
+                // Style every cell in this landmark header row
+                for (let c = 0; c < COLS.length; c++) {
+                    const addr = XLSX.utils.encode_cell({ r: ri, c });
+                    if (!ws[addr]) {
+                        // Create empty cell so we can style it
+                        ws[addr] = { t: 's', v: '', s: lmHdrStyle };
+                    } else {
+                        ws[addr].s = lmHdrStyle;
+                    }
+                }
+                continue; // skip alternating-color logic for header rows
+            }
+
+            const isAlt = dataRowIdx % 2 === 0;
+            const defaultBg = isAlt ? 'FFFFFF' : 'F7F7F7';
+            dataRowIdx++;
 
             for (let c = 0; c < COLS.length; c++) {
                 const addr = XLSX.utils.encode_cell({ r: ri, c });
@@ -3526,48 +3609,39 @@ async function exportAdminDonationEntriesToExcel(lang = 'en') {
 
                 // BAL DIFFERENCE (col 12): red if negative, green if positive
                 if (c === 12 && isNum) {
-                    if (val < 0)      cellBg = 'FFCCCC';  // Red for negative
-                    else if (val > 0) cellBg = 'CCFFCC';  // Green for positive
+                    cellBg = val < 0 ? 'FFCCCC' : (val > 0 ? 'CCFFCC' : defaultBg);
                 }
-                // BALANCE PENDING (col 7): blue highlight if > 0
-                if (c === 7 && isNum && val > 0) {
-                    cellBg = 'BDD7EE';  // Blue matching Excel screenshot
-                }
+                // BALANCE PENDING (col 7): blue if > 0
+                if (c === 7 && isNum && val > 0) cellBg = 'BDD7EE';
                 // BALANCE RECEIPT AMT (col 8): light blue if > 0
-                if (c === 8 && isNum && val > 0) {
-                    cellBg = 'DDEEFF';
-                }
+                if (c === 8 && isNum && val > 0) cellBg = 'DDEEFF';
 
-                if (numIdx.has(c) && isNum) {
-                    ws[addr].s = {
-                        font: { sz: 10 },
-                        numFmt: '#,##0',
-                        fill: { patternType: 'solid', fgColor: { rgb: cellBg } },
-                        alignment: { horizontal: 'right', vertical: 'center' },
-                        border: {
-                            top:    { style: 'hair', color: { rgb: 'CCCCCC' } },
-                            bottom: { style: 'hair', color: { rgb: 'CCCCCC' } },
-                            left:   { style: 'hair', color: { rgb: 'CCCCCC' } },
-                            right:  { style: 'hair', color: { rgb: 'CCCCCC' } }
-                        }
-                    };
-                } else {
-                    ws[addr].s = {
-                        font: { sz: 10 },
-                        fill: { patternType: 'solid', fgColor: { rgb: cellBg } },
-                        alignment: { horizontal: 'left', vertical: 'center' },
-                        border: {
-                            top:    { style: 'hair', color: { rgb: 'CCCCCC' } },
-                            bottom: { style: 'hair', color: { rgb: 'CCCCCC' } },
-                            left:   { style: 'hair', color: { rgb: 'CCCCCC' } },
-                            right:  { style: 'hair', color: { rgb: 'CCCCCC' } }
-                        }
-                    };
-                }
+                ws[addr].s = numIdx.has(c) && isNum ? {
+                    font: { sz: 10 },
+                    numFmt: '#,##0',
+                    fill: { patternType: 'solid', fgColor: { rgb: cellBg } },
+                    alignment: { horizontal: 'right', vertical: 'center' },
+                    border: {
+                        top:    { style: 'hair', color: { rgb: 'CCCCCC' } },
+                        bottom: { style: 'hair', color: { rgb: 'CCCCCC' } },
+                        left:   { style: 'hair', color: { rgb: 'CCCCCC' } },
+                        right:  { style: 'hair', color: { rgb: 'CCCCCC' } }
+                    }
+                } : {
+                    font: { sz: 10 },
+                    fill: { patternType: 'solid', fgColor: { rgb: cellBg } },
+                    alignment: { horizontal: 'left', vertical: 'center' },
+                    border: {
+                        top:    { style: 'hair', color: { rgb: 'CCCCCC' } },
+                        bottom: { style: 'hair', color: { rgb: 'CCCCCC' } },
+                        left:   { style: 'hair', color: { rgb: 'CCCCCC' } },
+                        right:  { style: 'hair', color: { rgb: 'CCCCCC' } }
+                    }
+                };
             }
         }
 
-        // Column widths matching screenshot proportions
+        // Column widths
         ws['!cols'] = [
             { wch: 10 }, // Receipt Book
             { wch: 13 }, // DATE
@@ -3584,37 +3658,29 @@ async function exportAdminDonationEntriesToExcel(lang = 'en') {
             { wch: 14 }, // BAL DIFFERENCE
             { wch: 30 }  // Common Location
         ];
-        ws['!rows'] = [{ hpt: 30 }]; // Header row height
+        ws['!rows'] = [{ hpt: 30 }];
     }
 
-    // ── Build worksheet 1: Ascending order (Book → Receipt No) ───────────────
-    const wsData = [COLS, ...finalRows.map(r => COLS.map(c => {
-        const v = r[c];
-        return (v !== undefined && v !== null && v !== '') ? v : '';
-    }))];
+    // ── Build worksheet 1: grouped by Common Location ─────────────────────────
+    const wsData = buildAoaData(finalLandmarkGroups, landmarkOrder);
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-    // Force date columns to text so they don't get converted to numbers
+    // Force date columns to text
     for (let ri = 1; ri < wsData.length; ri++) {
-        for (const ci of [1, 10]) {  // DATE col=1, BAL RECD DATE col=10
+        for (const ci of [1, 10]) {
             const addr = XLSX.utils.encode_cell({ r: ri, c: ci });
             if (ws[addr]) { ws[addr].t = 's'; delete ws[addr].z; }
         }
     }
-
     styleWorksheet(ws, wsData);
 
-    // ── Build worksheet 2: Descending order (Book DESC → Receipt No DESC) ─────
-    const sortedDesc = [...finalRows].sort((a, b) => {
-        const bkA = Number(a['Receipt Book']) || 0;
-        const bkB = Number(b['Receipt Book']) || 0;
-        if (bkA !== bkB) return bkB - bkA;
-        return (Number(b['Receipt No']) || 0) - (Number(a['Receipt No']) || 0);
+    // ── Build worksheet 2: Descending Order (same landmark grouping, entries reversed per group) ─
+    const descGroups = {};
+    landmarkOrder.forEach(lm => {
+        descGroups[lm] = [...(finalLandmarkGroups[lm] || [])].reverse();
     });
-    const wsData2 = [COLS, ...sortedDesc.map(r => COLS.map(c => {
-        const v = r[c];
-        return (v !== undefined && v !== null && v !== '') ? v : '';
-    }))];
+    // Reverse landmark order too for descending sheet
+    const descOrder = [...landmarkOrder].reverse();
+    const wsData2 = buildAoaData(descGroups, descOrder);
     const ws2 = XLSX.utils.aoa_to_sheet(wsData2);
     for (let ri = 1; ri < wsData2.length; ri++) {
         for (const ci of [1, 10]) {
@@ -3637,6 +3703,8 @@ async function exportAdminDonationEntriesToExcel(lang = 'en') {
     XLSX.writeFile(wb, fileName);
     showNotification('Exported ' + _deAdmAllEntries.length + ' entries → ' + fileName, 'success');
 }
+
+
 // ==================== GALLERY MANAGEMENT ====================
 let _adminGalleryPhotos = [];
 
