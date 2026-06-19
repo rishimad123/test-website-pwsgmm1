@@ -3406,174 +3406,237 @@ async function exportAdminDonationEntriesToExcel(lang = 'en') {
         try {
             const d = new Date(val);
             if (isNaN(d)) return String(val);
-            // If already DD-MM-YYYY string, return as-is
             if (/^\d{2}-\d{2}-\d{4}$/.test(String(val).trim())) return String(val).trim();
             return String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear();
         } catch(_) { return String(val); }
     };
 
-    // Exact 14-column order matching the Excel screenshot
+    // Exact column headers matching the screenshot
     const COLS = [
         'Receipt Book',
-        'Date',
+        'DATE',
         'Receipt No',
         'Receipt Type',
-        'Name',
-        'Location/ Area',
-        'Current Year Amount',
-        'Balance Pending',
-        'Balance Receipt Amount',
-        'Balance Recovered',
-        'Balance Received Date',
-        'Comments',
-        'Balance Difference',
+        'NAME',
+        'Location/Area',
+        'Current Year AMT',
+        'BALANCE PENDING',
+        'BALANCE RECEIPT AMT',
+        'BAL RECOVERED',
+        'BAL RECD DATE',
+        'COMMENT',
+        'BAL DIFFERENCE',
         'Common Location'
     ];
 
-    // Build rows from donation entries
+    // Build rows
     const rows = _deAdmAllEntries.map(e => {
         const donorName = e.donorType === 'Business'
             ? (e.businessName || '')
             : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
 
-        // Clean amount string to fix any stray characters or currency symbols ('à', '\u20B9', etc)
+        // Clean amount: strip any currency/stray chars
         const cleanAmt = String(e.amount || '').replace(/[^\d.-]/g, '');
-        const parsedAmt = parseFloat(cleanAmt);
-        const currentAmt = !isNaN(parsedAmt) ? parsedAmt : '';
-        
-        const isBalance  = String(e.paymentMode || '').toLowerCase() === 'balance';
+        const currentAmt = parseFloat(cleanAmt);
+        const safeAmt = isNaN(currentAmt) ? 0 : currentAmt;
+
+        const payMode   = String(e.paymentMode || '').toLowerCase();
+        const isBalance = payMode === 'balance';
         const isReceived = !!(e.markedReceivedBy || String(e.status || '').toLowerCase() === 'received');
-        const balPend    = isBalance ? (Number(currentAmt) || 0) : 0;
-        const balRec     = isReceived ? (Number(currentAmt) || 0) : 0;
-        const balDiff    = (typeof balPend === 'number' && typeof balRec === 'number') ? balPend - balRec : 0;
+
+        // Balance Pending: amount if this is a balance-mode entry, else 0
+        const balPend = isBalance ? safeAmt : 0;
+        // Balance Receipt Amount: amount paid now (non-balance payments)
+        const balRcptAmt = !isBalance ? safeAmt : 0;
+        // Bal Recovered: only if marked as received
+        const balRec  = isReceived && isBalance ? safeAmt : 0;
+        // Bal Difference: pending minus recovered
+        const balDiff = balPend - balRec;
+
+        // Location/Area: use area field directly (NOT joined with landmark)
+        const locationArea = e.area || e.location || '';
+        // Common Location: combine area + landmark for full path
+        const commonLoc = [e.area, e.landmark].filter(Boolean).join(' / ') || e.commonLandmark || e.buildingName || '';
 
         return {
-            'Receipt Book'           : e.bookNumber || '',
-            'Date'                   : fmtDate(e.submittedAt || e.receiptDate || ''),
-            'Receipt No'             : e.receiptNumber || '',
-            'Receipt Type'           : e.bookType === 'Old' ? 'Old' : 'New',
-            'Name'                   : donorName,
-            'Location/ Area'         : [e.landmark, e.area].filter(Boolean).join(', ') || (e.location || ''),
-            'Current Year Amount'    : currentAmt,
-            'Balance Pending'        : balPend,
-            'Balance Receipt Amount' : isBalance ? 0 : (Number(currentAmt) || 0),
-            'Balance Recovered'      : balRec,
-            'Balance Received Date'  : e.markedReceivedAt ? fmtDate(e.markedReceivedAt) : '',
-            'Comments'               : e.referenceNumber || e.remarks || '',
-            'Balance Difference'     : balDiff,
-            'Common Location'        : e.commonLandmark || e.landmark || e.buildingName || ''
+            'Receipt Book'       : e.bookNumber   != null ? Number(e.bookNumber)   : '',
+            'DATE'               : fmtDate(e.submittedAt || e.receiptDate || ''),
+            'Receipt No'         : e.receiptNumber != null ? Number(e.receiptNumber) : '',
+            'Receipt Type'       : e.bookType === 'Old' ? 'Old' : 'New',
+            'NAME'               : donorName,
+            'Location/Area'      : locationArea,
+            'Current Year AMT'   : safeAmt || '',
+            'BALANCE PENDING'    : balPend  || '',
+            'BALANCE RECEIPT AMT': balRcptAmt || '',
+            'BAL RECOVERED'      : balRec   || '',
+            'BAL RECD DATE'      : e.markedReceivedAt ? fmtDate(e.markedReceivedAt) : '',
+            'COMMENT'            : e.referenceNumber || e.remarks || '',
+            'BAL DIFFERENCE'     : balDiff  || '',
+            'Common Location'    : commonLoc
         };
     });
 
-    // ── SORT: Receipt Book ASC → Location/Area ASC → Receipt No ASC ─────────
+    // Sort: Receipt Book ASC → Receipt No ASC (sequential 1,2,3... within each book)
     rows.sort((a, b) => {
         const bkA = Number(a['Receipt Book']) || 0;
         const bkB = Number(b['Receipt Book']) || 0;
         if (bkA !== bkB) return bkA - bkB;
-        const locCmp = String(a['Location/ Area'] || '').localeCompare(String(b['Location/ Area'] || ''));
-        if (locCmp !== 0) return locCmp;
         return (Number(a['Receipt No']) || 0) - (Number(b['Receipt No']) || 0);
     });
 
     let finalRows = rows;
     if (lang === 'mr') finalRows = await translateExcelData(rows);
 
-    // ── Build worksheet using aoa_to_sheet to guarantee column order ─────────
-    const wsData = [COLS, ...finalRows.map(r => COLS.map(c => (r[c] !== undefined && r[c] !== null) ? r[c] : ''))];
+    // ── Helper to apply styling to a worksheet ────────────────────────────────
+    function styleWorksheet(ws, wsData) {
+        // Header style: dark green background, white bold text
+        const hStyle = {
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 10 },
+            fill: { patternType: 'solid', fgColor: { rgb: '1D6F42' } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+            border: {
+                top:    { style: 'thin', color: { rgb: '000000' } },
+                bottom: { style: 'thin', color: { rgb: '000000' } },
+                left:   { style: 'thin', color: { rgb: '000000' } },
+                right:  { style: 'thin', color: { rgb: '000000' } }
+            }
+        };
+
+        // Numeric column indices (0-based): Current Year AMT(6), BAL PENDING(7), BAL RCPT AMT(8), BAL RECOVERED(9), BAL DIFF(12)
+        const numIdx = new Set([6, 7, 8, 9, 12]);
+
+        // Apply header styling
+        for (let c = 0; c < COLS.length; c++) {
+            const addr = XLSX.utils.encode_cell({ r: 0, c });
+            if (ws[addr]) ws[addr].s = hStyle;
+        }
+
+        // Apply data row styling
+        for (let ri = 1; ri < wsData.length; ri++) {
+            const isAlt = ri % 2 === 0;
+            const defaultBg = isAlt ? 'F5F5F5' : 'FFFFFF';
+
+            for (let c = 0; c < COLS.length; c++) {
+                const addr = XLSX.utils.encode_cell({ r: ri, c });
+                if (!ws[addr]) continue;
+
+                let cellBg = defaultBg;
+                const val = ws[addr].v;
+                const isNum = ws[addr].t === 'n';
+
+                // BAL DIFFERENCE (col 12): red if negative, green if positive
+                if (c === 12 && isNum) {
+                    if (val < 0)      cellBg = 'FFCCCC';  // Red for negative
+                    else if (val > 0) cellBg = 'CCFFCC';  // Green for positive
+                }
+                // BALANCE PENDING (col 7): blue highlight if > 0
+                if (c === 7 && isNum && val > 0) {
+                    cellBg = 'BDD7EE';  // Blue matching Excel screenshot
+                }
+                // BALANCE RECEIPT AMT (col 8): light blue if > 0
+                if (c === 8 && isNum && val > 0) {
+                    cellBg = 'DDEEFF';
+                }
+
+                if (numIdx.has(c) && isNum) {
+                    ws[addr].s = {
+                        font: { sz: 10 },
+                        numFmt: '#,##0',
+                        fill: { patternType: 'solid', fgColor: { rgb: cellBg } },
+                        alignment: { horizontal: 'right', vertical: 'center' },
+                        border: {
+                            top:    { style: 'hair', color: { rgb: 'CCCCCC' } },
+                            bottom: { style: 'hair', color: { rgb: 'CCCCCC' } },
+                            left:   { style: 'hair', color: { rgb: 'CCCCCC' } },
+                            right:  { style: 'hair', color: { rgb: 'CCCCCC' } }
+                        }
+                    };
+                } else {
+                    ws[addr].s = {
+                        font: { sz: 10 },
+                        fill: { patternType: 'solid', fgColor: { rgb: cellBg } },
+                        alignment: { horizontal: 'left', vertical: 'center' },
+                        border: {
+                            top:    { style: 'hair', color: { rgb: 'CCCCCC' } },
+                            bottom: { style: 'hair', color: { rgb: 'CCCCCC' } },
+                            left:   { style: 'hair', color: { rgb: 'CCCCCC' } },
+                            right:  { style: 'hair', color: { rgb: 'CCCCCC' } }
+                        }
+                    };
+                }
+            }
+        }
+
+        // Column widths matching screenshot proportions
+        ws['!cols'] = [
+            { wch: 10 }, // Receipt Book
+            { wch: 13 }, // DATE
+            { wch: 10 }, // Receipt No
+            { wch: 12 }, // Receipt Type
+            { wch: 32 }, // NAME
+            { wch: 22 }, // Location/Area
+            { wch: 14 }, // Current Year AMT
+            { wch: 14 }, // BALANCE PENDING
+            { wch: 18 }, // BALANCE RECEIPT AMT
+            { wch: 14 }, // BAL RECOVERED
+            { wch: 14 }, // BAL RECD DATE
+            { wch: 20 }, // COMMENT
+            { wch: 14 }, // BAL DIFFERENCE
+            { wch: 30 }  // Common Location
+        ];
+        ws['!rows'] = [{ hpt: 30 }]; // Header row height
+    }
+
+    // ── Build worksheet 1: Ascending order (Book → Receipt No) ───────────────
+    const wsData = [COLS, ...finalRows.map(r => COLS.map(c => {
+        const v = r[c];
+        return (v !== undefined && v !== null && v !== '') ? v : '';
+    }))];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-    // Force date columns (index 1=Date, 10=Balance Received Date) to text
+    // Force date columns to text so they don't get converted to numbers
     for (let ri = 1; ri < wsData.length; ri++) {
-        for (const ci of [1, 10]) {
+        for (const ci of [1, 10]) {  // DATE col=1, BAL RECD DATE col=10
             const addr = XLSX.utils.encode_cell({ r: ri, c: ci });
-            if (ws[addr]) { ws[addr].t = 's'; ws[addr].z = '@'; }
+            if (ws[addr]) { ws[addr].t = 's'; delete ws[addr].z; }
         }
     }
 
-    // ── Styling ───────────────────────────────────────────────────────────────
-    const hStyle = {
-        font: { bold: true, color: { rgb: 'FFFFFF' } },
-        fill: { patternType: 'solid', fgColor: { rgb: '1D6F42' } },
-        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-        border: { top:{style:'thin',color:{rgb:'000000'}}, bottom:{style:'thin',color:{rgb:'000000'}}, left:{style:'thin',color:{rgb:'000000'}}, right:{style:'thin',color:{rgb:'000000'}} }
-    };
-    // Numeric column indices (Amount columns)
-    const numIdx = new Set([6, 7, 8, 9, 12]);  // Current Yr Amt, Bal Pending, Bal Rcpt Amt, Bal Recovered, Bal Diff
-    // Negative balance difference gets red fill, positive gets green
-    for (let c = 0; c < COLS.length; c++) {
-        const addr = XLSX.utils.encode_cell({ r: 0, c });
-        if (ws[addr]) ws[addr].s = hStyle;
-    }
-    for (let ri = 1; ri < wsData.length; ri++) {
-        const alt = ri % 2 === 0;
-        const fg  = alt ? 'F0FFF4' : 'FFFFFF';
-        for (let c = 0; c < COLS.length; c++) {
-            const addr = XLSX.utils.encode_cell({ r: ri, c });
-            if (!ws[addr]) continue;
-            let cellFg = fg;
-            // Balance Difference: red if negative, green if positive
-            if (c === 12 && ws[addr].t === 'n') {
-                cellFg = ws[addr].v < 0 ? 'FFCCCC' : (ws[addr].v > 0 ? 'CCFFCC' : fg);
-            }
-            // Balance Pending / Balance Receipt Amount: highlight blue if > 0
-            if ((c === 7 || c === 8) && ws[addr].t === 'n' && ws[addr].v > 0) {
-                cellFg = 'DDEEFF';
-            }
-            ws[addr].s = numIdx.has(c) && ws[addr].t === 'n' ? {
-                numFmt: '#,##0',
-                fill: { patternType: 'solid', fgColor: { rgb: cellFg } },
-                alignment: { horizontal: 'right', vertical: 'center' },
-                border: { top:{style:'hair',color:{rgb:'CCCCCC'}}, bottom:{style:'hair',color:{rgb:'CCCCCC'}}, left:{style:'hair',color:{rgb:'CCCCCC'}}, right:{style:'hair',color:{rgb:'CCCCCC'}} }
-            } : {
-                fill: { patternType: 'solid', fgColor: { rgb: cellFg } },
-                alignment: { vertical: 'center' },
-                border: { top:{style:'hair',color:{rgb:'CCCCCC'}}, bottom:{style:'hair',color:{rgb:'CCCCCC'}}, left:{style:'hair',color:{rgb:'CCCCCC'}}, right:{style:'hair',color:{rgb:'CCCCCC'}} }
-            };
-        }
-    }
+    styleWorksheet(ws, wsData);
 
-    // Column widths matching Excel
-    ws['!cols'] = [
-        {wch:12}, {wch:14}, {wch:12}, {wch:13}, {wch:30},
-        {wch:22}, {wch:16}, {wch:16}, {wch:20}, {wch:16},
-        {wch:20}, {wch:22}, {wch:16}, {wch:28}
-    ];
-    ws['!rows'] = [{ hpt: 32 }];
-
-    // ── Two workbook sheets ───────────────────────────────────────────────────
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Donation list');
-
-    // Second sheet: Descending order (Book DESC → Receipt No DESC)
+    // ── Build worksheet 2: Descending order (Book DESC → Receipt No DESC) ─────
     const sortedDesc = [...finalRows].sort((a, b) => {
-        const bkA = Number(a['Receipt Book']) || 0, bkB = Number(b['Receipt Book']) || 0;
+        const bkA = Number(a['Receipt Book']) || 0;
+        const bkB = Number(b['Receipt Book']) || 0;
         if (bkA !== bkB) return bkB - bkA;
         return (Number(b['Receipt No']) || 0) - (Number(a['Receipt No']) || 0);
     });
-    const wsData2 = [COLS, ...sortedDesc.map(r => COLS.map(c => (r[c] !== undefined && r[c] !== null) ? r[c] : ''))];
+    const wsData2 = [COLS, ...sortedDesc.map(r => COLS.map(c => {
+        const v = r[c];
+        return (v !== undefined && v !== null && v !== '') ? v : '';
+    }))];
     const ws2 = XLSX.utils.aoa_to_sheet(wsData2);
     for (let ri = 1; ri < wsData2.length; ri++) {
         for (const ci of [1, 10]) {
             const addr = XLSX.utils.encode_cell({ r: ri, c: ci });
-            if (ws2[addr]) { ws2[addr].t = 's'; ws2[addr].z = '@'; }
+            if (ws2[addr]) { ws2[addr].t = 's'; delete ws2[addr].z; }
         }
     }
-    for (let c = 0; c < COLS.length; c++) {
-        const addr = XLSX.utils.encode_cell({ r: 0, c });
-        if (ws2[addr]) ws2[addr].s = hStyle;
-    }
-    ws2['!cols'] = ws['!cols'];
-    ws2['!rows'] = [{ hpt: 32 }];
+    styleWorksheet(ws2, wsData2);
+
+    // ── Assemble workbook ─────────────────────────────────────────────────────
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws,  'Donation list');
     XLSX.utils.book_append_sheet(wb, ws2, 'Descending Order');
 
-    // ── Export ────────────────────────────────────────────────────────────────
-    const t = new Date();
+    // ── Download ──────────────────────────────────────────────────────────────
+    const t  = new Date();
     const dd = String(t.getDate()).padStart(2, '0');
     const mm = String(t.getMonth() + 1).padStart(2, '0');
-    XLSX.writeFile(wb, 'Donation_Entries_' + dd + '-' + mm + '-' + t.getFullYear() + '.xlsx');
-    showNotification('Exported ' + _deAdmAllEntries.length + ' entries → Donation_Entries_' + dd + '-' + mm + '-' + t.getFullYear() + '.xlsx', 'success');
+    const fileName = 'Donation_Entries_' + dd + '-' + mm + '-' + t.getFullYear() + '.xlsx';
+    XLSX.writeFile(wb, fileName);
+    showNotification('Exported ' + _deAdmAllEntries.length + ' entries → ' + fileName, 'success');
 }
-
 // ==================== GALLERY MANAGEMENT ====================
 let _adminGalleryPhotos = [];
 
