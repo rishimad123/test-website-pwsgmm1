@@ -4649,11 +4649,11 @@ window._fmtBytesA = function(b) {
                         <tr>
                             <th>#</th><th>Book</th><th>Receipt</th><th>Donor</th><th>Type</th>
                             <th>WhatsApp</th><th>Mobile</th><th>Building</th><th>Landmark</th><th>Area</th>
-                            <th>Amount</th><th>Mode</th><th>Ref No.</th><th>Landmark</th><th>Image</th><th>Submitted By</th><th>Date</th><th>Actions</th>
+                            <th>Amount</th><th>Mode</th><th>Ref No.</th><th>Image</th><th>Submitted By</th><th>Date</th><th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="adeTbody">
-                        <tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">Loading...</td></tr>
+                        <tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -5383,7 +5383,7 @@ window._fmtBytesA = function(b) {
     async function adeLoad() {
         const tbody = document.getElementById('adeTbody');
         if (!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">Loading...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">Loading...</td></tr>';
         try {
             const [entRes, landmarkRes, settingsRes] = await Promise.all([
                 fetch('/api/donation-entries?year=' + (window._adeSelectedYear || 'active')),
@@ -5515,42 +5515,63 @@ window._fmtBytesA = function(b) {
             loadDonationTrackingCards();
         }
 
-        if (!_adeFiltered.length) { tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">No entries found.</td></tr>'; return; }
-        tbody.innerHTML = _adeFiltered.slice().reverse().map((e, i) => {
-            const donor = e.donorType === 'Business'
-                ? (e.businessName || '—')
-                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
-            const dtObj = new Date(e.submittedAt);
-            const dtTime = dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
-            const dtDate = dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-            const dt = `<span style="font-size:.8rem;white-space:nowrap;">${dtTime}<br><span style="color:#aaa;">${dtDate}</span></span>`;
-            const amt = e.amount != null ? '&#x20B9;' + Number(e.amount).toLocaleString('en-IN') : '—';
-            return `<tr id="ade-row-${e.entryId}">
-                <td style="color:#aaa;font-size:.8rem;">${i+1}</td>
-                <td style="font-weight:700;vertical-align:middle;">Bk ${e.bookNumber} ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF8F1;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>' }</td>
-                <td>#${e.receiptNumber}</td>
-                <td style="font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${donor}">${donor}</td>
-                <td><span style="padding:2px 9px;border-radius:10px;font-size:.75rem;font-weight:700;background:${e.donorType==='Business'?'#E3F2FD':'#E8F5E9'};color:${e.donorType==='Business'?'#1565C0':'#1B5E20'};">${e.donorType}</span></td>
-                <td style="color:#555;font-size:.85rem;">${e.whatsappNumber||''}</td>
-                <td style="color:#555;font-size:.85rem;">${e.mobileNumber||''}</td>
-                <td style="font-size:.85rem;">${e.buildingName||''}${e.flatNumber ? `<br><span style="font-size:0.75rem;color:#777;">Flat: ${e.flatNumber}</span>` : ''}</td>
-                <td style="font-size:.85rem;">${e.landmark||''}</td>
-                <td style="font-size:.85rem;">${e.area||''}</td>
-                <td style="color:#2E7D32;font-weight:700;">${amt}</td>
-                <td><span style="padding:3px 10px;border-radius:12px;background:#FFF8F1;color:#E65100;font-size:.75rem;font-weight:700;">${e.paymentMode}</span></td>
-                <td style="font-size:.82rem;color:#777;">${e.referenceNumber||''}</td>
-                <td style="font-size:.82rem;color:#555;">${e.landmark||''}</td>
-                <td style="text-align:center;">${(e.photoUrl || e.receiptPreviewUrl) ? `<img src="${fixUrl(e.photoUrl || e.receiptPreviewUrl)}?t=${Date.now()}" style="width:50px;height:50px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openAdminLightbox(fixUrl('${e.photoUrl || e.receiptPreviewUrl}'))" title="View photo">` : '<span style="font-size:.72rem;color:#aaa;font-style:italic;">No Image</span>'}</td>
-                <td style="font-size:.82rem;color:#888;">${e.submittedBy||''}</td>
-                <td style="color:#888;font-size:.82rem;">${dt}</td>
-                <td>
-                    <div class="action-btns">
-                        <button class="btn-icon btn-edit" title="Edit" onclick="adeOpenEdit('${e.entryId}')"><i class="fas fa-edit"></i></button>
-                        <button class="btn-icon btn-delete" title="Delete" onclick="adeDelete('${e.entryId}')"><i class="fas fa-trash"></i></button>
-                    </div>
-                </td>
-            </tr>`;
-        }).join('');
+        if (!_adeFiltered.length) { tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">No entries found.</td></tr>'; return; }
+        // ── Group entries by Landmark ──────────────────────────────────────
+        const _adeLmOrder = [];
+        const _adeLmGroups = {};
+        _adeFiltered.forEach(e => {
+            const lm = String(e.landmark || '(No Landmark)').trim();
+            if (!_adeLmGroups[lm]) { _adeLmGroups[lm] = []; _adeLmOrder.push(lm); }
+            _adeLmGroups[lm].push(e);
+        });
+
+        let _adeHtml = '';
+        let _adeRowNum = 0;
+        _adeLmOrder.forEach(lm => {
+            const cnt = _adeLmGroups[lm].length;
+            // Landmark group header spanning all 17 columns
+            _adeHtml += '<tr>' +
+                '<td colspan="17" style="background:linear-gradient(90deg,#FFF3E0,#FFF8F5);color:#BF360C;font-weight:700;font-size:.88rem;padding:9px 16px;border-left:4px solid #E65100;border-top:2px solid #FFCC80;">' +
+                '<i class=\"fas fa-map-marker-alt\" style=\"margin-right:7px;color:#E65100;\"></i>' + lm +
+                '<span style=\"font-weight:400;color:#888;font-size:.78rem;margin-left:10px;\">(' + cnt + ' entr' + (cnt === 1 ? 'y' : 'ies') + ')</span>' +
+                '</td></tr>';
+            _adeLmGroups[lm].forEach(e => {
+                _adeRowNum++;
+                const i = _adeRowNum - 1;
+                const donor = e.donorType === 'Business'
+                    ? (e.businessName || '—')
+                    : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+                const dtObj = new Date(e.submittedAt);
+                const dtTime = dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
+                const dtDate = dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+                const dt = '<span style=\"font-size:.8rem;white-space:nowrap;\">' + dtTime + '<br><span style=\"color:#aaa;\">' + dtDate + '</span></span>';
+                const amt = e.amount != null ? '&#x20B9;' + Number(e.amount).toLocaleString('en-IN') : '—';
+                const photoUrl = e.photoUrl || e.receiptPreviewUrl || '';
+                const photoCell = photoUrl
+                    ? '<img src=\"' + fixUrl(photoUrl) + '?t=' + Date.now() + '\" style=\"width:50px;height:50px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;\" onclick=\"openAdminLightbox(fixUrl(\'' + photoUrl + '\')))\" title=\"View photo\">'
+                    : '<span style=\"font-size:.72rem;color:#aaa;font-style:italic;\">No Image</span>';
+                _adeHtml += '<tr id=\"ade-row-' + e.entryId + '\">' +
+                    '<td style=\"color:#aaa;font-size:.8rem;\">' + (i+1) + '</td>' +
+                    '<td style=\"font-weight:700;vertical-align:middle;\">Bk ' + e.bookNumber + ' ' + ((e.bookType||'New')==='Old' ? '<span style=\"background:#FFF8F1;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;\">Old</span>' : '<span style=\"background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;\">New</span>') + '</td>' +
+                    '<td>#' + e.receiptNumber + '</td>' +
+                    '<td style=\"font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;\" title=\"' + donor + '\">' + donor + '</td>' +
+                    '<td><span style=\"padding:2px 9px;border-radius:10px;font-size:.75rem;font-weight:700;background:' + (e.donorType==='Business'?'#E3F2FD':'#E8F5E9') + ';color:' + (e.donorType==='Business'?'#1565C0':'#1B5E20') + ';\">' + e.donorType + '</span></td>' +
+                    '<td style=\"color:#555;font-size:.85rem;\">' + (e.whatsappNumber||'') + '</td>' +
+                    '<td style=\"color:#555;font-size:.85rem;\">' + (e.mobileNumber||'') + '</td>' +
+                    '<td style=\"font-size:.85rem;\">' + (e.buildingName||'') + (e.flatNumber ? '<br><span style=\"font-size:0.75rem;color:#777;\">Flat: ' + e.flatNumber + '</span>' : '') + '</td>' +
+                    '<td style=\"font-size:.85rem;\">' + (e.landmark||'') + '</td>' +
+                    '<td style=\"font-size:.85rem;\">' + (e.area||'') + '</td>' +
+                    '<td style=\"color:#2E7D32;font-weight:700;\">' + amt + '</td>' +
+                    '<td><span style=\"padding:3px 10px;border-radius:12px;background:#FFF8F1;color:#E65100;font-size:.75rem;font-weight:700;\">' + e.paymentMode + '</span></td>' +
+                    '<td style=\"font-size:.82rem;color:#777;\">' + (e.referenceNumber||'') + '</td>' +
+                    '<td style=\"text-align:center;\">' + photoCell + '</td>' +
+                    '<td style=\"font-size:.82rem;color:#888;\">' + (e.submittedBy||'') + '</td>' +
+                    '<td style=\"color:#888;font-size:.82rem;\">' + dt + '</td>' +
+                    '<td><div class=\"action-btns\"><button class=\"btn-icon btn-edit\" title=\"Edit\" onclick=\"adeOpenEdit(\'' + e.entryId + '\')\"><i class=\"fas fa-edit\"></i></button><button class=\"btn-icon btn-delete\" title=\"Delete\" onclick=\"adeDelete(\'' + e.entryId + '\')\"><i class=\"fas fa-trash\"></i></button></div></td>' +
+                    '</tr>';
+            });
+        });
+        tbody.innerHTML = _adeHtml;
     }
 
     async function adeDelete(id) {
