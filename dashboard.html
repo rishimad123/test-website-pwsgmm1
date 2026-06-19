@@ -3873,19 +3873,6 @@ window.fixUrl = function(url) {
         await vdeLoad();
     }
 
-   });
-
-        if (totalShown === 0) {
-            const msg = filter ? 'No entries match your search.' : 'No entries yet.';
-            tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#999;padding:20px;">${msg}</td></tr>`;
-            if (cards) cards.innerHTML = `<p style="text-align:center;color:#999;padding:20px;">${msg}</p>`;
-        } else {
-            tbody.innerHTML = tableRows;
-            if (cards) cards.innerHTML = cardHtml;
-        }
-    }
-
-
     // ─── Year Filter for Donation Data Entry ────────────────────────────────
     async function deLoadYearFilter() {
         const roles = ['admin', 'volunteer_full', 'volunteer_full_tshirt'];
