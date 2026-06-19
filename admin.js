@@ -3436,7 +3436,11 @@ async function exportAdminDonationEntriesToExcel(lang = 'en') {
             ? (e.businessName || '')
             : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
 
-        const currentAmt = (e.amount != null && !isNaN(Number(e.amount))) ? Number(e.amount) : '';
+        // Clean amount string to fix any stray characters or currency symbols ('à', '₹', etc)
+        const cleanAmt = String(e.amount || '').replace(/[^\d.-]/g, '');
+        const parsedAmt = parseFloat(cleanAmt);
+        const currentAmt = !isNaN(parsedAmt) ? parsedAmt : '';
+        
         const isBalance  = String(e.paymentMode || '').toLowerCase() === 'balance';
         const isReceived = !!(e.markedReceivedBy || String(e.status || '').toLowerCase() === 'received');
         const balPend    = isBalance ? (Number(currentAmt) || 0) : 0;

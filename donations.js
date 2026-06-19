@@ -707,6 +707,11 @@ function donExportExcel() {
             if (!val && val !== 0) return '';
             if (dateColSet.has(col)) return _donFormatDate(val);
             if (numericColSet.has(col)) {
+                if (col.includes('Amount') || col.includes('Balance')) {
+                    const cleanStr = String(val).replace(/[^\d.-]/g, '');
+                    const num = parseFloat(cleanStr);
+                    return isNaN(num) ? '' : num;
+                }
                 const num = parseFloat(String(val).replace(/,/g, ''));
                 return isNaN(num) ? val : num;
             }
