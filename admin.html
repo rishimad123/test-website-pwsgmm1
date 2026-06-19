@@ -2172,7 +2172,7 @@ window._fmtBytesA = function(b) {
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;">
                             <div class="admin-stat-card"><div class="stat-icon blue"><i class="fas fa-users"></i></div><div class="stat-details"><h3 id="donStatTotal">0</h3><p>Total Records</p></div></div>
                             <div class="admin-stat-card"><div class="stat-icon green"><i class="fas fa-filter"></i></div><div class="stat-details"><h3 id="donStatFiltered">0</h3><p>Matching Filters</p></div></div>
-                            <div class="admin-stat-card"><div class="stat-icon orange"><i class="fas fa-rupee-sign"></i></div><div class="stat-details"><h3 id="donStatSum">â‚¹0</h3><p>Filtered Total Amount</p></div></div>
+                            <div class="admin-stat-card"><div class="stat-icon orange"><i class="fas fa-rupee-sign"></i></div><div class="stat-details"><h3 id="donStatSum">&#x20B9;0</h3><p>Filtered Total Amount</p></div></div>
                             <div class="admin-stat-card"><div class="stat-icon purple"><i class="fas fa-columns"></i></div><div class="stat-details"><h3 id="donStatCols">0</h3><p>Columns Detected</p></div></div>
                         </div>
                     </div>
@@ -2215,12 +2215,12 @@ window._fmtBytesA = function(b) {
                                     <span id="donAmtDetected" style="font-size:.72rem;color:#aaa;font-weight:400;text-transform:none;letter-spacing:0;"></span>
                                 </label>
                                 <div style="display:flex;gap:8px;align-items:center;">
-                                    <input type="number" id="donAmtMin" placeholder="Min â‚¹" min="0"
+                                    <input type="number" id="donAmtMin" placeholder="Min &#x20B9;" min="0"
                                         style="flex:1;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:.9rem;transition:border-color .2s;box-sizing:border-box;"
                                         onfocus="this.style.borderColor='#E67E22'" onblur="this.style.borderColor='#e0e0e0'"
                                         oninput="donApplyFilters()">
                                     <span style="color:#bbb;font-size:.9rem;">â€“</span>
-                                    <input type="number" id="donAmtMax" placeholder="Max â‚¹" min="0"
+                                    <input type="number" id="donAmtMax" placeholder="Max &#x20B9;" min="0"
                                         style="flex:1;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:.9rem;transition:border-color .2s;box-sizing:border-box;"
                                         onfocus="this.style.borderColor='#E67E22'" onblur="this.style.borderColor='#e0e0e0'"
                                         oninput="donApplyFilters()">
@@ -3614,7 +3614,7 @@ window._fmtBytesA = function(b) {
                         </div>
 
                         <div class="rcg-field">
-                            <label for="rcgAmount">Amount (â‚¹)</label>
+                            <label for="rcgAmount">Amount (&#x20B9;)</label>
                             <input type="number" id="rcgAmount" placeholder="e.g. 2100" min="1">
                         </div>
 
@@ -3709,7 +3709,7 @@ window._fmtBytesA = function(b) {
 
                             <!-- Rupee amount box -->
                             <div class="rcg-r-amt-row">
-                                <div class="rcg-r-amt-box" id="rcgRAmtBox"><span class="rcg-placeholder">â‚¹</span></div>
+                                <div class="rcg-r-amt-box" id="rcgRAmtBox"><span class="rcg-placeholder">&#x20B9;</span></div>
                                 <span class="rcg-r-paymode" id="rcgRPayMode"></span>
                             </div>
 
@@ -3911,7 +3911,7 @@ window._fmtBytesA = function(b) {
         <div class="adm-edit-box">
             <h4><i class="fas fa-edit" style="color:var(--primary-color);margin-right:8px;"></i>Edit Donation Amount</h4>
             <p class="adm-edit-sub" id="admEditSubtitle">Receipt ID: â€”</p>
-            <input type="number" id="admEditAmountInput" placeholder="New amount (â‚¹)" min="1">
+            <input type="number" id="admEditAmountInput" placeholder="New amount (&#x20B9;)" min="1">
             <div class="adm-edit-actions">
                 <button class="btn" style="background:#eee;color:#555;" onclick="closeAdminEdit()">Cancel</button>
                 <button class="btn btn-primary" id="admEditSaveBtn" onclick="saveAdminEditAmount()">Save</button>
@@ -4388,7 +4388,7 @@ window._fmtBytesA = function(b) {
                     <i class="fas fa-rupee-sign" style="margin-right:6px;"></i>Amount &amp; Payment
                 </div>
                 <div class="form-group">
-                    <label for="adeAmount">Donation Amount (â‚¹)</label>
+                    <label for="adeAmount">Donation Amount (&#x20B9;)</label>
                     <input type="number" id="adeAmount" class="form-control" placeholder="Enter amount" min="0">
                 </div>
                 <div class="form-group">
@@ -4546,7 +4546,7 @@ window._fmtBytesA = function(b) {
                     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
                         <div id="ade_rcg_r_amt"
                             style="border:2px solid #8B1A1A;border-radius:5px;padding:7px 18px;font-size:1.15rem;font-weight:700;color:#8B1A1A;min-width:120px;text-align:center;background:rgba(255,255,255,.5);">
-                            <span style="color:#CCC;font-style:italic;font-weight:400;">â‚¹</span>
+                            <span style="color:#CCC;font-style:italic;font-weight:400;">&#x20B9;</span>
                         </div>
                         <span id="ade_rcg_r_mode" style="font-size:.8rem;color:#777;font-style:italic;"></span>
                     </div>
@@ -4744,7 +4744,7 @@ window._fmtBytesA = function(b) {
             const donor = e.donorType === 'Business'
                 ? (e.businessName || 'â€”')
                 : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || 'â€”';
-            const amt = e.amount != null ? 'â‚¹' + Number(e.amount).toLocaleString('en-IN') : 'â€”';
+            const amt = e.amount != null ? '&#x20B9;' + Number(e.amount).toLocaleString('en-IN') : 'â€”';
             const mode = e.paymentMode || 'â€”';
             const modeClr = modeColor[mode] || '#555';
             const dtObj = new Date(e.submittedAt);
@@ -5508,7 +5508,7 @@ window._fmtBytesA = function(b) {
         const totalAmt = _adeFiltered.reduce((s,e) => s + (e.amount||0), 0);
         document.getElementById('adeSummaryTotal')    && (document.getElementById('adeSummaryTotal').textContent    = _adeAll.length);
         document.getElementById('adeSummaryFiltered') && (document.getElementById('adeSummaryFiltered').textContent = _adeFiltered.length);
-                document.getElementById('adeSummaryAmt')      && (document.getElementById('adeSummaryAmt').textContent      = 'â‚¹' + totalAmt.toLocaleString('en-IN'));
+                document.getElementById('adeSummaryAmt')      && (document.getElementById('adeSummaryAmt').textContent      = '&#x20B9;' + totalAmt.toLocaleString('en-IN'));
         
         // Instantly update donation tracking section when data changes
         if (typeof loadDonationTrackingCards === 'function') {
@@ -5524,7 +5524,7 @@ window._fmtBytesA = function(b) {
             const dtTime = dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
             const dtDate = dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
             const dt = `<span style="font-size:.8rem;white-space:nowrap;">${dtTime}<br><span style="color:#aaa;">${dtDate}</span></span>`;
-            const amt = e.amount != null ? 'â‚¹' + Number(e.amount).toLocaleString('en-IN') : 'â€”';
+            const amt = e.amount != null ? '&#x20B9;' + Number(e.amount).toLocaleString('en-IN') : 'â€”';
             return `<tr id="ade-row-${e.entryId}">
                 <td style="color:#aaa;font-size:.8rem;">${i+1}</td>
                 <td style="font-weight:700;vertical-align:middle;">Bk ${e.bookNumber} ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF8F1;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>' }</td>
@@ -5612,7 +5612,7 @@ window._fmtBytesA = function(b) {
                     <div class="form-group"><label>Landmark</label><input name="landmark" class="form-control" value="${e.landmark||''}"></div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
-                    <div class="form-group"><label>Amount (â‚¹)</label><input name="amount" class="form-control" type="number" value="${e.amount||''}" min="0"></div>
+                    <div class="form-group"><label>Amount (&#x20B9;)</label><input name="amount" class="form-control" type="number" value="${e.amount||''}" min="0"></div>
                     <div class="form-group"><label>Payment Mode</label>
                         <select name="paymentMode" class="form-control">
                             <option ${e.paymentMode==='Cash'?'selected':''}>Cash</option>
@@ -5662,7 +5662,7 @@ window._fmtBytesA = function(b) {
                     let nameChange = '';
                     if (h.from !== h.to) nameChange = '<span style="color:#888;">Name:</span> <strong>' + (h.from||'â€”') + '</strong> &rarr; <strong>' + (h.to||'â€”') + '</strong><br>';
                     let amtChange = '';
-                    if (h.fromAmount !== h.toAmount && h.fromAmount !== undefined && h.toAmount !== undefined) amtChange = '<span style="color:#888;">Amount:</span> <strong>â‚¹' + (h.fromAmount||'0') + '</strong> &rarr; <strong>â‚¹' + (h.toAmount||'0') + '</strong><br>';
+                    if (h.fromAmount !== h.toAmount && h.fromAmount !== undefined && h.toAmount !== undefined) amtChange = '<span style="color:#888;">Amount:</span> <strong>&#x20B9;' + (h.fromAmount||'0') + '</strong> &rarr; <strong>&#x20B9;' + (h.toAmount||'0') + '</strong><br>';
                     let bookChange = '';
                     if (h.fromBook !== h.toBook && h.fromBook !== undefined && h.toBook !== undefined) bookChange = '<span style="color:#888;">Book:</span> <strong>' + (h.fromBook||'â€”') + '</strong> &rarr; <strong>' + (h.toBook||'â€”') + '</strong><br>';
                     let recChange = '';
@@ -5673,7 +5673,7 @@ window._fmtBytesA = function(b) {
                     if (h.fromStatus !== h.toStatus && h.fromStatus !== undefined && h.toStatus !== undefined) statusChange = '<span style="color:#888;">Status:</span> <strong>' + (h.fromStatus||'â€”') + '</strong> &rarr; <strong>' + (h.toStatus||'â€”') + '</strong><br>';
                     
                     let extraInfo = '<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #E3F2FD;font-size:.78rem;color:#666;">' +
-                        'Amount: <strong>' + (h.toAmount !== undefined && h.toAmount !== null ? 'â‚¹'+h.toAmount : (e.amount != null ? 'â‚¹'+e.amount : 'â€”')) + '</strong> &nbsp;|&nbsp; ' +
+                        'Amount: <strong>' + (h.toAmount !== undefined && h.toAmount !== null ? '&#x20B9;'+h.toAmount : (e.amount != null ? '&#x20B9;'+e.amount : 'â€”')) + '</strong> &nbsp;|&nbsp; ' +
                         'Book: <strong>' + (h.toBook !== undefined && h.toBook !== null ? h.toBook : (e.bookNumber || 'â€”')) + '</strong> &nbsp;|&nbsp; ' +
                         'Receipt: <strong>' + (h.toReceipt !== undefined && h.toReceipt !== null ? h.toReceipt : (e.receiptNumber || 'â€”')) + '</strong>' +
                         '</div>';
@@ -7344,7 +7344,7 @@ fetchNotifications();
 
         // Amount words
         var words = amount > 0 ? ade_rcg_amtToWords(amount) : '';
-        var amtFmt = amount > 0 ? ('â‚¹\u00a0' + Number(amount).toLocaleString('en-IN')) : '';
+        var amtFmt = amount > 0 ? ('&#x20B9;\u00a0' + Number(amount).toLocaleString('en-IN')) : '';
 
         // Paint receipt fields
         ade_rcg_set('ade_rcg_r_year',   yearStr   || '<span style="color:#CCC;font-style:italic;">__</span>');
@@ -7358,7 +7358,7 @@ fetchNotifications();
             : '<span style="color:#CCC;font-style:italic;font-weight:400;">______________________________</span>');
         ade_rcg_set('ade_rcg_r_amt',    amtFmt
             ? '<span style="font-weight:700;color:#8B1A1A;">'+amtFmt+'</span>'
-            : '<span style="color:#CCC;font-style:italic;font-weight:400;">â‚¹</span>');
+            : '<span style="color:#CCC;font-style:italic;font-weight:400;">&#x20B9;</span>');
 
         var modeEl = document.getElementById('ade_rcg_r_mode');
         if (modeEl) modeEl.textContent = payMode ? ('(' + payMode + ')') : '';
@@ -7507,7 +7507,7 @@ fetchNotifications();
                     'â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”',
                     'ðŸ“‹ *Receipt No:* ' + rcptLabel,
                     'ðŸ‘¤ *Donor:* ' + (name || 'â€”'),
-                    'ðŸ’° *Amount:* â‚¹' + amtFmt,
+                    'ðŸ’° *Amount:* &#x20B9;' + amtFmt,
                     'ðŸ“… *Date:* ' + (dateStr || 'â€”'),
                     'ðŸ’³ *Payment:* ' + payMode,
                     'â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”',
@@ -7924,7 +7924,7 @@ window.contribExportExcel=function(){
   if(_contribs.length===0){alert('No contribution records to export.');return;}
   if(typeof XLSX==='undefined'){alert('Excel library not loaded. Please refresh the page.');return;}
   
-  var rows=[['#','Contributor Name','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Total (â‚¹)']];
+  var rows=[['#','Contributor Name','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Total (&#x20B9;)']];
   var groups={};
   _contribs.forEach(function(c){
     var n = (c.name||'').trim().toUpperCase();
