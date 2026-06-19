@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <script>
-/* Portable API base: strip hardcoded localhost:3000 → relative URL on any host */
+/* Portable API base: strip hardcoded localhost:3000 â†’ relative URL on any host */
 (function() {
   var _f = window.fetch.bind(window);
   window.fetch = function(url, opts) {
@@ -19,7 +19,7 @@ window.fixUrl = function(url) {
 };
 </script>
 <script>
-/* Canvas image compressor — used by all admin photo upload handlers */
+/* Canvas image compressor â€” used by all admin photo upload handlers */
 window._compressImage = function(file, targetKB, callback) {
   var MAX_BYTES = (targetKB || 950) * 1024;
   var img = new Image();
@@ -51,7 +51,7 @@ window._fmtBytesA = function(b) {
   return b < 1024 ? b + ' B' : b < 1048576 ? (b/1024).toFixed(1) + ' KB' : (b/1048576).toFixed(2) + ' MB';
 };
 </script>
-    <!-- FILE:// REDIRECT — if opened as a local file, switch to the server -->
+    <!-- FILE:// REDIRECT â€” if opened as a local file, switch to the server -->
     <script>
       if (window.location.protocol === 'file:') {
         var page = window.location.pathname.split('/').pop();
@@ -499,7 +499,7 @@ window._fmtBytesA = function(b) {
             color: #999;
         }
         
-        /* ── Admin Passbook Receipts styles ───────────────────────────── */
+        /* â”€â”€ Admin Passbook Receipts styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         #adminPbLightbox {
             display: none;
             position: fixed;
@@ -561,7 +561,7 @@ window._fmtBytesA = function(b) {
             font-family: monospace;
         }
 
-        /* ── Expenses Management styles ─────────────────────────────────── */
+        /* â”€â”€ Expenses Management styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         .exp-summary-strip {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -625,7 +625,7 @@ window._fmtBytesA = function(b) {
             border-bottom: 1px dashed #F0C0A0;
         }
 
-        /* ── Balance Sheet styles ─────────────────────────────────────── */
+        /* â”€â”€ Balance Sheet styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         .bs-year-tabs {
             display: flex;
             gap: 10px;
@@ -737,10 +737,10 @@ window._fmtBytesA = function(b) {
             gap: 18px;
             margin-bottom: 24px;
         }
-        /* ── Admin hamburger: hidden on desktop, shown on mobile ── */
+        /* â”€â”€ Admin hamburger: hidden on desktop, shown on mobile â”€â”€ */
         #adminHamburger { display: none; }
 
-        /* ── Admin Mobile Responsive (single, consolidated block) ── */
+        /* â”€â”€ Admin Mobile Responsive (single, consolidated block) â”€â”€ */
         @media (max-width: 968px) {
             #adminHamburger {
                 display: flex !important;
@@ -777,7 +777,7 @@ window._fmtBytesA = function(b) {
             .card-header     { flex-wrap: wrap; gap: 8px; }
         }
 
-        /* ===== ADMIN MOBILE UX â€” injected ===== */
+        /* ===== ADMIN MOBILE UX Ã¢â‚¬â€ injected ===== */
         /* iOS input zoom prevention */
         .admin-content input, .admin-content select, .admin-content textarea,
         .modal-content input, .modal-content select, .modal-content textarea,
@@ -788,8 +788,8 @@ window._fmtBytesA = function(b) {
         .btn, .btn-small   { min-height: 44px; }
         .btn-icon          { width: 40px; height: 40px; }
 
-        /* Table wrappers â€“ horizontal scroll on mobile */
-        /* Table wrappers â€“ horizontal scroll on mobile */
+        /* Table wrappers Ã¢â‚¬â€œ horizontal scroll on mobile */
+        /* Table wrappers Ã¢â‚¬â€œ horizontal scroll on mobile */
         .admin-card { overflow-x: hidden; }
         .admin-table { min-width: unset; }
 
@@ -844,13 +844,13 @@ window._fmtBytesA = function(b) {
             /* Hide profile name on mobile, keep avatar */
             .admin-user-profile > div:not(.admin-avatar) { display: none; }
 
-            /* Stat cards â€“ 2 col on phones */
+            /* Stat cards Ã¢â‚¬â€œ 2 col on phones */
             .admin-stats { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
             .admin-stat-card { padding: 14px 10px !important; flex-direction: column; text-align: center; gap: 8px; }
             .stat-icon { width: 48px; height: 48px; font-size: 1.4rem; margin: 0 auto; }
             .stat-details h3 { font-size: 1.5rem; }
 
-            /* Modals â€“ full-width sheet on mobile */
+            /* Modals Ã¢â‚¬â€œ full-width sheet on mobile */
             .modal-content {
                 padding: 20px 16px !important;
                 width: 100% !important;
@@ -880,7 +880,7 @@ window._fmtBytesA = function(b) {
             .action-btns { flex-wrap: wrap; }
         }
 
-        /* ── Admin Donation Entries Responsiveness Additions ── */
+        /* â”€â”€ Admin Donation Entries Responsiveness Additions â”€â”€ */
         
         /* Prevent iOS auto-zoom on dynamically created modals appended to document.body */
         #adeEditModal input, #adeEditModal select,
@@ -1163,7 +1163,7 @@ window._fmtBytesA = function(b) {
             </style>
 
   <div class="admin-dashboard">
-<button onclick="toggleAdminSidebar()" style="display:none;position:fixed;top:12px;left:12px;z-index:9999;background:var(--primary-color);color:white;border:none;border-radius:8px;padding:8px 12px;font-size:1.2rem;cursor:pointer;" id="mobileMenuBtn">☰</button>
+<button onclick="toggleAdminSidebar()" style="display:none;position:fixed;top:12px;left:12px;z-index:9999;background:var(--primary-color);color:white;border:none;border-radius:8px;padding:8px 12px;font-size:1.2rem;cursor:pointer;" id="mobileMenuBtn">â˜°</button>
         <!-- Sidebar -->
         <aside class="admin-sidebar">
             <div class="admin-sidebar-header">
@@ -1346,7 +1346,7 @@ window._fmtBytesA = function(b) {
                             <div class="stat-details">
                                 <h3 id="dashStatVolunteers"><i class="fas fa-spinner fa-spin" style="font-size:1rem;"></i></h3>
                                 <p>Total Volunteers</p>
-                                <span class="stat-trend" id="dashStatVolunteersTrend">Loading…</span>
+                                <span class="stat-trend" id="dashStatVolunteersTrend">Loadingâ€¦</span>
                             </div>
                         </div>
                         
@@ -1357,7 +1357,7 @@ window._fmtBytesA = function(b) {
                             <div class="stat-details">
                                 <h3 id="dashStatDonations"><i class="fas fa-spinner fa-spin" style="font-size:1rem;"></i></h3>
                                 <p>Total Donations</p>
-                                <span class="stat-trend" id="dashStatDonationsTrend">Loading…</span>
+                                <span class="stat-trend" id="dashStatDonationsTrend">Loadingâ€¦</span>
                             </div>
                         </div>
                         
@@ -1368,7 +1368,7 @@ window._fmtBytesA = function(b) {
                             <div class="stat-details">
                                 <h3 id="dashStatEvents"><i class="fas fa-spinner fa-spin" style="font-size:1rem;"></i></h3>
                                 <p>Upcoming Events</p>
-                                <span class="stat-trend" id="dashStatEventsTrend">Loading…</span>
+                                <span class="stat-trend" id="dashStatEventsTrend">Loadingâ€¦</span>
                             </div>
                         </div>
                         
@@ -1379,7 +1379,7 @@ window._fmtBytesA = function(b) {
                             <div class="stat-details">
                                 <h3 id="dashStatGallery"><i class="fas fa-spinner fa-spin" style="font-size:1rem;"></i></h3>
                                 <p>Gallery Photos</p>
-                                <span class="stat-trend" id="dashStatGalleryTrend">Loading…</span>
+                                <span class="stat-trend" id="dashStatGalleryTrend">Loadingâ€¦</span>
                             </div>
                         </div>
                     </div>
@@ -1579,7 +1579,7 @@ window._fmtBytesA = function(b) {
                         </div>
                     </div>
                 </div>
-                <!-- ══════════ END DONOR SEARCH SECTION ══════════ -->
+                <!-- â•â•â•â•â•â•â•â•â•â• END DONOR SEARCH SECTION â•â•â•â•â•â•â•â•â•â• -->
 
 
                 <!-- Users Management Section -->
@@ -1684,7 +1684,7 @@ window._fmtBytesA = function(b) {
 
                             <!-- Search bar -->
                             <div style="margin-bottom:14px;">
-                                <input type="text" id="volSearchInput" placeholder="🔍 Search by name or username…"
+                                <input type="text" id="volSearchInput" placeholder="ðŸ” Search by name or usernameâ€¦"
                                     style="width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.92rem;box-sizing:border-box;"
                                     oninput="volFilter()">
                             </div>
@@ -1703,7 +1703,7 @@ window._fmtBytesA = function(b) {
                                         </tr>
                                     </thead>
                                     <tbody id="volTbody">
-                                        <tr><td colspan="9" style="text-align:center;color:#aaa;padding:30px;">Loading volunteers…</td></tr>
+                                        <tr><td colspan="9" style="text-align:center;color:#aaa;padding:30px;">Loading volunteersâ€¦</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -1895,7 +1895,7 @@ window._fmtBytesA = function(b) {
                     </div>
                 </div>
 
-                <!-- ═══════════ Pauti Books Section ═══════════ -->
+                <!-- â•â•â•â•â•â•â•â•â•â•â• Pauti Books Section â•â•â•â•â•â•â•â•â•â•â• -->
                 <div id="pautiBooks" class="content-section">
                     <div class="admin-card">
                         <div class="card-header">
@@ -1909,7 +1909,7 @@ window._fmtBytesA = function(b) {
                             <i class="fas fa-magic" style="color:#3949AB;font-size:1.3rem;"></i>
                             <div>
                                 <strong style="color:#1A237E;font-size:.92rem;">Automatic Sequential Assignment</strong>
-                                <p style="margin:2px 0 0;font-size:.83rem;color:#555;">Books are created automatically as volunteers submit slips. Every submission claims the next available slip number — no manual assignment needed.</p>
+                                <p style="margin:2px 0 0;font-size:.83rem;color:#555;">Books are created automatically as volunteers submit slips. Every submission claims the next available slip number â€” no manual assignment needed.</p>
                                 <span id="pautiGlobalStats" style="font-size:.8rem;color:#3949AB;font-weight:600;"></span>
                             </div>
                         </div>
@@ -1959,7 +1959,7 @@ window._fmtBytesA = function(b) {
                     </div>
                 </div>
 
-                <!-- ═══════════ Balance/Pending Recovery Section ═══════════ -->
+                <!-- â•â•â•â•â•â•â•â•â•â•â• Balance/Pending Recovery Section â•â•â•â•â•â•â•â•â•â•â• -->
                 <div id="balanceRecovery" class="content-section">
                     <div class="admin-card">
                         <div class="card-header">
@@ -2088,7 +2088,7 @@ window._fmtBytesA = function(b) {
                 </div>
 
                 <!-- Settings Section -->
-                <!-- ═══════════ Upload Excel Section ═══════════ -->
+                <!-- â•â•â•â•â•â•â•â•â•â•â• Upload Excel Section â•â•â•â•â•â•â•â•â•â•â• -->
                 <div id="donations" class="content-section">
                     <!-- Quick Actions Row -->
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:28px;">
@@ -2121,7 +2121,7 @@ window._fmtBytesA = function(b) {
                     <!-- Upload Card -->
                     <div class="admin-card" id="donUploadCard">
                         <div class="card-header">
-                            <h3><i class="fas fa-file-excel" style="color:#1D6F42;margin-right:8px;"></i>Upload Excel — Donation Records
+                            <h3><i class="fas fa-file-excel" style="color:#1D6F42;margin-right:8px;"></i>Upload Excel â€” Donation Records
                                 <span id="donExplorerRecordBadge" style="display:none;margin-left:10px;background:#E8F5E9;color:#1B5E20;font-size:.72rem;padding:3px 10px;border-radius:16px;font-weight:700;"></span>
                             </h3>
                             
@@ -2163,7 +2163,7 @@ window._fmtBytesA = function(b) {
                         <div id="donUploadStatus" style="display:none;margin-top:14px;padding:12px 16px;border-radius:8px;font-weight:500;"></div>
                         <div id="donUploadProgress" style="display:none;margin-top:10px;">
                             <div style="background:#e0e0e0;border-radius:6px;height:8px;"><div id="donProgressBar" style="background:#4CAF50;height:100%;border-radius:6px;width:0%;transition:width .3s;"></div></div>
-                            <p id="donProgressLabel" style="font-size:.82rem;color:#555;margin:4px 0 0;">Parsing file…</p>
+                            <p id="donProgressLabel" style="font-size:.82rem;color:#555;margin:4px 0 0;">Parsing fileâ€¦</p>
                         </div>
                     </div>
 
@@ -2172,7 +2172,7 @@ window._fmtBytesA = function(b) {
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;">
                             <div class="admin-stat-card"><div class="stat-icon blue"><i class="fas fa-users"></i></div><div class="stat-details"><h3 id="donStatTotal">0</h3><p>Total Records</p></div></div>
                             <div class="admin-stat-card"><div class="stat-icon green"><i class="fas fa-filter"></i></div><div class="stat-details"><h3 id="donStatFiltered">0</h3><p>Matching Filters</p></div></div>
-                            <div class="admin-stat-card"><div class="stat-icon orange"><i class="fas fa-rupee-sign"></i></div><div class="stat-details"><h3 id="donStatSum">₹0</h3><p>Filtered Total Amount</p></div></div>
+                            <div class="admin-stat-card"><div class="stat-icon orange"><i class="fas fa-rupee-sign"></i></div><div class="stat-details"><h3 id="donStatSum">â‚¹0</h3><p>Filtered Total Amount</p></div></div>
                             <div class="admin-stat-card"><div class="stat-icon purple"><i class="fas fa-columns"></i></div><div class="stat-details"><h3 id="donStatCols">0</h3><p>Columns Detected</p></div></div>
                         </div>
                     </div>
@@ -2192,7 +2192,7 @@ window._fmtBytesA = function(b) {
                                     <i class="fas fa-map-marker-alt" style="color:var(--primary-color);"></i> Location
                                     <span id="donLocHint" style="font-size:.72rem;color:#aaa;font-weight:400;text-transform:none;letter-spacing:0;"></span>
                                 </label>
-                                <input type="text" id="donLocSearch" placeholder="Road, landmark, ward…"
+                                <input type="text" id="donLocSearch" placeholder="Road, landmark, wardâ€¦"
                                     style="width:100%;padding:9px 13px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:.9rem;transition:border-color .2s;box-sizing:border-box;"
                                     onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='#e0e0e0'"
                                     oninput="donApplyFilters()">
@@ -2203,7 +2203,7 @@ window._fmtBytesA = function(b) {
                                     <i class="fas fa-building" style="color:#3949AB;"></i> Landmark
                                     <span id="donLandHint" style="font-size:.72rem;color:#aaa;font-weight:400;text-transform:none;letter-spacing:0;"></span>
                                 </label>
-                                <input type="text" id="donLandSearch" placeholder="Building, society, complex…"
+                                <input type="text" id="donLandSearch" placeholder="Building, society, complexâ€¦"
                                     style="width:100%;padding:9px 13px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:.9rem;transition:border-color .2s;box-sizing:border-box;"
                                     onfocus="this.style.borderColor='#3949AB'" onblur="this.style.borderColor='#e0e0e0'"
                                     oninput="donApplyFilters()">
@@ -2215,12 +2215,12 @@ window._fmtBytesA = function(b) {
                                     <span id="donAmtDetected" style="font-size:.72rem;color:#aaa;font-weight:400;text-transform:none;letter-spacing:0;"></span>
                                 </label>
                                 <div style="display:flex;gap:8px;align-items:center;">
-                                    <input type="number" id="donAmtMin" placeholder="Min ₹" min="0"
+                                    <input type="number" id="donAmtMin" placeholder="Min â‚¹" min="0"
                                         style="flex:1;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:.9rem;transition:border-color .2s;box-sizing:border-box;"
                                         onfocus="this.style.borderColor='#E67E22'" onblur="this.style.borderColor='#e0e0e0'"
                                         oninput="donApplyFilters()">
-                                    <span style="color:#bbb;font-size:.9rem;">–</span>
-                                    <input type="number" id="donAmtMax" placeholder="Max ₹" min="0"
+                                    <span style="color:#bbb;font-size:.9rem;">â€“</span>
+                                    <input type="number" id="donAmtMax" placeholder="Max â‚¹" min="0"
                                         style="flex:1;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:.9rem;transition:border-color .2s;box-sizing:border-box;"
                                         onfocus="this.style.borderColor='#E67E22'" onblur="this.style.borderColor='#e0e0e0'"
                                         oninput="donApplyFilters()">
@@ -2229,12 +2229,12 @@ window._fmtBytesA = function(b) {
                         </div>
                     </div>
 
-                    <!-- Results Table — grouped by year -->
+                    <!-- Results Table â€” grouped by year -->
                     <div class="admin-card" id="donTableCard" style="display:none;">
                         <div class="card-header">
                             <h3 id="donTableTitle"><i class="fas fa-table" style="color:var(--primary-color);margin-right:8px;"></i>Donation Records</h3>
                             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                                <input type="text" id="donGlobalSearch" placeholder="🔍 Global search…"
+                                <input type="text" id="donGlobalSearch" placeholder="ðŸ” Global searchâ€¦"
                                     style="padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.88rem;width:200px;" oninput="donApplyFilters()">
                                 <button class="btn btn-small" style="background:#1D6F42;color:#fff;" onclick="donExportExcel()">
                                     <i class="fas fa-file-excel"></i> Export to Excel
@@ -2256,7 +2256,7 @@ window._fmtBytesA = function(b) {
 
                 <!-- Settings Section -->
                 
-                <!-- ═══════════ MY PROFILE SECTION (ADMIN) ═══════════ -->
+                <!-- â•â•â•â•â•â•â•â•â•â•â• MY PROFILE SECTION (ADMIN) â•â•â•â•â•â•â•â•â•â•â• -->
                 <div id="myprofile" class="content-section">
                     <div class="page-title">
                         <h1><i class="fas fa-user-circle" style="color:var(--primary-color);margin-right:10px;"></i>My Profile</h1>
@@ -2301,12 +2301,12 @@ window._fmtBytesA = function(b) {
                         </form>
                     </div>
 
-                    <!-- ═══════════ GOOGLE MAPS QR CONFIG CARD ═══════════ -->
+                    <!-- â•â•â•â•â•â•â•â•â•â•â• GOOGLE MAPS QR CONFIG CARD â•â•â•â•â•â•â•â•â•â•â• -->
                     <div style="margin-top:28px;" id="qrConfigCard">
                       <div class="admin-card">
                         <div class="card-header" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                           <h3 style="display:flex;align-items:center;gap:8px;margin:0;"><i class="fab fa-google" style="color:#EA4335;"></i> Google Maps QR &amp; Review Configuration</h3>
-                          <span style="font-size:.78rem;color:#aaa;font-weight:400;">— Displayed on the public landing page</span>
+                          <span style="font-size:.78rem;color:#aaa;font-weight:400;">â€” Displayed on the public landing page</span>
                         </div>
                         <div style="display:flex;flex-wrap:wrap;gap:28px;margin-top:20px;align-items:flex-start;">
 
@@ -2318,7 +2318,7 @@ window._fmtBytesA = function(b) {
                               <small style="color:#888;font-size:.75rem;">Paste your Google Maps business profile URL here.</small>
                             </div>
                             <div class="form-group">
-                              <label><i class="fas fa-search-location" style="color:#4285F4;margin-right:6px;"></i>Google Place ID <span style="color:#aaa;font-size:.78rem;font-weight:400;">(optional — for direct review link)</span></label>
+                              <label><i class="fas fa-search-location" style="color:#4285F4;margin-right:6px;"></i>Google Place ID <span style="color:#aaa;font-size:.78rem;font-weight:400;">(optional â€” for direct review link)</span></label>
                               <input type="text" id="qrPlaceId" class="form-control" placeholder="ChIJxxxxxxxxxxxxxxxx">
                               <small style="color:#888;font-size:.75rem;">Find yours at <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" style="color:#4285F4;">Place ID Finder</a>. If entered, the QR will link directly to the write-review page.</small>
                             </div>
@@ -2344,11 +2344,11 @@ window._fmtBytesA = function(b) {
                             <div style="background:#fff;border-radius:16px;padding:16px;border:1.5px solid #eee;display:inline-block;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
                               <img id="qrPreviewImg" src="" alt="QR Preview" style="display:none;width:200px;height:200px;border-radius:8px;">
                               <div id="qrPreviewLoading" style="width:200px;height:200px;display:flex;align-items:center;justify-content:center;">
-                                <span style="font-size:.8rem;color:#ccc;">Enter URL above…</span>
+                                <span style="font-size:.8rem;color:#ccc;">Enter URL aboveâ€¦</span>
                               </div>
                               <div id="qrPreviewError" style="display:none;width:200px;padding:16px;text-align:center;">
                                 <i class="fas fa-exclamation-triangle" style="color:#E65100;font-size:1.5rem;display:block;margin-bottom:6px;"></i>
-                                <p style="font-size:.75rem;color:#888;margin:0;">URL too long for QR.<br>Try a short link (e.g. maps.app.goo.gl/…)</p>
+                                <p style="font-size:.75rem;color:#888;margin:0;">URL too long for QR.<br>Try a short link (e.g. maps.app.goo.gl/â€¦)</p>
                               </div>
                             </div>
                             <p style="font-size:.72rem;color:#aaa;margin-top:8px;">Auto-updates as you type the URL</p>
@@ -2379,7 +2379,7 @@ window._fmtBytesA = function(b) {
                     row.style.cssText = 'display:flex;gap:6px;align-items:center;';
                     var inp = document.createElement('input');
                     inp.type = 'text'; inp.className = 'form-control';
-                    inp.placeholder = 'e.g. Amazing festival! Ganpati Bappa Morya 🙏';
+                    inp.placeholder = 'e.g. Amazing festival! Ganpati Bappa Morya ðŸ™';
                     inp.style.cssText = 'flex:1;font-size:.85rem;';
                     if (val) inp.value = val;
                     var del = document.createElement('button');
@@ -2401,7 +2401,7 @@ window._fmtBytesA = function(b) {
                     img.style.display = 'none';
                     if (errBox) errBox.style.display = 'none';
                     if (loader) { loader.style.display = 'flex'; loader.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:1.5rem;color:#ccc;"></i>'; }
-                    // Use QR Server API — no JS library required
+                    // Use QR Server API â€” no JS library required
                     var apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data=' + encodeURIComponent(url);
                     img.onload = function() {
                       if (loader) loader.style.display = 'none';
@@ -2423,12 +2423,12 @@ window._fmtBytesA = function(b) {
                     document.querySelectorAll('#qrTemplateList input[type=text]').forEach(function(i){ var v=i.value.trim(); if(v) templates.push(v); });
                     var btn = document.getElementById('qrSaveBtn');
                     var msg = document.getElementById('qrSaveMsg');
-                    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+                    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Savingâ€¦';
                     try {
                       var res = await fetch('/api/qr-config', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ mapsUrl:url.trim(), placeId:placeId.trim(), reviewTemplates:templates }) });
                       var data = await res.json();
                       msg.style.display = 'inline';
-                      if (data.success) { msg.style.color='#27ae60'; msg.innerHTML='✅ Saved! QR is now live on the landing page.'; }
+                      if (data.success) { msg.style.color='#27ae60'; msg.innerHTML='âœ… Saved! QR is now live on the landing page.'; }
                       else { msg.style.color='#dc2626'; msg.textContent='Error: '+(data.message||'Unknown'); }
                     } catch(e) { msg.style.display='inline'; msg.style.color='#dc2626'; msg.textContent='Network error.'; }
                     btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save &amp; Publish to Landing Page';
@@ -2458,13 +2458,13 @@ window._fmtBytesA = function(b) {
                         <button class="btn btn-primary">Save Settings</button>
                     </div>
                 </div>
-                <!-- ═══════════ Donation Data Entries (Admin) ═══════════ -->
+                <!-- â•â•â•â•â•â•â•â•â•â•â• Donation Data Entries (Admin) â•â•â•â•â•â•â•â•â•â•â• -->
                 <div id="donationEntriesStatic" class="content-section">
                     <div class="admin-card">
                         <div class="card-header">
                             <h3><i class="fas fa-file-invoice-dollar" style="color:var(--primary-color);margin-right:8px;"></i>All Donation Entries</h3>
                             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                                <input type="text" id="deAdmSearch" placeholder="🔍 Search donor, landmark…"
+                                <input type="text" id="deAdmSearch" placeholder="ðŸ” Search donor, landmarkâ€¦"
                                     style="padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.88rem;width:200px;"
                                     oninput="deAdmApplyFilter()">
                                 <button class="btn btn-primary btn-small" onclick="loadAdminDonationEntries()">
@@ -2483,9 +2483,9 @@ window._fmtBytesA = function(b) {
 
                         <!-- Stats row -->
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;">
-                            <div class="admin-stat-card"><div class="stat-icon blue"><i class="fas fa-receipt"></i></div><div class="stat-details"><h3 id="deAdmCount">—</h3><p>Total Entries</p></div></div>
-                            <div class="admin-stat-card"><div class="stat-icon green"><i class="fas fa-rupee-sign"></i></div><div class="stat-details"><h3 id="deAdmTotal">—</h3><p>Total Collected</p></div></div>
-                            <div class="admin-stat-card"><div class="stat-icon orange"><i class="fas fa-camera"></i></div><div class="stat-details"><h3 id="deAdmWithPhoto">—</h3><p>With Receipt Photo</p></div></div>
+                            <div class="admin-stat-card"><div class="stat-icon blue"><i class="fas fa-receipt"></i></div><div class="stat-details"><h3 id="deAdmCount">â€”</h3><p>Total Entries</p></div></div>
+                            <div class="admin-stat-card"><div class="stat-icon green"><i class="fas fa-rupee-sign"></i></div><div class="stat-details"><h3 id="deAdmTotal">â€”</h3><p>Total Collected</p></div></div>
+                            <div class="admin-stat-card"><div class="stat-icon orange"><i class="fas fa-camera"></i></div><div class="stat-details"><h3 id="deAdmWithPhoto">â€”</h3><p>With Receipt Photo</p></div></div>
                         </div>
 
                         <div style="overflow-x:auto;">
@@ -2510,7 +2510,7 @@ window._fmtBytesA = function(b) {
                         </div>
                     </div>
                 </div>
-                <!-- ═══════════ Gallery Section (Admin) ═══════════ -->
+                <!-- â•â•â•â•â•â•â•â•â•â•â• Gallery Section (Admin) â•â•â•â•â•â•â•â•â•â•â• -->
                 <div id="gallery" class="content-section">
                     <div class="admin-card">
                         <div class="card-header">
@@ -2525,11 +2525,11 @@ window._fmtBytesA = function(b) {
                     </div>
                 </div>
 
-                <!-- ═══════════ Events Section (Admin) ═══════════ -->
+                <!-- â•â•â•â•â•â•â•â•â•â•â• Events Section (Admin) â•â•â•â•â•â•â•â•â•â•â• -->
                 <div id="events" class="content-section">
 
                     <!-- Active Donation Year Configuration replaced by Manage Donation Years -->
-                    <!-- ══════════ MANAGE DONATION YEARS ══════════ -->
+                    <!-- â•â•â•â•â•â•â•â•â•â• MANAGE DONATION YEARS â•â•â•â•â•â•â•â•â•â• -->
                     <div class="admin-card" style="margin-bottom:20px; border-left:4px solid #f39c12;">
                         <div class="card-header">
                             <h3><i class="fas fa-calendar-check" style="color:#f39c12;margin-right:8px;"></i>Manage Donation Years</h3>
@@ -2556,7 +2556,7 @@ window._fmtBytesA = function(b) {
                                     </tr>
                                 </thead>
                                 <tbody id="adminYearsTbody">
-                                    <tr><td colspan="3" style="text-align:center;color:#aaa;padding:30px;">Loading…</td></tr>
+                                    <tr><td colspan="3" style="text-align:center;color:#aaa;padding:30px;">Loadingâ€¦</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -2571,73 +2571,73 @@ window._fmtBytesA = function(b) {
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;">
                             <div>
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Top Left Text</label>
-                                <input type="text" id="rfTopLeft" class="admin-input" placeholder="स्थापना १९९१" style="width:100%;margin:0;">
+                                <input type="text" id="rfTopLeft" class="admin-input" placeholder="à¤¸à¥à¤¥à¤¾à¤ªà¤¨à¤¾ à¥§à¥¯à¥¯à¥§" style="width:100%;margin:0;">
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Top Center Text</label>
-                                <input type="text" id="rfTopCenter" class="admin-input" placeholder="॥ श्री गजानन प्रसन्न ॥" style="width:100%;margin:0;">
+                                <input type="text" id="rfTopCenter" class="admin-input" placeholder="à¥¥ à¤¶à¥à¤°à¥€ à¤—à¤œà¤¾à¤¨à¤¨ à¤ªà¥à¤°à¤¸à¤¨à¥à¤¨ à¥¥" style="width:100%;margin:0;">
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Top Right Prefix</label>
-                                <input type="text" id="rfTopRight" class="admin-input" placeholder="वर्ष :" style="width:100%;margin:0;">
+                                <input type="text" id="rfTopRight" class="admin-input" placeholder="à¤µà¤°à¥à¤· :" style="width:100%;margin:0;">
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Receipt Year</label>
-                                <input type="text" id="rfYear" class="admin-input" placeholder="२०२६-२७" style="width:100%;margin:0;">
+                                <input type="text" id="rfYear" class="admin-input" placeholder="à¥¨à¥¦à¥¨à¥¬-à¥¨à¥­" style="width:100%;margin:0;">
                             </div>
                         </div>
 
                         <div style="margin-bottom:15px;">
                             <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Main Title</label>
-                            <input type="text" id="rfTitle" class="admin-input" placeholder="श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ" style="width:100%;margin:0;">
+                            <input type="text" id="rfTitle" class="admin-input" placeholder="à¤¶à¥à¤°à¥€ à¤ªà¤Ÿà¥‡à¤²à¤µà¤¾à¤¡à¥€ à¤¸à¤¾à¤°à¥à¤µà¤œà¤¨à¤¿à¤• à¤—à¤£à¥‡à¤¶à¥‹à¤¤à¥à¤¸à¤µ à¤®à¤‚à¤¡à¤³" style="width:100%;margin:0;">
                         </div>
 
                         <div style="margin-bottom:15px;">
                             <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Address</label>
-                            <input type="text" id="rfAddress" class="admin-input" placeholder="पटेलवाडी, क्लासिक हॉटेलच्या मागे..." style="width:100%;margin:0;">
+                            <input type="text" id="rfAddress" class="admin-input" placeholder="à¤ªà¤Ÿà¥‡à¤²à¤µà¤¾à¤¡à¥€, à¤•à¥à¤²à¤¾à¤¸à¤¿à¤• à¤¹à¥‰à¤Ÿà¥‡à¤²à¤šà¥à¤¯à¤¾ à¤®à¤¾à¤—à¥‡..." style="width:100%;margin:0;">
                         </div>
 
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;">
                             <div>
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Donor Prefix</label>
-                                <input type="text" id="rfDonorPrefix" class="admin-input" placeholder="श्री/श्रीमती" style="width:100%;margin:0;">
+                                <input type="text" id="rfDonorPrefix" class="admin-input" placeholder="à¤¶à¥à¤°à¥€/à¤¶à¥à¤°à¥€à¤®à¤¤à¥€" style="width:100%;margin:0;">
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Donor Suffix</label>
-                                <input type="text" id="rfDonorSuffix" class="admin-input" placeholder="यांचकडून" style="width:100%;margin:0;">
+                                <input type="text" id="rfDonorSuffix" class="admin-input" placeholder="à¤¯à¤¾à¤‚à¤šà¤•à¤¡à¥‚à¤¨" style="width:100%;margin:0;">
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Amount Prefix (Words)</label>
-                                <input type="text" id="rfAmountWords" class="admin-input" placeholder="अक्षरी रुपये" style="width:100%;margin:0;">
+                                <input type="text" id="rfAmountWords" class="admin-input" placeholder="à¤…à¤•à¥à¤·à¤°à¥€ à¤°à¥à¤ªà¤¯à¥‡" style="width:100%;margin:0;">
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Thank You Text</label>
-                                <input type="text" id="rfThankYou" class="admin-input" placeholder="रोख/चेक मिळाले, धन्यवाद !" style="width:100%;margin:0;">
+                                <input type="text" id="rfThankYou" class="admin-input" placeholder="à¤°à¥‹à¤–/à¤šà¥‡à¤• à¤®à¤¿à¤³à¤¾à¤²à¥‡, à¤§à¤¨à¥à¤¯à¤µà¤¾à¤¦ !" style="width:100%;margin:0;">
                             </div>
                         </div>
 
                         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:15px;">
                             <div>
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Sign 1 Role</label>
-                                <input type="text" id="rfSign1Role" class="admin-input" placeholder="अध्यक्ष" style="width:100%;margin:0;">
+                                <input type="text" id="rfSign1Role" class="admin-input" placeholder="à¤…à¤§à¥à¤¯à¤•à¥à¤·" style="width:100%;margin:0;">
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;margin-top:5px;">Sign 1 Name</label>
-                                <input type="text" id="rfSign1Name" class="admin-input" placeholder="जयेश शिंदे" style="width:100%;margin:0;">
+                                <input type="text" id="rfSign1Name" class="admin-input" placeholder="à¤œà¤¯à¥‡à¤¶ à¤¶à¤¿à¤‚à¤¦à¥‡" style="width:100%;margin:0;">
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Sign 2 Role</label>
-                                <input type="text" id="rfSign2Role" class="admin-input" placeholder="सरचिटणीस" style="width:100%;margin:0;">
+                                <input type="text" id="rfSign2Role" class="admin-input" placeholder="à¤¸à¤°à¤šà¤¿à¤Ÿà¤£à¥€à¤¸" style="width:100%;margin:0;">
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;margin-top:5px;">Sign 2 Name</label>
-                                <input type="text" id="rfSign2Name" class="admin-input" placeholder="ध्रुव चीटालीय" style="width:100%;margin:0;">
+                                <input type="text" id="rfSign2Name" class="admin-input" placeholder="à¤§à¥à¤°à¥à¤µ à¤šà¥€à¤Ÿà¤¾à¤²à¥€à¤¯" style="width:100%;margin:0;">
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Sign 3 Role</label>
-                                <input type="text" id="rfSign3Role" class="admin-input" placeholder="खजिनदार" style="width:100%;margin:0;">
+                                <input type="text" id="rfSign3Role" class="admin-input" placeholder="à¤–à¤œà¤¿à¤¨à¤¦à¤¾à¤°" style="width:100%;margin:0;">
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;margin-top:5px;">Sign 3 Name</label>
-                                <input type="text" id="rfSign3Name" class="admin-input" placeholder="रणजीत राजपूत" style="width:100%;margin:0;">
+                                <input type="text" id="rfSign3Name" class="admin-input" placeholder="à¤°à¤£à¤œà¥€à¤¤ à¤°à¤¾à¤œà¤ªà¥‚à¤¤" style="width:100%;margin:0;">
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;">Sign 4 Role</label>
-                                <input type="text" id="rfSign4Role" class="admin-input" placeholder="वसुल करणार" style="width:100%;margin:0;">
+                                <input type="text" id="rfSign4Role" class="admin-input" placeholder="à¤µà¤¸à¥à¤² à¤•à¤°à¤£à¤¾à¤°" style="width:100%;margin:0;">
                                 <label style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;margin-top:5px;">Sign 4 Name</label>
                                 <input type="text" id="rfSign4Name" class="admin-input" placeholder="&nbsp;" style="width:100%;margin:0;">
                             </div>
@@ -2713,7 +2713,7 @@ window._fmtBytesA = function(b) {
                     <!-- About Section Editor (Landing Page) -->
                     <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #9b59b6;">
                         <div class="card-header">
-                            <h3><i class="fas fa-info-circle" style="color:#9b59b6;margin-right:8px;"></i>About Our Mandal – Landing Page Section</h3>
+                            <h3><i class="fas fa-info-circle" style="color:#9b59b6;margin-right:8px;"></i>About Our Mandal â€“ Landing Page Section</h3>
                         </div>
                         <p style="color:#666;font-size:0.9rem;margin:8px 0 16px;">Edit the text and photo shown in the 'About Our Mandal' section on the landing page.</p>
                         <div style="display:flex;flex-direction:column;gap:15px;">
@@ -2935,9 +2935,9 @@ window._fmtBytesA = function(b) {
 
                 </div>
                 
-                <!-- ══════════ END EVENTS SECTION ══════════ -->
+                <!-- â•â•â•â•â•â•â•â•â•â• END EVENTS SECTION â•â•â•â•â•â•â•â•â•â• -->
 
-                <!-- ══════════ T-SHIRT SECTION ══════════ -->
+                <!-- â•â•â•â•â•â•â•â•â•â• T-SHIRT SECTION â•â•â•â•â•â•â•â•â•â• -->
                 <div id="tshirtSection" class="content-section">
                     <div class="page-title">
                         <h1><i class="fas fa-tshirt" style="color:var(--primary-color);margin-right:10px;"></i>T-shirt Section</h1>
@@ -3229,7 +3229,7 @@ window._fmtBytesA = function(b) {
                 <div id="receiptGenerator" class="content-section">
 
                 <style>
-                /* ── Receipt Generator: all styles scoped with .rcg- prefix ── */
+                /* â”€â”€ Receipt Generator: all styles scoped with .rcg- prefix â”€â”€ */
                 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700;900&display=swap');
 
                 .rcg-wrap {
@@ -3240,7 +3240,7 @@ window._fmtBytesA = function(b) {
                 }
                 @media(max-width:1024px){ .rcg-wrap{ grid-template-columns:1fr; } }
 
-                /* ── Entry Form Panel ── */
+                /* â”€â”€ Entry Form Panel â”€â”€ */
                 .rcg-form-card {
                     background:#fff;
                     border-radius:16px;
@@ -3371,7 +3371,7 @@ window._fmtBytesA = function(b) {
                 }
                 .rcg-wa-num-row input:focus { outline:none; border-color:#1A7B43; }
 
-                /* ── Receipt Preview Panel ── */
+                /* â”€â”€ Receipt Preview Panel â”€â”€ */
                 .rcg-preview-card {
                     background:#fff;
                     border-radius:16px;
@@ -3388,7 +3388,7 @@ window._fmtBytesA = function(b) {
                     gap:8px;
                 }
 
-                /* ── The Receipt itself ── */
+                /* â”€â”€ The Receipt itself â”€â”€ */
                 .rcg-receipt {
                     font-family:'Noto Sans Devanagari', 'Mangal', Arial, sans-serif;
                     background:linear-gradient(145deg,#dff0fa 0%,#f0f8ff 40%,#e8f4fc 70%,#cbe8f6 100%);
@@ -3593,46 +3593,46 @@ window._fmtBytesA = function(b) {
 
                 <div class="rcg-wrap">
 
-                    <!-- ── Left: Entry Form ── -->
+                    <!-- â”€â”€ Left: Entry Form â”€â”€ -->
                     <div class="rcg-form-card">
                         <h3><i class="fas fa-file-invoice" style="color:#8B1A1A;"></i> Donor Details</h3>
                         <p class="rcg-sub">Fill in the donor information below and click Generate Receipt.</p>
 
                         <div class="rcg-field">
-                            <label for="rcgReceiptNo">Receipt No. (पावती क्र.)</label>
+                            <label for="rcgReceiptNo">Receipt No. (à¤ªà¤¾à¤µà¤¤à¥€ à¤•à¥à¤°.)</label>
                             <input type="number" id="rcgReceiptNo" placeholder="e.g. 101" min="1">
                         </div>
 
                         <div class="rcg-field">
-                            <label for="rcgYear">Year (वर्ष)</label>
+                            <label for="rcgYear">Year (à¤µà¤°à¥à¤·)</label>
                             <input type="text" id="rcgYear" placeholder="e.g. 2025-26" value="2025-26">
                         </div>
 
                         <div class="rcg-field">
-                            <label for="rcgDonorName">Donor Full Name (श्री/श्रीमती)</label>
+                            <label for="rcgDonorName">Donor Full Name (à¤¶à¥à¤°à¥€/à¤¶à¥à¤°à¥€à¤®à¤¤à¥€)</label>
                             <input type="text" id="rcgDonorName" placeholder="e.g. Ramesh Kumar Sharma">
                         </div>
 
                         <div class="rcg-field">
-                            <label for="rcgAmount">Amount (₹)</label>
+                            <label for="rcgAmount">Amount (â‚¹)</label>
                             <input type="number" id="rcgAmount" placeholder="e.g. 2100" min="1">
                         </div>
 
                         <div class="rcg-field">
-                            <label for="rcgAmountWords">Amount in Words (अक्षरी रुपये) <span style="color:#aaa;font-weight:400;">(auto)</span></label>
+                            <label for="rcgAmountWords">Amount in Words (à¤…à¤•à¥à¤·à¤°à¥€ à¤°à¥à¤ªà¤¯à¥‡) <span style="color:#aaa;font-weight:400;">(auto)</span></label>
                             <input type="text" id="rcgAmountWords" readonly placeholder="Auto-generated...">
                         </div>
 
                         <div class="rcg-field">
-                            <label for="rcgDate">Date (दिनांक)</label>
+                            <label for="rcgDate">Date (à¤¦à¤¿à¤¨à¤¾à¤‚à¤•)</label>
                             <input type="date" id="rcgDate">
                         </div>
 
                         <div class="rcg-field">
                             <label for="rcgPayMode">Payment Mode</label>
                             <select id="rcgPayMode">
-                                <option value="Cash">Cash (रोख)</option>
-                                <option value="Cheque">Cheque (चेक)</option>
+                                <option value="Cash">Cash (à¤°à¥‹à¤–)</option>
+                                <option value="Cheque">Cheque (à¤šà¥‡à¤•)</option>
                                 <option value="UPI">UPI / Online</option>
                             </select>
                         </div>
@@ -3658,7 +3658,7 @@ window._fmtBytesA = function(b) {
                         </div>
                     </div>
 
-                    <!-- ── Right: Receipt Preview ── -->
+                    <!-- â”€â”€ Right: Receipt Preview â”€â”€ -->
                     <div class="rcg-preview-card">
                         <h3><i class="fas fa-eye" style="color:#8B1A1A;"></i> Receipt Preview</h3>
 
@@ -3667,71 +3667,71 @@ window._fmtBytesA = function(b) {
 
                             <!-- Top meta row -->
                             <div class="rcg-r-top">
-                                <span id="ade_rcg_f_receiptTopLeft">स्थापना १९९१</span>
-                                <span class="rcg-r-center">॥ श्री गजानन प्रसन्न ॥</span>
-                                <span class="rcg-r-right">वर्ष : <span id="rcgRYear" class="rcg-placeholder">__</span></span>
+                                <span id="ade_rcg_f_receiptTopLeft">à¤¸à¥à¤¥à¤¾à¤ªà¤¨à¤¾ à¥§à¥¯à¥¯à¥§</span>
+                                <span class="rcg-r-center">à¥¥ à¤¶à¥à¤°à¥€ à¤—à¤œà¤¾à¤¨à¤¨ à¤ªà¥à¤°à¤¸à¤¨à¥à¤¨ à¥¥</span>
+                                <span class="rcg-r-right">à¤µà¤°à¥à¤· : <span id="rcgRYear" class="rcg-placeholder">__</span></span>
                             </div>
 
                             <!-- Organisation title -->
-                            <div class="rcg-r-title">श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ</div>
+                            <div class="rcg-r-title">à¤¶à¥à¤°à¥€ à¤ªà¤Ÿà¥‡à¤²à¤µà¤¾à¤¡à¥€ à¤¸à¤¾à¤°à¥à¤µà¤œà¤¨à¤¿à¤• à¤—à¤£à¥‡à¤¶à¥‹à¤¤à¥à¤¸à¤µ à¤®à¤‚à¤¡à¤³</div>
 
                             <!-- Address -->
                             <div class="rcg-r-addr">
-                                पटेलवाडी, क्लासिक हॉटेलच्या मागे, जुना नागरदास रोड, अंधेरी (पूर्व), मुंबई - ४०००६९
+                                à¤ªà¤Ÿà¥‡à¤²à¤µà¤¾à¤¡à¥€, à¤•à¥à¤²à¤¾à¤¸à¤¿à¤• à¤¹à¥‰à¤Ÿà¥‡à¤²à¤šà¥à¤¯à¤¾ à¤®à¤¾à¤—à¥‡, à¤œà¥à¤¨à¤¾ à¤¨à¤¾à¤—à¤°à¤¦à¤¾à¤¸ à¤°à¥‹à¤¡, à¤…à¤‚à¤§à¥‡à¤°à¥€ (à¤ªà¥‚à¤°à¥à¤µ), à¤®à¥à¤‚à¤¬à¤ˆ - à¥ªà¥¦à¥¦à¥¦à¥¬à¥¯
                             </div>
 
                             <hr class="rcg-r-divider">
 
                             <!-- Receipt no + Date -->
                             <div class="rcg-r-meta">
-                                <span>पावती क्र. : <span id="rcgRReceiptNo" class="rcg-r-meta-val rcg-placeholder">___</span></span>
-                                <span>दिनांक : <span id="rcgRDate" class="rcg-r-meta-val rcg-placeholder">___________</span></span>
+                                <span>à¤ªà¤¾à¤µà¤¤à¥€ à¤•à¥à¤°. : <span id="rcgRReceiptNo" class="rcg-r-meta-val rcg-placeholder">___</span></span>
+                                <span>à¤¦à¤¿à¤¨à¤¾à¤‚à¤• : <span id="rcgRDate" class="rcg-r-meta-val rcg-placeholder">___________</span></span>
                             </div>
 
                             <!-- Donor name -->
                             <div class="rcg-r-donor-row">
-                                <span class="rcg-r-donor-label">श्री/श्रीमती</span>
+                                <span class="rcg-r-donor-label">à¤¶à¥à¤°à¥€/à¤¶à¥à¤°à¥€à¤®à¤¤à¥€</span>
                                 <span class="rcg-r-donor-name" id="rcgRDonorName"><span class="rcg-placeholder">__________________________________</span></span>
-                                <span class="rcg-r-donor-suffix">यांचकडून</span>
+                                <span class="rcg-r-donor-suffix">à¤¯à¤¾à¤‚à¤šà¤•à¤¡à¥‚à¤¨</span>
                             </div>
 
                             <!-- Amount in words -->
                             <div class="rcg-r-words-row">
-                                <span class="rcg-r-words-label">अक्षरी रुपये</span>
+                                <span class="rcg-r-words-label">à¤…à¤•à¥à¤·à¤°à¥€ à¤°à¥à¤ªà¤¯à¥‡</span>
                                 <span class="rcg-r-words-val" id="rcgRAmtWords"><span class="rcg-placeholder">______________________________</span></span>
                             </div>
 
                             <!-- Thank you line -->
                             <div class="rcg-r-thanks-row">
                                 <span class="rcg-r-thanks-line"></span>
-                                <span class="rcg-r-thanks-label">रोख/चेक मिळाले, धन्यवाद !</span>
+                                <span class="rcg-r-thanks-label">à¤°à¥‹à¤–/à¤šà¥‡à¤• à¤®à¤¿à¤³à¤¾à¤²à¥‡, à¤§à¤¨à¥à¤¯à¤µà¤¾à¤¦ !</span>
                             </div>
 
                             <!-- Rupee amount box -->
                             <div class="rcg-r-amt-row">
-                                <div class="rcg-r-amt-box" id="rcgRAmtBox"><span class="rcg-placeholder">₹</span></div>
+                                <div class="rcg-r-amt-box" id="rcgRAmtBox"><span class="rcg-placeholder">â‚¹</span></div>
                                 <span class="rcg-r-paymode" id="rcgRPayMode"></span>
                             </div>
 
                             <!-- Signatures -->
                             <div class="rcg-r-sigs">
                                 <div class="rcg-r-sig">
-                                    <div class="rcg-r-sig-title">अध्यक्ष</div>
+                                    <div class="rcg-r-sig-title">à¤…à¤§à¥à¤¯à¤•à¥à¤·</div>
                                     <div class="rcg-r-sig-line"></div>
-                                    <div>जयेश शिंदे</div>
+                                    <div>à¤œà¤¯à¥‡à¤¶ à¤¶à¤¿à¤‚à¤¦à¥‡</div>
                                 </div>
                                 <div class="rcg-r-sig">
-                                    <div class="rcg-r-sig-title">सरचिटणीस</div>
+                                    <div class="rcg-r-sig-title">à¤¸à¤°à¤šà¤¿à¤Ÿà¤£à¥€à¤¸</div>
                                     <div class="rcg-r-sig-line"></div>
-                                    <div><span class="sg-marathi" translate="no">ध्रुव चीटालीय</span><span class="sg-english" translate="no" style="display:none;">Dhruv Chotaliya</span></div>
+                                    <div><span class="sg-marathi" translate="no">à¤§à¥à¤°à¥à¤µ à¤šà¥€à¤Ÿà¤¾à¤²à¥€à¤¯</span><span class="sg-english" translate="no" style="display:none;">Dhruv Chotaliya</span></div>
                                 </div>
                                 <div class="rcg-r-sig">
-                                    <div class="rcg-r-sig-title">खजिनदार</div>
+                                    <div class="rcg-r-sig-title">à¤–à¤œà¤¿à¤¨à¤¦à¤¾à¤°</div>
                                     <div class="rcg-r-sig-line"></div>
-                                    <div>रणजीत राजपूत</div>
+                                    <div>à¤°à¤£à¤œà¥€à¤¤ à¤°à¤¾à¤œà¤ªà¥‚à¤¤</div>
                                 </div>
                                 <div class="rcg-r-sig">
-                                    <div class="rcg-r-sig-title">वसुल करणार</div>
+                                    <div class="rcg-r-sig-title">à¤µà¤¸à¥à¤² à¤•à¤°à¤£à¤¾à¤°</div>
                                     <div class="rcg-r-sig-line"></div>
                                     <div>&nbsp;</div>
                                 </div>
@@ -3900,18 +3900,18 @@ window._fmtBytesA = function(b) {
         </div>
     </div>
 
-    <!-- ── Admin Passbook Lightbox ───────────────────────────────────── -->
+    <!-- â”€â”€ Admin Passbook Lightbox â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <div id="adminPbLightbox">
         <span id="adminPbLightboxClose" onclick="closeAdminPbLightbox()">&times;</span>
         <img id="adminPbLightboxImg" src="" alt="Passbook image">
     </div>
 
-    <!-- ── Admin Edit Amount Modal ────────────────────────────────── -->
+    <!-- â”€â”€ Admin Edit Amount Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <div id="adminEditModal">
         <div class="adm-edit-box">
             <h4><i class="fas fa-edit" style="color:var(--primary-color);margin-right:8px;"></i>Edit Donation Amount</h4>
-            <p class="adm-edit-sub" id="admEditSubtitle">Receipt ID: —</p>
-            <input type="number" id="admEditAmountInput" placeholder="New amount (₹)" min="1">
+            <p class="adm-edit-sub" id="admEditSubtitle">Receipt ID: â€”</p>
+            <input type="number" id="admEditAmountInput" placeholder="New amount (â‚¹)" min="1">
             <div class="adm-edit-actions">
                 <button class="btn" style="background:#eee;color:#555;" onclick="closeAdminEdit()">Cancel</button>
                 <button class="btn btn-primary" id="admEditSaveBtn" onclick="saveAdminEditAmount()">Save</button>
@@ -3919,7 +3919,7 @@ window._fmtBytesA = function(b) {
         </div>
     </div>
 
-    <!-- ── Expenses Add / Edit Modal ──────────────────────────────────── -->
+    <!-- â”€â”€ Expenses Add / Edit Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <div id="expenseModal" class="modal">
         <div class="modal-content" style="max-width:680px;">
             <div class="modal-header">
@@ -4024,7 +4024,7 @@ window._fmtBytesA = function(b) {
             </form>
         </div>
     </div>
-    <!-- ── Balance Sheet Add Year Modal ──────────────────────────────── -->
+    <!-- â”€â”€ Balance Sheet Add Year Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <div id="financialModal" class="modal">
         <div class="modal-content" style="max-width:500px;">
             <div class="modal-header">
@@ -4058,7 +4058,7 @@ window._fmtBytesA = function(b) {
             </div>
             <form id="assignBookForm" onsubmit="saveAssignBook(event)">
                 <div class="form-group">
-                    <label>Book Number <span style="color:red;">*</span><small style="color:#888;margin-left:6px;">(1–50)</small></label>
+                    <label>Book Number <span style="color:red;">*</span><small style="color:#888;margin-left:6px;">(1â€“50)</small></label>
                     <input type="number" id="abBookNumber" min="1" max="50" placeholder="e.g. 1" required style="font-size:1.1rem;font-weight:600;">
                     <small id="abSlipRange" style="color:#888;display:block;margin-top:4px;"></small>
                 </div>
@@ -4110,7 +4110,7 @@ window._fmtBytesA = function(b) {
             </form>
         </div>
     </div>
-    <!-- ── Edit Donation Modal ─────────────────────────────────────────────── -->
+    <!-- â”€â”€ Edit Donation Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <div id="editDonationModal" class="modal">
         <div class="modal-content" style="max-width:600px;max-height:85vh;overflow-y:auto;">
             <div class="modal-header">
@@ -4129,10 +4129,10 @@ window._fmtBytesA = function(b) {
     </div>
 
     <script src="admin.js?v=4"></script>
-    <script src="donations.js?v=4"></script>
+    <script src="donations.js?v=5"></script>
     <script src="tshirts.js?v=1780009246876"></script>
 
-    <!-- ══════════ BALANCE/PENDING RECOVERY EDIT MODAL ══════════ -->
+    <!-- â•â•â•â•â•â•â•â•â•â• BALANCE/PENDING RECOVERY EDIT MODAL â•â•â•â•â•â•â•â•â•â• -->
     <div id="brEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
         <div style="background:var(--white);border-radius:16px;padding:32px 28px;max-width:460px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.25);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
@@ -4193,7 +4193,7 @@ window._fmtBytesA = function(b) {
         </div>
     </div>
 
-    <!-- ══════════ DONATION ENTRIES ADMIN SECTION HTML ══════════ -->
+    <!-- â•â•â•â•â•â•â•â•â•â• DONATION ENTRIES ADMIN SECTION HTML â•â•â•â•â•â•â•â•â•â• -->
     <!-- Section injected via JS into admin-content -->
     <script>
       document.addEventListener('DOMContentLoaded', function() {
@@ -4212,7 +4212,7 @@ window._fmtBytesA = function(b) {
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px;">
             <div>
                 <h2 style="color:var(--dark-color);margin:0 0 4px;">Donation Data Entry</h2>
-                <p style="color:#777;margin:0;">All donation receipt entries — full CRUD control</p>
+                <p style="color:#777;margin:0;">All donation receipt entries â€” full CRUD control</p>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
                 <button onclick="adeManageBooksModal()" class="btn btn-small" style="background:#00695C;color:#fff;"><i class="fas fa-book" style="margin-right:6px;"></i>Manage Books</button>
@@ -4238,7 +4238,7 @@ window._fmtBytesA = function(b) {
                 <button onclick="adeToggleForm()" class="btn btn-small" style="background:#eee;color:#555;"><i class="fas fa-times"></i> Close</button>
             </div>
             <form id="adeEntryForm" novalidate autocomplete="off">
-                <!-- ── Section A: Receipt Details ── -->
+                <!-- â”€â”€ Section A: Receipt Details â”€â”€ -->
                 <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
                     <i class="fas fa-book-open" style="margin-right:6px;"></i>Receipt Details
                 </div>
@@ -4265,12 +4265,12 @@ window._fmtBytesA = function(b) {
                     <div class="form-group" style="margin:0;">
                         <label for="adeReceiptNumber">Receipt Number <span style="color:red;">*</span></label>
                         <select id="adeReceiptNumber" class="form-control" disabled>
-                            <option value="">— Select Book first —</option>
+                            <option value="">â€” Select Book first â€”</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- ── Section B: Donor Type ── -->
+                <!-- â”€â”€ Section B: Donor Type â”€â”€ -->
                 <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
                     <i class="fas fa-user-circle" style="margin-right:6px;"></i>Donor Type
                 </div>
@@ -4308,7 +4308,7 @@ window._fmtBytesA = function(b) {
                     </div>
                 </div>
 
-                <!-- ── Section C: Contact ── -->
+                <!-- â”€â”€ Section C: Contact â”€â”€ -->
                 <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
                     <i class="fas fa-address-book" style="margin-right:6px;"></i>Contact Information
                 </div>
@@ -4327,7 +4327,7 @@ window._fmtBytesA = function(b) {
                     </div>
                 </div>
 
-                <!-- ── Section D: Location Cascade ── -->
+                <!-- â”€â”€ Section D: Location Cascade â”€â”€ -->
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
                     <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;flex:1;">
                         <i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Location
@@ -4341,7 +4341,7 @@ window._fmtBytesA = function(b) {
                         Landmark <span style="color:red;">*</span> <span style="font-size:.72rem;color:#aaa;font-weight:400;">Step 1 of 3</span>
                     </label>
                     <select id="adeLandmarkSelect" class="form-control" onchange="adeOnLandmarkChange()" style="font-weight:600;" required>
-                        <option value="">— Select Landmark —</option>
+                        <option value="">â€” Select Landmark â€”</option>
                     </select>
                 </div>
 
@@ -4352,7 +4352,7 @@ window._fmtBytesA = function(b) {
                         Area <span style="font-size:.72rem;color:#aaa;font-weight:400;">Step 2 of 3</span>
                     </label>
                     <select id="adeAreaSelect" class="form-control" onchange="adeOnAreaChange()" style="font-weight:600;">
-                        <option value="">— Select Area —</option>
+                        <option value="">â€” Select Area â€”</option>
                     </select>
                     <!-- Locked area badge -->
                     <div id="adeAreaLocked" style="display:none;margin-top:8px;padding:8px 14px;background:linear-gradient(135deg,#E8F5E9,#F1F8E9);border:1.5px solid #66BB6A;border-radius:8px;align-items:center;gap:10px;">
@@ -4369,7 +4369,7 @@ window._fmtBytesA = function(b) {
                         Building Name <span style="font-size:.72rem;color:#aaa;font-weight:400;">Step 3 of 3 (optional)</span>
                     </label>
                     <select id="adeBuildingNameSelect" class="form-control" onchange="adeOnBuildingChange()" style="font-weight:600;">
-                        <option value="">— Select Building (optional) —</option>
+                        <option value="">â€” Select Building (optional) â€”</option>
                     </select>
                     <div id="adeBuildingHint" style="display:none;font-size:.75rem;color:#888;margin-top:4px;"><i class="fas fa-info-circle"></i> No buildings linked to this area yet.</div>
                 </div>
@@ -4383,12 +4383,12 @@ window._fmtBytesA = function(b) {
                     <input type="text" id="adeFlatNumber" class="form-control" placeholder="e.g. A-201, Flat 3B, Shop 5">
                 </div>
 
-                <!-- ── Section E: Payment ── -->
+                <!-- â”€â”€ Section E: Payment â”€â”€ -->
                 <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
                     <i class="fas fa-rupee-sign" style="margin-right:6px;"></i>Amount &amp; Payment
                 </div>
                 <div class="form-group">
-                    <label for="adeAmount">Donation Amount (₹)</label>
+                    <label for="adeAmount">Donation Amount (â‚¹)</label>
                     <input type="number" id="adeAmount" class="form-control" placeholder="Enter amount" min="0">
                 </div>
                 <div class="form-group">
@@ -4417,7 +4417,7 @@ window._fmtBytesA = function(b) {
                     <input type="text" id="adeReference" class="form-control" placeholder="Reference / Transaction / Cheque number">
                 </div>
 
-                <!-- ── Section F: Passbook Document Upload ── -->
+                <!-- â”€â”€ Section F: Passbook Document Upload â”€â”€ -->
                 <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;margin-top:8px;">
                     <i class="fas fa-camera" style="margin-right:6px;"></i>Passbook Document
                 </div>
@@ -4433,7 +4433,7 @@ window._fmtBytesA = function(b) {
                     <input type="file" id="apbDocCamera" style="display:none;" accept="image/*">
                     <input type="file" id="apbDocCameraCapture" style="display:none;" accept="image/*" capture="environment">
                     <div id="apbCompressStatus" style="display:none;font-size:.82rem;color:#888;margin-bottom:10px;">
-                        <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Compressing image…
+                        <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Compressing imageâ€¦
                     </div>
                     <div id="apbDocPreview" style="display:none;margin-bottom:14px;">
                         <img id="apbDocThumb" src="" alt="Receipt preview" style="max-width:100%;max-height:220px;border-radius:10px;border:1.5px solid #e0e0e0;object-fit:contain;">
@@ -4460,10 +4460,10 @@ window._fmtBytesA = function(b) {
                 </button>
             </form>
 
-            <!-- ═══════════════════════════════════════════════════════════════
-                 LIVE RECEIPT PREVIEW — auto-fills from form above (ade_rcg_)
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+                 LIVE RECEIPT PREVIEW â€” auto-fills from form above (ade_rcg_)
                  Zero overlap with any other feature. Fully isolated.
-                 ═══════════════════════════════════════════════════════════════ -->
+                 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div id="ade_rcg_wrapper" style="margin-top:28px;border-top:2px dashed #ffe0d0;padding-top:22px;display:none;">
 
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
@@ -4490,46 +4490,46 @@ window._fmtBytesA = function(b) {
 
                     <!-- Top meta row -->
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;font-size:.78rem;color:#8B1A1A;font-weight:600;">
-                        <span>स्थापना १९९१</span>
-                        <span id="ade_rcg_f_receiptTopCenter" style="text-align:center;flex:1;">॥ श्री गजानन प्रसन्न ॥</span>
-                        <span style="white-space:nowrap;"><span id="ade_rcg_f_receiptTopRightPrefix">वर्ष :</span> <span id="ade_rcg_r_year" style="color:#222;font-weight:500;">__</span></span>
+                        <span>à¤¸à¥à¤¥à¤¾à¤ªà¤¨à¤¾ à¥§à¥¯à¥¯à¥§</span>
+                        <span id="ade_rcg_f_receiptTopCenter" style="text-align:center;flex:1;">à¥¥ à¤¶à¥à¤°à¥€ à¤—à¤œà¤¾à¤¨à¤¨ à¤ªà¥à¤°à¤¸à¤¨à¥à¤¨ à¥¥</span>
+                        <span style="white-space:nowrap;"><span id="ade_rcg_f_receiptTopRightPrefix">à¤µà¤°à¥à¤· :</span> <span id="ade_rcg_r_year" style="color:#222;font-weight:500;">__</span></span>
                     </div>
 
                     <!-- Title -->
                     <div id="ade_rcg_f_receiptTitle" style="text-align:center;font-size:1.75rem;font-weight:900;color:#8B1A1A;line-height:1.25;margin-bottom:3px;letter-spacing:.01em;">
-                        श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ
+                        à¤¶à¥à¤°à¥€ à¤ªà¤Ÿà¥‡à¤²à¤µà¤¾à¤¡à¥€ à¤¸à¤¾à¤°à¥à¤µà¤œà¤¨à¤¿à¤• à¤—à¤£à¥‡à¤¶à¥‹à¤¤à¥à¤¸à¤µ à¤®à¤‚à¤¡à¤³
                     </div>
 
                     <!-- Address -->
                     <div id="ade_rcg_f_receiptAddress" style="text-align:center;font-size:.72rem;color:#8B1A1A;margin-bottom:10px;font-weight:500;">
-                        पटेलवाडी, क्लासिक हॉटेलच्या मागे, जुना नागरदास रोड, अंधेरी (पूर्व), मुंबई - ४०००६९
+                        à¤ªà¤Ÿà¥‡à¤²à¤µà¤¾à¤¡à¥€, à¤•à¥à¤²à¤¾à¤¸à¤¿à¤• à¤¹à¥‰à¤Ÿà¥‡à¤²à¤šà¥à¤¯à¤¾ à¤®à¤¾à¤—à¥‡, à¤œà¥à¤¨à¤¾ à¤¨à¤¾à¤—à¤°à¤¦à¤¾à¤¸ à¤°à¥‹à¤¡, à¤…à¤‚à¤§à¥‡à¤°à¥€ (à¤ªà¥‚à¤°à¥à¤µ), à¤®à¥à¤‚à¤¬à¤ˆ - à¥ªà¥¦à¥¦à¥¦à¥¬à¥¯
                     </div>
 
                     <hr style="border:none;border-top:2px solid #8B1A1A;margin:6px 0 10px;">
 
                     <!-- Receipt no + Date -->
                     <div style="display:flex;justify-content:space-between;align-items:center;font-size:.9rem;font-weight:700;color:#8B1A1A;margin-bottom:10px;padding:2px;">
-                        <span>पावती क्र. :
+                        <span>à¤ªà¤¾à¤µà¤¤à¥€ à¤•à¥à¤°. :
                             <span id="ade_rcg_r_rcptno" style="font-weight:400;color:#222;border-bottom:1.5px solid #8B1A1A;min-width:80px;display:inline-block;padding:0 8px;text-align:center;">___</span>
                         </span>
-                        <span>दिनांक :
+                        <span>à¤¦à¤¿à¤¨à¤¾à¤‚à¤• :
                             <span id="ade_rcg_r_date" style="font-weight:400;color:#222;border-bottom:1.5px solid #8B1A1A;min-width:110px;display:inline-block;padding:0 8px;text-align:center;">___________</span>
                         </span>
                     </div>
 
                     <!-- Donor name row -->
                     <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:8px;">
-                        <span id="ade_rcg_f_receiptDonorPrefix" style="font-size:.92rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">श्री/श्रीमती</span>
+                        <span id="ade_rcg_f_receiptDonorPrefix" style="font-size:.92rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">à¤¶à¥à¤°à¥€/à¤¶à¥à¤°à¥€à¤®à¤¤à¥€</span>
                         <span id="ade_rcg_r_donor"
                             style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:26px;font-size:1rem;color:#222;padding:0 8px;font-weight:700;text-align:center;display:flex;align-items:flex-end;justify-content:center;">
                             <span style="color:#CCC;font-style:italic;font-weight:400;">__________________________</span>
                         </span>
-                        <span id="ade_rcg_f_receiptDonorSuffix" style="font-size:.88rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">यांचकडून</span>
+                        <span id="ade_rcg_f_receiptDonorSuffix" style="font-size:.88rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">à¤¯à¤¾à¤‚à¤šà¤•à¤¡à¥‚à¤¨</span>
                     </div>
 
                     <!-- Amount in words row -->
                     <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:8px;">
-                        <span id="ade_rcg_f_receiptAmountWordsPrefix" style="font-size:.92rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">अक्षरी रुपये</span>
+                        <span id="ade_rcg_f_receiptAmountWordsPrefix" style="font-size:.92rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">à¤…à¤•à¥à¤·à¤°à¥€ à¤°à¥à¤ªà¤¯à¥‡</span>
                         <span id="ade_rcg_r_words"
                             style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:26px;font-size:.88rem;color:#333;padding:0 8px;display:flex;align-items:flex-end;">
                             <span style="color:#CCC;font-style:italic;font-weight:400;">______________________________</span>
@@ -4539,14 +4539,14 @@ window._fmtBytesA = function(b) {
                     <!-- Thank you line -->
                     <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:6px 0 12px;">
                         <span style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:14px;"></span>
-                        <span id="ade_rcg_f_receiptThankYouText" style="font-size:.88rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">रोख/चेक मिळाले, धन्यवाद !</span>
+                        <span id="ade_rcg_f_receiptThankYouText" style="font-size:.88rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">à¤°à¥‹à¤–/à¤šà¥‡à¤• à¤®à¤¿à¤³à¤¾à¤²à¥‡, à¤§à¤¨à¥à¤¯à¤µà¤¾à¤¦ !</span>
                     </div>
 
                     <!-- Amount box -->
                     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
                         <div id="ade_rcg_r_amt"
                             style="border:2px solid #8B1A1A;border-radius:5px;padding:7px 18px;font-size:1.15rem;font-weight:700;color:#8B1A1A;min-width:120px;text-align:center;background:rgba(255,255,255,.5);">
-                            <span style="color:#CCC;font-style:italic;font-weight:400;">₹</span>
+                            <span style="color:#CCC;font-style:italic;font-weight:400;">â‚¹</span>
                         </div>
                         <span id="ade_rcg_r_mode" style="font-size:.8rem;color:#777;font-style:italic;"></span>
                     </div>
@@ -4554,22 +4554,22 @@ window._fmtBytesA = function(b) {
                     <!-- Signatures -->
                     <div style="display:flex;justify-content:space-between;border-top:1px solid #AACCDD;padding-top:10px;margin-top:4px;">
                         <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
-                            <div id="ade_rcg_f_receiptSign1Role" style="font-size:.68rem;color:#777;font-weight:400;">अध्यक्ष</div>
+                            <div id="ade_rcg_f_receiptSign1Role" style="font-size:.68rem;color:#777;font-weight:400;">à¤…à¤§à¥à¤¯à¤•à¥à¤·</div>
                             <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
-                            <div id="ade_rcg_f_receiptSign1Name">जयेश शिंदे</div>
+                            <div id="ade_rcg_f_receiptSign1Name">à¤œà¤¯à¥‡à¤¶ à¤¶à¤¿à¤‚à¤¦à¥‡</div>
                         </div>
                         <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
-                            <div id="ade_rcg_f_receiptSign2Role" style="font-size:.68rem;color:#777;font-weight:400;">सरचिटणीस</div>
+                            <div id="ade_rcg_f_receiptSign2Role" style="font-size:.68rem;color:#777;font-weight:400;">à¤¸à¤°à¤šà¤¿à¤Ÿà¤£à¥€à¤¸</div>
                             <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
-                            <div id="ade_rcg_f_receiptSign2Name"><span class="sg-marathi" translate="no">ध्रुव चीटालीय</span><span class="sg-english" translate="no" style="display:none;">Dhruv Chotaliya</span></div>
+                            <div id="ade_rcg_f_receiptSign2Name"><span class="sg-marathi" translate="no">à¤§à¥à¤°à¥à¤µ à¤šà¥€à¤Ÿà¤¾à¤²à¥€à¤¯</span><span class="sg-english" translate="no" style="display:none;">Dhruv Chotaliya</span></div>
                         </div>
                         <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
-                            <div id="ade_rcg_f_receiptSign3Role" style="font-size:.68rem;color:#777;font-weight:400;">खजिनदार</div>
+                            <div id="ade_rcg_f_receiptSign3Role" style="font-size:.68rem;color:#777;font-weight:400;">à¤–à¤œà¤¿à¤¨à¤¦à¤¾à¤°</div>
                             <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
-                            <div id="ade_rcg_f_receiptSign3Name">रणजीत राजपूत</div>
+                            <div id="ade_rcg_f_receiptSign3Name">à¤°à¤£à¤œà¥€à¤¤ à¤°à¤¾à¤œà¤ªà¥‚à¤¤</div>
                         </div>
                         <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
-                            <div id="ade_rcg_f_receiptSign4Role" style="font-size:.68rem;color:#777;font-weight:400;">वसुल करणार</div>
+                            <div id="ade_rcg_f_receiptSign4Role" style="font-size:.68rem;color:#777;font-weight:400;">à¤µà¤¸à¥à¤² à¤•à¤°à¤£à¤¾à¤°</div>
                             <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
                             <div id="ade_rcg_f_receiptSign4Name">&nbsp;</div>
                         </div>
@@ -4591,14 +4591,14 @@ window._fmtBytesA = function(b) {
                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                     <span id="adeCardCount" style="font-size:.83rem;color:#888;"></span>
                     <select id="adeYearFilter" style="display:inline-block;padding:7px 10px;border:1.5px solid var(--primary-color);border-radius:8px;font-size:.85rem;font-weight:700;color:#fff;background:var(--primary-color);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.12);" onchange="window._adeSelectedYear=this.value; adeLoad();" title="Filter by year"><option value="active">Active Year</option></select>
-                    <input type="text" id="adeCardSearch" placeholder="🔍 Search donor, landmark…"
+                    <input type="text" id="adeCardSearch" placeholder="ðŸ” Search donor, landmarkâ€¦"
                         style="padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.85rem;width:180px;"
                         oninput="adeRenderCards()">
                     <button onclick="adeLoad()" class="btn btn-small" style="background:var(--light-color);color:#555;"><i class="fas fa-sync-alt"></i></button>
                 </div>
             </div>
             <div id="adeCardGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;">
-                <div style="text-align:center;color:#aaa;padding:30px;grid-column:1/-1;">Loading…</div>
+                <div style="text-align:center;color:#aaa;padding:30px;grid-column:1/-1;">Loadingâ€¦</div>
             </div>
         </div>
 
@@ -4611,7 +4611,7 @@ window._fmtBytesA = function(b) {
                 </div>
                 <div>
                     <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Book No.</label>
-                    <input type="number" id="adeFilterBook" class="form-control" placeholder="1–50" min="1" max="50" oninput="adeFilter()" style="padding:9px 12px;">
+                    <input type="number" id="adeFilterBook" class="form-control" placeholder="1â€“50" min="1" max="50" oninput="adeFilter()" style="padding:9px 12px;">
                 </div>
                 <div>
                     <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Landmark</label>
@@ -4635,9 +4635,9 @@ window._fmtBytesA = function(b) {
                 </div>
             </div>
             <div style="margin-top:12px;display:flex;gap:12px;font-size:.85rem;color:#777;flex-wrap:wrap;">
-                <span>Total: <strong id="adeSummaryTotal">—</strong></span>
-                <span>Filtered: <strong id="adeSummaryFiltered">—</strong></span>
-                <span>Total Amount: <strong id="adeSummaryAmt" style="color:#2E7D32;">—</strong></span>
+                <span>Total: <strong id="adeSummaryTotal">â€”</strong></span>
+                <span>Filtered: <strong id="adeSummaryFiltered">â€”</strong></span>
+                <span>Total Amount: <strong id="adeSummaryAmt" style="color:#2E7D32;">â€”</strong></span>
             </div>
         </div>
 
@@ -4653,7 +4653,7 @@ window._fmtBytesA = function(b) {
                         </tr>
                     </thead>
                     <tbody id="adeTbody">
-                        <tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">Loading…</td></tr>
+                        <tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">Loadingâ€¦</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -4673,7 +4673,7 @@ window._fmtBytesA = function(b) {
                             <i class="fas fa-book-open"></i> New Books Limit
                         </label>
                         <div style="display:flex;align-items:center;gap:12px;">
-                            <button type="button" onclick="adeChangeBookLimit('New',-1)" style="width:38px;height:38px;border:none;border-radius:8px;background:#c8e6c9;color:#1b5e20;font-size:1.4rem;font-weight:700;cursor:pointer;line-height:1;">−</button>
+                            <button type="button" onclick="adeChangeBookLimit('New',-1)" style="width:38px;height:38px;border:none;border-radius:8px;background:#c8e6c9;color:#1b5e20;font-size:1.4rem;font-weight:700;cursor:pointer;line-height:1;">âˆ’</button>
                             <input type="number" id="adeMaxNewBooksInput" min="1" value="50" style="width:70px;text-align:center;font-size:1.2rem;font-weight:700;border:2px solid #81c784;border-radius:8px;padding:6px;">
                             <button type="button" onclick="adeChangeBookLimit('New',1)" style="width:38px;height:38px;border:none;border-radius:8px;background:#c8e6c9;color:#1b5e20;font-size:1.4rem;font-weight:700;cursor:pointer;line-height:1;">+</button>
                         </div>
@@ -4685,7 +4685,7 @@ window._fmtBytesA = function(b) {
                             <i class="fas fa-book"></i> Old Books Limit
                         </label>
                         <div style="display:flex;align-items:center;gap:12px;">
-                            <button type="button" onclick="adeChangeBookLimit('Old',-1)" style="width:38px;height:38px;border:none;border-radius:8px;background:#ffe0b2;color:#bf360c;font-size:1.4rem;font-weight:700;cursor:pointer;line-height:1;">−</button>
+                            <button type="button" onclick="adeChangeBookLimit('Old',-1)" style="width:38px;height:38px;border:none;border-radius:8px;background:#ffe0b2;color:#bf360c;font-size:1.4rem;font-weight:700;cursor:pointer;line-height:1;">âˆ’</button>
                             <input type="number" id="adeMaxOldBooksInput" min="1" value="30" style="width:70px;text-align:center;font-size:1.2rem;font-weight:700;border:2px solid #ffcc80;border-radius:8px;padding:6px;">
                             <button type="button" onclick="adeChangeBookLimit('Old',1)" style="width:38px;height:38px;border:none;border-radius:8px;background:#ffe0b2;color:#bf360c;font-size:1.4rem;font-weight:700;cursor:pointer;line-height:1;">+</button>
                         </div>
@@ -4703,7 +4703,7 @@ window._fmtBytesA = function(b) {
     })();
 
 
-    // ── Lightbox for Receipt Photos ──
+    // â”€â”€ Lightbox for Receipt Photos â”€â”€
     function adeOpenLightbox(url) {
         let lb = document.getElementById('adeLightbox');
         if (!lb) {
@@ -4717,11 +4717,11 @@ window._fmtBytesA = function(b) {
         document.getElementById('adeLightboxImg').src = url;
     }
 
-    // ── Admin Donation Entries JS ─────────────────────────────────
+    // â”€â”€ Admin Donation Entries JS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let _adeAll = [], _adeFiltered = [];
     let _adeFormOpen = false;
 
-    // ── All Submitted Entries card renderer ──────────────────────
+    // â”€â”€ All Submitted Entries card renderer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function adeRenderCards() {
         const grid = document.getElementById('adeCardGrid');
         if (!grid) return;
@@ -4742,13 +4742,13 @@ window._fmtBytesA = function(b) {
         const modeColor = { Cash:'#27AE60', Cheque:'#1565C0', UPI:'#6A1B9A', RTGS:'#F59E0B', Balance:'#E65100' };
         grid.innerHTML = list.slice().reverse().map(e => {
             const donor = e.donorType === 'Business'
-                ? (e.businessName || '—')
-                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
-            const amt = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '—';
-            const mode = e.paymentMode || '—';
+                ? (e.businessName || 'â€”')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || 'â€”';
+            const amt = e.amount != null ? 'â‚¹' + Number(e.amount).toLocaleString('en-IN') : 'â€”';
+            const mode = e.paymentMode || 'â€”';
             const modeClr = modeColor[mode] || '#555';
             const dtObj = new Date(e.submittedAt);
-            const dateStr = isNaN(dtObj) ? '—' : dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+            const dateStr = isNaN(dtObj) ? 'â€”' : dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
             const timeStr = isNaN(dtObj) ? '' : dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
             const photoUrl = e.photoUrl || e.receiptPreviewUrl || '';
             const photoSection = photoUrl
@@ -4807,11 +4807,11 @@ window._fmtBytesA = function(b) {
         const sel = document.getElementById('adeBookNumber');
         const bType = document.querySelector('input[name="adeBookType"]:checked')?.value || 'New';
         if (!sel) return;
-        sel.innerHTML = '<option value="">— Select Book —</option>';
+        sel.innerHTML = '<option value="">â€” Select Book â€”</option>';
         const maxBooks = bType === 'Old' ? (window._adeMaxOldBooks || 30) : (window._adeMaxNewBooks || 50);
         for (let b = 1; b <= maxBooks; b++) {
             const from = (b - 1) * 50 + 1, to = b * 50;
-            sel.innerHTML += `<option value="${b}">Book ${b}  (Receipts ${from}–${to})</option>`;
+            sel.innerHTML += `<option value="${b}">Book ${b}  (Receipts ${from}â€“${to})</option>`;
         }
     }
 
@@ -4820,12 +4820,12 @@ window._fmtBytesA = function(b) {
         const sel = document.getElementById('adeReceiptNumber');
         if (!sel) return;
         if (!bn) {
-            sel.innerHTML = '<option value="">— Select Book first —</option>';
+            sel.innerHTML = '<option value="">â€” Select Book first â€”</option>';
             sel.disabled = true;
             return;
         }
         sel.disabled = true;
-        sel.innerHTML = '<option value="">Loading…</option>';
+        sel.innerHTML = '<option value="">Loadingâ€¦</option>';
         const from = (bn - 1) * 50 + 1, to = bn * 50;
         let used = [];
         const bType = document.querySelector('input[name="adeBookType"]:checked')?.value || 'New';
@@ -4834,7 +4834,7 @@ window._fmtBytesA = function(b) {
             const d = await r.json();
             used = d.usedReceipts || [];
         } catch (e) {}
-        sel.innerHTML = '<option value="">— Select Receipt —</option>';
+        sel.innerHTML = '<option value="">â€” Select Receipt â€”</option>';
         for (let n = from; n <= to; n++) {
             const taken = used.includes(n);
             sel.innerHTML += `<option value="${n}" ${taken ? 'disabled style="color:#ccc;"' : ''}>${n}${taken ? ' (used)' : ''}</option>`;
@@ -4893,7 +4893,7 @@ window._fmtBytesA = function(b) {
         const sel = document.getElementById('adeBuildingNameSelect');
         if (!sel) return;
         const cur = sel.value;
-        sel.innerHTML = '<option value="">— Select Building —</option>';
+        sel.innerHTML = '<option value="">â€” Select Building â€”</option>';
         const bldgs = filterLandmarkId
             ? _adeAllBuildings.filter(function(b) { return b.landmarkId === filterLandmarkId; })
             : _adeAllBuildings;
@@ -4909,7 +4909,7 @@ window._fmtBytesA = function(b) {
         try {
             var r = await fetch('/api/landmarks');
             var d = await r.json();
-            sel.innerHTML = '<option value="">— Select Landmark —</option>';
+            sel.innerHTML = '<option value="">â€” Select Landmark â€”</option>';
             (d.landmarks || []).forEach(function(l) {
                 sel.innerHTML += '<option value="' + l.name + '"' + (l.name === cur ? ' selected' : '') + '>' + l.name + '</option>';
             });
@@ -4920,7 +4920,7 @@ window._fmtBytesA = function(b) {
     async function adeLoadAreas(landmarkName) {
         var sel = document.getElementById('adeAreaSelect');
         if (!sel) return;
-        sel.innerHTML = '<option value="">— Select Area —</option>';
+        sel.innerHTML = '<option value="">â€” Select Area â€”</option>';
         var areaGroup = document.getElementById('adeAreaGroup');
         if (!landmarkName) { if (areaGroup) areaGroup.style.display = 'none'; return; }
         try {
@@ -5015,7 +5015,7 @@ window._fmtBytesA = function(b) {
         var bHint = document.getElementById('adeBuildingHint');
         var bGrp  = document.getElementById('adeBuildingGroup');
         if (!bSel) return;
-        bSel.innerHTML = '<option value="">— Select Building (optional) —</option>';
+        bSel.innerHTML = '<option value="">â€” Select Building (optional) â€”</option>';
         bldgs.forEach(function(b) {
             bSel.innerHTML += '<option value="' + b.name + '" data-id="' + b.id + '">' + b.name + '</option>';
         });
@@ -5030,7 +5030,7 @@ window._fmtBytesA = function(b) {
             var sel = document.getElementById('adeLandmarkSelect');
             if (!sel) return;
             var cur = sel.value;
-            sel.innerHTML = '<option value="">— Select Landmark —</option>';
+            sel.innerHTML = '<option value="">â€” Select Landmark â€”</option>';
             (data.landmarks || []).forEach(function(l) {
                 var o = document.createElement('option');
                 o.value = l.name;
@@ -5090,7 +5090,7 @@ window._fmtBytesA = function(b) {
             const bType = document.querySelector('input[name="adeBookType"]:checked')?.value || 'New';
             const resp = await fetch(`/api/donation-entries/next-receipt?type=${bType}`);
             const slot = await resp.json();
-            if (!slot.bookNumber) { alert('❌ All receipt numbers are used.'); return; }
+            if (!slot.bookNumber) { alert('âŒ All receipt numbers are used.'); return; }
             const bookSel = document.getElementById('adeBookNumber');
             if (bookSel) {
                 bookSel.value = slot.bookNumber;
@@ -5104,12 +5104,12 @@ window._fmtBytesA = function(b) {
                 if (!rs.disabled && rs.options.length > 1) {
                     rs.value = slot.receiptNumber;
                     clearInterval(waitAndSet);
-                    adeShowStatus('✅ Auto: Book ' + slot.bookNumber + ', Receipt #' + slot.receiptNumber, 'success');
+                    adeShowStatus('âœ… Auto: Book ' + slot.bookNumber + ', Receipt #' + slot.receiptNumber, 'success');
                 }
                 if (attempts > 40) clearInterval(waitAndSet);
             }, 100);
         } catch (e) {
-            alert('❌ Auto-receipt error: ' + e.message);
+            alert('âŒ Auto-receipt error: ' + e.message);
         }
     }
 
@@ -5175,7 +5175,7 @@ window._fmtBytesA = function(b) {
         document.getElementById('adeEntryForm')?.addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('adeSubmitBtn');
-            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Saving…'; }
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Savingâ€¦'; }
 
             let payload;
             try {
@@ -5217,7 +5217,7 @@ window._fmtBytesA = function(b) {
                 };
             } catch (buildErr) {
                 console.error('[ADE Form] Payload build error:', buildErr);
-                adeShowStatus('❌ Form error: ' + buildErr.message, 'error');
+                adeShowStatus('âŒ Form error: ' + buildErr.message, 'error');
                 if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry'; }
                 return;
             }
@@ -5240,20 +5240,20 @@ window._fmtBytesA = function(b) {
                             apbClearDoc();
                         } catch (_) {}
                     }
-                    adeShowStatus(`✅ Entry saved! Book ${data.entry.bookNumber}, Receipt #${data.entry.receiptNumber}`, 'success');
+                    adeShowStatus(`âœ… Entry saved! Book ${data.entry.bookNumber}, Receipt #${data.entry.receiptNumber}`, 'success');
                     // Save receipt snapshot to the database
                     try { await ade_rcg_saveSnapshot(data.entry.entryId); } catch(_) {}
                     this.reset();
                     adeSetDonorType('Individual');
                     adeSetMode('Cash');
                     const rSel = document.getElementById('adeReceiptNumber');
-                    if (rSel) { rSel.innerHTML = '<option value="">— Select Book first —</option>'; rSel.disabled = true; }
+                    if (rSel) { rSel.innerHTML = '<option value="">â€” Select Book first â€”</option>'; rSel.disabled = true; }
                     await adeLoad();
                 } else {
-                    adeShowStatus('❌ ' + (data.message || 'Submission failed.'), 'error');
+                    adeShowStatus('âŒ ' + (data.message || 'Submission failed.'), 'error');
                 }
             } catch (err) {
-                adeShowStatus('❌ Network error: ' + (err.message || 'Cannot reach server.'), 'error');
+                adeShowStatus('âŒ Network error: ' + (err.message || 'Cannot reach server.'), 'error');
             } finally {
                 if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry'; }
             }
@@ -5348,7 +5348,7 @@ window._fmtBytesA = function(b) {
     }
 
     
-    // ─── Year Filter for Admin Data Entry ────────────────────────────────
+    // â”€â”€â”€ Year Filter for Admin Data Entry â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function adeLoadYearFilter() {
         const sel = document.getElementById('adeYearFilter');
         if (!sel) return;
@@ -5362,13 +5362,13 @@ window._fmtBytesA = function(b) {
             // Add "All Years" option
             const allOpt = document.createElement('option');
             allOpt.value = 'all';
-            allOpt.textContent = '📅 All Years';
+            allOpt.textContent = 'ðŸ“… All Years';
             sel.appendChild(allOpt);
             
             data.years.forEach(yr => {
                 const opt = document.createElement('option');
                 opt.value = yr;
-                opt.textContent = yr === activeYear ? '⭐ ' + yr + ' (Active)' : yr;
+                opt.textContent = yr === activeYear ? 'â­ ' + yr + ' (Active)' : yr;
                 if (!window._adeSelectedYear && yr === activeYear) opt.selected = true;
                 if (window._adeSelectedYear === yr) opt.selected = true;
                 sel.appendChild(opt);
@@ -5383,7 +5383,7 @@ window._fmtBytesA = function(b) {
     async function adeLoad() {
         const tbody = document.getElementById('adeTbody');
         if (!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">Loading…</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">Loadingâ€¦</td></tr>';
         try {
             const [entRes, landmarkRes, settingsRes] = await Promise.all([
                 fetch('/api/donation-entries?year=' + (window._adeSelectedYear || 'active')),
@@ -5427,7 +5427,7 @@ window._fmtBytesA = function(b) {
         }
     }
 
-    // ── Book Management Modal Functions ──────────────────────────────────────
+    // â”€â”€ Book Management Modal Functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function adeManageBooksModal() {
         const inpNew = document.getElementById('adeMaxNewBooksInput');
         const inpOld = document.getElementById('adeMaxOldBooksInput');
@@ -5469,8 +5469,8 @@ window._fmtBytesA = function(b) {
             adePopulateBooks();
             // Close modal
             document.getElementById('adeManageBooksModal').style.display = 'none';
-            if (typeof showNotification === 'function') showNotification(`Books updated — New: ${maxNew}, Old: ${maxOld}`, 'success');
-            else alert(`✅ Saved! New Books: ${maxNew}, Old Books: ${maxOld}`);
+            if (typeof showNotification === 'function') showNotification(`Books updated â€” New: ${maxNew}, Old: ${maxOld}`, 'success');
+            else alert(`âœ… Saved! New Books: ${maxNew}, Old Books: ${maxOld}`);
         } catch(err) {
             alert('Failed to save book limits: ' + err.message);
         }
@@ -5508,7 +5508,7 @@ window._fmtBytesA = function(b) {
         const totalAmt = _adeFiltered.reduce((s,e) => s + (e.amount||0), 0);
         document.getElementById('adeSummaryTotal')    && (document.getElementById('adeSummaryTotal').textContent    = _adeAll.length);
         document.getElementById('adeSummaryFiltered') && (document.getElementById('adeSummaryFiltered').textContent = _adeFiltered.length);
-                document.getElementById('adeSummaryAmt')      && (document.getElementById('adeSummaryAmt').textContent      = '₹' + totalAmt.toLocaleString('en-IN'));
+                document.getElementById('adeSummaryAmt')      && (document.getElementById('adeSummaryAmt').textContent      = 'â‚¹' + totalAmt.toLocaleString('en-IN'));
         
         // Instantly update donation tracking section when data changes
         if (typeof loadDonationTrackingCards === 'function') {
@@ -5518,13 +5518,13 @@ window._fmtBytesA = function(b) {
         if (!_adeFiltered.length) { tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;color:#999;padding:30px;">No entries found.</td></tr>'; return; }
         tbody.innerHTML = _adeFiltered.slice().reverse().map((e, i) => {
             const donor = e.donorType === 'Business'
-                ? (e.businessName || '—')
-                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+                ? (e.businessName || 'â€”')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || 'â€”';
             const dtObj = new Date(e.submittedAt);
             const dtTime = dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
             const dtDate = dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
             const dt = `<span style="font-size:.8rem;white-space:nowrap;">${dtTime}<br><span style="color:#aaa;">${dtDate}</span></span>`;
-            const amt = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '—';
+            const amt = e.amount != null ? 'â‚¹' + Number(e.amount).toLocaleString('en-IN') : 'â€”';
             return `<tr id="ade-row-${e.entryId}">
                 <td style="color:#aaa;font-size:.8rem;">${i+1}</td>
                 <td style="font-weight:700;vertical-align:middle;">Bk ${e.bookNumber} ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF8F1;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>' }</td>
@@ -5559,14 +5559,14 @@ window._fmtBytesA = function(b) {
             const res = await fetch(`/api/donation-entries/${encodeURIComponent(id)}`, { method:'DELETE' });
             const data = await res.json();
             if (res.ok && data.success) {
-                adeShowStatus('✅ Entry deleted.', 'success');
+                adeShowStatus('âœ… Entry deleted.', 'success');
                 _adeAll = _adeAll.filter(e => e.entryId !== id);
                 adeFilter();
-            } else { adeShowStatus('❌ ' + (data.message||'Delete failed.'), 'error'); }
-        } catch(e) { adeShowStatus('❌ Server error.', 'error'); }
+            } else { adeShowStatus('âŒ ' + (data.message||'Delete failed.'), 'error'); }
+        } catch(e) { adeShowStatus('âŒ Server error.', 'error'); }
     }
 
-    // ── Edit modal ─────────────────────────────────────────────────
+    // â”€â”€ Edit modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let _adeEditId = null;
     function adeOpenEdit(id) {
         const e = _adeAll.find(x => x.entryId === id);
@@ -5612,7 +5612,7 @@ window._fmtBytesA = function(b) {
                     <div class="form-group"><label>Landmark</label><input name="landmark" class="form-control" value="${e.landmark||''}"></div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
-                    <div class="form-group"><label>Amount (₹)</label><input name="amount" class="form-control" type="number" value="${e.amount||''}" min="0"></div>
+                    <div class="form-group"><label>Amount (â‚¹)</label><input name="amount" class="form-control" type="number" value="${e.amount||''}" min="0"></div>
                     <div class="form-group"><label>Payment Mode</label>
                         <select name="paymentMode" class="form-control">
                             <option ${e.paymentMode==='Cash'?'selected':''}>Cash</option>
@@ -5660,27 +5660,27 @@ window._fmtBytesA = function(b) {
                 hist.map(function(h) {
                     const dt = new Date(h.changedAt).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
                     let nameChange = '';
-                    if (h.from !== h.to) nameChange = '<span style="color:#888;">Name:</span> <strong>' + (h.from||'—') + '</strong> &rarr; <strong>' + (h.to||'—') + '</strong><br>';
+                    if (h.from !== h.to) nameChange = '<span style="color:#888;">Name:</span> <strong>' + (h.from||'â€”') + '</strong> &rarr; <strong>' + (h.to||'â€”') + '</strong><br>';
                     let amtChange = '';
-                    if (h.fromAmount !== h.toAmount && h.fromAmount !== undefined && h.toAmount !== undefined) amtChange = '<span style="color:#888;">Amount:</span> <strong>₹' + (h.fromAmount||'0') + '</strong> &rarr; <strong>₹' + (h.toAmount||'0') + '</strong><br>';
+                    if (h.fromAmount !== h.toAmount && h.fromAmount !== undefined && h.toAmount !== undefined) amtChange = '<span style="color:#888;">Amount:</span> <strong>â‚¹' + (h.fromAmount||'0') + '</strong> &rarr; <strong>â‚¹' + (h.toAmount||'0') + '</strong><br>';
                     let bookChange = '';
-                    if (h.fromBook !== h.toBook && h.fromBook !== undefined && h.toBook !== undefined) bookChange = '<span style="color:#888;">Book:</span> <strong>' + (h.fromBook||'—') + '</strong> &rarr; <strong>' + (h.toBook||'—') + '</strong><br>';
+                    if (h.fromBook !== h.toBook && h.fromBook !== undefined && h.toBook !== undefined) bookChange = '<span style="color:#888;">Book:</span> <strong>' + (h.fromBook||'â€”') + '</strong> &rarr; <strong>' + (h.toBook||'â€”') + '</strong><br>';
                     let recChange = '';
-                    if (h.fromReceipt !== h.toReceipt && h.fromReceipt !== undefined && h.toReceipt !== undefined) recChange = '<span style="color:#888;">Receipt:</span> <strong>' + (h.fromReceipt||'—') + '</strong> &rarr; <strong>' + (h.toReceipt||'—') + '</strong><br>';
+                    if (h.fromReceipt !== h.toReceipt && h.fromReceipt !== undefined && h.toReceipt !== undefined) recChange = '<span style="color:#888;">Receipt:</span> <strong>' + (h.fromReceipt||'â€”') + '</strong> &rarr; <strong>' + (h.toReceipt||'â€”') + '</strong><br>';
                     let modeChange = '';
-                    if (h.fromMode !== h.toMode && h.fromMode !== undefined && h.toMode !== undefined) modeChange = '<span style="color:#888;">Mode:</span> <strong>' + (h.fromMode||'—') + '</strong> &rarr; <strong>' + (h.toMode||'—') + '</strong><br>';
+                    if (h.fromMode !== h.toMode && h.fromMode !== undefined && h.toMode !== undefined) modeChange = '<span style="color:#888;">Mode:</span> <strong>' + (h.fromMode||'â€”') + '</strong> &rarr; <strong>' + (h.toMode||'â€”') + '</strong><br>';
                     let statusChange = '';
-                    if (h.fromStatus !== h.toStatus && h.fromStatus !== undefined && h.toStatus !== undefined) statusChange = '<span style="color:#888;">Status:</span> <strong>' + (h.fromStatus||'—') + '</strong> &rarr; <strong>' + (h.toStatus||'—') + '</strong><br>';
+                    if (h.fromStatus !== h.toStatus && h.fromStatus !== undefined && h.toStatus !== undefined) statusChange = '<span style="color:#888;">Status:</span> <strong>' + (h.fromStatus||'â€”') + '</strong> &rarr; <strong>' + (h.toStatus||'â€”') + '</strong><br>';
                     
                     let extraInfo = '<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #E3F2FD;font-size:.78rem;color:#666;">' +
-                        'Amount: <strong>' + (h.toAmount !== undefined && h.toAmount !== null ? '₹'+h.toAmount : (e.amount != null ? '₹'+e.amount : '—')) + '</strong> &nbsp;|&nbsp; ' +
-                        'Book: <strong>' + (h.toBook !== undefined && h.toBook !== null ? h.toBook : (e.bookNumber || '—')) + '</strong> &nbsp;|&nbsp; ' +
-                        'Receipt: <strong>' + (h.toReceipt !== undefined && h.toReceipt !== null ? h.toReceipt : (e.receiptNumber || '—')) + '</strong>' +
+                        'Amount: <strong>' + (h.toAmount !== undefined && h.toAmount !== null ? 'â‚¹'+h.toAmount : (e.amount != null ? 'â‚¹'+e.amount : 'â€”')) + '</strong> &nbsp;|&nbsp; ' +
+                        'Book: <strong>' + (h.toBook !== undefined && h.toBook !== null ? h.toBook : (e.bookNumber || 'â€”')) + '</strong> &nbsp;|&nbsp; ' +
+                        'Receipt: <strong>' + (h.toReceipt !== undefined && h.toReceipt !== null ? h.toReceipt : (e.receiptNumber || 'â€”')) + '</strong>' +
                         '</div>';
                         
                     return '<div style="padding:8px 12px;background:var(--white);border-radius:8px;border:1px solid #E3F2FD;margin-bottom:6px;font-size:.82rem;">' +
                         nameChange + amtChange + bookChange + recChange + modeChange + statusChange +
-                        '<span style="color:#888;">Reason:</span> ' + (h.reason||'—') + ' &nbsp;<span style="color:#aaa;font-size:.75rem;">' + dt + ' by ' + (h.changedBy||'—') + '</span>' +
+                        '<span style="color:#888;">Reason:</span> ' + (h.reason||'â€”') + ' &nbsp;<span style="color:#aaa;font-size:.75rem;">' + dt + ' by ' + (h.changedBy||'â€”') + '</span>' +
                         extraInfo +
                     '</div>';
                 }).join('');
@@ -5712,7 +5712,7 @@ window._fmtBytesA = function(b) {
                     const name  = document.getElementById('adeEditPhotoName');
                     const prev  = document.getElementById('adeEditPhotoPreview');
                     if (thumb) thumb.src = URL.createObjectURL(blob);
-                    if (name)  name.textContent = '✅ ' + f.name.replace(/\.[^.]+$/, '') + '.jpg (' + window._fmtBytesA(blob.size) + (f.size > blob.size ? ', compressed' : '') + ')';
+                    if (name)  name.textContent = 'âœ… ' + f.name.replace(/\.[^.]+$/, '') + '.jpg (' + window._fmtBytesA(blob.size) + (f.size > blob.size ? ', compressed' : '') + ')';
                     if (prev)  prev.style.display = '';
                 });
             };
@@ -5723,7 +5723,7 @@ window._fmtBytesA = function(b) {
         ev.preventDefault();
         const form = ev.target;
         const btn  = document.getElementById('adeSaveBtnModal');
-        if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+        if (btn) { btn.disabled = true; btn.textContent = 'Savingâ€¦'; }
         const fd = new FormData(form);
         const payload = { _isAdmin: true };
         fd.forEach((v, k) => { payload[k] = ['bookNumber','receiptNumber','amount'].includes(k) ? Number(v) : v; });
@@ -5752,7 +5752,7 @@ window._fmtBytesA = function(b) {
         finally { if (btn) { btn.disabled=false; btn.textContent='Save Changes'; } }
     }
 
-    // ── Building/Landmark Management modals ──────────────────────────
+    // â”€â”€ Building/Landmark Management modals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function adeBuildingModal() {
         const [rB, rL, rA] = await Promise.all([fetch('/api/buildings'), fetch('/api/landmarks'), fetch('/api/areas')]);
         const [dB, dL, dA] = await Promise.all([rB.json(), rL.json(), rA.json()]);
@@ -5760,7 +5760,7 @@ window._fmtBytesA = function(b) {
         const allLandmarks = dL.landmarks || [];
         const allAreas     = dA.areas     || [];
         // Build grouped area options: group by landmark, then ungrouped areas
-        var areaOpts = '<option value="">— Link to Area (optional) —</option>';
+        var areaOpts = '<option value="">â€” Link to Area (optional) â€”</option>';
         if (allLandmarks.length > 0) {
             allLandmarks.forEach(function(lm) {
                 var lmAreas = allAreas.filter(function(a){ return a.landmarkId === lm.id; });
@@ -5782,7 +5782,7 @@ window._fmtBytesA = function(b) {
                 areaOpts += '</optgroup>';
             }
         } else {
-            // No landmarks — flat list
+            // No landmarks â€” flat list
             allAreas.forEach(function(a) {
                 areaOpts += '<option value="' + a.id + '">' + a.name + '</option>';
             });
@@ -5874,7 +5874,7 @@ window._fmtBytesA = function(b) {
             html += '</div>';
             html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;">';
 
-            // ── Col 1: Landmarks ────────────────────────────────────────────
+            // â”€â”€ Col 1: Landmarks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             html += '<div style="border-right:2px solid #f0f0f0;padding-right:18px;display:flex;flex-direction:column;gap:10px;">';
             html += '<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#E65100;"><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>Landmarks</div>';
             html += '<div style="display:flex;gap:6px;">';
@@ -5903,7 +5903,7 @@ window._fmtBytesA = function(b) {
             if (!allLandmarks.length) html += '<div style="color:#aaa;text-align:center;padding:20px;font-size:.83rem;">No landmarks yet.</div>';
             html += '</div></div>';
 
-            // ── Col 2: Areas ────────────────────────────────────────────────
+            // â”€â”€ Col 2: Areas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             html += '<div style="border-right:2px solid #f0f0f0;padding-right:18px;display:flex;flex-direction:column;gap:10px;">';
             html += '<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#1565C0;"><i class="fas fa-map" style="margin-right:5px;"></i>Areas' + (lmName ? ' <span style="font-weight:400;text-transform:none;color:#888;">under ' + lmName + '</span>' : '') + '</div>';
             if (selLmId) {
@@ -5924,7 +5924,7 @@ window._fmtBytesA = function(b) {
             if (!selLmId) html += '<div style="color:#aaa;text-align:center;padding:20px;font-size:.83rem;">Select a landmark first.</div>';
             html += '</div></div>';
 
-            // ── Col 3: Buildings ────────────────────────────────────────────
+            // â”€â”€ Col 3: Buildings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             html += '<div style="display:flex;flex-direction:column;gap:10px;">';
             html += '<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#2E7D32;"><i class="fas fa-building" style="margin-right:5px;"></i>Buildings' + (lmName ? ' <span style="font-weight:400;text-transform:none;color:#888;">under ' + lmName + '</span>' : '') + '</div>';
             if (selLmId) {
@@ -5950,7 +5950,7 @@ window._fmtBytesA = function(b) {
             modal.innerHTML = html;
         }
 
-        // ── Event handlers (use data-* to avoid any quote nesting) ──────────
+        // â”€â”€ Event handlers (use data-* to avoid any quote nesting) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         window.amSelectLm = function(el) { selLmId = el.dataset.lmid; editingLm = null; renderModal(); };
         window.amEditLm   = function(btn) { editingLm = btn.dataset.lid; renderModal(); setTimeout(function(){ var i=document.getElementById('amRenLmInput'); if(i){i.focus();i.select();} },50); };
         window.amCancelRenLm = function() { editingLm = null; renderModal(); };
@@ -6028,7 +6028,7 @@ window._fmtBytesA = function(b) {
         document.body.appendChild(modal);
         modal.addEventListener('click', function(ev) { if (ev.target === modal) modal.remove(); });
     }
-    // ── Manage Areas modal — dedicated, linked to Landmarks ─────────────────
+    // â”€â”€ Manage Areas modal â€” dedicated, linked to Landmarks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function adeManageAreasModal() {
         var existing = document.getElementById('adeAreasMgrModal');
         if (existing) existing.remove();
@@ -6059,7 +6059,7 @@ window._fmtBytesA = function(b) {
 
             var h = '<div style="background:#fff;border-radius:16px;padding:28px;width:96%;max-width:820px;box-shadow:0 8px 40px rgba(0,0,0,.25);margin-bottom:40px;">';
 
-            // ── Header ──────────────────────────────────────────────────────
+            // â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:2px solid #f0f0f0;padding-bottom:14px;">';
             h += '<div>';
             h += '<h3 style="margin:0 0 4px;font-size:1.15rem;color:#1a237e;"><i class="fas fa-map" style="color:#6A1B9A;margin-right:10px;"></i>Manage Areas</h3>';
@@ -6070,7 +6070,7 @@ window._fmtBytesA = function(b) {
 
             h += '<div style="display:grid;grid-template-columns:240px 1fr;gap:20px;">';
 
-            // ── Left col: Landmarks (selector) ──────────────────────────────
+            // â”€â”€ Left col: Landmarks (selector) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             h += '<div style="border-right:2px solid #f0f0f0;padding-right:18px;display:flex;flex-direction:column;gap:8px;">';
             h += '<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#E65100;margin-bottom:4px;"><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>Landmark</div>';
             h += '<div style="font-size:.73rem;color:#aaa;margin-bottom:6px;">Click a landmark to manage its areas</div>';
@@ -6087,7 +6087,7 @@ window._fmtBytesA = function(b) {
             h += '</div>';
             h += '</div>';
 
-            // ── Right col: Areas for selected Landmark ───────────────────────
+            // â”€â”€ Right col: Areas for selected Landmark â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             h += '<div style="display:flex;flex-direction:column;gap:10px;">';
 
             if (!selLmId) {
@@ -6145,7 +6145,7 @@ window._fmtBytesA = function(b) {
             overlay.innerHTML = h;
         }
 
-        // ── Actions ──────────────────────────────────────────────────────────
+        // â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         window.amArSelLm = function(el) { selLmId = el.dataset.lid; editingAr = null; render(); };
 
         window.amArAddArea = async function(btn) {
@@ -6220,7 +6220,7 @@ window._fmtBytesA = function(b) {
         setTimeout(() => el.style.display = 'none', 5000);
     }
 
-    // ── Admin lightbox ───────────────────────────────────────────────────────
+    // â”€â”€ Admin lightbox â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function openAdminLightbox(src) {
         let lb = document.getElementById('adminLightbox');
         if (!lb) {
@@ -6235,7 +6235,7 @@ window._fmtBytesA = function(b) {
         lb.style.display = 'flex';
     }
 
-    // ── Admin New Entry Form ─────────────────────────────────────────────────
+    // â”€â”€ Admin New Entry Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     (function injectAdminNewEntryForm() {
         const sec = document.getElementById('donationEntriesStatic');
         if (!sec) return;
@@ -6263,8 +6263,8 @@ window._fmtBytesA = function(b) {
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
-                    <div class="form-group" style="margin:0;"><label>Book Number</label><select id="aneBook" class="form-control" onchange="aneBookChange()"><option value="">— Select —</option></select></div>
-                    <div class="form-group" style="margin:0;"><label>Receipt Number <button type="button" onclick="aneAutoReceipt()" style="margin-left:8px;padding:2px 10px;border:none;border-radius:8px;background:#E8F5E9;color:#1B5E20;font-size:.75rem;font-weight:700;cursor:pointer;"><i class="fas fa-magic"></i> Auto</button></label><select id="aneReceipt" class="form-control" disabled><option>— Select Book first —</option></select></div>
+                    <div class="form-group" style="margin:0;"><label>Book Number</label><select id="aneBook" class="form-control" onchange="aneBookChange()"><option value="">â€” Select â€”</option></select></div>
+                    <div class="form-group" style="margin:0;"><label>Receipt Number <button type="button" onclick="aneAutoReceipt()" style="margin-left:8px;padding:2px 10px;border:none;border-radius:8px;background:#E8F5E9;color:#1B5E20;font-size:.75rem;font-weight:700;cursor:pointer;"><i class="fas fa-magic"></i> Auto</button></label><select id="aneReceipt" class="form-control" disabled><option>â€” Select Book first â€”</option></select></div>
                 </div>
                 <!-- Donor Type -->
                 <div class="form-group" style="margin-bottom:14px;">
@@ -6291,7 +6291,7 @@ window._fmtBytesA = function(b) {
                     <div class="form-group" style="margin:0;"><label>Mobile Number</label><input id="aneMobile" class="form-control" placeholder="10 digits" maxlength="10"></div>
                     <div class="form-group" style="margin:0;"><label>Email ID</label><input id="aneEmail" class="form-control" placeholder="name" oninput="aneEmailHint(this)"><small id="aneEmailHint" style="color:#888;font-size:.78rem;"></small></div>
                 </div>
-                <!-- Location Cascade: Landmark → Landmark → Area → Building → Flat -->
+                <!-- Location Cascade: Landmark â†’ Landmark â†’ Area â†’ Building â†’ Flat -->
                 <div style="border:1.5px dashed #ffe0d0;border-radius:12px;padding:16px;margin-bottom:14px;">
                     <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--primary-color);margin-bottom:14px;letter-spacing:.07em;"><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Location</div>
                     <div class="form-group" style="margin-bottom:12px;">
@@ -6377,7 +6377,7 @@ window._fmtBytesA = function(b) {
     let _aneOpen = false;
     let _anePhotoFile = null;
 
-    /* ── Payment mode tile toggle ─────────────────────────────────────── */
+    /* â”€â”€ Payment mode tile toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     const _aneModeTiles = { Cash:'aneModeCash', Cheque:'aneModeChq', UPI:'aneModeUPI', RTGS:'aneModeRTGS', Balance:'aneModeBal' };
     const _aneModeColors = {
         Cash    : { bg:'var(--primary-color)', border:'var(--primary-color)', color:'#fff' },
@@ -6426,8 +6426,8 @@ window._fmtBytesA = function(b) {
         const sel = document.getElementById('aneBook'); if (!sel) return;
         const bType = document.querySelector('input[name="aneBookType"]:checked')?.value || 'New';
         const maxBooks = bType === 'Old' ? (window._adeMaxOldBooks || 30) : (window._adeMaxNewBooks || 50);
-        sel.innerHTML = '<option value="">— Select —</option>';
-        for (let b=1;b<=maxBooks;b++) { const o=document.createElement('option'); o.value=b; o.textContent=`Book ${b}  (${(b-1)*50+1}–${b*50})`; sel.appendChild(o); }
+        sel.innerHTML = '<option value="">â€” Select â€”</option>';
+        for (let b=1;b<=maxBooks;b++) { const o=document.createElement('option'); o.value=b; o.textContent=`Book ${b}  (${(b-1)*50+1}â€“${b*50})`; sel.appendChild(o); }
     }
     document.getElementById('anePhotoInput')?.addEventListener('change', function(ev) {
         const f=ev.target.files[0]; if(!f) return;
@@ -6437,12 +6437,12 @@ window._fmtBytesA = function(b) {
             if(!blob){ alert('Could not process image.'); return; }
             window._anePhotoFile=blob;
             const t=document.getElementById('anePhotoThumb'); if(t) t.src=URL.createObjectURL(blob);
-            const n=document.getElementById('anePhotoName'); if(n) n.textContent='✅ '+f.name.replace(/\.[^.]+$/,'')+'.jpg ('+window._fmtBytesA(blob.size)+')';
+            const n=document.getElementById('anePhotoName'); if(n) n.textContent='âœ… '+f.name.replace(/\.[^.]+$/,'')+'.jpg ('+window._fmtBytesA(blob.size)+')';
             const p=document.getElementById('anePhotoPreview'); if(p) p.style.display='';
         });
     });
     
-    // ── ANE form: cached data ────────────────────────────────────────────────
+    // â”€â”€ ANE form: cached data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     var _aneLandmarks = [], _aneLandmarks = [], _aneAreas = [], _aneBuildings = [];
 
     async function aneLoadAll() {
@@ -6459,7 +6459,7 @@ window._fmtBytesA = function(b) {
         var lSel = document.getElementById('aneLandmark');
         if (lSel) {
             var cur = lSel.value;
-            lSel.innerHTML = '<option value="">— Select Landmark —</option>';
+            lSel.innerHTML = '<option value="">â€” Select Landmark â€”</option>';
             _aneLandmarks.forEach(function(l) {
                 lSel.innerHTML += '<option value="'+l.name+'"'+(l.name===cur?' selected':'')+'>'+l.name+'</option>';
             });
@@ -6480,7 +6480,7 @@ window._fmtBytesA = function(b) {
         var filtLandmarks = lmObj ? _aneLandmarks.filter(function(a){return !a.landmarkId||a.landmarkId===lmObj.id;}) : _aneLandmarks;
         var landmarkSel = document.getElementById('aneLandmark');
         if (!landmarkSel) return;
-        landmarkSel.innerHTML = '<option value="">— Select Landmark —</option>';
+        landmarkSel.innerHTML = '<option value="">â€” Select Landmark â€”</option>';
         filtLandmarks.forEach(function(a){ landmarkSel.innerHTML += '<option value="'+a.name+'" data-id="'+a.id+'">'+a.name+'</option>'; });
         var g=document.getElementById('aneLandmarkGroup'); if(g) g.style.display='';
     }
@@ -6494,7 +6494,7 @@ window._fmtBytesA = function(b) {
         var subs = landmarkObj ? _aneAreas.filter(function(s){return s.landmarkId===landmarkObj.id;}) : [];
         var subSel = document.getElementById('aneArea');
         if (!subSel) return;
-        subSel.innerHTML = '<option value="">— Select Area —</option>';
+        subSel.innerHTML = '<option value="">â€” Select Area â€”</option>';
         subs.forEach(function(s){ subSel.innerHTML += '<option value="'+s.name+'" data-id="'+s.id+'">'+s.name+'</option>'; });
         var g=document.getElementById('aneAreaGroup'); if(g) g.style.display='';
     }
@@ -6508,7 +6508,7 @@ window._fmtBytesA = function(b) {
         var bldgs = saObj ? _aneBuildings.filter(function(b){return !b.areaId||b.areaId===saObj.id;}) : _aneBuildings;
         var bSel = document.getElementById('aneBuilding');
         if (!bSel) return;
-        bSel.innerHTML = '<option value="">— Select Building —</option>';
+        bSel.innerHTML = '<option value="">â€” Select Building â€”</option>';
         bldgs.forEach(function(b){ bSel.innerHTML += '<option value="'+b.name+'">'+b.name+'</option>'; });
         var g=document.getElementById('aneBuildingGroup'); if(g) g.style.display='';
     }
@@ -6546,10 +6546,10 @@ window._fmtBytesA = function(b) {
     }
 
 
-    // ── Manage Landmarks modal ───────────────────────────────────────────────
-    // (duplicate adeLandmarkModal removed — using the full 3-column version above)
+    // â”€â”€ Manage Landmarks modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // (duplicate adeLandmarkModal removed â€” using the full 3-column version above)
 
-    // ── Override aneToggle to also load buildings + landmarks ───────────────
+    // â”€â”€ Override aneToggle to also load buildings + landmarks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const _origAneToggle = window.aneToggle;
     window.aneToggle = function() {
         _origAneToggle && _origAneToggle();
@@ -6557,11 +6557,11 @@ window._fmtBytesA = function(b) {
         aneLoadLandmarks();
     };
 
-    // ── Override aneSave to include new fields ──────────────────────────────
+    // â”€â”€ Override aneSave to include new fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     window.aneSave = async function(ev) {
         ev.preventDefault();
         const btn = document.getElementById('aneSaveBtn');
-        if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Saving…';}
+        if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Savingâ€¦';}
         const aneShowStatus = function(msg,type){
             const el=document.getElementById('aneStatus');if(!el)return;
             el.style.display='';el.textContent=msg;
@@ -6578,9 +6578,9 @@ window._fmtBytesA = function(b) {
         const biz = (document.getElementById('aneBizName')?.value||'').trim().toUpperCase();
         const emailRaw = (document.getElementById('aneEmail')?.value||'').trim();
         const emailFull = emailRaw ? (emailRaw.includes('@') ? emailRaw : emailRaw+'@gmail.com') : null;
-        if(!bn||!rn){aneShowStatus('❌ Select Book and Receipt Number.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
-        if(donorType==='Individual'&&(!fn||!mn||!ln)){aneShowStatus('❌ First, Middle, and Last Name are required.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
-        if(donorType==='Business'&&!biz){aneShowStatus('❌ Business Name is required.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
+        if(!bn||!rn){aneShowStatus('âŒ Select Book and Receipt Number.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
+        if(donorType==='Individual'&&(!fn||!mn||!ln)){aneShowStatus('âŒ First, Middle, and Last Name are required.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
+        if(donorType==='Business'&&!biz){aneShowStatus('âŒ Business Name is required.','error');if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';}return;}
         const currentUser = JSON.parse(sessionStorage.getItem('currentUser')||'null');
         const payload = {
             bookNumber:bn, receiptNumber:rn, donorType,
@@ -6610,14 +6610,14 @@ window._fmtBytesA = function(b) {
                         await fetch('/api/upload-passbook',{method:'POST',body:fd});
                     }catch(_px){}
                 }
-                aneShowStatus('✅ Entry saved! Book '+data.entry.bookNumber+', Receipt #'+data.entry.receiptNumber,'success');
+                aneShowStatus('âœ… Entry saved! Book '+data.entry.bookNumber+', Receipt #'+data.entry.receiptNumber,'success');
                 aneReset();await adeLoad();
-            } else { aneShowStatus('❌ '+(data.message||'Submission failed.'),'error'); }
-        } catch(err){ aneShowStatus('❌ '+err.message,'error'); }
+            } else { aneShowStatus('âŒ '+(data.message||'Submission failed.'),'error'); }
+        } catch(err){ aneShowStatus('âŒ '+err.message,'error'); }
         finally{ if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-paper-plane" style="margin-right:6px;"></i>Save Entry';} }
     };
 
-    // ── Committee Members section ────────────────────────────────────────────
+    // â”€â”€ Committee Members section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     (function injectCommitteeSection() {
         const container = document.querySelector('.admin-content');
         if (!container || document.getElementById('committeeMembers')) return;
@@ -6626,12 +6626,12 @@ window._fmtBytesA = function(b) {
         sec.className = 'content-section';
         sec.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px;">
-            <div><h2 style="color:var(--dark-color);margin:0 0 4px;">Committee Members</h2><p style="color:#777;margin:0;">Manage committee — visible to all volunteers and on public page</p></div>
+            <div><h2 style="color:var(--dark-color);margin:0 0 4px;">Committee Members</h2><p style="color:#777;margin:0;">Manage committee â€” visible to all volunteers and on public page</p></div>
             <button onclick="cmOpenAdd()" class="btn btn-primary"><i class="fas fa-plus" style="margin-right:6px;"></i>Add Member</button>
         </div>
         <div id="cmStatus" style="display:none;padding:12px 18px;border-radius:10px;margin-bottom:16px;font-weight:600;"></div>
         <div id="cmGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;">
-            <div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">Loading…</div>
+            <div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;">Loadingâ€¦</div>
         </div>`;
         container.appendChild(sec);
     })();
@@ -6639,7 +6639,7 @@ window._fmtBytesA = function(b) {
     let _cmAll = [];
     async function cmLoad() {
         const grid = document.getElementById('cmGrid'); if(!grid) return;
-        grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--primary-color);margin-bottom:8px;"></i><br>Loading…</div>';
+        grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;grid-column:1/-1;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--primary-color);margin-bottom:8px;"></i><br>Loadingâ€¦</div>';
         try {
             const r = await fetch('/api/committee-members'); const d = await r.json();
             _cmAll = d.members || [];
@@ -6652,7 +6652,7 @@ window._fmtBytesA = function(b) {
                     <div style="padding:14px 12px 6px;">
                         <div style="font-weight:700;font-size:1.05rem;margin-bottom:4px;color:var(--dark-color);">${m.name}</div>
                         <div style="font-size:.82rem;color:var(--primary-color);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">${m.role||m.department||'Member'}</div>
-                        <div style="font-size:.78rem;color:#555;margin-bottom:4px;font-weight:600;">Seq: ${m.sequence||'—'}</div>
+                        <div style="font-size:.78rem;color:#555;margin-bottom:4px;font-weight:600;">Seq: ${m.sequence||'â€”'}</div>
                         ${m.memberId?'<div style="font-size:.78rem;color:#999;margin-bottom:8px;">ID: '+m.memberId+'</div>':''}
                         <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:10px;">
                             ${m.phone?'<div style="font-size:.82rem;color:#555;"><i class="fas fa-phone" style="margin-right:6px;color:var(--primary-color);"></i>'+m.phone+'</div>':''}
@@ -6667,7 +6667,7 @@ window._fmtBytesA = function(b) {
                     </div>
                 </div>
             </div>`).join('');
-        } catch(e) { grid.innerHTML='<div style="text-align:center;color:#c00;padding:40px;grid-column:1/-1;">⚠ Cannot load members.</div>'; }
+        } catch(e) { grid.innerHTML='<div style="text-align:center;color:#c00;padding:40px;grid-column:1/-1;">âš  Cannot load members.</div>'; }
     }
 
     function cmShowStatus(msg,type){
@@ -6763,7 +6763,7 @@ window._fmtBytesA = function(b) {
                 }catch(_px){}
             }
             document.getElementById('cmModal').remove();
-            cmShowStatus('✅ Member saved!','success');
+            cmShowStatus('âœ… Member saved!','success');
             await cmLoad();
         } catch(err){alert('Error: '+err.message);}
     }
@@ -6773,13 +6773,13 @@ window._fmtBytesA = function(b) {
         try {
             const res=await fetch(`/api/committee-members/${encodeURIComponent(id)}`,{method:'DELETE'});
             const d=await res.json();
-            if(res.ok&&d.success){cmShowStatus('✅ Member deleted.','success');await cmLoad();}
+            if(res.ok&&d.success){cmShowStatus('âœ… Member deleted.','success');await cmLoad();}
             else alert(d.message||'Delete failed.');
         }catch(e){alert('Server error.');}
     }
 
 
-    // ── Volunteer Cards public display section ──────────────────────────────
+    // â”€â”€ Volunteer Cards public display section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let _vcAll = [];
     async function vcLoad() {
         const grid = document.getElementById('vcGrid'); if(!grid) return;
@@ -6796,7 +6796,7 @@ window._fmtBytesA = function(b) {
                     <div style="padding:14px 12px 6px;">
                         <div style="font-weight:700;font-size:1.05rem;margin-bottom:4px;color:var(--dark-color);">${v.name}</div>
                         <div style="font-size:.82rem;color:var(--primary-color);font-weight:600;margin-bottom:10px;text-transform:uppercase;">${v.position||'Active Volunteer'}</div>
-                        <div style="font-size:.78rem;color:#555;margin-bottom:4px;font-weight:600;">Seq: ${v.sequence||'—'}</div>
+                        <div style="font-size:.78rem;color:#555;margin-bottom:4px;font-weight:600;">Seq: ${v.sequence||'â€”'}</div>
                         <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:10px;">
                             ${v.phone?'<div style="font-size:.82rem;color:#555;"><i class="fas fa-phone" style="margin-right:6px;color:var(--primary-color);"></i>'+v.phone+'</div>':''}
                             ${v.phone?'<div style="font-size:.82rem;color:#2e7d32;"><i class="fab fa-whatsapp" style="margin-right:6px;color:#25d366;font-weight:bold;"></i>wa.me/91'+v.phone+'</div>':''}
@@ -6810,7 +6810,7 @@ window._fmtBytesA = function(b) {
                     </div>
                 </div>
             </div>`).join('');
-        } catch(e) { grid.innerHTML='<div style="text-align:center;color:#c00;padding:40px;grid-column:1/-1;">⚠ Cannot load volunteer cards.</div>'; }
+        } catch(e) { grid.innerHTML='<div style="text-align:center;color:#c00;padding:40px;grid-column:1/-1;">âš  Cannot load volunteer cards.</div>'; }
     }
 
     function vcShowStatus(msg,type){
@@ -6900,7 +6900,7 @@ window._fmtBytesA = function(b) {
                 }catch(_px){}
             }
             document.getElementById('vcModal').remove();
-            vcShowStatus('✅ Volunteer card saved!','success');
+            vcShowStatus('âœ… Volunteer card saved!','success');
             await vcLoad();
         } catch(err){alert('Error: '+err.message);}
     }
@@ -6910,7 +6910,7 @@ window._fmtBytesA = function(b) {
         try {
             const res=await fetch(`/api/volunteer-cards/${encodeURIComponent(id)}`,{method:'DELETE'});
             const d=await res.json();
-            if(res.ok&&d.success){vcShowStatus('✅ Volunteer card deleted.','success');await vcLoad();}
+            if(res.ok&&d.success){vcShowStatus('âœ… Volunteer card deleted.','success');await vcLoad();}
             else alert(d.message||'Delete failed.');
         }catch(e){alert('Server error.');}
     }
@@ -6978,7 +6978,7 @@ window._fmtBytesA = function(b) {
                     </div>
                 </div>`;
             }).join('');
-        } catch(e) { grid.innerHTML='<div style="text-align:center;color:#c00;padding:40px;grid-column:1/-1;">⚠ Cannot load contact slots.</div>'; }
+        } catch(e) { grid.innerHTML='<div style="text-align:center;color:#c00;padding:40px;grid-column:1/-1;">âš  Cannot load contact slots.</div>'; }
     }
 
     function ccShowStatus(msg,type){
@@ -7071,13 +7071,13 @@ window._fmtBytesA = function(b) {
                 } catch (_px) {}
             }
             document.getElementById('ccModal').remove();
-            ccShowStatus(`✅ Slot ${slotNum} updated!`, 'success');
+            ccShowStatus(`âœ… Slot ${slotNum} updated!`, 'success');
             await ccLoad();
         } catch (err) { alert('Error: ' + err.message); }
     }
 
 
-    // ── Hook into admin section switcher ────────────────────────────────────
+    // â”€â”€ Hook into admin section switcher â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Hook into admin section switcher so we auto-load on navigate
     const _origShowAdmin = window.showAdminSection;
     window.showAdminSection = function(id) {
@@ -7248,14 +7248,14 @@ fetchNotifications();
 </script>
 
 <!-- ==========================================================================
-     ADE RECEIPT GENERATOR (ade_rcg_) — Live sync from donation entry form
+     ADE RECEIPT GENERATOR (ade_rcg_) â€” Live sync from donation entry form
      Fully isolated. Zero changes to existing code. All IDs prefixed ade_rcg_.
      ========================================================================== -->
 <script>
 (function() {
     'use strict';
 
-    // ── Amount → English words (Indian system) ─────────────────────────────
+    // â”€â”€ Amount â†’ English words (Indian system) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function ade_rcg_amtToWords(num) {
         if (!num || isNaN(num) || num <= 0) return '';
         num = Math.round(num);
@@ -7279,13 +7279,13 @@ fetchNotifications();
     // Expose to window so the receipt uploader IIFE can use it
     window.ade_rcg_amtToWords = ade_rcg_amtToWords;
 
-    // ── Set a receipt field ─────────────────────────────────────────────────
+    // â”€â”€ Set a receipt field â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function ade_rcg_set(id, html) {
         var el = document.getElementById(id);
         if (el) el.innerHTML = html;
     }
 
-    // ── Master sync — reads all form fields and paints the receipt ──────────
+    // â”€â”€ Master sync â€” reads all form fields and paints the receipt â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     window.ade_rcg_liveSync = function() {
         var wrapper = document.getElementById('ade_rcg_wrapper');
         if (!wrapper) return;
@@ -7344,7 +7344,7 @@ fetchNotifications();
 
         // Amount words
         var words = amount > 0 ? ade_rcg_amtToWords(amount) : '';
-        var amtFmt = amount > 0 ? ('₹\u00a0' + Number(amount).toLocaleString('en-IN')) : '';
+        var amtFmt = amount > 0 ? ('â‚¹\u00a0' + Number(amount).toLocaleString('en-IN')) : '';
 
         // Paint receipt fields
         ade_rcg_set('ade_rcg_r_year',   yearStr   || '<span style="color:#CCC;font-style:italic;">__</span>');
@@ -7358,13 +7358,13 @@ fetchNotifications();
             : '<span style="color:#CCC;font-style:italic;font-weight:400;">______________________________</span>');
         ade_rcg_set('ade_rcg_r_amt',    amtFmt
             ? '<span style="font-weight:700;color:#8B1A1A;">'+amtFmt+'</span>'
-            : '<span style="color:#CCC;font-style:italic;font-weight:400;">₹</span>');
+            : '<span style="color:#CCC;font-style:italic;font-weight:400;">â‚¹</span>');
 
         var modeEl = document.getElementById('ade_rcg_r_mode');
         if (modeEl) modeEl.textContent = payMode ? ('(' + payMode + ')') : '';
     };
 
-    // ── Wire all form fields to trigger live sync ───────────────────────────
+    // â”€â”€ Wire all form fields to trigger live sync â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function ade_rcg_wireListeners() {
         var ids = ['adeFirstName','adeMiddleName','adeLastName','adeBusinessName',
                    'adeAmount','adeReceiptNumber','adeBookNumber','adeReceiptDate'];
@@ -7377,7 +7377,7 @@ fetchNotifications();
             }
         });
 
-        // Payment mode buttons — they update a hidden input, so watch that too
+        // Payment mode buttons â€” they update a hidden input, so watch that too
         var pmEl = document.getElementById('adePaymentMode');
         if (pmEl && !pmEl._ade_rcg_bound) {
             pmEl._ade_rcg_bound = true;
@@ -7394,7 +7394,7 @@ fetchNotifications();
             }
         }
 
-        // Donor type change — also triggers sync
+        // Donor type change â€” also triggers sync
         var dtEl = document.getElementById('adeDonorType');
         if (dtEl && !dtEl._ade_rcg_bound_dt) {
             dtEl._ade_rcg_bound_dt = true;
@@ -7418,7 +7418,7 @@ fetchNotifications();
         }
     }
 
-    // ── Re-wire every time the form card becomes visible ────────────────────
+    // â”€â”€ Re-wire every time the form card becomes visible â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // (form card is hidden by default and toggled by adeToggleForm)
     var _origToggle = window.adeToggleForm;
     document.addEventListener('DOMContentLoaded', function() {
@@ -7451,7 +7451,7 @@ fetchNotifications();
         setTimeout(tryWrapToggle, 1500);
     });
 
-    // ── HD WhatsApp send ────────────────────────────────────────────────────
+    // â”€â”€ HD WhatsApp send â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     window.ade_rcg_sendWhatsApp = function() {
         var name = '';
         var donorType = document.getElementById('adeDonorType')?.value || 'Individual';
@@ -7480,14 +7480,14 @@ fetchNotifications();
         }
 
         var btn = document.getElementById('ade_rcg_wa_btn');
-        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating HD Image…'; }
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating HD Imageâ€¦'; }
 
         function doCapture() {
             var el = document.getElementById('ade_rcg_receipt');
             if (!el) { if (btn) { btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp"></i> Send Receipt via WhatsApp'; } return; }
 
             html2canvas(el, {
-                scale: 3,            // ← HD: 3× resolution
+                scale: 3,            // â† HD: 3Ã— resolution
                 backgroundColor: null,
                 useCORS: true,
                 logging: false,
@@ -7500,18 +7500,18 @@ fetchNotifications();
                     var pts = dateRaw.split('-');
                     dateStr = (pts[2]||'')+'/'+(pts[1]||'')+'/'+(pts[0]||'');
                 }
-                var rcptLabel = bookNo && rcptNo ? bookNo+'/'+rcptNo : (rcptNo || bookNo || '—');
+                var rcptLabel = bookNo && rcptNo ? bookNo+'/'+rcptNo : (rcptNo || bookNo || 'â€”');
 
                 var msg = [
-                    '🙏 *श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ*',
-                    '━━━━━━━━━━━━━━━━━━━━━',
-                    '📋 *Receipt No:* ' + rcptLabel,
-                    '👤 *Donor:* ' + (name || '—'),
-                    '💰 *Amount:* ₹' + amtFmt,
-                    '📅 *Date:* ' + (dateStr || '—'),
-                    '💳 *Payment:* ' + payMode,
-                    '━━━━━━━━━━━━━━━━━━━━━',
-                    'धन्यवाद! रोख/चेक मिळाले. 🙏',
+                    'ðŸ™ *à¤¶à¥à¤°à¥€ à¤ªà¤Ÿà¥‡à¤²à¤µà¤¾à¤¡à¥€ à¤¸à¤¾à¤°à¥à¤µà¤œà¤¨à¤¿à¤• à¤—à¤£à¥‡à¤¶à¥‹à¤¤à¥à¤¸à¤µ à¤®à¤‚à¤¡à¤³*',
+                    'â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”',
+                    'ðŸ“‹ *Receipt No:* ' + rcptLabel,
+                    'ðŸ‘¤ *Donor:* ' + (name || 'â€”'),
+                    'ðŸ’° *Amount:* â‚¹' + amtFmt,
+                    'ðŸ“… *Date:* ' + (dateStr || 'â€”'),
+                    'ðŸ’³ *Payment:* ' + payMode,
+                    'â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”',
+                    'à¤§à¤¨à¥à¤¯à¤µà¤¾à¤¦! à¤°à¥‹à¤–/à¤šà¥‡à¤• à¤®à¤¿à¤³à¤¾à¤²à¥‡. ðŸ™',
                     '_Shree Patelwadi Sarvjanik Ganeshostav Mandal_'
                 ].join('\n');
 
@@ -7560,20 +7560,20 @@ fetchNotifications();
 </script>
 <!-- ======= END ADE RECEIPT GENERATOR ======= -->
 
-<!-- ═══ ADE RECEIPT EDIT MODAL ═══ -->
+<!-- â•â•â• ADE RECEIPT EDIT MODAL â•â•â• -->
 <div id="ade_rcg_editModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:18px;padding:28px 28px 22px;max-width:480px;width:94%;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative;">
     <button onclick="ade_rcg_closeEditModal()" style="position:absolute;top:14px;right:16px;border:none;background:#f5f5f5;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;color:#555;display:flex;align-items:center;justify-content:center;">&times;</button>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
       <div style="width:40px;height:40px;background:linear-gradient(135deg,#8B1A1A,#B71C1C);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-file-invoice" style="color:#fff;font-size:1.1rem;"></i></div>
-      <div><div style="font-weight:800;font-size:1.05rem;color:#8B1A1A;">Edit Receipt</div><div style="font-size:.75rem;color:#aaa;" id="ade_rcg_editSubtitle">—</div></div>
+      <div><div style="font-weight:800;font-size:1.05rem;color:#8B1A1A;">Edit Receipt</div><div style="font-size:.75rem;color:#aaa;" id="ade_rcg_editSubtitle">â€”</div></div>
     </div>
     <form id="ade_rcg_editForm" onsubmit="ade_rcg_submitReceiptEdit(event)">
       <div style="margin-bottom:14px;"><label style="font-weight:600;font-size:.85rem;color:#333;display:block;margin-bottom:5px;"><i class="fas fa-user" style="color:#8B1A1A;margin-right:5px;"></i>Donor Name *</label><input type="text" id="ade_rcg_editName" style="width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:.95rem;box-sizing:border-box;" placeholder="Full name" required></div>
       <div style="margin-bottom:14px;"><label style="font-weight:600;font-size:.85rem;color:#333;display:block;margin-bottom:5px;"><i class="fas fa-rupee-sign" style="color:#27AE60;margin-right:5px;"></i>Amount (&#x20b9;)</label><input type="number" id="ade_rcg_editAmount" style="width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:.95rem;box-sizing:border-box;" placeholder="Amount" min="0"></div>
       <div style="margin-bottom:14px;"><label style="font-weight:600;font-size:.85rem;color:#333;display:block;margin-bottom:5px;"><i class="fas fa-calendar-alt" style="color:#1565C0;margin-right:5px;"></i>Receipt Date</label><input type="date" id="ade_rcg_editDate" style="width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:.95rem;box-sizing:border-box;"></div>
       <div style="margin-bottom:14px;"><label style="font-weight:600;font-size:.85rem;color:#333;display:block;margin-bottom:5px;"><i class="fas fa-info-circle" style="color:#F59E0B;margin-right:5px;"></i>Status</label><select id="ade_rcg_editStatus" style="width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:.95rem;box-sizing:border-box;background:#fff;"><option value="Received">Received</option><option value="Balance">Balance</option><option value="Cash">Cash</option><option value="Cheque">Cheque</option><option value="UPI">UPI</option><option value="RTGS">RTGS</option></select></div>
-      <div style="margin-bottom:18px;"><label style="font-weight:600;font-size:.85rem;color:#333;display:block;margin-bottom:5px;"><i class="fas fa-comment-alt" style="color:#6A1B9A;margin-right:5px;"></i>Reason <span style="font-weight:400;color:#aaa;font-size:.78rem;">(optional)</span></label><input type="text" id="ade_rcg_editReason" style="width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:.95rem;box-sizing:border-box;" placeholder="e.g. Correction, typo fix…"></div>
+      <div style="margin-bottom:18px;"><label style="font-weight:600;font-size:.85rem;color:#333;display:block;margin-bottom:5px;"><i class="fas fa-comment-alt" style="color:#6A1B9A;margin-right:5px;"></i>Reason <span style="font-weight:400;color:#aaa;font-size:.78rem;">(optional)</span></label><input type="text" id="ade_rcg_editReason" style="width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:.95rem;box-sizing:border-box;" placeholder="e.g. Correction, typo fixâ€¦"></div>
       <div id="ade_rcg_editHistoryBox" style="display:none;margin-bottom:14px;padding:10px 12px;background:#FFF8F1;border-radius:10px;border:1px solid #ffe0b2;font-size:.78rem;color:#555;max-height:120px;overflow-y:auto;"></div>
       <div style="display:flex;gap:10px;">
         <button type="submit" id="ade_rcg_editSaveBtn" style="flex:1;padding:12px;background:linear-gradient(135deg,#8B1A1A,#B71C1C);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="fas fa-save"></i> Save &amp; Re-send</button>
@@ -7731,7 +7731,7 @@ fetchNotifications();
   document.addEventListener("click",function(ev){var m=document.getElementById("ade_rcg_editModal");if(m&&ev.target===m)ade_rcg_closeEditModal();});
 })();
 </script>
-<!-- ═══ END ADE RECEIPT EDIT MODAL ═══ -->
+<!-- â•â•â• END ADE RECEIPT EDIT MODAL â•â•â• -->
 
 
 <script>
@@ -7924,7 +7924,7 @@ window.contribExportExcel=function(){
   if(_contribs.length===0){alert('No contribution records to export.');return;}
   if(typeof XLSX==='undefined'){alert('Excel library not loaded. Please refresh the page.');return;}
   
-  var rows=[['#','Contributor Name','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Total (₹)']];
+  var rows=[['#','Contributor Name','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Total (â‚¹)']];
   var groups={};
   _contribs.forEach(function(c){
     var n = (c.name||'').trim().toUpperCase();
@@ -7976,7 +7976,7 @@ window._contribSetDate=function(){var di=document.getElementById('contrib-date')
 document.addEventListener('DOMContentLoaded',function(){var sec=document.getElementById('contributions');if(sec&&sec.classList.contains('active'))contribLoad();});
 })();
 </script>
-<!-- ═══ END CONTRIBUTIONS MODULE ═══ -->
+<!-- â•â•â• END CONTRIBUTIONS MODULE â•â•â• -->
 
 <!--  CONTRIBUTIONS EDIT MODAL  -->
 <div class="modal" id="contribEditModal">
@@ -8021,3 +8021,4 @@ document.addEventListener('DOMContentLoaded',function(){var sec=document.getElem
 
 </body>
 </html>
+

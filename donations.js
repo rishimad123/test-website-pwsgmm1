@@ -5,8 +5,9 @@
 
 // ── CANONICAL COLUMN ORDER (must match the Excel format exactly) ──────────
 const DON_CANONICAL_COLS = [
-    'Receipt No',
+    'Receipt Book',
     'Date',
+    'Receipt No',
     'Receipt Type',
     'Name',
     'Location/ Area',
@@ -24,6 +25,11 @@ const DON_CANONICAL_COLS = [
 function _donMapToCanonical(colName) {
     const cn = (colName || '').trim().toLowerCase().replace(/\s+/g, ' ');
     const canonMap = {
+        'receipt book'          : 'Receipt Book',
+        'book'                  : 'Receipt Book',
+        'book no'               : 'Receipt Book',
+        'book number'           : 'Receipt Book',
+        'book no.'              : 'Receipt Book',
         'receipt no'            : 'Receipt No',
         'receipt no.'           : 'Receipt No',
         'receipt number'        : 'Receipt No',
@@ -114,7 +120,7 @@ function _donFormatDate(val) {
 // ── Helper: normalise a row to canonical column names ─────────────────────
 function _donNormaliseRow(rawRow) {
     const result = {};
-    const dateColKeys = ['Date', 'Balance Received Date'];
+    const dateColKeys = ['Date', 'Balance Received Date', 'Balance Reco Date'];
 
     // First pass: map known canonical columns
     for (const [origKey, origVal] of Object.entries(rawRow)) {
@@ -652,197 +658,155 @@ function donExportExcel() {
         if (typeof showNotification === 'function') showNotification('No data to export.', 'error');
         return;
     }
-
     if (typeof XLSX === 'undefined') {
         if (typeof showNotification === 'function') showNotification('SheetJS library not loaded — cannot export.', 'error');
         return;
     }
 
-    // Build ordered columns for export
-    const exportCols = _donBuildColOrder(_donColumns);
+    // Exact 14-column order matching the Excel format
+    const COLS = [
+        'Receipt Book', 'Date', 'Receipt No', 'Receipt Type', 'Name',
+        'Location/ Area', 'Current Year Amount', 'Balance Pending',
+        'Balance Receipt Amount', 'Balance Recovered', 'Balance Received Date',
+        'Comments', 'Balance Difference', 'Common Location'
+    ];
 
-    // ── Date columns: must stay as text strings in DD-MM-YYYY ────────────────
-    const dateColSet = new Set(['Date', 'Balance Received Date']);
+    // Build from _donColumns, preserving only canonical + any extras
+    const exportCols = [
+        ...COLS.filter(c => _donColumns.includes(c)),
+        ..._donColumns.filter(c => !COLS.includes(c) && !c.startsWith('_'))
+    ];
+    // If no canonical cols matched, fall back to original columns
+    const finalCols = exportCols.length > 0 ? exportCols : _donColumns.filter(c => !c.startsWith('_'));
 
-    // ── Numeric columns: must be stored as real numbers ───────────────────────
+    const dateColSet = new Set(['Date', 'Balance Received Date', 'Balance Reco Date']);
     const numericColSet = new Set([
-        'Current Year Amount', 'Balance Pending', 'Balance Receipt Amount',
-        'Balance Recovered', 'Balance Difference', 'Receipt No'
+        'Receipt Book', 'Receipt No', 'Current Year Amount', 'Balance Pending',
+        'Balance Receipt Amount', 'Balance Recovered', 'Balance Difference'
     ]);
 
-    // Build worksheet data array (header row + data rows)
-    const wsData = [];
-
-    // Header row
-    wsData.push(exportCols);
-
-    // Data rows
-    _donFiltered.forEach(record => {
-        const row = exportCols.map(col => {
-            const val = record[col] ?? '';
-            if (val === '' || val === null || val === undefined) return '';
-
-            // Date columns: always output as text string DD-MM-YYYY
-            if (dateColSet.has(col)) {
-                return _donFormatDate(val);
-            }
-
-            // Numeric columns: return as number if parseable
-            if (numericColSet.has(col)) {
-                const num = parseFloat(String(val).replace(/,/g, ''));
-                return isNaN(num) ? val : num;
-            }
-
-            // All others: return as-is (string)
-            return val;
-        });
-        wsData.push(row);
+    // ── Sort: Receipt Book ASC → Location/Area ASC → Receipt No ASC ─────────
+    const sorted = [..._donFiltered].sort((a, b) => {
+        const bkA = Number(a['Receipt Book'] || a['Receipt No'] || 0);
+        const bkB = Number(b['Receipt Book'] || b['Receipt No'] || 0);
+        if (_donColumns.includes('Receipt Book') && bkA !== bkB) return bkA - bkB;
+        const locA = String(a['Location/ Area'] || '');
+        const locB = String(b['Location/ Area'] || '');
+        const locCmp = locA.localeCompare(locB);
+        if (locCmp !== 0) return locCmp;
+        const rnA = Number(a['Receipt No'] || 0);
+        const rnB = Number(b['Receipt No'] || 0);
+        return rnA - rnB;
     });
 
-    // Create worksheet from array of arrays
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-    // ── Apply cell types: force date columns to text so Excel doesn't re-format ──
-    const dateColIndices = exportCols
-        .map((c, i) => dateColSet.has(c) ? i : -1)
-        .filter(i => i >= 0);
-
-    // Force date cells to text type (type 's')
-    for (let r = 1; r < wsData.length; r++) {
-        for (const ci of dateColIndices) {
-            const cellAddr = XLSX.utils.encode_cell({ r, c: ci });
-            if (ws[cellAddr]) {
-                ws[cellAddr].t = 's'; // force text type
-                ws[cellAddr].z = '@'; // format as text
-            }
-        }
-    }
-
-    // ── Set column widths ─────────────────────────────────────────────────────
-    const colWidths = exportCols.map(col => {
-        const maxLen = Math.max(
-            col.length,
-            ..._donFiltered.map(r => String(r[col] ?? '').length)
-        );
-        return { wch: Math.min(Math.max(maxLen + 2, 10), 40) };
-    });
-    ws['!cols'] = colWidths;
-
-    // ── Apply header styling if xlsx-js-style is available ───────────────────
-    const headerStyle = {
-        font: { bold: true, color: { rgb: 'FFFFFF' } },
-        fill: { patternType: 'solid', fgColor: { rgb: '1D6F42' } },
-        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-        border: {
-            top:    { style: 'thin', color: { rgb: '000000' } },
-            bottom: { style: 'thin', color: { rgb: '000000' } },
-            left:   { style: 'thin', color: { rgb: '000000' } },
-            right:  { style: 'thin', color: { rgb: '000000' } }
-        }
-    };
-    const dataStyle = {
-        alignment: { vertical: 'center', wrapText: false },
-        border: {
-            top:    { style: 'hair', color: { rgb: 'CCCCCC' } },
-            bottom: { style: 'hair', color: { rgb: 'CCCCCC' } },
-            left:   { style: 'hair', color: { rgb: 'CCCCCC' } },
-            right:  { style: 'hair', color: { rgb: 'CCCCCC' } }
-        }
-    };
-    const numStyle = {
-        ...dataStyle,
-        numFmt: '#,##0',
-        alignment: { horizontal: 'right', vertical: 'center' }
-    };
-    const dateStyle = {
-        ...dataStyle,
-        numFmt: '@',
-        alignment: { horizontal: 'center', vertical: 'center' }
-    };
-
-    // Style header row
-    for (let c = 0; c < exportCols.length; c++) {
-        const addr = XLSX.utils.encode_cell({ r: 0, c });
-        if (ws[addr]) ws[addr].s = headerStyle;
-    }
-
-    // Style data rows
-    for (let r = 1; r < wsData.length; r++) {
-        const isAltRow = r % 2 === 0;
-        for (let c = 0; c < exportCols.length; c++) {
-            const addr = XLSX.utils.encode_cell({ r, c });
-            if (!ws[addr]) continue;
-            const colName = exportCols[c];
-            if (dateColSet.has(colName)) {
-                ws[addr].s = { ...dateStyle };
-            } else if (numericColSet.has(colName) && ws[addr].t === 'n') {
-                ws[addr].s = { ...numStyle };
-                if (isAltRow) ws[addr].s.fill = { patternType: 'solid', fgColor: { rgb: 'F0FFF4' } };
-            } else {
-                ws[addr].s = { ...dataStyle };
-                if (isAltRow) ws[addr].s.fill = { patternType: 'solid', fgColor: { rgb: 'F7F9FC' } };
-            }
-        }
-    }
-
-    // Set row height for header
-    ws['!rows'] = [{ hpt: 30 }];
-
-    // ── Create workbook with two sheets ──────────────────────────────────────
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Donation list');
-
-    // Second sheet: descending order by Receipt No or first column
-    const sortedData = [..._donFiltered].sort((a, b) => {
-        const aVal = a['Receipt No'] ?? a[exportCols[0]] ?? '';
-        const bVal = b['Receipt No'] ?? b[exportCols[0]] ?? '';
-        const aNum = parseFloat(aVal);
-        const bNum = parseFloat(bVal);
-        if (!isNaN(aNum) && !isNaN(bNum)) return bNum - aNum;
-        return String(bVal).localeCompare(String(aVal));
-    });
-
-    const wsData2 = [exportCols, ...sortedData.map(record =>
-        exportCols.map(col => {
-            const val = record[col] ?? '';
-            if (val === '' || val === null) return '';
+    // Build worksheet data
+    const wsData = [finalCols];
+    sorted.forEach(record => {
+        const row = finalCols.map(col => {
+            const val = record[col] !== undefined ? record[col] : '';
+            if (!val && val !== 0) return '';
             if (dateColSet.has(col)) return _donFormatDate(val);
             if (numericColSet.has(col)) {
                 const num = parseFloat(String(val).replace(/,/g, ''));
                 return isNaN(num) ? val : num;
             }
             return val;
-        })
-    )];
-    const ws2 = XLSX.utils.aoa_to_sheet(wsData2);
+        });
+        wsData.push(row);
+    });
 
-    // Force date cells to text in sheet 2
-    for (let r2 = 1; r2 < wsData2.length; r2++) {
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Force date cells to text
+    const dateColIndices = finalCols.map((c, i) => dateColSet.has(c) ? i : -1).filter(i => i >= 0);
+    for (let r = 1; r < wsData.length; r++) {
         for (const ci of dateColIndices) {
-            const cellAddr = XLSX.utils.encode_cell({ r: r2, c: ci });
-            if (ws2[cellAddr]) { ws2[cellAddr].t = 's'; ws2[cellAddr].z = '@'; }
+            const addr = XLSX.utils.encode_cell({ r, c: ci });
+            if (ws[addr]) { ws[addr].t = 's'; ws[addr].z = '@'; }
         }
     }
-    ws2['!cols'] = colWidths;
 
-    // Style sheet 2 headers
-    for (let c = 0; c < exportCols.length; c++) {
+    // Styling
+    const hStyle = {
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { patternType: 'solid', fgColor: { rgb: '1D6F42' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: { top:{style:'thin',color:{rgb:'000000'}}, bottom:{style:'thin',color:{rgb:'000000'}}, left:{style:'thin',color:{rgb:'000000'}}, right:{style:'thin',color:{rgb:'000000'}} }
+    };
+    const numericColIndices = new Set(finalCols.map((c, i) => numericColSet.has(c) ? i : -1).filter(i => i >= 0));
+    const balDiffIdx = finalCols.indexOf('Balance Difference');
+    const balPendIdx = finalCols.indexOf('Balance Pending');
+    const balRcptIdx = finalCols.indexOf('Balance Receipt Amount');
+
+    for (let c = 0; c < finalCols.length; c++) {
         const addr = XLSX.utils.encode_cell({ r: 0, c });
-        if (ws2[addr]) ws2[addr].s = headerStyle;
+        if (ws[addr]) ws[addr].s = hStyle;
+    }
+    for (let r = 1; r < wsData.length; r++) {
+        const alt = r % 2 === 0;
+        const fg  = alt ? 'F0FFF4' : 'FFFFFF';
+        for (let c = 0; c < finalCols.length; c++) {
+            const addr = XLSX.utils.encode_cell({ r, c });
+            if (!ws[addr]) continue;
+            let cellFg = fg;
+            if (c === balDiffIdx && ws[addr].t === 'n') {
+                cellFg = ws[addr].v < 0 ? 'FFCCCC' : (ws[addr].v > 0 ? 'CCFFCC' : fg);
+            }
+            if ((c === balPendIdx || c === balRcptIdx) && ws[addr].t === 'n' && ws[addr].v > 0) {
+                cellFg = 'DDEEFF';
+            }
+            ws[addr].s = numericColIndices.has(c) && ws[addr].t === 'n' ? {
+                numFmt: '#,##0', fill:{patternType:'solid',fgColor:{rgb:cellFg}},
+                alignment:{horizontal:'right',vertical:'center'},
+                border:{top:{style:'hair',color:{rgb:'CCCCCC'}},bottom:{style:'hair',color:{rgb:'CCCCCC'}},left:{style:'hair',color:{rgb:'CCCCCC'}},right:{style:'hair',color:{rgb:'CCCCCC'}}}
+            } : {
+                fill:{patternType:'solid',fgColor:{rgb:cellFg}}, alignment:{vertical:'center'},
+                border:{top:{style:'hair',color:{rgb:'CCCCCC'}},bottom:{style:'hair',color:{rgb:'CCCCCC'}},left:{style:'hair',color:{rgb:'CCCCCC'}},right:{style:'hair',color:{rgb:'CCCCCC'}}}
+            };
+        }
     }
 
+    // Column widths
+    ws['!cols'] = finalCols.map(col => {
+        const maxLen = Math.max(col.length, ...sorted.map(r => String(r[col] ?? '').length));
+        return { wch: Math.min(Math.max(maxLen + 2, 10), 35) };
+    });
+    ws['!rows'] = [{ hpt: 32 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Donation list');
+
+    // Second sheet: Descending order
+    const sortedDesc = [...sorted].reverse();
+    const wsData2 = [finalCols, ...sortedDesc.map(r => finalCols.map(c => {
+        const val = r[c] !== undefined ? r[c] : '';
+        if (!val && val !== 0) return '';
+        if (dateColSet.has(c)) return _donFormatDate(val);
+        if (numericColSet.has(c)) { const n = parseFloat(String(val).replace(/,/g,'')); return isNaN(n)?val:n; }
+        return val;
+    }))];
+    const ws2 = XLSX.utils.aoa_to_sheet(wsData2);
+    for (let r = 1; r < wsData2.length; r++) {
+        for (const ci of dateColIndices) {
+            const addr = XLSX.utils.encode_cell({ r, c: ci });
+            if (ws2[addr]) { ws2[addr].t = 's'; ws2[addr].z = '@'; }
+        }
+    }
+    for (let c = 0; c < finalCols.length; c++) {
+        const addr = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws2[addr]) ws2[addr].s = hStyle;
+    }
+    ws2['!cols'] = ws['!cols'];
+    ws2['!rows'] = [{ hpt: 32 }];
     XLSX.utils.book_append_sheet(wb, ws2, 'Descending Order');
 
-    // ── Write and trigger download ────────────────────────────────────────────
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
     const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const yyyy = today.getFullYear();
-    const fileName = `donations_${dd}-${mm}-${yyyy}.xlsx`;
-
+    const fileName = 'donations_' + dd + '-' + mm + '-' + today.getFullYear() + '.xlsx';
     XLSX.writeFile(wb, fileName);
     if (typeof showNotification === 'function')
-        showNotification(`\u2705 Exported ${_donFiltered.length} records to ${fileName}`, 'success');
+        showNotification('Exported ' + sorted.length + ' records to ' + fileName, 'success');
 }
 
 // ── Legacy CSV export (kept for backward compatibility) ──────────────────────

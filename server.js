@@ -1556,9 +1556,9 @@ const server = http.createServer(async (req, res) => {
     // ── GET /api/donations ────────────────────────────────────────────────────
     if (req.method === 'GET' && pathname === '/api/donations') {
         const visible = donationsStore.records.filter(r => !r._deleted);
-        // Return columns in canonical order (matching the Excel format)
+        // Return columns in canonical 14-column order (matching the Excel format)
         const CANONICAL = [
-            'Receipt No','Date','Receipt Type','Name','Location/ Area',
+            'Receipt Book','Date','Receipt No','Receipt Type','Name','Location/ Area',
             'Current Year Amount','Balance Pending','Balance Receipt Amount',
             'Balance Recovered','Balance Received Date','Comments',
             'Balance Difference','Common Location'
