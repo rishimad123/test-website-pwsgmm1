@@ -3217,16 +3217,7 @@ async function loadAdminDonationEntries() {
     try {
         const res  = await fetch('/api/donation-entries');
         const data = await res.json();
-        // Sort by landmark first, then book number, then receipt number
-        _deAdmAllEntries = (data.entries || []).slice().sort((a, b) => {
-            const lmA = String(a.landmark || a.area || '').toLowerCase();
-            const lmB = String(b.landmark || b.area || '').toLowerCase();
-            if (lmA < lmB) return -1;
-            if (lmA > lmB) return 1;
-            const bkDiff = (Number(a.bookNumber)||0) - (Number(b.bookNumber)||0);
-            if (bkDiff !== 0) return bkDiff;
-            return (Number(a.receiptNumber)||0) - (Number(b.receiptNumber)||0);
-        });
+        _deAdmAllEntries = (data.entries || []).slice().reverse();
         deAdmApplyFilter();
     } catch(e) {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#c0392b;padding:24px;">⚠ Cannot reach server.</td></tr>';
@@ -3253,49 +3244,35 @@ function deAdmApplyFilter() {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:24px;">No entries found.</td></tr>';
         return;
     }
-    // Group entries by landmark for a structured, clear display
-    const lmOrder = [];
-    const lmGroups = {};
-    list.forEach(e => {
-        const lm = String(e.landmark || e.area || '(No Landmark)').trim();
-        if (!lmGroups[lm]) { lmGroups[lm] = []; lmOrder.push(lm); }
-        lmGroups[lm].push(e);
-    });
-    let htmlRows = '';
-    lmOrder.forEach(lm => {
-        const cnt = lmGroups[lm].length;
-        htmlRows += '<tr><td colspan="9" style="background:linear-gradient(90deg,#FFF3E0,#FFF8F5);color:#BF360C;font-weight:700;font-size:.85rem;padding:8px 14px;border-left:4px solid #E65100;border-top:2px solid #FFCC80;"><i class="fas fa-map-marker-alt" style="margin-right:6px;color:#E65100;"></i>' + escHtml(lm) + '<span style="font-weight:400;color:#888;font-size:.78rem;margin-left:8px;">(' + cnt + ' entr' + (cnt===1?'y':'ies') + ')</span></td></tr>';
-        lmGroups[lm].forEach(e => {
-            const donor = e.donorType==='Business' ? (e.businessName||'—') : [e.firstName,e.middleName,e.lastName].filter(Boolean).join(' ')||'—';
-            const amt = e.amount!=null ? '₹'+Number(e.amount).toLocaleString('en-IN') : '<span style="color:#ccc;">—</span>';
-            const dtObj = new Date(e.submittedAt);
-            const dtTime = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
-            const dtDate = dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
-            const photoCell = e.photoUrl
-                ? '<img src="'+e.photoUrl+'?t='+Date.now()+'" loading="lazy" onclick="openAdminPbLightbox(''+e.photoUrl+'')" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" title="Click to enlarge">'
-                : '<span style="color:#ccc;font-size:.8rem;">—</span>';
-            let modeBadge = '<span style="padding:3px 9px;border-radius:10px;background:#E3F2FD;color:#1565C0;font-size:.76rem;font-weight:700;">'+(e.paymentMode||'—')+'</span>';
-            if (e.markedReceivedBy) {
-                modeBadge = '<span style="padding:3px 9px;border-radius:10px;background:#E8F5E9;color:#2E7D32;font-size:.76rem;font-weight:700;">Received</span><div style="font-size:0.75rem;color:#E65100;font-weight:700;margin-top:6px;line-height:1.2;">Marked received by '+escHtml(e.markedReceivedBy)+'</div>';
-            }
-            const safeId = (e.entryId||'').replace(/'/g,"\'");
-            const bkBadge = (e.bookType||'New')==='Old'
-                ? '<span style="background:#FFF3E0;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>'
-                : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>';
-            htmlRows += '<tr>' +
-                '<td style="vertical-align:middle;"><strong>Bk'+e.bookNumber+'</strong> '+bkBadge+'<br><span style="font-size:.8rem;color:#888;">#'+e.receiptNumber+'</span></td>' +
-                '<td>'+escHtml(donor)+'</td>' +
-                '<td>'+escHtml(e.area||'—')+'</td>' +
-                '<td style="color:#2E7D32;font-weight:600;">'+amt+'</td>' +
-                '<td>'+modeBadge+'</td>' +
-                '<td style="text-align:center;">'+photoCell+'</td>' +
-                '<td style="font-size:.82rem;color:#3949AB;">'+escHtml(e.submittedBy||'—')+'</td>' +
-                '<td style="font-size:.78rem;color:#888;white-space:nowrap;">'+dtTime+'<br>'+dtDate+'</td>' +
-                '<td><button class="btn-icon btn-delete" title="Delete entry" onclick="deAdmDelete(''+safeId+'')"><i class="fas fa-trash"></i></button></td>' +
-                '</tr>';
-        });
-    });
-    tbody.innerHTML = htmlRows;
+    tbody.innerHTML = list.map(e => {
+        const donor   = e.donorType === 'Business' ? (e.businessName||'—') : [e.firstName,e.middleName,e.lastName].filter(Boolean).join(' ') || '—';
+        const amt     = e.amount != null ? '\u20B9' + Number(e.amount).toLocaleString('en-IN') : '<span style="color:#ccc;">—</span>';
+        const dtObj   = new Date(e.submittedAt);
+        const dtTime  = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
+        const dtDate  = dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+        const photoCell = e.photoUrl
+            ? `<img src="${e.photoUrl}?t=${Date.now()}" loading="lazy" onclick="openAdminPbLightbox('${e.photoUrl}')" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" title="Click to enlarge">`
+            : '<span style="color:#ccc;font-size:.8rem;">—</span>';
+        let modeBadge = `<span style="padding:3px 9px;border-radius:10px;background:#E3F2FD;color:#1565C0;font-size:.76rem;font-weight:700;">${e.paymentMode||'—'}</span>`;
+        if (e.markedReceivedBy) {
+            modeBadge = `<span style="padding:3px 9px;border-radius:10px;background:#E8F5E9;color:#2E7D32;font-size:.76rem;font-weight:700;">Received</span>
+                         <div style="font-size:0.75rem;color:#E65100;font-weight:700;margin-top:6px;line-height:1.2;">Marked received by ${escHtml(e.markedReceivedBy)}</div>`;
+        }
+        const safeId  = (e.entryId||'').replace(/'/g,"\\'");
+        return `<tr>
+            <td style="vertical-align:middle;"><strong>Bk${e.bookNumber}</strong> ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF3E0;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>' }<br><span style="font-size:.8rem;color:#888;">#${e.receiptNumber}</span></td>
+            <td>${escHtml(donor)}</td>
+            <td>${escHtml(e.area||'—')}</td>
+            <td style="color:#2E7D32;font-weight:600;">${amt}</td>
+            <td>${modeBadge}</td>
+            <td style="text-align:center;">${photoCell}</td>
+            <td style="font-size:.82rem;color:#3949AB;">${escHtml(e.submittedBy||'—')}</td>
+            <td style="font-size:.78rem;color:#888;white-space:nowrap;">${dtTime}<br>${dtDate}</td>
+            <td>
+                <button class="btn-icon btn-delete" title="Delete entry" onclick="deAdmDelete('${safeId}')"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>`;
+    }).join('');
 }
 
 async function deAdmDelete(entryId) {
@@ -3478,8 +3455,8 @@ async function exportAdminDonationEntriesToExcel(lang = 'en') {
 
         // Location/Area: use area field directly (NOT joined with landmark)
         const locationArea = e.area || e.location || '';
-        // Common Location: use ONLY the landmark field so all entries for same landmark group together
-        const commonLoc = String(e.landmark || e.commonLandmark || e.buildingName || '').trim();
+        // Common Location: combine area + landmark for full path
+        const commonLoc = [e.area, e.landmark].filter(Boolean).join(' / ') || e.commonLandmark || e.buildingName || '';
 
         return {
             'Receipt Book'       : e.bookNumber   != null ? Number(e.bookNumber)   : '',
