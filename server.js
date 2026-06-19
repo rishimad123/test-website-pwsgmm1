@@ -522,7 +522,7 @@ const server = http.createServer(async (req, res) => {
             receipts.push(receipt);
             await saveReceipts();
 
-            console.log(`✅ Receipt saved: ${receipt.receiptId} | ${receipt.name} | ₹${receipt.amount} | ${receipt.paymentMode}`);
+            console.log(`✅ Receipt saved: ${receipt.receiptId} | ${receipt.name} | \u20B9${receipt.amount} | ${receipt.paymentMode}`);
             return sendJSON(res, 200, {
                 success  : true,
                 receiptId: receipt.receiptId,
@@ -1242,7 +1242,7 @@ const server = http.createServer(async (req, res) => {
             };
             expenses.push(record);
             await saveExpenses();
-            console.log(`✅ Expense saved: ${record.expenseId} | ${record.category} | ₹${record.amount}`);
+            console.log(`✅ Expense saved: ${record.expenseId} | ${record.category} | \u20B9${record.amount}`);
             return sendJSON(res, 200, { success: true, expense: record });
         } catch (err) {
             return sendJSON(res, 400, { message: err.message || 'Bad request.' });
@@ -3558,7 +3558,7 @@ const server = http.createServer(async (req, res) => {
                 createdAt   : new Date().toISOString(),
             };
             await colContributors.insertOne(entry);
-            console.log(`✅ Contributor added: ${entry.id} | ${entry.name} | ₹${entry.amount} | ${entry.date}`);
+            console.log(`✅ Contributor added: ${entry.id} | ${entry.name} | \u20B9${entry.amount} | ${entry.date}`);
             return sendJSON(res, 200, { success: true, entry: stripId(entry) });
         } catch (err) {
             console.error('POST /api/contributors error:', err.message);

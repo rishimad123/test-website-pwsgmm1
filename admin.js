@@ -311,13 +311,13 @@ async function loadDashboardData() {
             });
             const el = document.getElementById('dashStatDonations');
             const trend = document.getElementById('dashStatDonationsTrend');
-            if (el) el.textContent = '₹' + totalSum.toLocaleString('en-IN');
+            if (el) el.textContent = '\u20B9' + totalSum.toLocaleString('en-IN');
             if (trend) trend.innerHTML = `<i class="fas fa-check-circle"></i> Live collected total`;
         }).catch(e => {
             console.error('Donations load error:', e);
             const el = document.getElementById('dashStatDonations');
             const trend = document.getElementById('dashStatDonationsTrend');
-            if (el) el.textContent = '₹0';
+            if (el) el.textContent = '\u20B90';
             if (trend) trend.textContent = 'Failed to load';
         });
 
@@ -432,7 +432,7 @@ async function loadDashboardData() {
                                     displayColors: false,
                                     callbacks: {
                                         label: function(context) {
-                                            return '₹ ' + context.parsed.y.toLocaleString('en-IN');
+                                            return '\u20B9 ' + context.parsed.y.toLocaleString('en-IN');
                                         }
                                     }
                                 }
@@ -444,10 +444,10 @@ async function loadDashboardData() {
                                     ticks: {
                                         font: { size: 12, family: "'Inter', sans-serif", color: '#666' },
                                         callback: function(value) {
-                                            if (value >= 10000000) return '₹' + (value/10000000).toFixed(1) + 'Cr';
-                                            if (value >= 100000) return '₹' + (value/100000).toFixed(1) + 'L';
-                                            if (value >= 1000) return '₹' + (value/1000).toFixed(0) + 'K';
-                                            return '₹' + value;
+                                            if (value >= 10000000) return '\u20B9' + (value/10000000).toFixed(1) + 'Cr';
+                                            if (value >= 100000) return '\u20B9' + (value/100000).toFixed(1) + 'L';
+                                            if (value >= 1000) return '\u20B9' + (value/1000).toFixed(0) + 'K';
+                                            return '\u20B9' + value;
                                         }
                                     }
                                 },
@@ -493,7 +493,7 @@ async function loadDonationTrackingCards() {
         const newBookSlips = allSlips.filter(s => !s.bookType || s.bookType === 'New');
         const oldBookSlips = allSlips.filter(s => s.bookType === 'Old');
 
-        const fmt   = n  => '₹' + Number(n).toLocaleString('en-IN');
+        const fmt   = n  => '\u20B9' + Number(n).toLocaleString('en-IN');
         const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
 
         // ── Main cards ──────────────────────────────────────────────────
@@ -660,7 +660,7 @@ async function loadBrReceivedBreakdown() {
         });
 
         const total = allSlips.reduce((s, x) => s + Number(x.amount), 0);
-        const fmt   = n => '₹' + Number(n).toLocaleString('en-IN');
+        const fmt   = n => '\u20B9' + Number(n).toLocaleString('en-IN');
         if (totalEl) totalEl.textContent = fmt(total);
         if (countEl) countEl.textContent = allSlips.length;
 
@@ -699,8 +699,8 @@ function saveBrOverride() {
         return;
     }
     const totalEl = document.getElementById('brReceivedTotal');
-    if (totalEl) totalEl.textContent = '₹' + val.toLocaleString('en-IN');
-    showNotification('Override amount saved: ₹' + val.toLocaleString('en-IN'), 'success');
+    if (totalEl) totalEl.textContent = '\u20B9' + val.toLocaleString('en-IN');
+    showNotification('Override amount saved: \u20B9' + val.toLocaleString('en-IN'), 'success');
 }
 
 // ==================== DONATION DATA MANAGEMENT ====================
@@ -1207,7 +1207,7 @@ async function loadAdminReceipts() {
         tbody.innerHTML = list.map(r => {
             const dateStr    = new Date(r.submittedAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
             const amtDisplay = (r.amount !== null && r.amount !== undefined)
-                ? '₹' + Number(r.amount).toLocaleString('en-IN')
+                ? '\u20B9' + Number(r.amount).toLocaleString('en-IN')
                 : '<span style="color:#ccc;">—</span>';
             // Editable Mode dropdown
             const safeRId = r.receiptId.replace(/'/g, "\\'");
@@ -1710,7 +1710,7 @@ function exportExpensesExcel() {
   <th>Subcategory</th>
   <th>Particulars</th>
   <th>Reference Number</th>
-  <th>Amount (₹)</th>
+  <th>Amount (\u20B9)</th>
 </tr>
 </thead>
 <tbody>`;
@@ -2488,7 +2488,7 @@ function viewPautiSlips(bookId) {
               })()
             : '<span style="color:#ccc">—</span>';
 
-        const amtCell   = slip.amount ? '₹' + Number(slip.amount).toLocaleString('en-IN') : '<span style="color:#ccc">—</span>';
+        const amtCell   = slip.amount ? '\u20B9' + Number(slip.amount).toLocaleString('en-IN') : '<span style="color:#ccc">—</span>';
         const nameCell  = slip.donorName  ? escHtml(slip.donorName)  : '<span style="color:#ccc">—</span>';
         const byCell    = slip.uploadedBy
             ? `<span style="font-size:.82rem;color:#3949AB;font-weight:600;">${escHtml(slip.uploadedBy)}</span>`
@@ -2782,7 +2782,7 @@ async function loadBalanceRecovery() {
                 const dateStr = dt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase()
                               + ', ' + dt.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
                 const amtCell  = r.amount && Number(r.amount) > 0
-                    ? '₹' + Number(r.amount).toLocaleString('en-IN')
+                    ? '\u20B9' + Number(r.amount).toLocaleString('en-IN')
                     : '<span style="color:#ccc;font-style:italic;">No amount</span>';
                 const hasFile  = !!r.passbookUrl;
                 const photoBtn = hasFile
@@ -2877,7 +2877,7 @@ function openBrEditModal(receiptId, name, amount, mode, status, bookNum, receipt
                 let nameChange = '';
                 if (h.from !== h.to) nameChange = '<span style="color:#888;">Name:</span> <strong>' + (h.from||'—') + '</strong> &rarr; <strong>' + (h.to||'—') + '</strong><br>';
                 let amtChange = '';
-                if (h.fromAmount !== h.toAmount && h.fromAmount !== undefined && h.toAmount !== undefined) amtChange = '<span style="color:#888;">Amount:</span> <strong>₹' + (h.fromAmount||'0') + '</strong> &rarr; <strong>₹' + (h.toAmount||'0') + '</strong><br>';
+                if (h.fromAmount !== h.toAmount && h.fromAmount !== undefined && h.toAmount !== undefined) amtChange = '<span style="color:#888;">Amount:</span> <strong>\u20B9' + (h.fromAmount||'0') + '</strong> &rarr; <strong>\u20B9' + (h.toAmount||'0') + '</strong><br>';
                 let bookChange = '';
                 if (h.fromBook !== h.toBook && h.fromBook !== undefined && h.toBook !== undefined) bookChange = '<span style="color:#888;">Book:</span> <strong>' + (h.fromBook||'—') + '</strong> &rarr; <strong>' + (h.toBook||'—') + '</strong><br>';
                 let recChange = '';
@@ -2887,7 +2887,7 @@ function openBrEditModal(receiptId, name, amount, mode, status, bookNum, receipt
                 let statusChange = '';
                 if (h.fromStatus !== h.toStatus && h.fromStatus !== undefined && h.toStatus !== undefined) statusChange = '<span style="color:#888;">Status:</span> <strong>' + (h.fromStatus||'—') + '</strong> &rarr; <strong>' + (h.toStatus||'—') + '</strong><br>';
                 let extraInfo = '<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #E3F2FD;font-size:.78rem;color:#666;">' +
-                    'Amount: <strong>' + (h.toAmount !== undefined && h.toAmount !== null ? '₹'+h.toAmount : (amount != null ? '₹'+amount : '—')) + '</strong> &nbsp;|&nbsp; ' +
+                    'Amount: <strong>' + (h.toAmount !== undefined && h.toAmount !== null ? '\u20B9'+h.toAmount : (amount != null ? '\u20B9'+amount : '—')) + '</strong> &nbsp;|&nbsp; ' +
                     'Book: <strong>' + (h.toBook !== undefined && h.toBook !== null ? h.toBook : (bookNum || '—')) + '</strong> &nbsp;|&nbsp; ' +
                     'Receipt: <strong>' + (h.toReceipt !== undefined && h.toReceipt !== null ? h.toReceipt : (receiptNum || '—')) + '</strong>' +
                     '</div>';
@@ -3235,7 +3235,7 @@ function deAdmApplyFilter() {
     const withPhoto  = list.filter(e => e.photoUrl).length;
     const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     setEl('deAdmCount',     list.length.toLocaleString('en-IN'));
-    setEl('deAdmTotal',     '₹' + totalAmt.toLocaleString('en-IN'));
+    setEl('deAdmTotal',     '\u20B9' + totalAmt.toLocaleString('en-IN'));
     setEl('deAdmWithPhoto', withPhoto.toLocaleString('en-IN'));
 
     const tbody = document.getElementById('deAdmTbody');
@@ -3246,7 +3246,7 @@ function deAdmApplyFilter() {
     }
     tbody.innerHTML = list.map(e => {
         const donor   = e.donorType === 'Business' ? (e.businessName||'—') : [e.firstName,e.middleName,e.lastName].filter(Boolean).join(' ') || '—';
-        const amt     = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '<span style="color:#ccc;">—</span>';
+        const amt     = e.amount != null ? '\u20B9' + Number(e.amount).toLocaleString('en-IN') : '<span style="color:#ccc;">—</span>';
         const dtObj   = new Date(e.submittedAt);
         const dtTime  = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
         const dtDate  = dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
@@ -3436,7 +3436,7 @@ async function exportAdminDonationEntriesToExcel(lang = 'en') {
             ? (e.businessName || '')
             : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
 
-        // Clean amount string to fix any stray characters or currency symbols ('à', '₹', etc)
+        // Clean amount string to fix any stray characters or currency symbols ('à', '\u20B9', etc)
         const cleanAmt = String(e.amount || '').replace(/[^\d.-]/g, '');
         const parsedAmt = parseFloat(cleanAmt);
         const currentAmt = !isNaN(parsedAmt) ? parsedAmt : '';
@@ -3989,7 +3989,7 @@ function dsApplyFilters() {
     const cs  = document.getElementById('dsChipSum');
     if (ct) ct.textContent = _dsRecords.length.toLocaleString('en-IN') + ' total';
     if (cm) cm.textContent = _dsFiltered.length.toLocaleString('en-IN') + ' shown';
-    if (cs) cs.textContent = _dsAmtCol ? '₹' + sum.toLocaleString('en-IN') : '';
+    if (cs) cs.textContent = _dsAmtCol ? '\u20B9' + sum.toLocaleString('en-IN') : '';
     _dsPage = 1;
     dsRenderTable();
 }
@@ -4034,12 +4034,12 @@ function dsRenderTable() {
 
     tbody.innerHTML = pageRows.map(item => {
         if (item.type === 'header') {
-            const sumTxt = item.sum !== null ? ' &nbsp;&middot;&nbsp; <span style="color:#27AE60;font-weight:700;">₹' + item.sum.toLocaleString('en-IN') + '</span>' : '';
+            const sumTxt = item.sum !== null ? ' &nbsp;&middot;&nbsp; <span style="color:#27AE60;font-weight:700;">\u20B9' + item.sum.toLocaleString('en-IN') + '</span>' : '';
             return '<tr><td colspan="' + _dsVolCols.length + '" class="ds-year-header" style="padding:9px 12px;background:linear-gradient(90deg,#1a237e0a,transparent);border-top:2px solid #e8eaf0;border-bottom:1px solid #e8eaf0;"><span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;"><span style="background:linear-gradient(135deg,#FF6B35,#FF8C42);color:#fff;border-radius:20px;padding:2px 12px;font-size:.76rem;font-weight:700;letter-spacing:.04em;">' + item.yr + '</span><span style="font-size:.8rem;color:#666;">' + item.count.toLocaleString('en-IN') + ' donors' + sumTxt + '</span></span></td></tr>';
         }
         const cells = _dsVolCols.map(col => {
             const v    = item.r[col] ?? '';
-            const disp = col === _dsAmtCol && v !== '' ? '<strong style="color:#2E7D32;">₹' + Number(v).toLocaleString('en-IN') + '</strong>' : '<span title="' + String(v).replace(/"/g, '&quot;') + '">' + v + '</span>';
+            const disp = col === _dsAmtCol && v !== '' ? '<strong style="color:#2E7D32;">\u20B9' + Number(v).toLocaleString('en-IN') + '</strong>' : '<span title="' + String(v).replace(/"/g, '&quot;') + '">' + v + '</span>';
             return '<td data-label="' + String(col).replace(/"/g, '&quot;') + '">' + disp + '</td>';
         }).join('');
         return '<tr onmouseover="this.style.background=\\\'#eef2ff\\\'" onmouseout="this.style.background=\\\'\\\'">' + cells + '</tr>';
@@ -5449,7 +5449,7 @@ function rcg_generateReceipt() {
     const words   = wordsEl && wordsEl.value ? wordsEl.value : rcg_amountToWords(amount);
 
     // Format amount with Indian locale
-    const amtFormatted = '₹ ' + Number(amount).toLocaleString('en-IN');
+    const amtFormatted = '\u20B9 ' + Number(amount).toLocaleString('en-IN');
 
     // --- Populate receipt preview ---
     function setFilled(id, text) {
@@ -5556,7 +5556,7 @@ function rcg_sendWhatsApp() {
         '━━━━━━━━━━━━━━━━━━━━━',
         `📋 *Receipt No:* ${receiptNo || '—'}`,
         `👤 *Donor:* ${donorName}`,
-        `💰 *Amount:* ₹${amtFmt}`,
+        `💰 *Amount:* \u20B9${amtFmt}`,
         `📅 *Date:* ${formattedDate}`,
         `💳 *Payment Mode:* ${payMode}`,
         '━━━━━━━━━━━━━━━━━━━━━',
