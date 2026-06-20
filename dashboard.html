@@ -2360,8 +2360,14 @@ window.fixUrl = function(url) {
                     const donor = r.name || '—';
                     const amt   = r.amount && Number(r.amount) > 0 ? '₹' + Number(r.amount).toLocaleString('en-IN') : '—';
                     const dtObj = new Date(r.submittedAt);
-                    const dtStr = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()
+                    let dtStr = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()
                                 + '\n' + dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+                    if (r.updatedAt && r.updatedAt !== r.submittedAt) {
+                        const upObj = new Date(r.updatedAt);
+                        if (!isNaN(upObj)) {
+                            dtStr += '\n' + upObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase() + ' ' + upObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+                        }
+                    }
                     const dtParts = dtStr.split('\n');
                     const photoSection = (r.photoUrl || r.receiptPreviewUrl)
                         ? `<div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(r.photoUrl || r.receiptPreviewUrl)}')">
@@ -2400,7 +2406,9 @@ window.fixUrl = function(url) {
                                 </div>
                                 <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
                                     <span style="color:#2E7D32;font-weight:700;font-size:1.05rem;">${amt}</span>
-                                    <span style="font-size:.72rem;color:#aaa;text-align:right;">${dtParts[0]}<br><span style="color:#bbb;">${dtParts[1]}</span></span>
+                                    <span style="font-size:.72rem;color:#aaa;text-align:right;">${dtParts[0]}<br><span style="color:#bbb;">${dtParts[1]}</span>
+                                    ${dtParts[2] ? `<br><div style="margin-top:4px;padding:2px 4px;background:#FFF8F1;border:1px solid #ffe0b2;border-radius:4px;color:#E65100;font-size:0.7rem;line-height:1.1;text-align:right;white-space:nowrap;"><i class="fas fa-history" style="font-size:0.6rem;"></i> Updated:<br>${dtParts[2]}</div>` : ''}
+                                    </span>
                                 </div>
                             </div>
                             <div style="display:flex;flex-direction:column;gap:6px;">
@@ -3750,7 +3758,15 @@ window.fixUrl = function(url) {
                 const dtObj = new Date(e.submittedAt);
                 const dtTime = dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
                 const dtDate = dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-                const dt = '<span style="font-size:.8rem;white-space:nowrap;">' + dtTime + '<br><span style="color:#aaa;">' + dtDate + '</span></span>';
+                let dt = '<span style="font-size:.8rem;white-space:nowrap;">' + dtTime + '<br><span style="color:#aaa;">' + dtDate + '</span></span>';
+                if (e.updatedAt && e.updatedAt !== e.submittedAt) {
+                    const upObj = new Date(e.updatedAt);
+                    if (!isNaN(upObj)) {
+                        const upTime = upObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
+                        const upDate = upObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+                        dt += '<div style="margin-top:4px;padding:2px 4px;background:#FFF8F1;border:1px solid #ffe0b2;border-radius:4px;color:#E65100;font-size:0.7rem;line-height:1.1;white-space:nowrap;"><i class="fas fa-history" style="font-size:0.6rem;"></i> Updated:<br>' + upTime + ' ' + upDate + '</div>';
+                    }
+                }
                 const amt = e.amount != null ? '&#x20B9;' + Number(e.amount).toLocaleString('en-IN') : '—';
                 
                 const _tHp  = !!e.photoUrl;
@@ -3863,7 +3879,12 @@ window.fixUrl = function(url) {
                 </div>
                 <div style="display:flex;align-items:center;justify-content:space-between;">
                     <div style="font-size:1.1rem;font-weight:800;color:#2E7D32;">${amt}</div>
-                    <div style="font-size:.76rem;color:#aaa;text-align:right;line-height:1.4;">${timeStr}<br>${dateStr}</div>
+                    <div style="font-size:.76rem;color:#aaa;text-align:right;line-height:1.4;">
+                        ${timeStr}<br>${dateStr}
+                        ${(e.updatedAt && e.updatedAt !== e.submittedAt && !isNaN(new Date(e.updatedAt))) ? 
+                            `<div style="margin-top:4px;padding:2px 4px;background:#FFF8F1;border:1px solid #ffe0b2;border-radius:4px;color:#E65100;font-size:0.7rem;line-height:1.1;text-align:right;"><i class="fas fa-history" style="font-size:0.6rem;"></i> Updated:<br>${new Date(e.updatedAt).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase()} ${new Date(e.updatedAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</div>` 
+                            : ''}
+                    </div>
                 </div>
                 ${e.submittedBy ? `<div style="font-size:.75rem;color:#bbb;margin-top:7px;"><i class="fas fa-user" style="margin-right:4px;"></i>${e.submittedBy}</div>` : ''}
                 ${e.markedReceivedBy ? `<div style="font-size:.76rem;font-weight:700;color:#E65100;margin-top:6px;padding:5px 10px;background:#FFF8F1;border-radius:8px;border:1px solid #ffe0b2;"><i class="fas fa-check-circle" style="color:#2E7D32;margin-right:5px;"></i>Marked received by <strong>${e.markedReceivedBy}</strong></div>` : ''}
@@ -4477,8 +4498,14 @@ if (originalShowSection) {
                     const canEdit = !e.entryId?.startsWith('PB-') && !e.entryId?.startsWith('RC-');
 
                     const dtObj = new Date(e.submittedAt);
-                    const dtStr = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()
+                    let dtStr = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()
                                 + '\n' + dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+                    if (e.updatedAt && e.updatedAt !== e.submittedAt) {
+                        const upObj = new Date(e.updatedAt);
+                        if (!isNaN(upObj)) {
+                            dtStr += '\n' + upObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase() + ' ' + upObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+                        }
+                    }
                     const dtParts = dtStr.split('\n');
                     // Show BOTH uploaded photo AND digital receipt preview
                     const _vHp = !!e.photoUrl, _vHpv = !!e.receiptPreviewUrl, _vTs = Date.now();
@@ -4515,7 +4542,9 @@ if (originalShowSection) {
                                 </div>
                                 <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
                                     <span style="color:#2E7D32;font-weight:700;font-size:1.05rem;">${myDonFmtAmt(e.amount)}</span>
-                                    <span style="font-size:.72rem;color:#aaa;text-align:right;">${dtParts[0]}<br><span style="color:#bbb;">${dtParts[1]}</span></span>
+                                    <span style="font-size:.72rem;color:#aaa;text-align:right;">${dtParts[0]}<br><span style="color:#bbb;">${dtParts[1]}</span>
+                                    ${dtParts[2] ? `<br><div style="margin-top:4px;padding:2px 4px;background:#FFF8F1;border:1px solid #ffe0b2;border-radius:4px;color:#E65100;font-size:0.7rem;line-height:1.1;text-align:right;white-space:nowrap;"><i class="fas fa-history" style="font-size:0.6rem;"></i> Updated:<br>${dtParts[2]}</div>` : ''}
+                                    </span>
                                 </div>
                             </div>
                         </div>

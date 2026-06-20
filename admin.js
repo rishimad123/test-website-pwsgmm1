@@ -3308,6 +3308,15 @@ function deAdmApplyFilter() {
             const dtObj = new Date(e.submittedAt);
             const dtTime = dtObj.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true}).toUpperCase();
             const dtDate = dtObj.toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric'});
+            let dtHtml = dtTime + '<br>' + dtDate;
+            if (e.updatedAt && e.updatedAt !== e.submittedAt) {
+                const upObj = new Date(e.updatedAt);
+                if (!isNaN(upObj)) {
+                    const upTime = upObj.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true}).toUpperCase();
+                    const upDate = upObj.toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric'});
+                    dtHtml += '<br><div style="margin-top:4px;padding:2px 4px;background:#FFF8F1;border:1px solid #ffe0b2;border-radius:4px;color:#E65100;font-size:0.7rem;line-height:1.1;white-space:nowrap;"><i class="fas fa-history" style="font-size:0.6rem;"></i> Updated:<br>' + upTime + ' ' + upDate + '</div>';
+                }
+            }
             const photoUrl = e.photoUrl || '';
             const photoCell = photoUrl
                 ? '<img src="' + photoUrl + '?t=' + Date.now() + '" loading="lazy" onclick="openAdminPbLightbox(\'' + photoUrl.replace(/'/g, "\\''") + '\')" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1.5px solid #ffe0d0;cursor:pointer;" title="Click to enlarge">'
@@ -3328,7 +3337,7 @@ function deAdmApplyFilter() {
                 '<td>' + modeBadge + '</td>' +
                 '<td style="text-align:center;">' + photoCell + '</td>' +
                 '<td style="font-size:.82rem;color:#3949AB;">' + escHtml(e.submittedBy || '—') + '</td>' +
-                '<td style="font-size:.78rem;color:#888;white-space:nowrap;">' + dtTime + '<br>' + dtDate + '</td>' +
+                '<td style="font-size:.78rem;color:#888;white-space:nowrap;">' + dtHtml + '</td>' +
                 '<td><button class="btn-icon btn-delete" title="Delete entry" onclick="deAdmDelete(\'' + safeId + '\')"><i class="fas fa-trash"></i></button></td>' +
                 '</tr>';
         });
