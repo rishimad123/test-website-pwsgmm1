@@ -3649,13 +3649,7 @@ window.fixUrl = function(url) {
             const data = await res.json();
             let entries = (data.entries || []).filter(e => !e.deleted);
             
-            // Filter to only this volunteer's entries
-            if (uid && (typeof currentUser !== 'undefined') && currentUser.role !== 'admin') {
-                entries = entries.filter(e =>
-                    String(e.submittedByUserId) === String(uid) ||
-                    String(e.userId) === String(uid)
-                );
-            }
+            // Show all entries (same as admin view)
             
             entries.sort((a,b) => new Date(b.submittedAt||0) - new Date(a.submittedAt||0));
             _vdeAll = entries;
