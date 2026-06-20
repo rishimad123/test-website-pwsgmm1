@@ -321,9 +321,13 @@ async function loadDashboardData() {
             if (trend) trend.textContent = 'Failed to load';
         });
 
-        // Fetch Donation Analytics for Chart
-        fetch('/api/donation-entries').then(r => r.json()).then(deData => {
+        // Fetch Donation and Expense Analytics for Chart
+        Promise.all([
+            fetch('/api/donation-entries').then(r => r.json()),
+            fetch('/api/expenses').then(r => r.json())
+        ]).then(([deData, expData]) => {
             window._allDonationEntriesForChart = (deData.entries || []).filter(e => !e.deleted && e.submittedAt && Number(e.amount) > 0);
+            window._allExpensesForChart = (expData.expenses || []).filter(e => !e.deleted && e.date && Number(e.amount) > 0);
             renderDonationAnalyticsChart();
         }).catch(e => console.error('Analytics load error:', e));
         
@@ -5753,14 +5757,15 @@ async function adminDeleteYear(year) {
 
 // ==================== DONATION ANALYTICS CHART RENDERING ====================
 window.renderDonationAnalyticsChart = function() {
-    const entries = window._allDonationEntriesForChart || [];
+    const dEntries = window._allDonationEntriesForChart || [];
+    const eEntries = window._allExpensesForChart || [];
     const filterEl = document.getElementById('analyticsGroupingFilter');
     const grouping = filterEl ? filterEl.value : 'month'; // 'day', 'month', 'year'
 
-    if (!entries.length) {
+    if (!dEntries.length && !eEntries.length) {
         const ctxCanvas = document.getElementById('yearlyDonationChart');
-        if (ctxCanvas) {
-            ctxCanvas.parentElement.innerHTML = '<div style="text-align:center;color:#aaa;padding:60px 20px;font-size:.95rem;">No donation data available yet.</div>';
+        if (ctxCanvas && ctxCanvas.parentElement) {
+            ctxCanvas.parentElement.innerHTML = '<div style="text-align:center;color:#aaa;padding:60px 20px;font-size:.95rem;">No data available yet.</div>';
         }
         return;
     }
@@ -5768,95 +5773,148 @@ window.renderDonationAnalyticsChart = function() {
     const totals = {};
     const order = [];
 
-    entries.forEach(e => {
-        const d = new Date(e.submittedAt);
-        if (isNaN(d)) return;
-        
-        let label = '';
-        let sortKey = 0;
-        
-        if (grouping === 'day') {
-            label = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-            sortKey = d.getFullYear() * 10000 + d.getMonth() * 100 + d.getDate();
-        } else if (grouping === 'month') {
-            label = d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
-            sortKey = d.getFullYear() * 100 + d.getMonth();
-        } else if (grouping === 'year') {
-            label = d.getFullYear().toString();
-            sortKey = d.getFullYear();
-        }
+    // Helper to process entries
+    const processEntries = (entries, type, dateField) => {
+        entries.forEach(e => {
+            const d = new Date(e[dateField]);
+            if (isNaN(d)) return;
+            
+            let label = '';
+            let sortKey = 0;
+            
+            if (grouping === 'day') {
+                label = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                sortKey = d.getFullYear() * 10000 + d.getMonth() * 100 + d.getDate();
+            } else if (grouping === 'month') {
+                label = d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+                sortKey = d.getFullYear() * 100 + d.getMonth();
+            } else if (grouping === 'year') {
+                label = d.getFullYear().toString();
+                sortKey = d.getFullYear();
+            }
 
-        if (!totals[label]) {
-            totals[label] = { total: 0, sort: sortKey };
-            order.push(label);
-        }
-        totals[label].total += Number(e.amount) || 0;
-    });
+            if (!totals[label]) {
+                totals[label] = { donTotal: 0, expTotal: 0, sort: sortKey };
+                order.push(label);
+            }
+            if (type === 'don') totals[label].donTotal += Number(e.amount) || 0;
+            if (type === 'exp') totals[label].expTotal += Number(e.amount) || 0;
+        });
+    };
+
+    processEntries(dEntries, 'don', 'submittedAt');
+    processEntries(eEntries, 'exp', 'date');
 
     order.sort((a, b) => totals[a].sort - totals[b].sort);
     const labels  = order;
-    const amounts = order.map(m => totals[m].total);
-    const maxAmt  = Math.max(...amounts, 1);
-
-    // If grouping by day and there are too many days, we might want to just show the last 30 days
-    // But for now we show all. Chart.js handles large datasets gracefully.
+    const donAmounts = order.map(m => totals[m].donTotal);
+    const expAmounts = order.map(m => totals[m].expTotal);
+    const maxAmt  = Math.max(...donAmounts, ...expAmounts, 1);
 
     const ctxCanvas = document.getElementById('yearlyDonationChart');
     if (!ctxCanvas) return;
     const ctx = ctxCanvas.getContext('2d');
     
-    // Check if the canvas parent was replaced by the "No donation data" message
-    if (ctxCanvas.tagName !== 'CANVAS') {
-        // We'd have to recreate the canvas if we destroyed it, but we only show the message if !entries.length,
-        // and if there are entries we never destroy the canvas.
-    }
-
     if (window._donationChartInst) window._donationChartInst.destroy();
 
-    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, 'rgba(46, 125, 50, 0.85)');
-    gradient.addColorStop(1, 'rgba(46, 125, 50, 0.10)');
+    const donGradient = ctx.createLinearGradient(0, 0, 0, 300);
+    donGradient.addColorStop(0, 'rgba(46, 125, 50, 0.85)'); // Green
+    donGradient.addColorStop(1, 'rgba(46, 125, 50, 0.10)');
+
+    const expGradient = ctx.createLinearGradient(0, 0, 0, 300);
+    expGradient.addColorStop(0, 'rgba(230, 81, 0, 0.85)'); // Orange
+    expGradient.addColorStop(1, 'rgba(230, 81, 0, 0.10)');
+
+    // Custom plugin to draw values on top of bars
+    const drawValuesPlugin = {
+        id: 'drawValues',
+        afterDatasetsDraw(chart, args, options) {
+            const { ctx } = chart;
+            ctx.save();
+            ctx.font = "bold 12px 'Inter', sans-serif";
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            
+            chart.data.datasets.forEach((dataset, i) => {
+                const meta = chart.getDatasetMeta(i);
+                if (meta.hidden) return;
+                
+                ctx.fillStyle = dataset.borderColor; // Use the border color for the text
+                meta.data.forEach((bar, index) => {
+                    const data = dataset.data[index];
+                    if (data > 0) {
+                        let text = '₹' + (data >= 100000 ? (data/100000).toFixed(1)+'L' : (data >= 1000 ? (data/1000).toFixed(1)+'K' : data));
+                        ctx.fillText(text, bar.x, bar.y - 5);
+                    }
+                });
+            });
+            ctx.restore();
+        }
+    };
 
     window._donationChartInst = new Chart(ctx, {
         type: 'bar',
         data: {
             labels,
-            datasets: [{
-                label: 'Total Donations (₹)',
-                data: amounts,
-                backgroundColor: gradient,
-                borderColor: '#2E7D32',
-                borderWidth: { top: 2, right: 0, bottom: 0, left: 0 },
-                borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
-                borderSkipped: false,
-                hoverBackgroundColor: 'rgba(46, 125, 50, 0.9)',
-                hoverBorderColor: '#1B5E20',
-                maxBarThickness: 50,
-                minBarLength: 6 // Ensures very small amounts are still visible as a small bar
-            }]
+            datasets: [
+                {
+                    label: 'Donations (₹)',
+                    data: donAmounts,
+                    backgroundColor: donGradient,
+                    borderColor: '#2E7D32',
+                    borderWidth: { top: 2, right: 0, bottom: 0, left: 0 },
+                    borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
+                    borderSkipped: false,
+                    hoverBackgroundColor: 'rgba(46, 125, 50, 0.9)',
+                    hoverBorderColor: '#1B5E20',
+                    maxBarThickness: 50,
+                    minBarLength: 6
+                },
+                {
+                    label: 'Expenses (₹)',
+                    data: expAmounts,
+                    backgroundColor: expGradient,
+                    borderColor: '#E65100',
+                    borderWidth: { top: 2, right: 0, bottom: 0, left: 0 },
+                    borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
+                    borderSkipped: false,
+                    hoverBackgroundColor: 'rgba(230, 81, 0, 0.9)',
+                    hoverBorderColor: '#BF360C',
+                    maxBarThickness: 50,
+                    minBarLength: 6
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: { top: 25 } // Make room for the labels
+            },
             plugins: {
-                legend: { display: false },
+                legend: { 
+                    display: true, 
+                    position: 'top',
+                    align: 'end',
+                    labels: { font: { family: "'Inter', sans-serif", size: 13, weight: '600' }, usePointStyle: true, boxWidth: 8 }
+                },
                 tooltip: {
                     backgroundColor: 'rgba(30,30,30,0.92)',
                     titleFont: { size: 13, family: "'Inter', sans-serif", weight: '600' },
                     bodyFont:  { size: 15, family: "'Inter', sans-serif", weight: '700' },
                     padding: 12,
                     cornerRadius: 10,
-                    displayColors: false,
+                    displayColors: true,
                     callbacks: {
                         title: ctx => ctx[0].label,
-                        label: ctx => '₹ ' + ctx.parsed.y.toLocaleString('en-IN')
+                        label: ctx => ctx.dataset.label.replace('(₹)','') + ': ₹ ' + ctx.parsed.y.toLocaleString('en-IN')
                     }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    suggestedMax: maxAmt * 1.15,
+                    suggestedMax: maxAmt * 1.20,
                     grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
                     ticks: {
                         color: '#666',
@@ -5880,6 +5938,7 @@ window.renderDonationAnalyticsChart = function() {
                 }
             },
             animation: { duration: 1000, easing: 'easeOutQuart' }
-        }
+        },
+        plugins: [drawValuesPlugin]
     });
 };
