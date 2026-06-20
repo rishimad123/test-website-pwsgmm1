@@ -123,8 +123,8 @@
 
     /* ── AWAL SECTION ── */
     .awal-section {
-        background: var(--cream);
-        padding: 80px 20px;
+        background: #000;
+        padding: 40px 0;
         min-height: 300px;
     }
     
@@ -132,33 +132,21 @@
     .awal-layout {
         display: flex;
         flex-direction: column;
-        gap: 60px;
-        max-width: 900px;
+        gap: 0;
+        max-width: 1000px;
         margin: 0 auto;
-        margin-top: 48px;
     }
     
     .awal-item {
-        background: #fff;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        width: 100%;
         position: relative;
-    }
-    
-    .awal-item:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(185,28,28,0.15);
     }
     
     .awal-item img {
         width: 100%;
         height: auto;
         display: block;
-        max-height: 800px;
-        object-fit: contain;
-        background: #111;
+        object-fit: cover;
     }
     
     .awal-caption {
@@ -268,13 +256,11 @@
 
     <!-- Awal Vertical Sequence -->
     <section class="awal-section">
-        <div class="container">
-            <div id="awalLayout" class="awal-layout">
-                <!-- Loaded dynamically -->
-                <div class="awal-empty">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <h3>Loading moments…</h3>
-                </div>
+        <div id="awalLayout" class="awal-layout">
+            <!-- Loaded dynamically -->
+            <div class="awal-empty">
+                <i class="fas fa-spinner fa-spin"></i>
+                <h3>Loading moments…</h3>
             </div>
         </div>
     </section>

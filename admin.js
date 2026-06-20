@@ -6540,7 +6540,7 @@ async function handleAwalPdfUpload(event) {
             if (progressText) progressText.textContent = `Uploading page ${pageNum} of ${totalPages}...`;
             
             const payload = {
-                description: `${file.name.replace('.pdf', '')} - Page ${pageNum}`,
+                description: ``,
                 active: true,
                 order: currentMaxOrder + pageNum,
                 photoBase64: b64,
