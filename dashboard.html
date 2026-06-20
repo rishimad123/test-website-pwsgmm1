@@ -3623,7 +3623,17 @@ window.fixUrl = function(url) {
                 if (rSel) { rSel.innerHTML = '<option value="">\u2014 Select Book first \u2014</option>'; rSel.disabled = true; }
                 await deLoadMyEntries();
             } else {
-        // ── Volunteer Entries Table (Mirrored from Admin) ────────────────────────
+                deShowStatus('\u274c ' + (data.message || 'Could not save entry.'), 'error');
+            }
+        } catch (err) {
+            console.error('[DE Form] Error:', err);
+            deShowStatus('\u274c Server error: ' + err.message, 'error');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry'; }
+        }
+    });
+
+    // ── Volunteer Entries Table (admin layout mirrored) ───────────────────
     let _vdeAll = [];
     let _vdeFiltered = [];
 
