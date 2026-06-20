@@ -2559,6 +2559,7 @@ async function loadBalanceRecovery() {
                 if (!slip.deleted && slip.uploadedAt &&
                     (slip.paymentMode === 'balance' || !slip.amount || Number(slip.amount) <= 0)) {
                     pautiPending.push({
+                        ...slip,
                         receiptId  : `SLIP-${slip.slipNumber}`,
                         name       : slip.donorName || '—',
                         amount     : slip.amount || 0,
@@ -2588,6 +2589,7 @@ async function loadBalanceRecovery() {
                 ? (e.businessName || '—')
                 : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
             return {
+                ...e,
                 receiptId  : e.entryId || ('DE-' + e.receiptNumber),
                 name       : donor,
                 amount     : e.amount || 0,
@@ -2608,6 +2610,8 @@ async function loadBalanceRecovery() {
 
         const list = [...pautiPending, ...receiptBal, ...deBal].sort((a, b) =>
             new Date(b.submittedAt) - new Date(a.submittedAt));
+            
+        window._balancePendingList = list;
 
         if (list.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:30px;">No pending balance slips found. All slips have amounts recorded.</td></tr>';
@@ -2961,6 +2965,172 @@ async function saveBrEditEntry(ev) {
         if (btn) { btn.disabled = false; btn.textContent = 'Save Changes'; }
     }
 }
+
+window.exportBalancePendingExcel = async function(lang = 'en') {
+    if (typeof XLSX === 'undefined') {
+        alert('Excel library not loaded.');
+        return;
+    }
+    const srcData = window._balancePendingList;
+    if (!srcData || !srcData.length) {
+        alert('No pending balances to export. Please click Refresh first.');
+        return;
+    }
+
+    const fmtDate = (v) => {
+        if (!v) return '';
+        try {
+            const d = new Date(v);
+            if (isNaN(d)) return String(v);
+            return String(d.getDate()).padStart(2,'0') + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + d.getFullYear();
+        } catch(_) { return String(v); }
+    };
+
+    // ── Column definitions matching Donation Data Entry ──────────────────
+    const COLS = [
+        '#',
+        'Book No',
+        'Receipt No',
+        'Donor Name',
+        'Type',
+        'WhatsApp',
+        'Mobile',
+        'Building',
+        'Landmark',
+        'Area',
+        'Amount',
+        'Mode',
+        'Ref No.',
+        'Submitted By',
+        'Date'
+    ];
+
+    // ── Map each entry to a row object ────────────────────────────────────
+    const mapRow = (e, idx) => {
+        const donor = e.donorType === 'Business'
+            ? (e.businessName || e.name || '')
+            : e.name || [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
+        
+        return {
+            '#':            idx,
+            'Book No':      e.bookNumber || e._bookNum || '',
+            'Receipt No':   e.receiptNumber || e._recNum || e.receiptId || '',
+            'Donor Name':   donor,
+            'Type':         e.donorType || '',
+            'WhatsApp':     e.whatsappNumber || '',
+            'Mobile':       e.mobileNumber || '',
+            'Building':     (e.buildingName || '') + (e.flatNumber ? ' Flat:' + e.flatNumber : ''),
+            'Landmark':     e.landmark || '',
+            'Area':         e.area || '',
+            'Amount':       e.amount != null ? Number(e.amount) : '',
+            'Mode':         e.paymentMode || '',
+            'Ref No.':      e.referenceNumber || '',
+            'Submitted By': e.userId || e.submittedBy || '',
+            'Date':         fmtDate(e.submittedAt)
+        };
+    };
+
+    // ── Group by Landmark ─────────────────
+    const lmOrder = [];
+    const lmGroups = {};
+    srcData.forEach(e => {
+        const lm = String(e.landmark || '(No Landmark)').trim();
+        if (!lmGroups[lm]) { lmGroups[lm] = []; lmOrder.push(lm); }
+        lmGroups[lm].push(e);
+    });
+
+    // ── Build AoA (Array of Arrays) with landmark header rows ─────────────
+    const wsData = [COLS];  // column header row
+    let rowNum = 0;
+    lmOrder.forEach(lm => {
+        // Landmark group separator
+        const sepRow = COLS.map((_, ci) => ci === 0 ? '► ' + lm : '');
+        sepRow._isLm = true;
+        wsData.push(sepRow);
+        lmGroups[lm].forEach(e => {
+            rowNum++;
+            const r = mapRow(e, rowNum);
+            wsData.push(COLS.map(c => r[c] !== undefined ? r[c] : ''));
+        });
+    });
+
+    // Optional Marathi translation (translates string cells)
+    let finalData = wsData;
+    if (lang === 'mr' && typeof translateExcelData === 'function') {
+        const dataRows = srcData.map((e, i) => mapRow(e, i+1));
+        const translated = await translateExcelData(dataRows);
+        const tData = [COLS];
+        let rIdx = 0;
+        lmOrder.forEach(lm => {
+            const sepRow = COLS.map((_, ci) => ci === 0 ? '► ' + lm : '');
+            sepRow._isLm = true;
+            tData.push(sepRow);
+            lmGroups[lm].forEach(() => {
+                const tr = translated[rIdx++];
+                tData.push(COLS.map(c => tr ? (tr[c] !== undefined ? tr[c] : '') : ''));
+            });
+        });
+        finalData = tData;
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(finalData);
+
+    // ── Styles ────────────────────────────────────────────────────────────
+    const colHdrStyle = {
+        font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 10 },
+        fill: { patternType: 'solid', fgColor: { rgb: '1D6F42' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: { top:{style:'thin',color:{rgb:'000000'}}, bottom:{style:'thin',color:{rgb:'000000'}}, left:{style:'thin',color:{rgb:'000000'}}, right:{style:'thin',color:{rgb:'000000'}} }
+    };
+    const lmHdrStyle = {
+        font: { bold: true, color: { rgb: '7B3F00' }, sz: 10 },
+        fill: { patternType: 'solid', fgColor: { rgb: 'FFE0B2' } },
+        alignment: { horizontal: 'left', vertical: 'center' },
+        border: { top:{style:'thin',color:{rgb:'FFCC80'}}, bottom:{style:'thin',color:{rgb:'FFCC80'}} }
+    };
+    const dataStyle = {
+        font: { sz: 10 },
+        alignment: { vertical: 'center' },
+        border: { top:{style:'hair',color:{rgb:'DDDDDD'}}, bottom:{style:'hair',color:{rgb:'DDDDDD'}} }
+    };
+
+    if(!ws['!rows']) ws['!rows'] = [];
+    for(let R=0; R<finalData.length; R++){
+        if(R===0) ws['!rows'][R] = { hpt: 25 }; // Header row height
+        else if (finalData[R]._isLm) ws['!rows'][R] = { hpt: 20 }; // Landmark row height
+        else ws['!rows'][R] = { hpt: 18 }; // Data row height
+
+        for(let C=0; C<COLS.length; C++){
+            const cellAddr = XLSX.utils.encode_cell({r:R, c:C});
+            if(!ws[cellAddr]) continue;
+            if(R===0){
+                ws[cellAddr].s = colHdrStyle;
+            } else if (finalData[R]._isLm){
+                if(C===0) ws[cellAddr].s = lmHdrStyle;
+                else ws[cellAddr].s = { ...lmHdrStyle, fill: {patternType:'solid', fgColor:{rgb:'FFE0B2'}}};
+            } else {
+                ws[cellAddr].s = dataStyle;
+            }
+        }
+        if(finalData[R]._isLm) {
+            if(!ws['!merges']) ws['!merges'] = [];
+            ws['!merges'].push({ s:{r:R, c:0}, e:{r:R, c:COLS.length-1} });
+        }
+    }
+
+    const wscols = [
+        {wch: 4},  {wch: 8},  {wch: 12}, {wch: 25},
+        {wch: 10}, {wch: 12}, {wch: 12}, {wch: 20},
+        {wch: 18}, {wch: 15}, {wch: 10}, {wch: 10},
+        {wch: 12}, {wch: 15}, {wch: 12}
+    ];
+    ws['!cols'] = wscols;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pending_Balances");
+    const filename = `Pending_Balances_${lang.toUpperCase()}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
+};
 
 // =====================================================================
 // VOLUNTEER MANAGEMENT MODULE  (server-backed)
