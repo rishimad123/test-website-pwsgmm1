@@ -2668,7 +2668,11 @@ window._fmtBytesA = function(b) {
                         <div>
                             <h3><i class="fas fa-camera" style="color:var(--primary-color);margin-right:8px;"></i>Manage Awal Photos</h3>
                         </div>
-                        <button class="btn btn-primary" onclick="openAwalModal()"><i class="fas fa-plus"></i> Add Photo</button>
+                        <div style="display:flex; gap:10px;">
+                            <input type="file" id="awalPdfInput" accept="application/pdf" style="display:none;" onchange="handleAwalPdfUpload(event)">
+                            <button class="btn btn-secondary" onclick="document.getElementById('awalPdfInput').click()"><i class="fas fa-file-pdf" style="color:#d32f2f;"></i> Upload PDF</button>
+                            <button class="btn btn-primary" onclick="openAwalModal()"><i class="fas fa-plus"></i> Add Photo</button>
+                        </div>
                     </div>
 
                     <div class="admin-card" style="margin-bottom:24px;">
@@ -8397,6 +8401,21 @@ document.addEventListener('DOMContentLoaded',function(){var sec=document.getElem
   </div>
 </div>
 <!--  END CONTRIBUTIONS EDIT MODAL  -->
+
+<!-- PDF.js library for Client-Side Extraction -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+    if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+</script>
+
+<!-- Awal PDF Upload Progress Overlay -->
+<div id="awalPdfProgressOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999999; align-items:center; justify-content:center; flex-direction:column; color:#fff;">
+    <i class="fas fa-spinner fa-spin" style="font-size:3rem; margin-bottom:15px; color:#FCD34D;"></i>
+    <h2 style="font-family:'Cinzel', serif; margin-bottom:10px;">Extracting PDF...</h2>
+    <p id="awalPdfProgressText" style="font-size:1.1rem; color:#ddd;">Initializing...</p>
+</div>
 
 </body>
 </html>

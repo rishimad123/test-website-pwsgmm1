@@ -6483,6 +6483,98 @@ async function deleteAwal(id) {
         alert('Failed: ' + e.message);
     }
 }
+// ── PDF Upload & Extraction ──────────────────────────────────────────────────
+async function handleAwalPdfUpload(event) {
+    const file = event.target.files[0];
+    if (!file || file.type !== 'application/pdf') return;
+
+    if (!window.pdfjsLib) {
+        alert('PDF library not loaded. Please wait a moment and try again.');
+        return;
+    }
+
+    const overlay = document.getElementById('awalPdfProgressOverlay');
+    const progressText = document.getElementById('awalPdfProgressText');
+    if (overlay) overlay.style.display = 'flex';
+    if (progressText) progressText.textContent = 'Reading PDF file...';
+
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const totalPages = pdf.numPages;
+
+        if (totalPages === 0) {
+            throw new Error('PDF has no pages.');
+        }
+
+        // Determine starting order
+        let currentMaxOrder = 0;
+        if (_awalList && _awalList.length > 0) {
+            currentMaxOrder = Math.max(..._awalList.map(a => parseInt(a.order) || 0));
+        }
+
+        for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+            if (progressText) progressText.textContent = `Extracting page ${pageNum} of ${totalPages}...`;
+            
+            const page = await pdf.getPage(pageNum);
+            
+            // Calculate scale to render at a good quality (e.g. 1500px width max)
+            const unscaledViewport = page.getViewport({ scale: 1.0 });
+            // Don't scale up if the PDF is already huge, but scale down or up to ~1500px
+            const scale = 1500 / unscaledViewport.width;
+            const viewport = page.getViewport({ scale: scale });
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            // Render PDF page into canvas context
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+            // Convert canvas to base64 JPEG
+            const base64DataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            const b64 = base64DataUrl.split(',')[1];
+
+            // Upload to API
+            if (progressText) progressText.textContent = `Uploading page ${pageNum} of ${totalPages}...`;
+            
+            const payload = {
+                description: `${file.name.replace('.pdf', '')} - Page ${pageNum}`,
+                active: true,
+                order: currentMaxOrder + pageNum,
+                photoBase64: b64,
+                photoExt: 'jpg'
+            };
+
+            const res = await fetch('/api/awal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            
+            if (!res.ok || !data.success) {
+                console.error(`Failed to upload page ${pageNum}:`, data.message);
+            }
+        }
+
+        if (progressText) progressText.textContent = 'Complete! Refreshing...';
+        
+        // Refresh table
+        await loadAwal();
+        if (typeof showNotification === 'function') {
+            showNotification(`Successfully extracted and uploaded ${totalPages} pages.`, 'success');
+        }
+
+    } catch (e) {
+        alert('Error processing PDF: ' + e.message);
+    } finally {
+        if (overlay) overlay.style.display = 'none';
+        // Reset input so the same file can be uploaded again if needed
+        event.target.value = '';
+    }
+}
 
 // Expose for inline HTML onclicks
 window.openAwalModal    = openAwalModal;
@@ -6492,4 +6584,5 @@ window.deleteAwal       = deleteAwal;
 window.toggleAwalActive = toggleAwalActive;
 window.updateAwalOrder  = updateAwalOrder;
 window.awalPreviewPhoto = awalPreviewPhoto;
+window.handleAwalPdfUpload = handleAwalPdfUpload;
 // ==================== END AWAL MODULE =====================================
