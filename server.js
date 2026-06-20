@@ -110,6 +110,7 @@ let colTshirts, colTshirtSettings;
 let colVolunteerCards, colNotifications;
 let colQrConfig;
 let colContributors;
+let colSponsors;
 
 // ─── In-memory stores (populated from MongoDB at startup) ───────────────────
 const SLIPS_PER_BOOK_DE = 50;
@@ -132,6 +133,7 @@ let tshirtSettings    = { price: 350 };
 let galleryPhotos     = [];
 let events            = [];
 let volunteerCards    = [];
+let sponsors          = [];
 
 
 // ─── SSE (Server-Sent Events) for Live Updates ───────────
@@ -214,6 +216,12 @@ async function saveEvents() {
     broadcastLiveEvent('events_updated');
 }
 
+async function saveSponsors() {
+    await colSponsors.deleteMany({});
+    if (sponsors.length > 0) await colSponsors.insertMany(sponsors.map(s => ({ ...s })));
+    broadcastLiveEvent('sponsors_updated');
+}
+
 // ─── Strip MongoDB _id fields from returned objects ──────────────────────────
 function stripId(obj) {
     if (!obj) return obj;
@@ -245,6 +253,7 @@ async function connectDB() {
     colVolunteerCards   = db.collection('volunteerCards');
     colQrConfig         = db.collection('qrConfig');
     colContributors     = db.collection('contributors');
+    colSponsors         = db.collection('sponsors');
 
     // ── Purge any existing master login notifications on startup ──────────────
     // Master logins must never appear in the notification bell — clean the DB.
@@ -349,6 +358,10 @@ async function connectDB() {
     // ── Load volunteer cards ──────────────────────────────────────────────────
     const vcArr = (await colVolunteerCards.find({}).toArray()).map(stripId);
     if (vcArr.length > 0) volunteerCards = vcArr;
+
+    // ── Load sponsors ─────────────────────────────────────────────────────────
+    sponsors = (await colSponsors.find({}).toArray()).map(stripId);
+    console.log(`📂 Loaded ${sponsors.length} sponsor(s) from MongoDB`);
 
 
 
@@ -2863,6 +2876,89 @@ const server = http.createServer(async (req, res) => {
         if (idx === -1) return sendJSON(res, 404, { message: 'Photo not found.' });
         galleryPhotos.splice(idx, 1);
         await saveGallery();
+        return sendJSON(res, 200, { success: true });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // ─── SPONSORS API ─────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════
+
+    if (req.method === 'GET' && pathname === '/api/sponsors') {
+        const sorted = [...sponsors].sort((a, b) => (a.order || 0) - (b.order || 0));
+        return sendJSON(res, 200, { sponsors: sorted });
+    }
+    if (req.method === 'POST' && pathname === '/api/sponsors') {
+        try {
+            const body = await readBody(req);
+            const { name, tagline, description, websiteUrl, photoBase64, photoExt, bannerBase64, bannerExt, active } = body;
+            if (!name || !name.trim()) return sendJSON(res, 400, { message: 'Sponsor name is required.' });
+
+            let photoUrl = null;
+            if (photoBase64) {
+                const pExt = (photoExt || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
+                const mime = pExt === 'png' ? 'image/png' : (pExt === 'gif' ? 'image/gif' : 'image/jpeg');
+                photoUrl = `data:${mime};base64,${photoBase64}`;
+            }
+            let bannerUrl = null;
+            if (bannerBase64) {
+                const bExt = (bannerExt || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
+                const mime = bExt === 'png' ? 'image/png' : (bExt === 'gif' ? 'image/gif' : 'image/jpeg');
+                bannerUrl = `data:${mime};base64,${bannerBase64}`;
+            }
+
+            const maxOrder = sponsors.length > 0 ? Math.max(...sponsors.map(s => s.order || 0)) : 0;
+            const sponsor = {
+                id: `SPO-${Date.now()}`,
+                name: String(name).trim(),
+                tagline: tagline ? String(tagline).trim() : '',
+                description: description ? String(description).trim() : '',
+                websiteUrl: websiteUrl ? String(websiteUrl).trim() : '',
+                photoUrl,
+                bannerUrl,
+                order: maxOrder + 1,
+                active: active !== false,
+                createdAt: new Date().toISOString()
+            };
+            sponsors.push(sponsor);
+            await saveSponsors();
+            console.log(`✅ Sponsor created: ${sponsor.id} | ${sponsor.name}`);
+            return sendJSON(res, 200, { success: true, sponsor });
+        } catch(err) { return sendJSON(res, 400, { message: err.message }); }
+    }
+    if (req.method === 'PUT' && pathname.startsWith('/api/sponsors/')) {
+        const id = decodeURIComponent(pathname.replace('/api/sponsors/', ''));
+        const idx = sponsors.findIndex(s => s.id === id);
+        if (idx === -1) return sendJSON(res, 404, { message: 'Sponsor not found.' });
+        try {
+            const body = await readBody(req);
+            const s = sponsors[idx];
+            if (body.name !== undefined) s.name = String(body.name).trim();
+            if (body.tagline !== undefined) s.tagline = String(body.tagline).trim();
+            if (body.description !== undefined) s.description = String(body.description).trim();
+            if (body.websiteUrl !== undefined) s.websiteUrl = String(body.websiteUrl).trim();
+            if (body.active !== undefined) s.active = body.active !== false && body.active !== 'false';
+            if (body.order !== undefined) s.order = Number(body.order);
+            if (body.photoBase64) {
+                const pExt = (body.photoExt || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
+                const mime = pExt === 'png' ? 'image/png' : (pExt === 'gif' ? 'image/gif' : 'image/jpeg');
+                s.photoUrl = `data:${mime};base64,${body.photoBase64}`;
+            }
+            if (body.bannerBase64) {
+                const bExt = (body.bannerExt || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
+                const mime = bExt === 'png' ? 'image/png' : (bExt === 'gif' ? 'image/gif' : 'image/jpeg');
+                s.bannerUrl = `data:${mime};base64,${body.bannerBase64}`;
+            }
+            s.updatedAt = new Date().toISOString();
+            await saveSponsors();
+            return sendJSON(res, 200, { success: true, sponsor: s });
+        } catch(err) { return sendJSON(res, 400, { message: err.message }); }
+    }
+    if (req.method === 'DELETE' && pathname.startsWith('/api/sponsors/')) {
+        const id = decodeURIComponent(pathname.replace('/api/sponsors/', ''));
+        const idx = sponsors.findIndex(s => s.id === id);
+        if (idx === -1) return sendJSON(res, 404, { message: 'Sponsor not found.' });
+        sponsors.splice(idx, 1);
+        await saveSponsors();
         return sendJSON(res, 200, { success: true });
     }
 

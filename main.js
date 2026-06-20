@@ -251,6 +251,9 @@ async function loadPublicData() {
             console.error('Failed to load full gallery:', e);
         }
     }
+
+    // Load Sponsor Banners (index.html homepage strip)
+    await loadSponsorBanners();
 }
 
 // Lightbox logic for public gallery
@@ -467,6 +470,57 @@ async function loadSiteSettings() {
 document.addEventListener('DOMContentLoaded', loadSiteSettings);
 
 
+// ==================== SPONSOR BANNERS (Homepage Strip) ====================
+async function loadSponsorBanners() {
+    const section = document.getElementById('sponsorBannersSection');
+    const row     = document.getElementById('sponsorBannersRow');
+    if (!section || !row) return;
+    try {
+        const res  = await fetch('/api/sponsors');
+        if (!res.ok) return;
+        const data = await res.json();
+        const active = (data.sponsors || [])
+            .filter(s => s.active !== false && s.bannerUrl)
+            .slice(0, 5);
+
+        if (!active.length) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+        row.innerHTML = active.map(s => {
+            const flex = active.length === 1 ? '0 0 min(520px,90vw)' :
+                         active.length === 2 ? '1 1 min(420px,44vw)' :
+                         '1 1 min(300px,28vw)';
+            return `
+            <a href="sponsors.html#sponsor-${s.id}" title="${s.name}" style="
+                flex:${flex};
+                min-width:200px;
+                max-width:520px;
+                border-radius:16px;
+                overflow:hidden;
+                display:block;
+                border:2px solid rgba(217,119,6,0.25);
+                box-shadow:0 6px 24px rgba(0,0,0,0.35);
+                transition:transform .3s ease,box-shadow .3s ease;
+                text-decoration:none;
+            "
+            onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 36px rgba(0,0,0,0.5)'"
+            onmouseout="this.style.transform='';this.style.boxShadow='0 6px 24px rgba(0,0,0,0.35)'">
+                <img src="${s.bannerUrl}" alt="${s.name} banner"
+                     style="width:100%;height:160px;object-fit:cover;display:block;">
+                <div style="background:rgba(26,7,0,0.85);padding:10px 14px;display:flex;align-items:center;gap:10px;">
+                    ${s.photoUrl ? `<img src="${s.photoUrl}" alt="${s.name}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(217,119,6,0.5);">` : ''}
+                    <span style="color:#FCD34D;font-weight:600;font-size:.85rem;font-family:'Inter',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</span>
+                </div>
+            </a>`;
+        }).join('');
+    } catch(e) {
+        console.warn('Could not load sponsor banners:', e.message);
+    }
+}
+
 // Live Updates via SSE
 const sse = new EventSource('/api/live-updates');
 sse.onmessage = (event) => {
@@ -478,10 +532,14 @@ sse.onmessage = (event) => {
         if (data.type === 'settings_updated') {
             loadSiteSettings();
         }
+        if (data.type === 'sponsors_updated') {
+            loadSponsorBanners();
+        }
     } catch(e) {}
 };
 sse.addEventListener('gallery_updated', loadPublicData);
 sse.addEventListener('events_updated', loadPublicData);
 sse.addEventListener('settings_updated', loadSiteSettings);
+sse.addEventListener('sponsors_updated', loadSponsorBanners);
 
-console.log('🕉️ Ganpati Bappa Morya! Website loaded successfully.');
+console.log('\u1F549\uFE0F Ganpati Bappa Morya! Website loaded successfully.');

@@ -571,6 +571,7 @@
                     <li><a href="volunteers.html">Volunteers</a></li>
                     <li><a href="tshirt.html">T-shirts</a></li>
                     <li><a href="gallery.html">Gallery</a></li>
+                    <li><a href="sponsors.html">Sponsors</a></li>
                     
                     <li><a href="login.html" class="btn-login">Login</a></li>
                 </ul>
@@ -804,6 +805,35 @@
         </div>
     </section>
 
+
+
+    <!-- ═══════════════════════════════════════════════════════
+         SPONSOR BANNERS STRIP
+         Shown dynamically when admin has configured sponsors.
+    ═══════════════════════════════════════════════════════ -->
+    <section id="sponsorBannersSection" style="display:none; background:linear-gradient(135deg,#1A0700 0%,#2D1000 50%,#1A0A00 100%); padding:60px 20px; position:relative; overflow:hidden;">
+        <!-- Subtle decorative blobs -->
+        <div style="position:absolute;top:-60px;left:-60px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(217,119,6,0.1),transparent 70%);pointer-events:none;"></div>
+        <div style="position:absolute;bottom:-60px;right:-60px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(185,28,28,0.1),transparent 70%);pointer-events:none;"></div>
+
+        <div style="max-width:1200px;margin:0 auto;position:relative;z-index:1;">
+            <!-- Section Heading -->
+            <div style="text-align:center;margin-bottom:36px;">
+                <div style="display:inline-block;background:linear-gradient(135deg,rgba(217,119,6,0.18),rgba(232,97,0,0.08));border:1px solid rgba(217,119,6,0.35);border-radius:50px;padding:6px 20px;font-size:0.72rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(252,211,77,0.8);margin-bottom:14px;">Our Valued Partners</div>
+                <div style="font-family:'Cinzel',serif;font-size:clamp(1.5rem,3.5vw,2.2rem);font-weight:700;color:#FCD34D;text-shadow:0 0 24px rgba(252,211,77,0.25);">Sponsors</div>
+            </div>
+            <!-- Banners Row -->
+            <div id="sponsorBannersRow" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-items:stretch;"></div>
+            <!-- View All link -->
+            <div style="text-align:center;margin-top:32px;">
+                <a href="sponsors.html" style="display:inline-flex;align-items:center;gap:8px;padding:11px 28px;background:linear-gradient(135deg,#E07010,#C03008);color:#fff;border-radius:50px;font-weight:600;font-size:0.9rem;text-decoration:none;box-shadow:0 4px 16px rgba(180,50,8,0.4);transition:all .3s;"
+                   onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(180,50,8,0.55)'"
+                   onmouseout="this.style.transform='';this.style.boxShadow='0 4px 16px rgba(180,50,8,0.4)'">
+                    <i class="fas fa-handshake"></i> View All Sponsors
+                </a>
+            </div>
+        </div>
+    </section>
 
 
 

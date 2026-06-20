@@ -5942,3 +5942,293 @@ window.renderDonationAnalyticsChart = function() {
         plugins: [drawValuesPlugin]
     });
 };
+
+
+// =============================================================================
+// ==================== SPONSORS MODULE =========================================
+// Fully self-contained, prefixed with sponsor* to avoid any collision.
+// =============================================================================
+
+let _sponsorsList = [];
+
+// ── Load & render sponsors table ─────────────────────────────────────────────
+async function loadSponsors() {
+    const tbody   = document.getElementById('sponsorsAdminTbody');
+    const total   = document.getElementById('sponsorTotalCount');
+    const active  = document.getElementById('sponsorActiveCount');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:24px;"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>';
+    try {
+        const res  = await fetch('/api/sponsors');
+        const data = await res.json();
+        _sponsorsList = data.sponsors || [];
+
+        if (total) total.textContent = _sponsorsList.length;
+        if (active) active.textContent = _sponsorsList.filter(s => s.active !== false).length;
+
+        if (!_sponsorsList.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px;">No sponsors yet. Click <strong>Add Sponsor</strong> to get started.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = _sponsorsList.map(s => {
+            const bannerThumb = s.bannerUrl
+                ? `<img src="${s.bannerUrl}" alt="banner" style="width:90px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #eee;">`
+                : `<div style="width:90px;height:48px;background:#f0f0f0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.72rem;color:#aaa;">No banner</div>`;
+            const statusBadge = s.active !== false
+                ? '<span style="background:#D5F4E6;color:#1a7a3c;padding:4px 12px;border-radius:12px;font-size:0.78rem;font-weight:700;">Active</span>'
+                : '<span style="background:#F8D7DA;color:#c0392b;padding:4px 12px;border-radius:12px;font-size:0.78rem;font-weight:700;">Inactive</span>';
+            const website = s.websiteUrl
+                ? `<a href="${s.websiteUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--primary-color);font-size:0.82rem;word-break:break-all;">${s.websiteUrl.replace(/^https?:\/\//, '').slice(0,30)}…</a>`
+                : '<span style="color:#ccc;font-size:0.82rem;">—</span>';
+            return `<tr>
+                <td data-label="Order" style="font-weight:700;color:#555;">${s.order || 1}</td>
+                <td data-label="Banner">${bannerThumb}</td>
+                <td data-label="Name">
+                    <div style="font-weight:600;color:#222;">${s.name}</div>
+                    ${s.tagline ? `<div style="font-size:0.78rem;color:#888;">${s.tagline}</div>` : ''}
+                </td>
+                <td data-label="Website">${website}</td>
+                <td data-label="Status">${statusBadge}</td>
+                <td data-label="Actions">
+                    <div class="action-btns" style="flex-wrap:wrap;">
+                        <button class="btn-icon btn-edit" onclick="openSponsorModal('${s.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+                        <button class="btn-icon" onclick="toggleSponsorActive('${s.id}')" title="${s.active !== false ? 'Deactivate' : 'Activate'}"
+                            style="background:${s.active !== false ? '#FFF8E1' : '#E8F5E9'};color:${s.active !== false ? '#f39c12' : '#27ae60'};">
+                            <i class="fas ${s.active !== false ? 'fa-eye-slash' : 'fa-eye'}"></i>
+                        </button>
+                        <button class="btn-icon btn-delete" onclick="deleteSponsor('${s.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#e74c3c;padding:24px;"><i class="fas fa-exclamation-triangle"></i> Error loading sponsors: ${e.message}</td></tr>`;
+    }
+}
+
+// ── Open Add / Edit Modal ────────────────────────────────────────────────────
+function openSponsorModal(id) {
+    const modal   = document.getElementById('sponsorModal');
+    const title   = document.getElementById('sponsorModalTitle');
+    const editId  = document.getElementById('sponsorEditId');
+    if (!modal) return;
+
+    // Reset form
+    document.getElementById('sponsorName').value        = '';
+    document.getElementById('sponsorTagline').value     = '';
+    document.getElementById('sponsorWebsite').value     = '';
+    document.getElementById('sponsorDescription').value = '';
+    document.getElementById('sponsorActive').checked    = true;
+    document.getElementById('sponsorPhotoInput').value  = '';
+    document.getElementById('sponsorBannerInput').value = '';
+    document.getElementById('sponsorPhotoPreviewWrap').innerHTML  = '<span style="font-size:0.7rem;color:#aaa;text-align:center;">No image</span>';
+    document.getElementById('sponsorBannerPreviewWrap').innerHTML = '<span style="font-size:0.8rem;color:#aaa;">No banner selected</span>';
+    editId.value = '';
+
+    if (id) {
+        // Edit mode — populate with existing data
+        const s = _sponsorsList.find(x => x.id === id);
+        if (!s) return;
+        title.textContent  = 'Edit Sponsor';
+        editId.value       = s.id;
+        document.getElementById('sponsorName').value        = s.name || '';
+        document.getElementById('sponsorTagline').value     = s.tagline || '';
+        document.getElementById('sponsorWebsite').value     = s.websiteUrl || '';
+        document.getElementById('sponsorDescription').value = s.description || '';
+        document.getElementById('sponsorActive').checked    = s.active !== false;
+        if (s.photoUrl) {
+            document.getElementById('sponsorPhotoPreviewWrap').innerHTML =
+                `<img src="${s.photoUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+        }
+        if (s.bannerUrl) {
+            document.getElementById('sponsorBannerPreviewWrap').innerHTML =
+                `<img src="${s.bannerUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+        }
+    } else {
+        title.textContent = 'Add Sponsor';
+    }
+    modal.classList.add('active');
+}
+
+function closeSponsorModal() {
+    const modal = document.getElementById('sponsorModal');
+    if (modal) modal.classList.remove('active');
+}
+
+// ── Image Preview helpers ─────────────────────────────────────────────────────
+function sponsorPreviewPhoto(input) {
+    if (!input.files || !input.files[0]) return;
+    const wrap = document.getElementById('sponsorPhotoPreviewWrap');
+    const file = input.files[0];
+    if (typeof window._compressImage === 'function') {
+        window._compressImage(file, 950, function(blob) {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            wrap.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+        });
+    } else {
+        const reader = new FileReader();
+        reader.onload = e => { wrap.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; };
+        reader.readAsDataURL(file);
+    }
+}
+
+function sponsorPreviewBanner(input) {
+    if (!input.files || !input.files[0]) return;
+    const wrap = document.getElementById('sponsorBannerPreviewWrap');
+    const file = input.files[0];
+    if (typeof window._compressImage === 'function') {
+        window._compressImage(file, 950, function(blob) {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            wrap.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;">`;
+        });
+    } else {
+        const reader = new FileReader();
+        reader.onload = e => { wrap.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`; };
+        reader.readAsDataURL(file);
+    }
+}
+
+// ── Helper: file → base64 string ─────────────────────────────────────────────
+function _sponsorFileToBase64(file, callback) {
+    if (typeof window._compressImage === 'function') {
+        window._compressImage(file, 950, function(blob) {
+            if (!blob) { callback(null, null); return; }
+            const reader = new FileReader();
+            reader.onload = e => {
+                const b64 = e.target.result.split(',')[1];
+                const ext = blob.type === 'image/png' ? 'png' : 'jpg';
+                callback(b64, ext);
+            };
+            reader.readAsDataURL(blob);
+        });
+    } else {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const b64 = e.target.result.split(',')[1];
+            const ext = file.name.split('.').pop().toLowerCase() || 'jpg';
+            callback(b64, ext);
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// ── Save (Create or Update) Sponsor ──────────────────────────────────────────
+async function saveSponsor() {
+    const name        = (document.getElementById('sponsorName')?.value || '').trim();
+    const tagline     = (document.getElementById('sponsorTagline')?.value || '').trim();
+    const websiteUrl  = (document.getElementById('sponsorWebsite')?.value || '').trim();
+    const description = (document.getElementById('sponsorDescription')?.value || '').trim();
+    const active      = document.getElementById('sponsorActive')?.checked !== false;
+    const editId      = (document.getElementById('sponsorEditId')?.value || '').trim();
+    const photoFile   = document.getElementById('sponsorPhotoInput')?.files?.[0] || null;
+    const bannerFile  = document.getElementById('sponsorBannerInput')?.files?.[0] || null;
+    const saveBtn     = document.getElementById('sponsorSaveBtn');
+
+    if (!name) { alert('Please enter the sponsor name.'); return; }
+
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; }
+
+    // Convert files to base64 (parallel via Promise wrappers)
+    const toB64 = (file) => file
+        ? new Promise(res => _sponsorFileToBase64(file, (b64, ext) => res({ b64, ext })))
+        : Promise.resolve({ b64: null, ext: null });
+
+    try {
+        const [photoResult, bannerResult] = await Promise.all([toB64(photoFile), toB64(bannerFile)]);
+
+        const payload = {
+            name, tagline, description, websiteUrl, active,
+            ...(photoResult.b64  ? { photoBase64: photoResult.b64,   photoExt: photoResult.ext }  : {}),
+            ...(bannerResult.b64 ? { bannerBase64: bannerResult.b64, bannerExt: bannerResult.ext } : {}),
+        };
+
+        const url    = editId ? `/api/sponsors/${encodeURIComponent(editId)}` : '/api/sponsors';
+        const method = editId ? 'PUT' : 'POST';
+        const res    = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            closeSponsorModal();
+            await loadSponsors();
+            if (typeof showNotification === 'function') {
+                showNotification(editId ? 'Sponsor updated successfully!' : 'Sponsor added successfully!', 'success');
+            }
+        } else {
+            alert('Error: ' + (data.message || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Failed to save sponsor: ' + e.message);
+    }
+
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Sponsor'; }
+}
+
+// ── Toggle Active Status ──────────────────────────────────────────────────────
+async function toggleSponsorActive(id) {
+    const s = _sponsorsList.find(x => x.id === id);
+    if (!s) return;
+    const newActive = s.active === false; // flip
+    try {
+        const res  = await fetch(`/api/sponsors/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ active: newActive })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            await loadSponsors();
+        } else {
+            alert('Error: ' + (data.message || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Failed: ' + e.message);
+    }
+}
+
+// ── Delete Sponsor ────────────────────────────────────────────────────────────
+async function deleteSponsor(id) {
+    const s = _sponsorsList.find(x => x.id === id);
+    if (!confirm(`Remove sponsor "${s ? s.name : id}"? This cannot be undone.`)) return;
+    try {
+        const res = await fetch(`/api/sponsors/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            await loadSponsors();
+            if (typeof showNotification === 'function') showNotification('Sponsor deleted.', 'success');
+        } else {
+            alert('Error: ' + (data.message || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Failed: ' + e.message);
+    }
+}
+
+// ── Hook into showAdminSection ────────────────────────────────────────────────
+(function() {
+    const _origShow = window.showAdminSection;
+    if (typeof _origShow === 'function') {
+        window.showAdminSection = function(sectionId) {
+            _origShow(sectionId);
+            if (sectionId === 'sponsors') {
+                loadSponsors();
+            }
+        };
+    }
+})();
+
+// Expose for inline HTML onclicks
+window.openSponsorModal    = openSponsorModal;
+window.closeSponsorModal   = closeSponsorModal;
+window.saveSponsor         = saveSponsor;
+window.deleteSponsor       = deleteSponsor;
+window.toggleSponsorActive = toggleSponsorActive;
+window.sponsorPreviewPhoto = sponsorPreviewPhoto;
+window.sponsorPreviewBanner = sponsorPreviewBanner;
+// ==================== END SPONSORS MODULE =====================================

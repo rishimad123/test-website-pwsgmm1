@@ -1248,6 +1248,12 @@ window._fmtBytesA = function(b) {
                     </a>
                 </li>
                 <li>
+                    <a href="#" onclick="showAdminSection('sponsors')">
+                        <i class="fas fa-handshake"></i>
+                        <span>Sponsors</span>
+                    </a>
+                </li>
+                <li>
                     <a href="#" onclick="showAdminSection('events')">
                         <i class="fas fa-calendar-alt"></i>
                         <span>Events</span>
@@ -2526,6 +2532,126 @@ window._fmtBytesA = function(b) {
                         </div>
                         <div class="gallery-grid" id="adminGalleryGrid">
                             <div style="text-align:center;color:#aaa;grid-column: 1 / -1;padding:30px;">Loading&#8230;</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ Sponsors Section (Admin) ═══════════ -->
+                <div id="sponsors" class="content-section">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-handshake" style="color:var(--primary-color);margin-right:8px;"></i>Manage Sponsors</h3>
+                            <button class="btn btn-primary btn-small" onclick="openSponsorModal()">
+                                <i class="fas fa-plus"></i> Add Sponsor
+                            </button>
+                        </div>
+                        <p style="color:#666;font-size:0.88rem;margin-bottom:16px;">Add up to 5 sponsors. Each sponsor can have a photo (logo), a banner image, and details. Active sponsors with banners appear on the homepage strip. All sponsors appear on the public Sponsors page.</p>
+
+                        <!-- Summary strip -->
+                        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
+                            <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px 22px;min-width:130px;">
+                                <div style="font-size:1.6rem;font-weight:700;color:#16a34a;" id="sponsorTotalCount">0</div>
+                                <div style="font-size:0.8rem;color:#15803d;margin-top:2px;">Total Sponsors</div>
+                            </div>
+                            <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:14px 22px;min-width:130px;">
+                                <div style="font-size:1.6rem;font-weight:700;color:#ea580c;" id="sponsorActiveCount">0</div>
+                                <div style="font-size:0.8rem;color:#c2410c;margin-top:2px;">Active / Visible</div>
+                            </div>
+                        </div>
+
+                        <div style="overflow-x:auto;">
+                            <table class="admin-table" id="sponsorsAdminTable">
+                                <thead>
+                                    <tr>
+                                        <th>Order</th>
+                                        <th>Banner</th>
+                                        <th>Name / Tagline</th>
+                                        <th>Website</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sponsorsAdminTbody">
+                                    <tr><td colspan="6" style="text-align:center;color:#aaa;padding:30px;">Loading…</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ Sponsor Add/Edit Modal ══ -->
+                <div id="sponsorModal" class="modal">
+                    <div class="modal-content" style="max-width:660px;">
+                        <div class="modal-header">
+                            <h3 id="sponsorModalTitle">Add Sponsor</h3>
+                            <span class="modal-close" onclick="closeSponsorModal()">&times;</span>
+                        </div>
+                        <input type="hidden" id="sponsorEditId">
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label for="sponsorName">Sponsor Name *</label>
+                                <input type="text" id="sponsorName" placeholder="e.g. ABC Corporation">
+                            </div>
+                            <div class="form-group">
+                                <label for="sponsorTagline">Tagline</label>
+                                <input type="text" id="sponsorTagline" placeholder="Short tagline or slogan">
+                            </div>
+                            <div class="form-group">
+                                <label for="sponsorWebsite">Website URL</label>
+                                <input type="url" id="sponsorWebsite" placeholder="https://example.com">
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label for="sponsorDescription">Description</label>
+                                <textarea id="sponsorDescription" rows="3" style="width:100%;padding:12px 15px;border:2px solid #E0E0E0;border-radius:8px;font-size:1rem;resize:vertical;" placeholder="About this sponsor…"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Photo Upload -->
+                        <div class="form-group">
+                            <label>Sponsor Logo / Photo <span style="font-size:0.78rem;color:#999;">(shown as circular logo on card)</span></label>
+                            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+                                <div id="sponsorPhotoPreviewWrap" style="width:72px;height:72px;border-radius:50%;border:2px dashed #ddd;overflow:hidden;background:#f8f9fa;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:#aaa;text-align:center;">
+                                    No image
+                                </div>
+                                <div>
+                                    <input type="file" id="sponsorPhotoInput" accept="image/*" style="display:none;" onchange="sponsorPreviewPhoto(this)">
+                                    <button type="button" class="btn btn-small" onclick="document.getElementById('sponsorPhotoInput').click()" style="background:#f0f0f0;color:#333;border:1.5px solid #ddd;">
+                                        <i class="fas fa-camera"></i> Choose Logo
+                                    </button>
+                                    <p style="font-size:0.78rem;color:#999;margin-top:6px;">JPG/PNG · max ~950 KB</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Banner Upload -->
+                        <div class="form-group">
+                            <label>Sponsor Banner <span style="font-size:0.78rem;color:#999;">(wide image shown on homepage strip and card top)</span></label>
+                            <div style="display:flex;flex-direction:column;gap:10px;">
+                                <div id="sponsorBannerPreviewWrap" style="width:100%;height:120px;border:2px dashed #ddd;border-radius:10px;overflow:hidden;background:#f8f9fa;display:flex;align-items:center;justify-content:center;font-size:0.82rem;color:#aaa;">
+                                    No banner selected
+                                </div>
+                                <div>
+                                    <input type="file" id="sponsorBannerInput" accept="image/*" style="display:none;" onchange="sponsorPreviewBanner(this)">
+                                    <button type="button" class="btn btn-small" onclick="document.getElementById('sponsorBannerInput').click()" style="background:#f0f0f0;color:#333;border:1.5px solid #ddd;">
+                                        <i class="fas fa-image"></i> Choose Banner
+                                    </button>
+                                    <p style="font-size:0.78rem;color:#999;margin-top:4px;">Recommended: 1200×400 px · JPG/PNG · max ~950 KB</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Active toggle -->
+                        <div class="form-group" style="display:flex;align-items:center;gap:12px;">
+                            <input type="checkbox" id="sponsorActive" checked style="width:18px;height:18px;cursor:pointer;">
+                            <label for="sponsorActive" style="margin:0;cursor:pointer;">Active (visible on public site &amp; homepage banners)</label>
+                        </div>
+
+                        <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
+                            <button type="button" class="btn" onclick="closeSponsorModal()" style="background:#f0f0f0;color:#333;">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="saveSponsor()" id="sponsorSaveBtn">
+                                <i class="fas fa-save"></i> Save Sponsor
+                            </button>
                         </div>
                     </div>
                 </div>
