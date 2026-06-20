@@ -5829,7 +5829,8 @@ window.renderDonationAnalyticsChart = function() {
                 borderWidth: 2,
                 borderRadius: 8,
                 borderSkipped: false,
-                hoverBackgroundColor: '#1B5E20'
+                hoverBackgroundColor: '#1B5E20',
+                maxBarThickness: 60
             }]
         },
         options: {
