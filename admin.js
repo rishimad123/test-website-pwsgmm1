@@ -5826,11 +5826,13 @@ window.renderDonationAnalyticsChart = function() {
                 data: amounts,
                 backgroundColor: gradient,
                 borderColor: '#2E7D32',
-                borderWidth: 2,
-                borderRadius: 8,
+                borderWidth: { top: 2, right: 0, bottom: 0, left: 0 },
+                borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
                 borderSkipped: false,
-                hoverBackgroundColor: '#1B5E20',
-                maxBarThickness: 60
+                hoverBackgroundColor: 'rgba(46, 125, 50, 0.9)',
+                hoverBorderColor: '#1B5E20',
+                maxBarThickness: 50,
+                minBarLength: 6 // Ensures very small amounts are still visible as a small bar
             }]
         },
         options: {
