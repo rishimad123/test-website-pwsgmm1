@@ -2648,8 +2648,12 @@ async function loadBalanceRecovery() {
             html += `<tr><td colspan="8" style="background:#F4F6FB;color:#1A237E;font-weight:700;font-size:1.05rem;padding:12px 16px;vertical-align:middle;">Book Number ${bnDisplay} ${btBadge}</td></tr>`;
             html += grouped[bn].map(r => {
                 const dt = new Date(r.submittedAt);
-                const dateStr = dt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase()
-                              + ', ' + dt.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+                const dateStr = isNaN(dt) ? '—' :
+                              (dt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase()
+                              + ', ' + dt.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }));
+                const updatedStr = (r.updatedAt && r.updatedAt !== r.submittedAt && !isNaN(new Date(r.updatedAt)))
+                              ? ('<br><div style="margin-top:4px;padding:2px 4px;background:#FFF8F1;border:1px solid #ffe0b2;border-radius:4px;color:#E65100;font-size:0.7rem;line-height:1.1;white-space:nowrap;"><i class="fas fa-history" style="font-size:0.6rem;"></i> Updated:<br>' + new Date(r.updatedAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase() + ' ' + new Date(r.updatedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + '</div>')
+                              : '';
                 const amtCell  = r.amount && Number(r.amount) > 0
                     ? '\u20B9' + Number(r.amount).toLocaleString('en-IN')
                     : '<span style="color:#ccc;font-style:italic;">No amount</span>';
@@ -2685,7 +2689,7 @@ async function loadBalanceRecovery() {
                     <td>${amtCell}</td>
                     <td>${photoBtn}</td>
                     <td style="font-size:.85rem;color:#3949AB;font-weight:600;">${escHtml(r.userId || '—')}</td>
-                    <td style="font-size:.82rem;color:#555;white-space:nowrap;">${dateStr}</td>
+                    <td style="font-size:.82rem;color:#555;white-space:nowrap;">${dateStr}${updatedStr}</td>
                     <td>${statusBadge}</td>
                     <td><div class="action-btns">${editBtn}${markBtn}${delBtn}</div></td>
                 </tr>`;
@@ -3306,8 +3310,8 @@ function deAdmApplyFilter() {
             const donor = e.donorType === 'Business' ? (e.businessName || '—') : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
             const amt = e.amount != null ? '₹' + Number(e.amount).toLocaleString('en-IN') : '<span style="color:#ccc;">—</span>';
             const dtObj = new Date(e.submittedAt);
-            const dtTime = dtObj.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true}).toUpperCase();
-            const dtDate = dtObj.toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric'});
+            const dtTime = isNaN(dtObj) ? '' : dtObj.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true}).toUpperCase();
+            const dtDate = isNaN(dtObj) ? '—' : dtObj.toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric'});
             let dtHtml = dtTime + '<br>' + dtDate;
             if (e.updatedAt && e.updatedAt !== e.submittedAt) {
                 const upObj = new Date(e.updatedAt);
