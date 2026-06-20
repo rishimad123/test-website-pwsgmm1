@@ -321,151 +321,114 @@ async function loadDashboardData() {
             if (trend) trend.textContent = 'Failed to load';
         });
 
-        // Fetch Donation Analytics for Chart
-        fetch('/api/donations').then(r => r.json()).then(data => {
-            if (data && data.records && data.columns) {
-                // Find Amount, Year, and Date columns based on heuristics
-                let amtCol = null, yearCol = null, dateCol = null;
-                for (const col of data.columns) {
-                    const low = col.toLowerCase();
-                    if (low.includes('amount')) {
-                        amtCol = col;
-                    } else if (!amtCol && (low.includes('rs') || low.includes('rupee') || low.includes('donation'))) {
-                        amtCol = col;
-                    }
-                    if (!yearCol && (low.includes('year') || low === 'fy' || low.includes('financial'))) yearCol = col;
-                    if (!dateCol && low.includes('date')) dateCol = col;
-                }
-                
-                const yearlyTotals = {};
-                data.records.forEach(r => {
-                    if (r._deleted) return;
-                    let yr = null;
-                    
-                    // 1. Try explicit year column
-                    if (yearCol && r[yearCol]) {
-                        const val = String(r[yearCol]).trim();
-                        // Try 4-digit
-                        const m = val.match(/\b(19|20)\d{2}\b/);
-                        if (m) yr = m[0];
-                        else {
-                            // Try 2-digit range like 21-22
-                            const m2 = val.match(/\b(\d{2})-(\d{2})\b/);
-                            if (m2) yr = "20" + m2[1]; // e.g. "21-22" -> "2021"
-                            else yr = val.substring(0,4); // Fallback to raw string
-                        }
-                    }
-                    
-                    // 2. Try explicit date column
-                    if (!yr && dateCol && r[dateCol]) {
-                        const m = String(r[dateCol]).match(/\b(19|20)\d{2}\b/);
-                        if (m) yr = m[0];
-                    }
-                    
-                    // 3. Fallback to searching any column for a 4-digit year
-                    if (!yr) {
-                        for (const col of data.columns) {
-                            if (col === amtCol) continue;
-                            const m = String(r[col] || '').match(/\b(19|20)\d{2}\b/);
-                            if (m) { yr = m[0]; break; }
-                        }
-                    }
-                    
-                    if (!yr || yr === 'Unknown') return;
-                    
-                    // Normalize to 4 digits if possible for neatness
-                    const normMatch = yr.match(/\b(19|20)\d{2}\b/);
-                    if (normMatch) yr = normMatch[0];
-                    
-                    // Extract amount robustly
-                    let amt = 0;
-                    if (amtCol && r[amtCol]) {
-                        const amtStr = String(r[amtCol]).replace(/[^0-9.-]+/g, '');
-                        amt = parseFloat(amtStr) || 0;
-                    }
-                    
-                    if (!yearlyTotals[yr]) yearlyTotals[yr] = 0;
-                    yearlyTotals[yr] += amt;
-                });
-                
-                const labels = Object.keys(yearlyTotals).sort();
-                const amounts = labels.map(y => yearlyTotals[y]);
-                
+        // Fetch Donation Analytics for Chart — uses donation-entries grouped by month
+        fetch('/api/donation-entries').then(r => r.json()).then(deData => {
+            const entries = (deData.entries || []).filter(e => !e.deleted && e.submittedAt && Number(e.amount) > 0);
+
+            if (!entries.length) {
                 const ctxCanvas = document.getElementById('yearlyDonationChart');
                 if (ctxCanvas) {
-                    const ctx = ctxCanvas.getContext('2d');
-                    if (window._donationChartInst) {
-                        window._donationChartInst.destroy();
-                    }
-                    
-                    // Premium Gradient
-                    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                    gradient.addColorStop(0, 'rgba(46, 125, 50, 0.85)'); // Vibrant green
-                    gradient.addColorStop(1, 'rgba(46, 125, 50, 0.15)');
+                    ctxCanvas.parentElement.innerHTML = '<div style="text-align:center;color:#aaa;padding:60px 20px;font-size:.95rem;">No donation data available yet.</div>';
+                }
+                return;
+            }
 
-                    window._donationChartInst = new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Total Donations',
-                                data: amounts,
-                                backgroundColor: gradient,
-                                borderColor: '#2E7D32',
-                                borderWidth: 2,
-                                borderRadius: 8,
-                                borderSkipped: false,
-                                hoverBackgroundColor: '#1B5E20'
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                                    titleFont: { size: 14, family: "'Inter', sans-serif" },
-                                    bodyFont: { size: 15, weight: 'bold', family: "'Inter', sans-serif" },
-                                    padding: 12,
-                                    cornerRadius: 8,
-                                    displayColors: false,
-                                    callbacks: {
-                                        label: function(context) {
-                                            return '\u20B9 ' + context.parsed.y.toLocaleString('en-IN');
-                                        }
-                                    }
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
-                                    ticks: {
-                                        font: { size: 12, family: "'Inter', sans-serif", color: '#666' },
-                                        callback: function(value) {
-                                            if (value >= 10000000) return '\u20B9' + (value/10000000).toFixed(1) + 'Cr';
-                                            if (value >= 100000) return '\u20B9' + (value/100000).toFixed(1) + 'L';
-                                            if (value >= 1000) return '\u20B9' + (value/1000).toFixed(0) + 'K';
-                                            return '\u20B9' + value;
-                                        }
-                                    }
-                                },
-                                x: {
-                                    grid: { display: false, drawBorder: false },
-                                    ticks: { font: { size: 13, weight: '600', family: "'Inter', sans-serif", color: '#444' } }
-                                }
-                            },
-                            animation: {
-                                duration: 1200,
-                                easing: 'easeOutQuart'
+            // Group by Month-Year (e.g. "Jun 2026")
+            const monthTotals = {};
+            const monthOrder = [];
+            entries.forEach(e => {
+                const d = new Date(e.submittedAt);
+                if (isNaN(d)) return;
+                const label = d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+                const sortKey = d.getFullYear() * 100 + d.getMonth(); // for sorting
+                if (!monthTotals[label]) {
+                    monthTotals[label] = { total: 0, sort: sortKey };
+                    monthOrder.push(label);
+                }
+                monthTotals[label].total += Number(e.amount) || 0;
+            });
+
+            // Sort months chronologically
+            monthOrder.sort((a, b) => monthTotals[a].sort - monthTotals[b].sort);
+            const labels  = monthOrder;
+            const amounts = monthOrder.map(m => monthTotals[m].total);
+            const maxAmt  = Math.max(...amounts, 1);
+
+            const ctxCanvas = document.getElementById('yearlyDonationChart');
+            if (!ctxCanvas) return;
+            const ctx = ctxCanvas.getContext('2d');
+            if (window._donationChartInst) window._donationChartInst.destroy();
+
+            // Gradient fill
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(46, 125, 50, 0.85)');
+            gradient.addColorStop(1, 'rgba(46, 125, 50, 0.10)');
+
+            window._donationChartInst = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Total Donations (₹)',
+                        data: amounts,
+                        backgroundColor: gradient,
+                        borderColor: '#2E7D32',
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        hoverBackgroundColor: '#1B5E20'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(30,30,30,0.92)',
+                            titleFont: { size: 13, family: "'Inter', sans-serif", weight: '600' },
+                            bodyFont:  { size: 15, family: "'Inter', sans-serif", weight: '700' },
+                            padding: 12,
+                            cornerRadius: 10,
+                            displayColors: false,
+                            callbacks: {
+                                title: ctx => ctx[0].label,
+                                label: ctx => '₹ ' + ctx.parsed.y.toLocaleString('en-IN')
                             }
                         }
-                    });
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: maxAmt * 1.15,
+                            grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
+                            ticks: {
+                                color: '#666',
+                                font: { size: 12, family: "'Inter', sans-serif" },
+                                callback: v => {
+                                    if (v >= 10000000) return '₹' + (v/10000000).toFixed(1) + 'Cr';
+                                    if (v >= 100000)   return '₹' + (v/100000).toFixed(1) + 'L';
+                                    if (v >= 1000)     return '₹' + (v/1000).toFixed(0) + 'K';
+                                    return '₹' + v;
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: {
+                                color: '#444',
+                                font: { size: 12, weight: '600', family: "'Inter', sans-serif" },
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        }
+                    },
+                    animation: { duration: 1000, easing: 'easeOutQuart' }
                 }
+            });
 
-            }
         }).catch(e => console.error('Analytics load error:', e));
+        
         
     } catch (err) {
         console.error('Error in loadDashboardData:', err);
