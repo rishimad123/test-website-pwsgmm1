@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Our Sponsors – Shree Patelwadi Sarvjanik Ganesh Utsav Mandal</title>
-    <meta name="description" content="Meet the generous sponsors who support Shree Patelwadi Sarvjanik Ganesh Utsav Mandal and help us celebrate Ganesh Chaturthi every year.">
-    <meta name="keywords" content="Sponsors, Ganesh Utsav, Shree Patelwadi, Festival Sponsors">
+    <title>Awal – Shree Patelwadi Sarvjanik Ganesh Utsav Mandal</title>
+    <meta name="description" content="View the magnificent Awal moments of Shree Patelwadi Sarvjanik Ganesh Utsav Mandal.">
+    <meta name="keywords" content="Awal, Ganesh Utsav, Shree Patelwadi, Photos">
     <link rel="stylesheet" href="style.css?v=1.0.1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
@@ -59,14 +59,14 @@
     .btn-login:hover { opacity: 0.9; transform: translateY(-1px) !important; }
 
     /* ── PAGE HERO ── */
-    .sponsors-hero {
+    .awal-hero {
         background: linear-gradient(175deg, #1A0700 0%, #371000 35%, #280800 65%, #160500 100%);
         padding: 120px 20px 80px;
         text-align: center;
         position: relative;
         overflow: hidden;
     }
-    .sponsors-hero::before {
+    .awal-hero::before {
         content: '';
         position: absolute;
         top: 50%; left: 50%;
@@ -81,7 +81,7 @@
         from { opacity: 0.6; transform: translate(-50%,-50%) scale(0.95); }
         to   { opacity: 1;   transform: translate(-50%,-50%) scale(1.05); }
     }
-    .sponsors-hero-badge {
+    .awal-hero-badge {
         display: inline-block;
         background: linear-gradient(135deg, rgba(217,119,6,0.2), rgba(232,97,0,0.1));
         border: 1px solid rgba(217,119,6,0.4);
@@ -95,7 +95,7 @@
         margin-bottom: 20px;
         animation: fadeInUp 0.7s ease both;
     }
-    .sponsors-hero h1 {
+    .awal-hero h1 {
         font-family: 'Cinzel', serif;
         font-size: clamp(2rem, 5vw, 3.8rem);
         font-weight: 700;
@@ -106,7 +106,7 @@
         animation: fadeInUp 0.8s ease 0.1s both;
         position: relative; z-index: 2;
     }
-    .sponsors-hero p {
+    .awal-hero p {
         font-family: 'Inter', sans-serif;
         font-size: clamp(0.88rem, 2vw, 1.05rem);
         color: rgba(255,240,210,0.7);
@@ -121,166 +121,80 @@
         to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── SPONSORS GRID SECTION ── */
-    .sponsors-section {
+    /* ── AWAL SECTION ── */
+    .awal-section {
         background: var(--cream);
         padding: 80px 20px;
         min-height: 300px;
     }
-    .sponsors-section .section-header h2 {
-        color: #1A0A00 !important;
-        font-family: 'Cinzel', serif;
-    }
-    .sponsors-section .divider {
-        background: linear-gradient(90deg, var(--saffron), var(--crimson)) !important;
-        height: 3px !important;
-        border-radius: 2px;
-    }
-
-    /* ── SPONSOR CARD ── */
-    .sponsor-cards-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 32px;
+    
+    /* ── AWAL VERTICAL LAYOUT ── */
+    .awal-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 60px;
+        max-width: 900px;
+        margin: 0 auto;
         margin-top: 48px;
     }
-    .sponsor-card {
+    
+    .awal-item {
         background: #fff;
         border-radius: 20px;
         overflow: hidden;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.09);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
-        display: flex;
-        flex-direction: column;
         position: relative;
     }
-    .sponsor-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 16px 40px rgba(185,28,28,0.15);
+    
+    .awal-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(185,28,28,0.15);
     }
-    .sponsor-card-banner {
+    
+    .awal-item img {
         width: 100%;
-        height: 180px;
-        object-fit: cover;
+        height: auto;
         display: block;
-        background: linear-gradient(135deg, #1A0700, #371000);
+        max-height: 800px;
+        object-fit: contain;
+        background: #111;
     }
-    .sponsor-card-banner-placeholder {
-        width: 100%;
-        height: 180px;
-        background: linear-gradient(135deg, #1A0700 0%, #371000 50%, #0D0E1A 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .sponsor-card-banner-placeholder i {
-        font-size: 3rem;
-        color: rgba(217,119,6,0.4);
-    }
-    .sponsor-card-body {
-        padding: 28px 24px 24px;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    .sponsor-card-logo-wrap {
-        width: 72px; height: 72px;
-        border-radius: 50%;
-        border: 3px solid rgba(217,119,6,0.35);
-        overflow: hidden;
+    
+    .awal-caption {
+        padding: 24px 32px;
         background: #fff;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-        margin-top: -52px;
-        margin-left: 20px;
-        margin-bottom: 4px;
-        flex-shrink: 0;
-        position: relative;
-        z-index: 2;
+        border-top: 4px solid var(--saffron);
     }
-    .sponsor-card-logo-wrap img {
-        width: 100%; height: 100%;
-        object-fit: cover;
-    }
-    .sponsor-card-logo-placeholder {
-        width: 100%; height: 100%;
-        background: linear-gradient(135deg, var(--saffron), var(--crimson));
-        display: flex; align-items: center; justify-content: center;
-        color: #fff; font-size: 1.8rem; font-weight: 700;
-    }
-    .sponsor-card-name {
-        font-family: 'Cinzel', serif;
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: #1A0A00;
-        line-height: 1.3;
-    }
-    .sponsor-card-tagline {
-        font-size: 0.83rem;
-        color: var(--saffron);
-        font-weight: 600;
-        letter-spacing: 0.3px;
-    }
-    .sponsor-card-desc {
-        font-size: 0.9rem;
-        color: #5A4035;
-        line-height: 1.65;
-        flex: 1;
-    }
-    .sponsor-card-divider {
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(217,119,6,0.3), transparent);
-        margin: 4px 0;
-    }
-    .sponsor-card-footer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-    }
-    .sponsor-visit-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 22px;
-        background: linear-gradient(135deg, var(--saffron), var(--crimson));
-        color: #fff;
-        border-radius: 50px;
-        font-size: 0.88rem;
-        font-weight: 600;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 14px rgba(185,28,28,0.3);
-    }
-    .sponsor-visit-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 22px rgba(185,28,28,0.45);
-        color: #fff;
-    }
-    .sponsor-no-website {
-        font-size: 0.8rem;
-        color: #aaa;
-        font-style: italic;
+    
+    .awal-caption p {
+        font-family: 'Inter', sans-serif;
+        font-size: 1.1rem;
+        color: #333;
+        line-height: 1.6;
+        margin: 0;
+        text-align: center;
+        font-weight: 500;
     }
 
     /* ── EMPTY STATE ── */
-    .sponsors-empty {
+    .awal-empty {
         text-align: center;
         padding: 60px 20px;
         color: #aaa;
     }
-    .sponsors-empty i {
+    .awal-empty i {
         font-size: 3.5rem;
         margin-bottom: 20px;
         color: rgba(217,119,6,0.4);
         display: block;
     }
-    .sponsors-empty h3 {
+    .awal-empty h3 {
         font-family: 'Cinzel', serif;
         color: #5A4035;
         margin-bottom: 10px;
     }
-    .sponsors-empty p {
+    .awal-empty p {
         color: #999;
         font-size: 0.95rem;
     }
@@ -309,8 +223,8 @@
     .footer-bottom { border-color: rgba(217,119,6,0.1) !important; color: rgba(255,248,238,0.3) !important; }
 
     @media (max-width: 576px) {
-        .sponsors-hero { padding: 100px 16px 60px; }
-        .sponsor-cards-grid { grid-template-columns: 1fr; gap: 20px; }
+        .awal-hero { padding: 100px 16px 60px; }
+        .awal-caption { padding: 20px; }
     }
     </style>
 </head>
@@ -335,36 +249,31 @@
                     <li><a href="volunteers.html">Volunteers</a></li>
                     <li><a href="tshirt.html">T-shirts</a></li>
                     <li><a href="gallery.html">Gallery</a></li>
-                    <li><a href="sponsors.html" class="active">Sponsors</a></li>
-                    <li><a href="awal.html">Awal</a></li>
+                    <li><a href="sponsors.html">Sponsors</a></li>
+                    <li><a href="awal.html" class="active">Awal</a></li>
                     <li><a href="login.html" class="btn-login">Login</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Sponsors Hero -->
-    <section class="sponsors-hero">
+    <!-- Awal Hero -->
+    <section class="awal-hero">
         <div style="position:relative;z-index:2;">
-            <div class="sponsors-hero-badge">✦ Valued Partners ✦</div>
-            <h1>Our Sponsors</h1>
-            <p>We are deeply grateful to all the generous organisations and individuals who support our mission of celebrating Lord Ganesha's blessings and strengthening our community.</p>
+            <div class="awal-hero-badge">✦ The Grand Arrival ✦</div>
+            <h1>Awal</h1>
+            <p>Experience the divine journey and majestic arrival of Lord Ganesha.</p>
         </div>
     </section>
 
-    <!-- Sponsors Grid -->
-    <section class="sponsors-section">
+    <!-- Awal Vertical Sequence -->
+    <section class="awal-section">
         <div class="container">
-            <div class="section-header">
-                <h2>Meet Our Sponsors</h2>
-                <div class="divider"></div>
-            </div>
-
-            <div id="sponsorCardsGrid" class="sponsor-cards-grid">
+            <div id="awalLayout" class="awal-layout">
                 <!-- Loaded dynamically -->
-                <div class="sponsors-empty" style="grid-column:1/-1;">
+                <div class="awal-empty">
                     <i class="fas fa-spinner fa-spin"></i>
-                    <h3>Loading sponsors…</h3>
+                    <h3>Loading moments…</h3>
                 </div>
             </div>
         </div>
@@ -409,68 +318,57 @@
         </div>
     </footer>
 
-    <script src="main.js?v=1.0.5"></script>
+    <script src="main.js?v=1.0.6"></script>
     <script>
-    // ── Load Sponsor Cards ──
-    async function loadSponsorsPage() {
-        const grid = document.getElementById('sponsorCardsGrid');
-        if (!grid) return;
+    // ── Load Awal Photos ──
+    async function loadAwalPage() {
+        const layout = document.getElementById('awalLayout');
+        if (!layout) return;
         try {
-            const res  = await fetch('/api/sponsors');
+            const res  = await fetch('/api/awal');
             const data = await res.json();
-            const list = (data.sponsors || []).filter(s => s.active !== false);
+            const list = (data.awals || []).filter(a => a.active !== false);
 
             if (!list.length) {
-                grid.innerHTML = `
-                    <div class="sponsors-empty" style="grid-column:1/-1;">
-                        <i class="fas fa-handshake"></i>
-                        <h3>No Sponsors Yet</h3>
-                        <p>We are actively seeking sponsors who share our vision of celebrating community and culture. Interested? <strong>Get in touch!</strong></p>
+                layout.innerHTML = `
+                    <div class="awal-empty">
+                        <i class="fas fa-camera"></i>
+                        <h3>No Photos Yet</h3>
+                        <p>Stay tuned! Awal moments will be uploaded soon.</p>
                     </div>`;
                 return;
             }
 
-            grid.innerHTML = list.map(s => {
-                const initials = s.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-                const banner = s.bannerUrl
-                    ? `<img class="sponsor-card-banner" src="${s.bannerUrl}" alt="${s.name} banner">`
-                    : `<div class="sponsor-card-banner-placeholder"><i class="fas fa-image"></i></div>`;
-                const logo = s.photoUrl
-                    ? `<img src="${s.photoUrl}" alt="${s.name} logo">`
-                    : `<div class="sponsor-card-logo-placeholder">${initials}</div>`;
-                const website = (s.websiteUrl && s.websiteUrl.trim())
-                    ? (() => {
-                        let url = s.websiteUrl.trim();
-                        if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
-                        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="sponsor-visit-btn"><i class="fas fa-external-link-alt"></i> Visit Website</a>`;
-                      })()
-                    : `<span class="sponsor-no-website">No website listed</span>`;
+            layout.innerHTML = list.map(a => {
+                const photo = a.photoUrl
+                    ? `<img src="${a.photoUrl}" alt="Awal photo">`
+                    : ``;
+                
                 return `
-                    <div class="sponsor-card" id="sponsor-${s.id}">
-                        ${banner}
-                        <div class="sponsor-card-logo-wrap">${logo}</div>
-                        <div class="sponsor-card-body">
-                            <div class="sponsor-card-name">${s.name}</div>
-                            ${s.tagline ? `<div class="sponsor-card-tagline">${s.tagline}</div>` : ''}
-                            ${s.description ? `<div class="sponsor-card-desc">${s.description}</div>` : ''}
-                            <div class="sponsor-card-divider"></div>
-                            <div class="sponsor-card-footer">
-                                ${website}
-                            </div>
-                        </div>
+                    <div class="awal-item" id="awal-${a.id}">
+                        ${photo}
+                        ${a.description ? `<div class="awal-caption"><p>${a.description}</p></div>` : ''}
                     </div>`;
             }).join('');
 
-            // If navigated from a banner (hash), scroll to the anchor
+            // If navigated from a hash, scroll to the anchor
             if (window.location.hash) {
                 const el = document.querySelector(window.location.hash);
                 if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
             }
         } catch(e) {
-            grid.innerHTML = `<div class="sponsors-empty" style="grid-column:1/-1;"><i class="fas fa-exclamation-triangle"></i><h3>Could not load sponsors</h3><p>Please refresh the page.</p></div>`;
+            layout.innerHTML = `<div class="awal-empty"><i class="fas fa-exclamation-triangle"></i><h3>Could not load Awal photos</h3><p>Please refresh the page.</p></div>`;
         }
     }
-    document.addEventListener('DOMContentLoaded', loadSponsorsPage);
+    
+    document.addEventListener('DOMContentLoaded', loadAwalPage);
+    
+    // SSE Live Update
+    if (window.sse) {
+        window.sse.addEventListener('awal_updated', () => {
+            loadAwalPage();
+        });
+    }
     </script>
 </body>
 </html>

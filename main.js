@@ -523,6 +523,7 @@ async function loadSponsorBanners() {
 
 // Live Updates via SSE
 const sse = new EventSource('/api/live-updates');
+window.sse = sse;
 sse.onmessage = (event) => {
     try {
         const data = JSON.parse(event.data);

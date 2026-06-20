@@ -111,7 +111,7 @@ let colVolunteerCards, colNotifications;
 let colQrConfig;
 let colContributors;
 let colSponsors;
-
+let colAwal;
 // ─── In-memory stores (populated from MongoDB at startup) ───────────────────
 const SLIPS_PER_BOOK_DE = 50;
 const SLIPS_PER_BOOK    = 50;
@@ -134,7 +134,7 @@ let galleryPhotos     = [];
 let events            = [];
 let volunteerCards    = [];
 let sponsors          = [];
-
+let awals             = [];
 
 // ─── SSE (Server-Sent Events) for Live Updates ───────────
 const sseClients = [];
@@ -222,6 +222,12 @@ async function saveSponsors() {
     broadcastLiveEvent('sponsors_updated');
 }
 
+async function saveAwal() {
+    await colAwal.deleteMany({});
+    if (awals.length > 0) await colAwal.insertMany(awals.map(a => ({ ...a })));
+    broadcastLiveEvent('awal_updated');
+}
+
 // ─── Strip MongoDB _id fields from returned objects ──────────────────────────
 function stripId(obj) {
     if (!obj) return obj;
@@ -254,7 +260,7 @@ async function connectDB() {
     colQrConfig         = db.collection('qrConfig');
     colContributors     = db.collection('contributors');
     colSponsors         = db.collection('sponsors');
-
+    colAwal             = db.collection('awal');
     // ── Purge any existing master login notifications on startup ──────────────
     // Master logins must never appear in the notification bell — clean the DB.
     try {
@@ -362,6 +368,10 @@ async function connectDB() {
     // ── Load sponsors ─────────────────────────────────────────────────────────
     sponsors = (await colSponsors.find({}).toArray()).map(stripId);
     console.log(`📂 Loaded ${sponsors.length} sponsor(s) from MongoDB`);
+
+    // ── Load Awal ─────────────────────────────────────────────────────────────
+    awals = (await colAwal.find({}).toArray()).map(stripId);
+    console.log(`📂 Loaded ${awals.length} Awal photo(s) from MongoDB`);
 
 
 
@@ -2880,6 +2890,97 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ══════════════════════════════════════════════════════════════
+    // ─── AWAL API ─────────────────────────────────────────────
+    if (req.method === 'GET' && pathname === '/api/awal') {
+        const sorted = [...awals].sort((a, b) => (a.order || 0) - (b.order || 0));
+        return sendJSON(res, 200, { awals: sorted });
+    }
+
+    if (req.method === 'POST' && pathname === '/api/awal') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            try {
+                const data = JSON.parse(body);
+                const maxOrder = awals.length > 0 ? Math.max(...awals.map(a => a.order || 0)) : 0;
+                
+                const awal = {
+                    id: Date.now().toString(),
+                    description: data.description || '',
+                    active: data.active !== false,
+                    order: maxOrder + 1,
+                    photoUrl: null
+                };
+
+                if (data.photoBase64 && data.photoExt) {
+                    const filename = `awal_${awal.id}.${data.photoExt}`;
+                    const filepath = path.join(UPLOADS_DIR, filename);
+                    fs.writeFileSync(filepath, data.photoBase64, 'base64');
+                    awal.photoUrl = `/uploads/${filename}`;
+                }
+
+                awals.push(awal);
+                await saveAwal();
+                sendJSON(res, 200, { success: true, awal });
+            } catch (e) {
+                sendJSON(res, 500, { success: false, message: e.message });
+            }
+        });
+        return;
+    }
+
+    if (req.method === 'PUT' && pathname.startsWith('/api/awal/')) {
+        const id = decodeURIComponent(pathname.replace('/api/awal/', ''));
+        const idx = awals.findIndex(a => a.id === id);
+        if (idx === -1) return sendJSON(res, 404, { success: false, message: 'Awal photo not found' });
+
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            try {
+                const data = JSON.parse(body);
+                const a = awals[idx];
+                
+                if (data.description !== undefined) a.description = data.description;
+                if (data.active !== undefined) a.active = data.active;
+                if (data.order !== undefined) a.order = parseInt(data.order, 10);
+                
+                if (data.photoBase64 && data.photoExt) {
+                    if (a.photoUrl) {
+                        const oldPath = path.join(process.cwd(), a.photoUrl);
+                        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+                    }
+                    const filename = `awal_${a.id}_${Date.now()}.${data.photoExt}`;
+                    const filepath = path.join(UPLOADS_DIR, filename);
+                    fs.writeFileSync(filepath, data.photoBase64, 'base64');
+                    a.photoUrl = `/uploads/${filename}`;
+                }
+
+                await saveAwal();
+                sendJSON(res, 200, { success: true, awal: a });
+            } catch (e) {
+                sendJSON(res, 500, { success: false, message: e.message });
+            }
+        });
+        return;
+    }
+
+    if (req.method === 'DELETE' && pathname.startsWith('/api/awal/')) {
+        const id = decodeURIComponent(pathname.replace('/api/awal/', ''));
+        const idx = awals.findIndex(a => a.id === id);
+        if (idx === -1) return sendJSON(res, 404, { success: false, message: 'Not found' });
+        
+        const a = awals[idx];
+        if (a.photoUrl) {
+            const oldPath = path.join(process.cwd(), a.photoUrl);
+            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        }
+        
+        awals.splice(idx, 1);
+        await saveAwal();
+        return sendJSON(res, 200, { success: true });
+    }
+
     // ─── SPONSORS API ─────────────────────────────────────────────
     // ══════════════════════════════════════════════════════════════
 

@@ -6219,6 +6219,9 @@ async function deleteSponsor(id) {
             if (sectionId === 'sponsors') {
                 loadSponsors();
             }
+            if (sectionId === 'awal') {
+                loadAwal();
+            }
         };
     }
 })();
@@ -6232,3 +6235,261 @@ window.toggleSponsorActive = toggleSponsorActive;
 window.sponsorPreviewPhoto = sponsorPreviewPhoto;
 window.sponsorPreviewBanner = sponsorPreviewBanner;
 // ==================== END SPONSORS MODULE =====================================
+
+// =============================================================================
+// ==================== AWAL MODULE =========================================
+// Fully self-contained, prefixed with awal* to avoid any collision.
+// =============================================================================
+
+let _awalList = [];
+
+// ── Load & render awal table ─────────────────────────────────────────────
+async function loadAwal() {
+    const tbody   = document.getElementById('awalAdminTbody');
+    const total   = document.getElementById('awalTotalCount');
+    const active  = document.getElementById('awalActiveCount');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:24px;"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>';
+    try {
+        const res  = await fetch('/api/awal');
+        const data = await res.json();
+        _awalList = data.awals || [];
+
+        if (total) total.textContent = _awalList.length;
+        if (active) active.textContent = _awalList.filter(s => s.active !== false).length;
+
+        if (!_awalList.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:30px;">No Awal photos yet. Click <strong>Add Photo</strong> to get started.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = _awalList.map(s => {
+            const photoThumb = s.photoUrl
+                ? `<img src="${s.photoUrl}" alt="photo" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #eee;">`
+                : `<div style="width:80px;height:80px;background:#f0f0f0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.72rem;color:#aaa;">No photo</div>`;
+            const statusBadge = s.active !== false
+                ? '<span style="background:#D5F4E6;color:#1a7a3c;padding:4px 12px;border-radius:12px;font-size:0.78rem;font-weight:700;">Active</span>'
+                : '<span style="background:#F8D7DA;color:#c0392b;padding:4px 12px;border-radius:12px;font-size:0.78rem;font-weight:700;">Inactive</span>';
+            return `<tr>
+                <td data-label="Order" style="font-weight:700;color:#555;">
+                    <input type="number" value="${s.order || 1}" 
+                           onchange="updateAwalOrder('${s.id}', this.value)"
+                           style="width:60px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;text-align:center;">
+                </td>
+                <td data-label="Photo">${photoThumb}</td>
+                <td data-label="Description">
+                    <div style="font-weight:500;color:#444;max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.description || '<span style="color:#aaa;font-style:italic;">No description</span>'}</div>
+                </td>
+                <td data-label="Status">${statusBadge}</td>
+                <td data-label="Actions">
+                    <div class="action-btns" style="flex-wrap:wrap;">
+                        <button class="btn-icon btn-edit" onclick="openAwalModal('${s.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+                        <button class="btn-icon" onclick="toggleAwalActive('${s.id}')" title="${s.active !== false ? 'Deactivate' : 'Activate'}"
+                            style="background:${s.active !== false ? '#FFF8E1' : '#E8F5E9'};color:${s.active !== false ? '#f39c12' : '#27ae60'};">
+                            <i class="fas ${s.active !== false ? 'fa-eye-slash' : 'fa-eye'}"></i>
+                        </button>
+                        <button class="btn-icon btn-delete" onclick="deleteAwal('${s.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#e74c3c;padding:24px;"><i class="fas fa-exclamation-triangle"></i> Error loading Awal: ${e.message}</td></tr>`;
+    }
+}
+
+// ── Open Add / Edit Modal ────────────────────────────────────────────────────
+function openAwalModal(id) {
+    const modal   = document.getElementById('awalModal');
+    const title   = document.getElementById('awalModalTitle');
+    const editId  = document.getElementById('awalEditId');
+    if (!modal) return;
+
+    // Reset form
+    document.getElementById('awalDescription').value = '';
+    document.getElementById('awalActive').checked    = true;
+    document.getElementById('awalPhotoInput').value  = '';
+    document.getElementById('awalPhotoPreviewWrap').innerHTML  = '<span style="font-size:0.8rem;color:#aaa;">No photo selected</span>';
+    editId.value = '';
+
+    if (id) {
+        // Edit mode
+        const s = _awalList.find(x => x.id === id);
+        if (!s) return;
+        title.textContent  = 'Edit Awal Photo';
+        editId.value       = s.id;
+        document.getElementById('awalDescription').value = s.description || '';
+        document.getElementById('awalActive').checked    = s.active !== false;
+        if (s.photoUrl) {
+            document.getElementById('awalPhotoPreviewWrap').innerHTML =
+                `<img src="${s.photoUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+        }
+    } else {
+        title.textContent = 'Add Awal Photo';
+    }
+    modal.classList.add('active');
+}
+
+function closeAwalModal() {
+    const modal = document.getElementById('awalModal');
+    if (modal) modal.classList.remove('active');
+}
+
+// ── Image Preview ─────────────────────────────────────────────────────────────
+function awalPreviewPhoto(input) {
+    if (!input.files || !input.files[0]) return;
+    const wrap = document.getElementById('awalPhotoPreviewWrap');
+    const file = input.files[0];
+    if (typeof window._compressImage === 'function') {
+        window._compressImage(file, 1200, function(blob) {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            wrap.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;">`;
+        });
+    } else {
+        const reader = new FileReader();
+        reader.onload = e => { wrap.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`; };
+        reader.readAsDataURL(file);
+    }
+}
+
+// ── Helper: file → base64 string ─────────────────────────────────────────────
+function _awalFileToBase64(file, callback) {
+    if (typeof window._compressImage === 'function') {
+        window._compressImage(file, 1200, function(blob) {
+            if (!blob) { callback(null, null); return; }
+            const reader = new FileReader();
+            reader.onload = e => {
+                const b64 = e.target.result.split(',')[1];
+                const ext = blob.type === 'image/png' ? 'png' : 'jpg';
+                callback(b64, ext);
+            };
+            reader.readAsDataURL(blob);
+        });
+    } else {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const b64 = e.target.result.split(',')[1];
+            const ext = file.name.split('.').pop().toLowerCase() || 'jpg';
+            callback(b64, ext);
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// ── Save (Create or Update) ──────────────────────────────────────────────────
+async function saveAwal() {
+    const description = (document.getElementById('awalDescription')?.value || '').trim();
+    const active      = document.getElementById('awalActive')?.checked !== false;
+    const editId      = (document.getElementById('awalEditId')?.value || '').trim();
+    const photoFile   = document.getElementById('awalPhotoInput')?.files?.[0] || null;
+    const saveBtn     = document.getElementById('awalSaveBtn');
+
+    if (!editId && !photoFile) { alert('Please select a photo to upload.'); return; }
+
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; }
+
+    const toB64 = (file) => file
+        ? new Promise(res => _awalFileToBase64(file, (b64, ext) => res({ b64, ext })))
+        : Promise.resolve({ b64: null, ext: null });
+
+    try {
+        const photoResult = await toB64(photoFile);
+
+        const payload = {
+            description, active,
+            ...(photoResult.b64  ? { photoBase64: photoResult.b64, photoExt: photoResult.ext }  : {}),
+        };
+
+        const url    = editId ? `/api/awal/${encodeURIComponent(editId)}` : '/api/awal';
+        const method = editId ? 'PUT' : 'POST';
+        const res    = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            closeAwalModal();
+            await loadAwal();
+            if (typeof showNotification === 'function') {
+                showNotification(editId ? 'Awal updated successfully!' : 'Awal photo added successfully!', 'success');
+            }
+        } else {
+            alert('Error: ' + (data.message || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Failed to save Awal photo: ' + e.message);
+    }
+
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Photo'; }
+}
+
+// ── Update Order ──────────────────────────────────────────────────────────────
+async function updateAwalOrder(id, newOrder) {
+    try {
+        const res  = await fetch(`/api/awal/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: newOrder })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            await loadAwal();
+        } else {
+            alert('Error: ' + (data.message || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Failed: ' + e.message);
+    }
+}
+
+// ── Toggle Active Status ──────────────────────────────────────────────────────
+async function toggleAwalActive(id) {
+    const s = _awalList.find(x => x.id === id);
+    if (!s) return;
+    const newActive = s.active === false; // flip
+    try {
+        const res  = await fetch(`/api/awal/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ active: newActive })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            await loadAwal();
+        } else {
+            alert('Error: ' + (data.message || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Failed: ' + e.message);
+    }
+}
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+async function deleteAwal(id) {
+    if (!confirm(`Remove this Awal photo? This cannot be undone.`)) return;
+    try {
+        const res = await fetch(`/api/awal/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            await loadAwal();
+            if (typeof showNotification === 'function') showNotification('Awal photo deleted.', 'success');
+        } else {
+            alert('Error: ' + (data.message || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Failed: ' + e.message);
+    }
+}
+
+// Expose for inline HTML onclicks
+window.openAwalModal    = openAwalModal;
+window.closeAwalModal   = closeAwalModal;
+window.saveAwal         = saveAwal;
+window.deleteAwal       = deleteAwal;
+window.toggleAwalActive = toggleAwalActive;
+window.updateAwalOrder  = updateAwalOrder;
+window.awalPreviewPhoto = awalPreviewPhoto;
+// ==================== END AWAL MODULE =====================================

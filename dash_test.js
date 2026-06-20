@@ -1,0 +1,5165 @@
+
+// Apply dynamic receipt format from server settings
+function applyReceiptFormat(rf, prefix) {
+    if (!rf) return;
+    // Store year globally so receipt liveSync functions use it
+    if (rf.receiptYear !== undefined) window._receiptYear = rf.receiptYear;
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.innerHTML = val; };
+    setVal(prefix + '_f_receiptTopLeft', rf.receiptTopLeft);
+    setVal(prefix + '_f_receiptTopCenter', rf.receiptTopCenter);
+    setVal(prefix + '_f_receiptTopRightPrefix', rf.receiptTopRightPrefix);
+    setVal(prefix + '_r_year', rf.receiptYear);
+    setVal(prefix + '_f_receiptTitle', rf.receiptTitle);
+    setVal(prefix + '_f_receiptAddress', rf.receiptAddress);
+    setVal(prefix + '_f_receiptDonorPrefix', rf.receiptDonorPrefix);
+    setVal(prefix + '_f_receiptDonorSuffix', rf.receiptDonorSuffix);
+    setVal(prefix + '_f_receiptAmountWordsPrefix', rf.receiptAmountWordsPrefix);
+    setVal(prefix + '_f_receiptThankYouText', rf.receiptThankYouText);
+    setVal(prefix + '_f_receiptSign1Role', rf.receiptSign1Role);
+    setVal(prefix + '_f_receiptSign1Name', rf.receiptSign1Name);
+    setVal(prefix + '_f_receiptSign2Role', rf.receiptSign2Role);
+    setVal(prefix + '_f_receiptSign2Name', rf.receiptSign2Name);
+    setVal(prefix + '_f_receiptSign3Role', rf.receiptSign3Role);
+    setVal(prefix + '_f_receiptSign3Name', rf.receiptSign3Name);
+    setVal(prefix + '_f_receiptSign4Role', rf.receiptSign4Role);
+    setVal(prefix + '_f_receiptSign4Name', rf.receiptSign4Name);
+}
+</script>
+<script>
+/* Portable API base: strip hardcoded localhost:3000 → relative URL on any host */
+(function() {
+  var _f = window.fetch.bind(window);
+  window.fetch = function(url, opts) {
+    if (typeof url === 'string' && url.startsWith('http://localhost:3000'))
+      url = url.slice('http://localhost:3000'.length);
+    return _f(url, opts);
+  };
+})();
+/* Fix photo URLs for mobile (relative, not localhost) */
+window.fixUrl = function(url) {
+  if (!url) return '';
+  if (url.startsWith('http://localhost:3000')) return url.slice('http://localhost:3000'.length);
+  return url;
+};
+</script>
+    <!-- FILE:// REDIRECT — if opened as a local file, switch to the server -->
+    <script>
+      if (window.location.protocol === 'file:') {
+        var page = window.location.pathname.split('/').pop();
+        var hash = window.location.hash || '';
+        window.location.replace('/' + page + hash);
+      }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .dashboard {
+            display: flex;
+            min-height: 100vh;
+            background: var(--light-color);
+        }
+
+        /* ── Mobile hamburger ──────────────────────────────────── */
+        .hamburger-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            color: var(--dark-color);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.45);
+            z-index: 999;
+        }
+        .sidebar-overlay.active { display: block; }
+
+        @media (max-width: 900px) {
+            .hamburger-btn { display: block; }
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                z-index: 1000;
+                transition: left .3s ease;
+            }
+            .sidebar.open { left: 0; }
+            .main-content { margin-left: 0 !important; }
+            .content-landmark { padding: 16px !important; }
+            .top-bar { padding: 14px 16px !important; }
+            #deIndFields, #deBizFields { grid-template-columns: 1fr !important; }
+            #dsTopBar { flex-wrap: wrap; gap: 8px; }
+            .dashboard-cards { grid-template-columns: 1fr 1fr !important; }
+            .ds-scroll { max-height: 55vh; }
+        }
+        @media (max-width: 600px) {
+            .dashboard-cards { grid-template-columns: 1fr !important; }
+            .dash-card { padding: 16px; }
+            .card { padding: 16px; }
+            .table th, .table td { padding: 10px 8px; font-size:.82rem; }
+            #deIndFields { grid-template-columns: 1fr !important; }
+            .de-payment-grid { grid-template-columns: repeat(2,1fr) !important; }
+            #donorHeroBanner { flex-direction: column; gap: 12px; padding: 16px; }
+            .top-bar h2 { font-size: 1rem; }
+        }
+        
+        .sidebar {
+            width: 260px;
+            background: var(--dark-color);
+            color: var(--white);
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar-header h3 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 20px 0;
+        }
+        
+        .sidebar-menu li {
+            margin: 5px 0;
+        }
+        
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            color: #94A3B8;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background: rgba(255,107,53,0.1);
+            color: var(--primary-color);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .sidebar-menu i {
+            width: 20px;
+        }
+        
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            background: #F5F6FA;
+        }
+        
+        .top-bar {
+            background: var(--white);
+            padding: 20px 30px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: 700;
+        }
+        
+        .content-landmark {
+            padding: 30px;
+        }
+
+        /* ── Donor Search ─────────────────────────────────── */
+        #dsTopBar {
+            background: #fff;
+            border: 1px solid #e8eaf0;
+            border-radius: 12px;
+            padding: 11px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,.06);
+            margin-bottom: 12px;
+        }
+        #dsTopBar input[type=text] {
+            flex: 1;
+            min-width: 180px;
+            padding: 8px 10px 8px 32px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 9px;
+            font-size: .88rem;
+            outline: none;
+            transition: border-color .2s;
+            background: #fff;
+        }
+        #dsTopBar input[type=text]:focus { border-color: var(--primary-color); }
+        #dsFilterPanel {
+            background: #FAFBFF;
+            border: 1px solid #e8eaf0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+        #dsTableWrap {
+            border: 1px solid #eef0f6;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,.05);
+        }
+        .ds-scroll {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: calc(100vh - 290px);
+        }
+        #dsTableWrap table { width: 100%; border-collapse: collapse; }
+        #dsTableWrap thead th {
+            position: sticky; top: 0; z-index: 2;
+            padding: 8px 12px;
+            background: #f4f6fb;
+            font-size: .71rem;
+            font-weight: 700;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            white-space: nowrap;
+            border-bottom: 2px solid #e8eaf0;
+            text-align: left;
+        }
+        #dsTableWrap tbody td {
+            padding: 7px 12px;
+            border-bottom: 1px solid #f0f2f8;
+            font-size: .83rem;
+            vertical-align: middle;
+        }
+        #dsTableWrap tbody tr:nth-child(even) { background: #f9fafe; }
+        #dsTableWrap tbody tr:hover { background: #eef2ff !important; }
+        .ds-chip {
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: .73rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        
+
+        .page-title {
+            margin-bottom: 30px;
+        }
+        
+        .page-title h1 {
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+        
+        .page-title p {
+            color: #777;
+        }
+        
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .dash-card {
+            background: var(--white);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .dash-card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+        
+        .dash-card-icon.blue {
+            background: #E3F2FD;
+            color: #2196F3;
+        }
+        
+        .dash-card-icon.green {
+            background: #E8F5E9;
+            color: #4CAF50;
+        }
+        
+        .dash-card-icon.orange {
+            background: #FFF8F1;
+            color: #FF9800;
+        }
+        
+        .dash-card-icon.red {
+            background: #FFEBEE;
+            color: #F44336;
+        }
+        
+        .dash-card-content h3 {
+            font-size: 2rem;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+        
+        .dash-card-content p {
+            color: #777;
+            font-size: 0.9rem;
+        }
+        
+        .card {
+            background: var(--white);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #F0F0F0;
+        }
+        
+        .card-header h3 {
+            color: var(--dark-color);
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table thead {
+            background: #F8F9FA;
+        }
+        
+        .table th,
+        .table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #E0E0E0;
+        }
+        
+        .table th {
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .badge-success {
+            background: #D5F4E6;
+            color: var(--success);
+        }
+        
+        .badge-pending {
+            background: #FFF8F1;
+            color: var(--warning);
+        }
+        
+        .btn-sm {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+        
+        .upload-landmark {
+            border: 2px dashed #D0D0D0;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-landmark:hover {
+            border-color: var(--primary-color);
+            background: #FFF5F2;
+        }
+        
+        .upload-landmark i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        /* ── Lightbox modal ────────────────────────────────────────── */
+        #pbLightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.85);
+            z-index: 9000;
+            align-items: center;
+            justify-content: center;
+        }
+        #pbLightbox.active { display: flex; }
+        #pbLightbox img {
+            max-width: 90vw;
+            max-height: 88vh;
+            border-radius: 10px;
+            box-shadow: 0 8px 40px rgba(0,0,0,.6);
+        }
+        #pbLightboxClose {
+            position: absolute;
+            top: 18px; right: 22px;
+            font-size: 2.2rem;
+            color: #fff;
+            cursor: pointer;
+            line-height: 1;
+            user-select: none;
+        }
+        /* ── Edit-Amount mini modal ────────────────────────────────── */
+        #pbEditModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.55);
+            z-index: 9100;
+            align-items: center;
+            justify-content: center;
+        }
+        #pbEditModal.active { display: flex; }
+        #pbEditModal .pb-edit-box {
+            background: #fff;
+            padding: 32px 28px;
+            border-radius: 14px;
+            width: 340px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.2);
+        }
+        #pbEditModal h4 { margin-bottom: 16px; color: var(--dark-color); }
+        #pbEditModal input {
+            width: 100%; padding: 10px 12px;
+            border: 2px solid #E0E0E0; border-radius: 8px;
+            font-size: 1rem; margin-bottom: 16px;
+        }
+        #pbEditModal input:focus { outline: none; border-color: var(--primary-color); }
+        .pb-edit-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+        /* Mobile donation entry extras */
+        @media (max-width: 600px) {
+            #deReceiptGrid    { grid-template-columns: 1fr !important; }
+            #deContactFields  { grid-template-columns: 1fr !important; }
+            #deLandmarkFields { grid-template-columns: 1fr !important; }
+            .de-donor-toggle  { flex-wrap: wrap; }
+            .de-payment-grid label { min-height: 52px; }
+            #pbCameraBtn { min-width: unset !important; width: 100% !important; }
+            .form-control, select.form-control, input.form-control { font-size: 16px !important; }
+            .de-entries-table-wrap { display: none !important; }
+            .de-entries-cards      { display: block !important; }
+            #deVolEditModal > div {
+                width: 100% !important; max-width: 100% !important; margin: 0 !important;
+                border-radius: 16px 16px 0 0 !important;
+                position: fixed; bottom: 0; left: 0; right: 0;
+                max-height: 92vh; overflow-y: auto;
+            }
+            #deVolNameIndFields { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 380px) {
+            .de-payment-grid { grid-template-columns: repeat(2,1fr) !important; }
+        }
+
+        /* ===== DASHBOARD MOBILE UX — injected ===== */
+        /* iOS input zoom prevention */
+        .content-landmark input, .content-landmark select, .content-landmark textarea {
+            font-size: max(16px, 1rem) !important;
+        }
+
+        /* Touch-friendly sidebar links */
+        .sidebar-menu a { min-height: 48px; display: flex; align-items: center; }
+
+        /* Table horizontal scroll */
+        .card { overflow-x: hidden; }
+        .table { min-width: unset; }
+
+        @media (max-width: 768px) {
+            .table, .table tbody, .table tr, .table td {
+                display: block;
+                width: 100%;
+                white-space: normal !important;
+            }
+            .table thead {
+                display: none; /* Hide headers */
+            }
+            .table tr {
+                margin-bottom: 12px;
+                border: 1px solid #eee;
+                border-radius: 8px;
+                padding: 4px;
+                background: #fff;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            }
+            .table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                padding: 10px 12px !important;
+                border-bottom: 1px solid #f5f5f5;
+            }
+            .table td:last-child {
+                border-bottom: none;
+            }
+            .table td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #666;
+                margin-right: 15px;
+                text-align: left;
+            }
+        }
+
+        @media (max-width: 576px) {
+            /* Topbar */
+            .top-bar { flex-wrap: nowrap; gap: 6px; padding: 12px 14px !important; align-items: center; justify-content: space-between; }
+            .top-bar h2 { font-size: 1rem !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%; margin: 0; }
+            
+            /* Hide profile name on mobile, keep avatar */
+            .user-profile > div:not(.user-avatar) { display: none; }
+            
+            /* Dashboard stat cards — 2 col */
+            .dashboard-cards { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+            .dash-card { padding: 14px 10px !important; flex-direction: column; text-align: center; gap: 8px; }
+            .dash-card-icon { width: 48px; height: 48px; font-size: 1.4rem; margin: 0 auto; }
+            .dash-card-content h3 { font-size: 1.5rem; }
+
+            /* Cards */
+            .card { padding: 14px !important; }
+            .card-header { flex-wrap: wrap; gap: 8px; }
+            .card-header h3 { font-size: 1.05rem; }
+
+            /* Buttons */
+            .btn, .btn-sm { min-height: 44px; }
+
+            /* Donor search chips wrap */
+            #dsTopBar { flex-wrap: wrap; gap: 8px; }
+            #dsTopBar input[type=text] { min-width: 100%; }
+
+            /* Edit modals — bottom sheet */
+            #pbEditModal .pb-edit-box,
+            #deVolEditModal > div {
+                width: 100% !important;
+                max-width: 100% !important;
+                border-radius: 16px 16px 0 0 !important;
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                max-height: 92vh !important;
+                overflow-y: auto !important;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .dashboard-cards { grid-template-columns: 1fr !important; }
+            .dash-card { flex-direction: row; text-align: left; }
+        }
+
+        /* ===== DONOR SEARCH — MOBILE OPTIMISED ===== */
+
+        /* Donor search container */
+        #donorSearch > div {
+            padding: 14px !important;
+        }
+
+        /* Top search bar wraps cleanly on small screens */
+        #dsTopBar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        #dsTopBar > div:first-child { display: none; } /* hide "Donor Search" label — saves space */
+        #dsTopBar > div[style*="flex:1"] { flex: 1 1 100%; min-width: 0; }
+        #dsGlobalSearch {
+            width: 100%;
+            padding: 10px 10px 10px 32px;
+            font-size: 1rem;
+            border: 1.5px solid #ddd;
+            border-radius: 10px;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+        }
+        #dsChipTotal, #dsChipMatch, #dsChipSum { font-size: .78rem; }
+
+        /* Filter panel stacks vertically on small screens */
+        #dsFilterPanel > div {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+        }
+
+        /* Table scroll container */
+        .ds-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Mobile: card-style rows for donor table */
+        @media (max-width: 768px) {
+            /* Year-header rows — keep as a wide banner, not a card */
+            #dsTbody tr:has(td.ds-year-header) {
+                background: none !important;
+                border: none !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                padding: 0 !important;
+                margin-bottom: 4px !important;
+            }
+            #dsTbody td.ds-year-header {
+                display: block !important;
+                text-align: center !important;
+                padding: 8px 12px !important;
+                border-bottom: none !important;
+            }
+            #dsTbody td.ds-year-header::before { content: none !important; }
+
+            /* Data rows — premium card style */
+            #dsTbody tr {
+                background: #fff;
+                border: 1px solid #e0e7ef;
+                border-radius: 12px;
+                margin-bottom: 10px;
+                box-shadow: 0 2px 8px rgba(26,35,126,.07);
+                padding: 6px 4px;
+            }
+            #dsTbody td {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                flex-wrap: wrap;
+                padding: 9px 14px !important;
+                font-size: .9rem;
+                border-bottom: 1px solid #f0f3fa;
+                text-align: right;
+            }
+            #dsTbody td:last-child { border-bottom: none; }
+            #dsTbody td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                color: #1a237e;
+                font-size: .78rem;
+                text-transform: uppercase;
+                letter-spacing: .04em;
+                text-align: left;
+                flex: 0 0 42%;
+                max-width: 42%;
+                margin-right: 8px;
+                padding-top: 2px;
+            }
+            #dsThead { display: none; }
+
+            /* Pagination bar wraps */
+            #dsPaginationInfo { font-size: .76rem; }
+            #dsPaginationBtns button { min-width: 36px; min-height: 36px; font-size: .85rem; }
+        }
+
+        @media (max-width: 576px) {
+            /* Top bar action buttons go full width */
+            #dsTopBar button { flex: 1 1 calc(50% - 4px); justify-content: center; min-height: 40px; font-size: .85rem; }
+            #dsChipTotal, #dsChipMatch, #dsChipSum { flex: 1; text-align: center; }
+            /* Donor search section padding */
+            #donorSearch > div { padding: 10px !important; }
+        }
+        /* Google Translate Customization */
+        .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon { display: none !important; }
+        body { top: 0px !important; }
+        #google_translate_element { display: none; }
+        .lang-toggle {
+            display: flex; align-items: center; background: #f0f2f5; border-radius: 20px;
+            padding: 2px; cursor: pointer; margin-right: 16px; font-size: 0.8rem;
+            font-weight: 600; color: #555; border: 1px solid #ddd; user-select: none;
+        }
+        .lang-toggle span { padding: 4px 10px; border-radius: 18px; transition: 0.3s; }
+        .lang-toggle span.active { background: #fff; color: #1a237e; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        /* Deep Hide Google Translate Top Bar */
+        .goog-te-banner-frame { display: none !important; visibility: hidden !important; }
+        .skiptranslate iframe { display: none !important; visibility: hidden !important; }
+        body { top: 0px !important; position: static !important; }
+        html { margin-top: 0px !important; }
+        #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
+        .goog-text-highlight { background: none !important; box-shadow: none !important; border: none !important; }
+        .VIpgJd-ZVi9od-aZ2wEe-wOHMyf { display: none !important; visibility: hidden !important; }
+    
+        /* Responsive styling for My Donations */
+        @media (max-width: 768px) {
+            #donations .admin-table,
+            #donations .admin-table tbody,
+            #donations .admin-table tr,
+            #donations .admin-table td {
+                display: block;
+                width: 100%;
+            }
+            #donations .admin-table tr {
+                margin-bottom: 10px;
+                border-bottom: 1px solid #eee;
+                padding-bottom: 10px;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: space-between;
+                position: relative;
+            }
+            #donations .admin-table td {
+                border: none;
+                padding: 4px 10px;
+                text-align: left;
+            }
+            /* Receipt Number & Book */
+            #donations .admin-table td:nth-child(1) {
+                flex: 0 0 100%;
+                font-size: 1rem;
+                margin-bottom: 4px;
+            }
+            /* Donor Info */
+            #donations .admin-table td:nth-child(2) {
+                flex: 0 0 100%;
+                margin-bottom: 8px;
+            }
+            /* Amount */
+            #donations .admin-table td:nth-child(3) {
+                flex: 0 0 auto;
+                font-size: 1.1rem;
+                color: #2E7D32;
+                font-weight: bold;
+            }
+            /* Payment Mode */
+            #donations .admin-table td:nth-child(4) {
+                flex: 0 0 auto;
+            }
+            /* Time */
+            #donations .admin-table td:nth-child(5) {
+                flex: 0 0 100%;
+                text-align: right;
+                font-size: 0.75rem;
+                color: #888;
+                margin-top: 4px;
+            }
+        }
+
+    </style>
+    <title>Private Area</title>
+    <meta name="robots" content="noindex, nofollow">
+</head>
+<body>
+<style id="dashboard-theme-override">
+                :root {
+                    --primary-color: #2563EB;
+                    --accent-color: #F97316;
+                    --dark-color: #1E293B; /* keep dark mode unified */
+                }
+                .admin-menu a:hover, .admin-menu a.active, .dashboard-menu a:hover, .dashboard-menu a.active {
+                    background: rgba(37, 99, 235, 0.08) !important;
+                    color: var(--primary-color) !important;
+                    border-left: 4px solid var(--primary-color) !important;
+                }
+            </style>
+
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3>Dashboard</h3>
+                <p id="userName">Welcome User</p>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li><a href="#overview" class="active" onclick="showSection('overview');closeSidebar()">
+                    <i class="fas fa-home"></i> Overview
+                </a></li>
+                <li><a href="#donorSearch" onclick="showSection('donorSearch');closeSidebar()" id="sidebarDonorSearchLink" style="position:relative;">
+                    <i class="fas fa-search"></i> Donor Search
+                    <span id="sidebarDonorBadge" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--primary-color);color:#fff;border-radius:10px;padding:1px 7px;font-size:.7rem;font-weight:700;">LIVE</span>
+                </a></li>
+                <li><a href="#profile" onclick="showSection('profile');closeSidebar()">
+                    <i class="fas fa-user"></i> My Profile
+                </a></li>
+                <li><a href="#donations" onclick="showSection('donations');closeSidebar()">
+                    <i class="fas fa-hand-holding-heart"></i> My Donations
+                </a></li>
+                <li><a href="#donationEntry" onclick="showSection('donationEntry');closeSidebar()" id="sidebarDonationEntryLink">
+                    <i class="fas fa-file-invoice-dollar"></i> Donation Data Entry
+                </a></li>
+                <li><a href="#balanceRecovery" onclick="showSection('balanceRecovery');closeSidebar()">
+                    <i class="fas fa-hand-holding-usd"></i> Balance Recovery
+                </a></li>
+                <li><a href="#tshirtSection" onclick="showSection('tshirtSection');closeSidebar()">
+                    <i class="fas fa-tshirt"></i> T-shirt Section
+                </a></li>
+                <li><a href="#documents" onclick="showSection('documents');closeSidebar()">
+                    <i class="fas fa-folder"></i> Documents
+                </a></li>
+                <li><a href="#" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a></li>
+            </ul>
+        </aside>
+        
+        <!-- Overlay for mobile sidebar -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <button class="hamburger-btn" id="hamburgerBtn" onclick="openSidebar()" aria-label="Open menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2 style="margin:0;">Volunteer Dashboard</h2>
+                </div>
+                <div style="display:flex;align-items:center;">
+                    <div id="google_translate_element"></div>
+                    <div class="lang-toggle" onclick="toggleLanguage()">
+                        <span id="langEng" class="active">ENG</span>
+                        <span id="langMar">MAR</span>
+                    </div>
+                    <div class="notification-container" id="dashNotifContainer" onclick="toggleNotifDropdown(event)" style="position:relative;cursor:pointer;margin-right:18px;">
+                        <i class="fas fa-bell" style="font-size:1.2rem;color:#555;"></i>
+                        <span class="notification-badge-dynamic" id="dashNotifBadge" style="display:none;position:absolute;top:-5px;right:-8px;background:#E53935;color:#fff;font-size:.7rem;font-weight:bold;padding:2px 6px;border-radius:10px;">0</span>
+                        <div class="notification-dropdown" id="dashNotifDropdown" onclick="event.stopPropagation()">
+                            <div class="notification-header">
+                                <span><i class="fas fa-bell" style="margin-right:6px;color:#ff8c42;"></i>Notifications</span>
+                                <i class="fas fa-times" style="cursor:pointer;color:#888;" onclick="document.getElementById('dashNotifDropdown').classList.remove('show')"></i>
+                            </div>
+                            <ul class="notification-list" id="dashNotifList">
+                                <li class="notification-empty">Loading...</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="user-profile">
+                        <div class="user-avatar" id="userAvatar">V</div>
+                        <div>
+                            <strong id="topBarName">Volunteer</strong>
+                            <p style="font-size: 0.85rem; color: #777; margin:0;">Volunteer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="content-landmark">
+                <!-- Overview Section -->
+                <div id="overview" class="content-section">
+                    <!-- Welcome Title -->
+                    <div style="margin-bottom:24px;display:flex;align-items:center;gap:15px;flex-wrap:wrap;">
+                        <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#E65100,#ff8c42);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.8rem;box-shadow:0 4px 10px rgba(230,81,0,.3);">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h1 style="font-size:2.2rem;font-weight:800;color:#2c3e50;margin:0;letter-spacing:-0.02em;">Welcome <span id="overviewWelcomeName" style="color:var(--primary-color);">Volunteer</span></h1>
+                            <p style="margin:5px 0 0;color:#666;font-size:.95rem;">Here's your quick access dashboard</p>
+                        </div>
+                    </div>
+
+                    <!-- Responsive Banner -->
+                    <div id="volOverviewBannerContainer"
+                        style="border-radius:16px;margin-bottom:32px;box-shadow:0 8px 25px rgba(26,35,126,.25);overflow:hidden;background:linear-gradient(135deg,#1a237e 0%,#3949ab 100%);width:100%;">
+                        <!-- Default banner text (shown when no image uploaded) -->
+                        <div id="volDefaultBanner"
+                            style="min-height:180px;width:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px 20px;box-sizing:border-box;position:relative;overflow:hidden;">
+                            <div style="position:absolute;top:-20px;left:-20px;width:120px;height:120px;background:rgba(255,255,255,.05);border-radius:50%;"></div>
+                            <div style="position:absolute;bottom:-30px;right:-10px;width:150px;height:150px;background:rgba(255,255,255,.05);border-radius:50%;"></div>
+                            <h2 style="color:#fff;font-size:clamp(1.1rem,3.5vw,2rem);font-weight:800;margin:0;letter-spacing:0.02em;text-shadow:0 2px 10px rgba(0,0,0,.3);position:relative;z-index:1;line-height:1.4;">
+                                <i class="fas fa-om" style="color:#FFD54F;margin-right:12px;"></i>
+                                Patelwadi Cha Sukhakarta Cha Vijay Asoh .
+                            </h2>
+                        </div>
+                        <!-- Image banner — always full width, height scales naturally with no cropping -->
+                        <img id="volBannerImg" src="" alt="Event Banner"
+                            style="display:none;width:100%;height:auto;max-height:400px;min-height:140px;object-fit:cover;object-position:center center;border-radius:0;"
+                            onerror="this.style.display='none';document.getElementById('volDefaultBanner').style.display='flex';">
+                    </div>
+
+                    <!-- Top Section: T-shirt & Countdown -->
+                    <div style="display:flex;flex-direction:column;gap:15px;margin-bottom:25px;">
+                        <!-- T-shirt Shortcut -->
+                        <div onclick="showSection('tshirtSection')" style="background:linear-gradient(135deg, #8E24AA, #AB47BC);border-radius:14px;padding:20px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:space-between;box-shadow:0 6px 15px rgba(142,36,170,.25);transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                            <div style="display:flex;align-items:center;gap:15px;">
+                                <i class="fas fa-tshirt" style="font-size:2rem;"></i>
+                                <div>
+                                    <h3 style="margin:0;font-size:1.3rem;">T-shirt Section</h3>
+                                    <p style="margin:0;font-size:0.9rem;opacity:0.9;">Manage T-shirts, passes, and event details</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                        
+                        <!-- Countdown Card -->
+                        <div style="background:var(--white);border-radius:14px;padding:20px;border:1px solid #eee;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,.04);">
+                            <h3 id="volEventNameDisplay" style="margin:0 0 12px;color:#555;font-size:1rem;text-transform:uppercase;letter-spacing:1px;">Days to Event</h3>
+                            <!-- Full ticking countdown -->
+                            <div style="display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;">
+                                <div style="text-align:center;">
+                                    <div id="volCdDays" style="font-size:2.4rem;font-weight:800;color:#E65100;line-height:1;">--</div>
+                                    <div style="font-size:0.7rem;color:#999;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Days</div>
+                                </div>
+                                <div style="font-size:2rem;font-weight:300;color:#ccc;padding-bottom:14px;">:</div>
+                                <div style="text-align:center;">
+                                    <div id="volCdHours" style="font-size:2.4rem;font-weight:800;color:#E65100;line-height:1;">--</div>
+                                    <div style="font-size:0.7rem;color:#999;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Hours</div>
+                                </div>
+                                <div style="font-size:2rem;font-weight:300;color:#ccc;padding-bottom:14px;">:</div>
+                                <div style="text-align:center;">
+                                    <div id="volCdMins" style="font-size:2.4rem;font-weight:800;color:#E65100;line-height:1;">--</div>
+                                    <div style="font-size:0.7rem;color:#999;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Mins</div>
+                                </div>
+                                <div style="font-size:2rem;font-weight:300;color:#ccc;padding-bottom:14px;">:</div>
+                                <div style="text-align:center;">
+                                    <div id="volCdSecs" style="font-size:2.4rem;font-weight:800;color:#1a237e;line-height:1;">--</div>
+                                    <div style="font-size:0.7rem;color:#999;text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Secs</div>
+                                </div>
+                            </div>
+                            <p id="volEventDescDisplay" style="margin:10px 0 0;color:#888;font-size:0.82rem;">Synchronized with event date</p>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Cards -->
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:20px;margin-bottom:30px;">
+                        
+                        <!-- Card 1: Donation Data Entry -->
+                        <div onclick="showSection('donationEntry')" style="background:var(--white);border-radius:14px;padding:26px 20px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,.04);transition:all .2s;border:1px solid #eee;display:flex;flex-direction:column;align-items:center;text-align:center;" onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 10px 25px rgba(0,0,0,.1)';this.style.borderColor='#E65100'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 15px rgba(0,0,0,.04)';this.style.borderColor='#eee'">
+                            <div style="width:60px;height:60px;border-radius:14px;background:#FFF8F1;color:#E65100;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:16px;">
+                                <i class="fas fa-keyboard"></i>
+                            </div>
+                            <h3 style="margin:0 0 8px;color:#333;font-size:1.15rem;font-weight:700;">Donation Data Entry</h3>
+                            <p style="margin:0;color:#777;font-size:.88rem;line-height:1.4;">Enter new donations and issue receipts instantly</p>
+                        </div>
+
+                        <!-- Card 2: My Donations -->
+                        <div onclick="showSection('donations')" style="background:var(--white);border-radius:14px;padding:26px 20px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,.04);transition:all .2s;border:1px solid #eee;display:flex;flex-direction:column;align-items:center;text-align:center;" onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 10px 25px rgba(0,0,0,.1)';this.style.borderColor='#3949AB'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 15px rgba(0,0,0,.04)';this.style.borderColor='#eee'">
+                            <div style="width:60px;height:60px;border-radius:14px;background:#E8EAF6;color:#3949AB;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:16px;">
+                                <i class="fas fa-hand-holding-heart"></i>
+                            </div>
+                            <h3 style="margin:0 0 8px;color:#333;font-size:1.15rem;font-weight:700;">My Donations</h3>
+                            <p style="margin:0;color:#777;font-size:.88rem;line-height:1.4;">View and track your submitted donation history</p>
+                        </div>
+
+                        <!-- Card 3: Balance Recovery -->
+                        <div onclick="showSection('balanceRecovery')" style="background:var(--white);border-radius:14px;padding:26px 20px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,.04);transition:all .2s;border:1px solid #eee;display:flex;flex-direction:column;align-items:center;text-align:center;" onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 10px 25px rgba(0,0,0,.1)';this.style.borderColor='#43A047'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 15px rgba(0,0,0,.04)';this.style.borderColor='#eee'">
+                            <div style="width:60px;height:60px;border-radius:14px;background:#E8F5E9;color:#43A047;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin-bottom:16px;">
+                                <i class="fas fa-money-check-alt"></i>
+                            </div>
+                            <h3 style="margin:0 0 8px;color:#333;font-size:1.15rem;font-weight:700;">Balance Recovery</h3>
+                            <p style="margin:0;color:#777;font-size:.88rem;line-height:1.4;">Track and recover pending balances easily</p>
+                        </div>
+
+                        
+                    </div>
+                    
+                    <script>
+                        let _volCdTarget = null;
+                        let _volCdInterval = null;
+
+                        function updateVolCountdown() {
+                            if (!_volCdTarget) return;
+                            const now = Date.now();
+                            const dist = _volCdTarget - now;
+                            const pad = n => String(Math.max(0, n)).padStart(2, '0');
+                            if (dist > 0) {
+                                const days  = Math.floor(dist / (1000*60*60*24));
+                                const hours = Math.floor((dist % (1000*60*60*24)) / (1000*60*60));
+                                const mins  = Math.floor((dist % (1000*60*60)) / (1000*60));
+                                const secs  = Math.floor((dist % (1000*60)) / 1000);
+                                document.getElementById('volCdDays').textContent  = pad(days);
+                                document.getElementById('volCdHours').textContent = pad(hours);
+                                document.getElementById('volCdMins').textContent  = pad(mins);
+                                document.getElementById('volCdSecs').textContent  = pad(secs);
+                            } else {
+                                ['volCdDays','volCdHours','volCdMins','volCdSecs'].forEach(id => {
+                                    document.getElementById(id).textContent = '00';
+                                });
+                            }
+                        }
+
+                        async function loadEventCountdown() {
+                            try {
+                                const res = await fetch('/api/settings');
+                                const data = await res.json();
+
+                                if (data && data.receiptFormat) { applyReceiptFormat(data.receiptFormat, 'de_rcg'); }
+
+                                // --- Banner ---
+                                const bannerImg = document.getElementById('volBannerImg');
+                                const defaultBanner = document.getElementById('volDefaultBanner');
+                                if (data && data.dashboardBanner && bannerImg) {
+                                    bannerImg.src = data.dashboardBanner;
+                                    bannerImg.style.display = 'block';
+                                    if (defaultBanner) defaultBanner.style.display = 'none';
+                                } else if (bannerImg) {
+                                    bannerImg.style.display = 'none';
+                                    if (defaultBanner) defaultBanner.style.display = 'block';
+                                }
+
+                                // --- Countdown: use same field as landing page (countdownDate or eventDate) ---
+                                const isoDate = (data && (data.countdownDate || data.eventDate)) || null;
+                                if (isoDate) {
+                                    const parsed = new Date(isoDate).getTime();
+                                    if (!isNaN(parsed)) _volCdTarget = parsed;
+                                }
+
+                                if (data && data.eventName) {
+                                    const nameEl = document.getElementById('volEventNameDisplay');
+                                    if (nameEl) nameEl.textContent = data.eventName + ' Countdown';
+                                }
+                                if (data && data.eventDesc) {
+                                    const descEl = document.getElementById('volEventDescDisplay');
+                                    if (descEl) descEl.textContent = data.eventDesc;
+                                }
+
+                            } catch(e) {
+                                console.warn('Failed to load event countdown');
+                            } finally {
+                                // Start ticking regardless
+                                updateVolCountdown();
+                                if (_volCdInterval) clearInterval(_volCdInterval);
+                                _volCdInterval = setInterval(updateVolCountdown, 1000);
+                            }
+                        }
+                        
+                        document.addEventListener('DOMContentLoaded', () => {
+                            loadEventCountdown();
+                        });
+                        
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const nameSpan = document.getElementById('overviewWelcomeName');
+                            if (nameSpan && typeof currentUser !== 'undefined' && currentUser) {
+                                nameSpan.textContent = currentUser.name || 'Volunteer';
+                            }
+                        });
+                        
+                        // Also hook into showSection in case it's set later or currentUser takes a bit
+                        const origShowSection2 = window.showSection;
+                        if (typeof origShowSection2 === 'function') {
+                            window.showSection = function(id) {
+                                origShowSection2(id);
+                                if (id === 'overview') {
+                                    const nSpan = document.getElementById('overviewWelcomeName');
+                                    if (nSpan && typeof currentUser !== 'undefined' && currentUser) {
+                                        nSpan.textContent = currentUser.name || 'Volunteer';
+                                    }
+                                }
+                            };
+                        }
+                    </script>
+                </div>
+                
+                <!-- Profile Section -->
+                <div id="profile" class="content-section" style="display:none;">
+                    <div class="page-title">
+                        <h1>My Profile</h1>
+                        <p>Manage your personal information</p>
+                    </div>
+                    
+                    <div class="card">
+                        <form id="profileForm" onsubmit="saveVolProfile(event)">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input type="text" id="profVolName" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Email / Username (Read Only)</label>
+                                <input type="text" id="profVolEmail" class="form-control" disabled style="background:#eee;">
+                            </div>
+                            <div class="form-group">
+                                <label>Phone / Contact Number</label>
+                                <input type="tel" id="profVolContact" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Profile Photo</label>
+                                <input type="file" id="profVolPhoto" accept="image/*" class="form-control" onchange="previewVolProfileImage(this)">
+                                <img id="profVolPhotoPreview" src="" style="display:none;width:100px;height:100px;object-fit:cover;border-radius:50%;border:2px solid #ccc;margin-top:10px;">
+                            </div>
+                            <button type="submit" id="profVolBtn" class="btn btn-primary"><i class="fas fa-save"></i> Update Profile</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Donations Section -->
+                <div id="donations" class="content-section" style="display:none;">
+                    <div class="page-title">
+                        <h1><i class="fas fa-hand-holding-heart" style="color:var(--primary-color);margin-right:10px;"></i>My Donations</h1>
+                        <p>Your personal donation history &mdash; grouped by Indian date, updated live</p>
+                    </div>
+
+                    <!-- Summary Bar -->
+                    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:22px;">
+                        <div style="flex:1;min-width:140px;background:linear-gradient(135deg,#E65100,#ff8c42);border-radius:14px;padding:18px 20px;color:#fff;box-shadow:0 4px 18px rgba(230,81,0,.22);">
+                            <div style="font-size:.78rem;font-weight:600;opacity:.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;">Total Entries</div>
+                            <div id="myDonTotalEntries" style="font-size:1.9rem;font-weight:800;">&#x2014;</div>
+                        </div>
+                        <div style="flex:1;min-width:140px;background:linear-gradient(135deg,#1a237e,#3949ab);border-radius:14px;padding:18px 20px;color:#fff;box-shadow:0 4px 18px rgba(26,35,126,.22);">
+                            <div style="font-size:.78rem;font-weight:600;opacity:.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;">Total Amount</div>
+                            <div id="myDonTotalAmount" style="font-size:1.9rem;font-weight:800;">&#x2014;</div>
+                        </div>
+                        <div style="flex:1;min-width:140px;background:linear-gradient(135deg,#1b5e20,#43a047);border-radius:14px;padding:18px 20px;color:#fff;box-shadow:0 4px 18px rgba(27,94,32,.22);">
+                            <div style="font-size:.78rem;font-weight:600;opacity:.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;">Days Active</div>
+                            <div id="myDonTotalDays" style="font-size:1.9rem;font-weight:800;">&#x2014;</div>
+                        </div>
+                        <div style="flex:1;min-width:140px;background:linear-gradient(135deg,#4a148c,#7b1fa2);border-radius:14px;padding:18px 20px;color:#fff;box-shadow:0 4px 18px rgba(74,20,140,.22);">
+                            <div style="font-size:.78rem;font-weight:600;opacity:.9;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;">Books Used</div>
+                            <div id="myDonTotalBooks" style="font-size:1.9rem;font-weight:800;">&#x2014;</div>
+                        </div>
+                    </div>
+
+                    <!-- Toolbar -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+                        <div style="font-size:.83rem;color:#888;display:flex;align-items:center;gap:8px;">
+                            <span id="myDonLiveIndicator" style="width:9px;height:9px;border-radius:50%;background:#4caf50;display:inline-block;animation:myDonPulse 1.5s infinite;flex-shrink:0;"></span>
+                            Live &mdash; auto-updates from Donation Data Entry
+                        </div>
+                        <button onclick="myDonLoad()" style="border:1.5px solid #E65100;background:#fff8f5;color:#E65100;border-radius:8px;padding:7px 16px;font-size:.82rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;" onmouseover="this.style.background='#E65100';this.style.color='#fff'" onmouseout="this.style.background='#fff8f5';this.style.color='#E65100'">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+
+                    <!-- Daily Groups Container -->
+                    <div id="myDonGroups">
+                        <div style="text-align:center;padding:50px;color:#bbb;">
+                            <i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:14px;display:block;color:#E65100;opacity:.5;"></i>
+                            Loading your donations&hellip;
+                        </div>
+                    </div>
+                </div>
+
+
+                                <!-- Donor Search Section -->
+                <div id="donorSearch" class="content-section" style="display:none;">
+                    <div class="page-title">
+                        <h1><i class="fas fa-search" style="color:var(--primary-color);margin-right:10px;"></i>Donor Search</h1>
+                        <p>Search and filter all donation records</p>
+                    </div>
+                    <div style="background:var(--white);border-radius:14px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.06);">
+                        <!-- Top bar: search + chips + buttons -->
+                        <div id="dsTopBar">
+                            <div style="font-weight:700;font-size:.95rem;color:#1a237e;display:flex;align-items:center;gap:7px;white-space:nowrap;">
+                                <i class="fas fa-search" style="font-size:.85rem;"></i>Donor Search
+                            </div>
+                            <div style="flex:1;min-width:180px;position:relative;">
+                                <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#bbb;font-size:.78rem;pointer-events:none;"></i>
+                                <input type="text" id="dsGlobalSearch" placeholder="Search name, road, building, amount&#x2026;" oninput="dsApplyFilters()">
+                            </div>
+                            <span id="dsChipTotal" class="ds-chip" style="background:#E3F2FD;color:#1565C0;">&#x2014; total</span>
+                            <span id="dsChipMatch" class="ds-chip" style="background:#E8F5E9;color:#2E7D32;">&#x2014; shown</span>
+                            <span id="dsChipSum"   class="ds-chip" style="background:#FFF8F1;color:#E65100;">&#x20B9;&#x2014;</span>
+                            <button id="dsToggleFiltersBtn" onclick="dsToggleFilters()" style="padding:6px 12px;border:1.5px solid #e0e0e0;border-radius:8px;background:#f8f9fa;color:#444;font-size:.81rem;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                                <i class="fas fa-sliders-h"></i><span id="dsToggleBtnLabel">Filters</span>
+                            </button>
+                            <button onclick="dsClearFilters()" title="Clear filters" style="padding:6px 10px;border:1.5px solid #ffcdd2;border-radius:8px;background:var(--white);color:#c62828;font-size:.81rem;cursor:pointer;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button onclick="dsExportCSV()" style="padding:6px 12px;border:none;border-radius:8px;background:var(--primary-color);color:#fff;font-size:.81rem;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                                <i class="fas fa-download"></i>CSV
+                            </button>
+                        </div>
+
+                        <!-- Filters -->
+                        <div id="dsFilterPanel" style="display:none;">
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;align-items:end;">
+                                <div>
+                                    <label style="font-size:.77rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px;margin-bottom:6px;">
+                                        <i class="fas fa-map-marker-alt" style="color:var(--primary-color);"></i> Location
+                                    </label>
+                                    <input type="text" id="dsLocSearch" placeholder="Road, landmark, ward&#x2026;" style="width:100%;padding:7px 11px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.85rem;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='#e0e0e0'" oninput="dsApplyFilters()">
+                                </div>
+                                <div>
+                                    <label style="font-size:.77rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px;margin-bottom:6px;">
+                                        <i class="fas fa-building" style="color:#3949AB;"></i> Landmark
+                                    </label>
+                                    <input type="text" id="dsLandSearch" placeholder="Building, society&#x2026;" style="width:100%;padding:7px 11px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.85rem;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='#3949AB'" onblur="this.style.borderColor='#e0e0e0'" oninput="dsApplyFilters()">
+                                </div>
+                                <div>
+                                    <label style="font-size:.77rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px;margin-bottom:6px;">
+                                        <i class="fas fa-rupee-sign" style="color:#E67E22;"></i> Amount Range
+                                    </label>
+                                    <div style="display:flex;gap:6px;align-items:center;">
+                                        <input type="number" id="dsAmtMin" placeholder="Min &#x20B9;" min="0" style="flex:1;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.85rem;box-sizing:border-box;" onfocus="this.style.borderColor='#E67E22'" onblur="this.style.borderColor='#e0e0e0'" oninput="dsApplyFilters()">
+                                        <span style="color:#bbb;">&#x2013;</span>
+                                        <input type="number" id="dsAmtMax" placeholder="Max &#x20B9;" min="0" style="flex:1;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.85rem;box-sizing:border-box;" onfocus="this.style.borderColor='#E67E22'" onblur="this.style.borderColor='#e0e0e0'" oninput="dsApplyFilters()">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loading / table / empty state -->
+                        <div id="dsLoadingMsg" style="text-align:center;color:#aaa;padding:48px 20px;font-size:.92rem;">
+                            <i class="fas fa-spinner fa-spin" style="font-size:1.3rem;margin-bottom:10px;display:block;color:#ccc;"></i>
+                            Loading donor records&#x2026;
+                        </div>
+                        <div id="dsTableWrap" style="display:none;">
+                            <div class="ds-scroll">
+                                <table class="table admin-table"><thead id="dsThead"></thead><tbody id="dsTbody"></tbody></table>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid #eef0f6;background:#fafbff;flex-wrap:wrap;gap:8px;">
+                                <span id="dsPaginationInfo" style="font-size:.78rem;color:#888;"></span>
+                                <div id="dsPaginationBtns" style="display:flex;gap:4px;"></div>
+                            </div>
+                        </div>
+                        <div id="dsNoResults" style="display:none;text-align:center;padding:40px 20px;color:#aaa;font-size:.88rem;">
+                            <i class="fas fa-search" style="font-size:1.6rem;margin-bottom:10px;display:block;opacity:.25;"></i>
+                            No records match your filters.
+                        </div>
+                    </div>
+                </div>
+                <!-- ══════════ END DONOR SEARCH SECTION ══════════ -->
+
+
+
+
+
+                <!-- ══════════ DONATION DATA ENTRY SECTION ══════════ -->
+                <div id="donationEntry" class="content-section" style="display:none;">
+                    <div class="page-title">
+                        <h1><i class="fas fa-file-invoice-dollar" style="color:var(--primary-color);margin-right:10px;"></i>Donation Data Entry</h1>
+                        <p>Record a new donation receipt — Book &amp; Receipt numbers are auto-sequenced</p>
+                    </div>
+
+
+                    <!-- Status message -->
+                    <div id="deStatus" style="display:none;padding:14px 18px;border-radius:10px;margin-bottom:18px;font-weight:600;font-size:.95rem;"></div>
+
+                    <div class="card">
+                        <form id="donationEntryForm" novalidate autocomplete="off">
+
+                            <!-- ── Section A: Receipt Details ── -->
+                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
+                                <i class="fas fa-book-open" style="margin-right:6px;"></i>Receipt Details
+                            </div>
+                            
+                            <div style="margin-bottom: 15px;">
+                                <label style="font-weight:600;font-size:0.85rem;color:#333;margin-bottom:8px;display:block;">Book Type</label>
+                                <div style="display:flex;gap:15px;align-items:center;">
+                                    <label style="cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem;">
+                                        <input type="radio" name="deBookType" value="New" checked onchange="dePopulateBooks(); deOnBookChange();">
+                                        <span id="deLblNewBooks">New Book (50 Books)</span>
+                                    </label>
+                                    <label style="cursor:pointer;display:flex;align-items:center;gap:5px;font-size:0.9rem;">
+                                        <input type="radio" name="deBookType" value="Old" onchange="dePopulateBooks(); deOnBookChange();">
+                                        <span id="deLblOldBooks">Old Book (30 Books)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div id="deReceiptGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deBookNumber">Book Number <span style="color:red;">*</span> <button type="button" onclick="deAutoReceipt()" style="margin-left:6px;padding:2px 9px;border:none;border-radius:8px;background:#E8F5E9;color:#1B5E20;font-size:.72rem;font-weight:700;cursor:pointer;"><i class="fas fa-magic"></i> Auto</button></label>
+                                    <select id="deBookNumber" class="form-control" onchange="deOnBookChange()">
+                                        <option value="">— Select Book —</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deReceiptNumber">Receipt Number <span style="color:red;">*</span></label>
+                                    <select id="deReceiptNumber" class="form-control" disabled>
+                                        <option value="">— Select Book first —</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- ── Section B: Donor Type ── -->
+                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
+                                <i class="fas fa-user-circle" style="margin-right:6px;"></i>Donor Type
+                            </div>
+                            <div class="de-donor-toggle" style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+                                <label id="deBtnInd" onclick="deSetDonorType('Individual')" style="display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid var(--primary-color);border-radius:16px;cursor:pointer;font-weight:600;font-size:.82rem;background:var(--primary-color);color:#fff;transition:all .2s;">
+                                    <i class="fas fa-user" style="font-size:.78rem;"></i> Individual
+                                </label>
+                                <label id="deBtnBiz" onclick="deSetDonorType('Business')" style="display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid #ddd;border-radius:16px;cursor:pointer;font-weight:600;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                                    <i class="fas fa-building" style="font-size:.78rem;"></i> Business
+                                </label>
+                            </div>
+                            <input type="hidden" id="deDonorType" value="Individual">
+
+                            <!-- Individual name fields -->
+                            <div id="deIndFields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;">
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deFirstName">First Name <span style="color:red;">*</span></label>
+                                    <input type="text" id="deFirstName" class="form-control" placeholder="FIRST" oninput="this.value=this.value.toUpperCase()" required>
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deMiddleName">Middle Name</label>
+                                    <input type="text" id="deMiddleName" class="form-control" placeholder="MIDDLE" oninput="this.value=this.value.toUpperCase()" >
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deLastName">Last Name <span style="color:red;">*</span></label>
+                                    <input type="text" id="deLastName" class="form-control" placeholder="LAST" oninput="this.value=this.value.toUpperCase()" required>
+                                </div>
+                            </div>
+
+                            <!-- Business name field -->
+                            <div id="deBizFields" style="display:none;margin-bottom:20px;">
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deBusinessName">Business Name <span style="color:red;">*</span></label>
+                                    <input type="text" id="deBusinessName" class="form-control" placeholder="BUSINESS NAME" oninput="this.value=this.value.toUpperCase()">
+                                </div>
+                            </div>
+
+                            <!-- ── Section C: Contact ── -->
+                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
+                                <i class="fas fa-address-book" style="margin-right:6px;"></i>Contact Information
+                            </div>
+                            <div id="deContactFields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;">
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deWhatsapp"><i class="fab fa-whatsapp" style="color:#25D366;"></i> WhatsApp Number</label>
+                                    <input type="tel" id="deWhatsapp" class="form-control" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}">
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deMobile"><i class="fas fa-mobile-alt" style="color:#3949AB;"></i> Mobile Number</label>
+                                    <input type="tel" id="deMobile" class="form-control" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}">
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label for="deMail"><i class="fas fa-envelope" style="color:#E67E22;"></i> Mail ID</label>
+                                    <input type="email" id="deMail" class="form-control" placeholder="email@example.com">
+                                </div>
+                            </div>
+
+                            <!-- Section D: Location Cascade -->
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;flex:1;"><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Location</div>
+                                <button type="button" id="deManageLocBtn" onclick="deOpenManageModal()" style="display:none;margin-left:12px;padding:5px 14px;border:none;border-radius:8px;background:linear-gradient(135deg,#1a237e,#3949ab);color:#fff;cursor:pointer;font-size:.78rem;font-weight:700;white-space:nowrap;"><i class="fas fa-cog" style="margin-right:5px;"></i>Manage</button>
+                            </div>
+
+                            <!-- Step 1: Landmark -->
+                            <div class="form-group" id="deLandmarkGroup" style="margin-bottom:16px;">
+                                <label for="deLandmark" style="font-weight:700;font-size:.85rem;color:#333;display:flex;align-items:center;gap:6px;">
+                                    <i class="fas fa-map-marker-alt" style="color:#E65100;font-size:.85rem;"></i>
+                                    Landmark <span style="color:red;">*</span> <span style="font-size:.72rem;color:#aaa;font-weight:400;">Step 1 of 3</span>
+                                </label>
+                                <select id="deLandmark" class="form-control" onchange="deOnLandmarkChange()" style="font-weight:600;" required>
+                                    <option value="">— Select Landmark —</option>
+                                </select>
+                                <div id="deLandmarkHint" style="display:none;font-size:.75rem;color:#E65100;margin-top:5px;"><i class="fas fa-info-circle"></i> No landmarks configured yet. Ask admin to add some.</div>
+                            </div>
+
+                            <!-- Step 2: Area (slides in after landmark) -->
+                            <div class="form-group" id="deAreaGroup" style="margin-bottom:16px;display:none;">
+                                <label style="font-weight:700;font-size:.85rem;color:#333;display:flex;align-items:center;gap:6px;">
+                                    <i class="fas fa-map" style="color:#2E7D32;font-size:.85rem;"></i>
+                                    Area <span style="font-size:.72rem;color:#aaa;font-weight:400;">Step 2 of 3</span>
+                                </label>
+                                <!-- Area chips + dropdown -->
+                                <div id="deAreaChips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;"></div>
+                                <select id="deArea" class="form-control" onchange="deOnAreaChange()" style="font-weight:600;">
+                                    <option value="">— Select Area —</option>
+                                </select>
+                                <!-- Locked-in area badge (shown after area selected) -->
+                                <div id="deAreaLocked" style="display:none;margin-top:8px;padding:8px 14px;background:linear-gradient(135deg,#E8F5E9,#F1F8E9);border:1.5px solid #66BB6A;border-radius:8px;display:none;align-items:center;gap:10px;">
+                                    <i class="fas fa-check-circle" style="color:#2E7D32;font-size:1rem;"></i>
+                                    <span id="deAreaLockedName" style="font-weight:700;color:#1B5E20;font-size:.88rem;"></span>
+                                    <button type="button" onclick="deUnlockArea()" style="margin-left:auto;border:none;background:transparent;color:#888;cursor:pointer;font-size:.75rem;padding:2px 6px;border-radius:4px;"><i class="fas fa-times"></i> Change</button>
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Building (slides in after area) -->
+                            <div class="form-group" id="deBuildingGroup" style="margin-bottom:16px;display:none;">
+                                <label for="deBuildingName" style="font-weight:700;font-size:.85rem;color:#333;display:flex;align-items:center;gap:6px;">
+                                    <i class="fas fa-building" style="color:#5C6BC0;font-size:.85rem;"></i>
+                                    Building Name <span style="font-size:.72rem;color:#aaa;font-weight:400;">Step 3 of 3 (optional)</span>
+                                </label>
+                                <select id="deBuildingName" class="form-control" onchange="deOnBuildingChange()" style="font-weight:600;">
+                                    <option value="">— Select Building (optional) —</option>
+                                </select>
+                                <div id="deBuildingHint" style="display:none;font-size:.75rem;color:#888;margin-top:4px;"><i class="fas fa-info-circle"></i> No buildings linked to this area yet.</div>
+                            </div>
+
+                            <!-- Flat / Unit Number (optional, after building) -->
+                            <div class="form-group" id="deFlatNumberGroup" style="margin-bottom:16px;display:none;">
+                                <label for="deFlatNumber" style="font-weight:600;font-size:.85rem;color:#333;"><i class="fas fa-door-open" style="color:#E67E22;margin-right:5px;font-size:.8rem;"></i> Flat / Unit Number <span style="font-weight:400;color:#aaa;font-size:.75rem;">(optional)</span></label>
+                                <input type="text" id="deFlatNumber" class="form-control" placeholder="e.g. A-201, Flat 3B, Shop 5">
+                            </div>
+
+                            <!-- ── Section E: Payment ── -->
+                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;">
+                                <i class="fas fa-rupee-sign" style="margin-right:6px;"></i>Amount &amp; Payment
+                            </div>
+                            <div class="form-group">
+                                <label for="deAmount">Donation Amount (₹)</label>
+                                <input type="number" id="deAmount" class="form-control" placeholder="Enter amount" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Payment Mode <span style="color:red;">*</span></label>
+                                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
+                                    <label class="de-mode-btn active" id="deModeCash" onclick="deSetMode('Cash')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid var(--primary-color);border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:var(--primary-color);color:#fff;transition:all .2s;">
+                                        <i class="fas fa-money-bill-wave" style="font-size:1.2rem;"></i>Cash
+                                    </label>
+                                    <label class="de-mode-btn" id="deModeChq" onclick="deSetMode('Cheque')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                                        <i class="fas fa-file-alt" style="font-size:1.2rem;"></i>Cheque
+                                    </label>
+                                    <label class="de-mode-btn" id="deModeUPI" onclick="deSetMode('UPI')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                                        <i class="fas fa-qrcode" style="font-size:1.2rem;"></i>UPI
+                                    </label>
+                                    <label class="de-mode-btn" id="deModeRTGS" onclick="deSetMode('RTGS')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                                        <i class="fas fa-university" style="font-size:1.2rem;"></i>RTGS
+                                    </label>
+                                    <label class="de-mode-btn" id="deModeBal" onclick="deSetMode('Balance')" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border:2px solid #ddd;border-radius:10px;cursor:pointer;font-weight:700;font-size:.78rem;background:#f9f9f9;color:#555;transition:all .2s;">
+                                        <i class="fas fa-hand-holding-usd" style="font-size:1.2rem;"></i>Balance
+                                    </label>
+                                </div>
+                            </div>
+                            <input type="hidden" id="dePaymentMode" value="Cash">
+                            <div class="form-group" id="deRefGroup">
+                                <label for="deReference" id="deRefLabel">Reference Number <span style="color:#aaa;font-weight:400;font-size:.85rem;">(optional)</span></label>
+                                <input type="text" id="deReference" class="form-control" placeholder="Reference / Transaction / Cheque number">
+                            </div>
+
+                            <!-- ── Section F: Passbook Document Upload ── -->
+                            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--primary-color);border-bottom:2px dashed #ffe0d0;padding-bottom:6px;margin-bottom:16px;margin-top:8px;">
+                                <i class="fas fa-camera" style="margin-right:6px;"></i>Passbook Document
+                            </div>
+                            <div class="card" style="margin-bottom:0;box-shadow:none;border:1.5px solid #ffe0d0;padding:18px;">
+                                <div id="pbDocStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:500;"></div>
+                                <!-- Camera / Gallery button — uses capture=environment for rear camera on mobile -->
+                                <div id="pbUploadContainer" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+                                    <button type="button" id="pbCameraBtn"
+                                        onclick="document.getElementById('pbDocCamera').click()"
+                                        style="flex:1;min-width:140px;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                                        <i class="fas fa-camera" style="font-size:1.3rem;"></i> Take Photo / Select Image
+                                    </button>
+                                </div>
+                                <!-- Hidden file inputs: one for camera, one for gallery -->
+                                <input type="file" id="pbDocCamera" style="display:none;" accept="image/*">
+                                <input type="file" id="pbDocCameraCapture" style="display:none;" accept="image/*" capture="environment">
+                                <!-- Compress status -->
+                                <div id="pbCompressStatus" style="display:none;font-size:.82rem;color:#888;margin-bottom:10px;">
+                                    <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Compressing image…
+                                </div>
+                                <!-- Preview -->
+                                <div id="pbDocPreview" style="display:none;margin-bottom:14px;">
+                                    <img id="pbDocThumb" src="" alt="Receipt preview" style="max-width:100%;max-height:220px;border-radius:10px;border:1.5px solid #e0e0e0;object-fit:contain;">
+                                    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
+                                        <span id="pbDocFileName" style="font-size:.83rem;color:#555;flex:1;"></span>
+                                        <span id="pbDocFileSize" style="font-size:.78rem;color:#27ae60;font-weight:600;"></span>
+                                        <button type="button" onclick="pbClearDoc()" style="background:none;border:none;color:#E74C3C;cursor:pointer;font-size:.85rem;"><i class="fas fa-times"></i> Remove</button>
+                                    </div>
+                                </div>
+                                <p style="font-size:.78rem;color:#aaa;margin:0;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Image is automatically compressed to under 1 MB. Works on Android, iOS, and desktop.</p>
+                            </div>
+
+                            <!-- Date field for receipt (before submit) -->
+                            <div class="form-group" style="margin-bottom:16px;">
+                                <label for="deReceiptDate" style="font-weight:600;font-size:.85rem;color:#333;">
+                                    <i class="fas fa-calendar-alt" style="color:var(--primary-color);margin-right:5px;"></i>
+                                    Receipt Date <span style="color:#aaa;font-weight:400;font-size:.78rem;">(for receipt)</span>
+                                </label>
+                                <input type="date" id="deReceiptDate" class="form-control">
+                            </div>
+
+                            <!-- ── Submit ── -->
+                            <button type="submit" id="deSubmitBtn" class="btn btn-primary" style="width:100%;max-width:360px;display:block;padding:14px 30px;font-size:1rem;border-radius:10px;margin-top:8px;">
+                                <i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry
+                            </button>
+                        </form>
+
+                        <!-- ═══════════════════════════════════════════════════════════════
+                             LIVE RECEIPT PREVIEW — auto-fills from form above (de_rcg_)
+                             Zero overlap with any other feature. Fully isolated.
+                             ═══════════════════════════════════════════════════════════════ -->
+                        <div id="de_rcg_wrapper" style="margin-top:28px;border-top:2px dashed #ffe0d0;padding-top:22px;display:none;">
+
+                            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <i class="fas fa-file-invoice" style="color:#8B1A1A;font-size:1.1rem;"></i>
+                                    <strong style="color:#8B1A1A;font-size:1rem;">Receipt Preview</strong>
+                                    <span style="font-size:.75rem;color:#aaa;font-style:italic;">auto-updates as you type</span>
+                                </div>
+                                <button type="button" id="de_rcg_wa_btn" onclick="de_rcg_sendWhatsApp()"
+                                    style="display:flex;align-items:center;gap:8px;padding:11px 20px;background:linear-gradient(135deg,#1A7B43,#25A55A);color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;transition:transform .2s,box-shadow .2s;"
+                                    onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 18px rgba(26,123,67,.4)'"
+                                    onmouseout="this.style.transform='';this.style.boxShadow=''">
+                                    <i class="fab fa-whatsapp" style="font-size:1.1rem;"></i> Send Receipt via WhatsApp
+                                </button>
+                            </div>
+
+                            <!-- THE RECEIPT (captured as HD PNG for WhatsApp) -->
+                            <div id="de_rcg_receipt"
+                                style="font-family:'Noto Sans Devanagari','Mangal',Arial,sans-serif;
+                                       background:linear-gradient(145deg,#dff0fa 0%,#f0f8ff 40%,#e8f4fc 70%,#cbe8f6 100%);
+                                       border:2px solid #AACCDD;border-radius:10px;padding:20px 28px 24px;
+                                       max-width:780px;margin:0 auto;box-shadow:0 4px 20px rgba(0,0,0,.13);
+                                       box-sizing:border-box;position:relative;">
+
+                                <!-- Top meta row -->
+                                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;font-size:.78rem;color:#8B1A1A;font-weight:600;">
+                                    <span id="de_rcg_f_receiptTopLeft">स्थापना १९९१</span>
+                                    <span id="de_rcg_f_receiptTopCenter" style="text-align:center;flex:1;">॥ श्री गजानन प्रसन्न ॥</span>
+                                    <span style="white-space:nowrap;"><span id="de_rcg_f_receiptTopRightPrefix">वर्ष :</span> <span id="de_rcg_r_year" style="color:#222;font-weight:500;">__</span></span>
+                                </div>
+
+                                <!-- Title -->
+                                <div id="de_rcg_f_receiptTitle" style="text-align:center;font-size:1.75rem;font-weight:900;color:#8B1A1A;line-height:1.25;margin-bottom:3px;letter-spacing:.01em;">
+                        श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ
+                    </div>
+
+                                <!-- Address -->
+                                <div id="de_rcg_f_receiptAddress" style="text-align:center;font-size:.72rem;color:#8B1A1A;margin-bottom:10px;font-weight:500;">
+                        पटेलवाडी, क्लासिक हॉटेलच्या मागे, जुना नागरदास रोड, अंधेरी (पूर्व), मुंबई - ४०००६९
+                    </div>
+
+                                <hr style="border:none;border-top:2px solid #8B1A1A;margin:6px 0 10px;">
+
+                                <!-- Receipt no + Date -->
+                                <div style="display:flex;justify-content:space-between;align-items:center;font-size:.9rem;font-weight:700;color:#8B1A1A;margin-bottom:10px;padding:2px;">
+                                    <span>पावती क्र. :
+                                        <span id="de_rcg_r_rcptno" style="font-weight:400;color:#222;border-bottom:1.5px solid #8B1A1A;min-width:80px;display:inline-block;padding:0 8px;text-align:center;">___</span>
+                                    </span>
+                                    <span>दिनांक :
+                                        <span id="de_rcg_r_date" style="font-weight:400;color:#222;border-bottom:1.5px solid #8B1A1A;min-width:110px;display:inline-block;padding:0 8px;text-align:center;">___________</span>
+                                    </span>
+                                </div>
+
+                                <!-- Donor name row -->
+                                <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:8px;">
+                                    <span id="de_rcg_f_receiptDonorPrefix" style="font-size:.92rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">श्री/श्रीमती</span>
+                                    <span id="de_rcg_r_donor"
+                                        style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:26px;font-size:1rem;color:#222;padding:0 8px;font-weight:700;text-align:center;display:flex;align-items:flex-end;justify-content:center;">
+                                        <span style="color:#CCC;font-style:italic;font-weight:400;">__________________________</span>
+                                    </span>
+                                    <span id="de_rcg_f_receiptDonorSuffix" style="font-size:.88rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">यांचकडून</span>
+                                </div>
+
+                                <!-- Amount in words row -->
+                                <div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:8px;">
+                                    <span id="de_rcg_f_receiptAmountWordsPrefix" style="font-size:.92rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">अक्षरी रुपये</span>
+                                    <span id="de_rcg_r_words"
+                                        style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:26px;font-size:.88rem;color:#333;padding:0 8px;display:flex;align-items:flex-end;">
+                                        <span style="color:#CCC;font-style:italic;font-weight:400;">______________________________</span>
+                                    </span>
+                                </div>
+
+                                <!-- Thank you line -->
+                                <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:6px 0 12px;">
+                                    <span style="flex:1;border-bottom:1.5px solid #8B1A1A;min-height:14px;"></span>
+                                    <span id="de_rcg_f_receiptThankYouText" style="font-size:.88rem;font-weight:700;color:#8B1A1A;white-space:nowrap;">रोख/चेक मिळाले, धन्यवाद !</span>
+                                </div>
+
+                                <!-- Amount box -->
+                                <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+                                    <div id="de_rcg_r_amt"
+                                        style="border:2px solid #8B1A1A;border-radius:5px;padding:7px 18px;font-size:1.15rem;font-weight:700;color:#8B1A1A;min-width:120px;text-align:center;background:rgba(255,255,255,.5);">
+                                        <span style="color:#CCC;font-style:italic;font-weight:400;">₹</span>
+                                    </div>
+                                    <span id="de_rcg_r_mode" style="font-size:.8rem;color:#777;font-style:italic;"></span>
+                                </div>
+
+                                <!-- Signatures -->
+                                <div style="display:flex;justify-content:space-between;border-top:1px solid #AACCDD;padding-top:10px;margin-top:4px;">
+                                    <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
+                                        <div id="de_rcg_f_receiptSign1Role" style="font-size:.68rem;color:#777;font-weight:400;">अध्यक्ष</div>
+                            <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
+                            <div id="de_rcg_f_receiptSign1Name">जयेश शिंदे</div>
+                                    </div>
+                                    <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
+                                        <div id="de_rcg_f_receiptSign2Role" style="font-size:.68rem;color:#777;font-weight:400;">सरचिटणीस</div>
+                            <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
+                            <div id="de_rcg_f_receiptSign2Name"><span class="sg-marathi" translate="no">ध्रुव चीटालीय</span><span class="sg-english" translate="no" style="display:none;">Dhruv Chotaliya</span></div>
+                                    </div>
+                                    <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
+                                        <div id="de_rcg_f_receiptSign3Role" style="font-size:.68rem;color:#777;font-weight:400;">खजिनदार</div>
+                            <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
+                            <div id="de_rcg_f_receiptSign3Name">रणजीत राजपूत</div>
+                                    </div>
+                                    <div style="text-align:center;font-size:.72rem;color:#333;font-weight:600;">
+                                        <div id="de_rcg_f_receiptSign4Role" style="font-size:.68rem;color:#777;font-weight:400;">वसुल करणार</div>
+                            <div style="border-top:1.5px solid #8B1A1A;width:70px;margin:6px auto 3px;"></div>
+                            <div id="de_rcg_f_receiptSign4Name">&nbsp;</div>
+                                    </div>
+                                </div>
+
+                            </div><!-- /#de_rcg_receipt -->
+
+                            <p style="text-align:center;font-size:.75rem;color:#aaa;margin-top:10px;">
+                                <i class="fas fa-info-circle"></i> The WhatsApp button converts this receipt to a high-resolution image and shares it.
+                            </p>
+                        </div><!-- /#de_rcg_wrapper -->
+                    </div>
+
+                    <!-- All Donation Entries cards -->
+        <div class="admin-card" style="padding:24px;margin-bottom:18px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #F0F0F0;">
+                <h3 style="margin:0;color:var(--dark-color);font-size:1.2rem;"><i class="fas fa-list-ul" style="color:var(--primary-color);margin-right:8px;"></i>All Submitted Entries</h3>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <span id="vdeCardCount" style="font-size:.83rem;color:#888;"></span>
+                    <select id="vdeYearFilter" style="display:inline-block;padding:7px 10px;border:1.5px solid var(--primary-color);border-radius:8px;font-size:.85rem;font-weight:700;color:#fff;background:var(--primary-color);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.12);" onchange="window._vdeSelectedYear=this.value; adeLoad();" title="Filter by year"><option value="active">Active Year</option></select>
+                    <input type="text" id="vdeCardSearch" placeholder="🔍 Search donor, landmark..."
+                        style="padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.85rem;width:180px;"
+                        oninput="vdeRenderCards()">
+                    <button onclick="vdeLoad()" class="btn btn-small" style="background:var(--light-color);color:#555;"><i class="fas fa-sync-alt"></i></button>
+                </div>
+            </div>
+            <div id="vdeCardGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;">
+                <div style="text-align:center;color:#aaa;padding:30px;grid-column:1/-1;">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="admin-card" style="padding:20px;margin-bottom:18px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Search Name</label>
+                    <input type="text" id="vdeSearchName" class="form-control" placeholder="Donor / Business" oninput="vdeFilter()" style="padding:9px 12px;">
+                </div>
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Book No.</label>
+                    <input type="number" id="vdeFilterBook" class="form-control" placeholder="1–50" min="1" max="50" oninput="vdeFilter()" style="padding:9px 12px;">
+                </div>
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Landmark</label>
+                    <select id="vdeFilterLandmark" class="form-control" onchange="vdeFilter()" style="padding:9px 12px;"><option value="">All Landmarks</option></select>
+                </div>
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Payment Mode</label>
+                    <select id="vdeFilterMode" class="form-control" onchange="vdeFilter()" style="padding:9px 12px;">
+                        <option value="">All Modes</option>
+                        <option>Cash</option><option>Cheque</option><option>UPI</option><option>RTGS</option><option>Balance</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#555;display:block;margin-bottom:5px;">Donor Type</label>
+                    <select id="vdeFilterType" class="form-control" onchange="vdeFilter()" style="padding:9px 12px;">
+                        <option value="">All Types</option><option>Individual</option><option>Business</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:flex-end;">
+                    <button onclick="vdeClearFilters()" class="btn btn-small" style="background:#eee;color:#666;width:100%;padding:9px;">Clear Filters</button>
+                </div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:12px;font-size:.85rem;color:#777;flex-wrap:wrap;">
+                <span>Total: <strong id="vdeSummaryTotal">—</strong></span>
+                <span>Filtered: <strong id="vdeSummaryFiltered">—</strong></span>
+                <span>Total Amount: <strong id="vdeSummaryAmt" style="color:#2E7D32;">—</strong></span>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="admin-card" style="padding:0;overflow:hidden;">
+            <div style="overflow-x:auto;">
+                <table class="admin-table" id="vdeTable">
+                    <thead>
+                        <tr>
+                            <th>#</th><th>Book</th><th>Receipt</th><th>Donor</th><th>Type</th>
+                            <th>WhatsApp</th><th>Mobile</th><th>Building</th><th>Landmark</th><th>Area</th>
+                            <th>Amount</th><th>Mode</th><th>Ref No.</th><th>Image</th><th>Submitted By</th><th>Date</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vdeTbody">
+                        <tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        
+<!-- ══════════ END DONATION DATA ENTRY SECTION ══════════ -->
+
+                <!-- ══════════ BALANCE RECOVERY SECTION (VOLUNTEER) ══════════ -->
+                <div id="balanceRecovery" class="content-section" style="display:none;">
+                    <div class="page-title">
+                        <h1><i class="fas fa-hand-holding-usd" style="color:var(--primary-color);margin-right:10px;"></i>Balance Recovery</h1>
+                        <p>Track your submitted entries with pending balance</p>
+                    </div>
+
+
+        <div class="admin-card">
+                        <div class="card-header">
+                            <h3>My Pending Balances</h3>
+                            <button onclick="loadVolBalanceRecovery()" class="btn btn-small" style="background:var(--light-color);color:#555;font-size:.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
+                        </div>
+                        <div id="volBalCards" style="padding:10px 0;">
+                            <div style="text-align:center;color:#999;padding:24px;">Loading…</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- ══════════ END BALANCE RECOVERY SECTION ══════════ -->
+
+                <!-- ══════════ T-SHIRT SECTION ══════════ -->
+                <div id="tshirtSection" class="content-section" style="display:none;">
+                    <div class="page-title">
+                        <h1><i class="fas fa-tshirt" style="color:var(--primary-color);margin-right:10px;"></i>T-shirt Section</h1>
+                        <p>Manage T-shirt applications and size summaries</p>
+                    </div>
+
+                    <!-- T-shirt Showcase Photos (Landing Page) -->
+                    <div class="admin-card" style="margin-bottom:20px;border-left:4px solid #e74c3c;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-image" style="color:#e74c3c;margin-right:8px;"></i>Landing Page Showcase Images</h3>
+                        </div>
+                        <p style="color:#666;font-size:0.9rem;margin:8px 0 16px;">Upload up to 4 images to showcase the T-shirts on the public landing page.</p>
+                        
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;">
+                            <!-- Slot 1 -->
+                            <div style="background:#f9f9f9;padding:12px;border-radius:8px;border:1px solid #eee;">
+                                <h4 style="margin:0 0 8px;font-size:0.9rem;color:#333;">Slot 1</h4>
+                                <input type="file" id="volTshirtPhoto0" accept="image/*" class="admin-input" style="width:100%;margin-bottom:8px;padding:4px;font-size:0.8rem;">
+                                <button class="btn btn-primary btn-small" onclick="uploadVolTshirtPhoto(0)" style="width:100%;"><i class="fas fa-upload"></i> Upload</button>
+                                <div id="volTshirtPhotoPreviewWrap0" style="display:none;margin-top:8px;">
+                                    <img id="volTshirtPhotoPreview0" src="" alt="Slot 1" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;border:1px solid #ddd;">
+                                </div>
+                            </div>
+                            <!-- Slot 2 -->
+                            <div style="background:#f9f9f9;padding:12px;border-radius:8px;border:1px solid #eee;">
+                                <h4 style="margin:0 0 8px;font-size:0.9rem;color:#333;">Slot 2</h4>
+                                <input type="file" id="volTshirtPhoto1" accept="image/*" class="admin-input" style="width:100%;margin-bottom:8px;padding:4px;font-size:0.8rem;">
+                                <button class="btn btn-primary btn-small" onclick="uploadVolTshirtPhoto(1)" style="width:100%;"><i class="fas fa-upload"></i> Upload</button>
+                                <div id="volTshirtPhotoPreviewWrap1" style="display:none;margin-top:8px;">
+                                    <img id="volTshirtPhotoPreview1" src="" alt="Slot 2" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;border:1px solid #ddd;">
+                                </div>
+                            </div>
+                            <!-- Slot 3 -->
+                            <div style="background:#f9f9f9;padding:12px;border-radius:8px;border:1px solid #eee;">
+                                <h4 style="margin:0 0 8px;font-size:0.9rem;color:#333;">Slot 3</h4>
+                                <input type="file" id="volTshirtPhoto2" accept="image/*" class="admin-input" style="width:100%;margin-bottom:8px;padding:4px;font-size:0.8rem;">
+                                <button class="btn btn-primary btn-small" onclick="uploadVolTshirtPhoto(2)" style="width:100%;"><i class="fas fa-upload"></i> Upload</button>
+                                <div id="volTshirtPhotoPreviewWrap2" style="display:none;margin-top:8px;">
+                                    <img id="volTshirtPhotoPreview2" src="" alt="Slot 3" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;border:1px solid #ddd;">
+                                </div>
+                            </div>
+                            <!-- Slot 4 -->
+                            <div style="background:#f9f9f9;padding:12px;border-radius:8px;border:1px solid #eee;">
+                                <h4 style="margin:0 0 8px;font-size:0.9rem;color:#333;">Slot 4</h4>
+                                <input type="file" id="volTshirtPhoto3" accept="image/*" class="admin-input" style="width:100%;margin-bottom:8px;padding:4px;font-size:0.8rem;">
+                                <button class="btn btn-primary btn-small" onclick="uploadVolTshirtPhoto(3)" style="width:100%;"><i class="fas fa-upload"></i> Upload</button>
+                                <div id="volTshirtPhotoPreviewWrap3" style="display:none;margin-top:8px;">
+                                    <img id="volTshirtPhotoPreview3" src="" alt="Slot 4" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;border:1px solid #ddd;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-card">
+                        <!-- Application Form + Admin Price Settings -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:28px;">
+            <div style="background:var(--white);border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:2px solid #e74c3c;">
+                <h3 style="margin:0 0 18px;color:#2c3e50;font-size:1rem;">&#128248; Apply for T-shirt</h3>
+                <form onsubmit="tsSubmitApplication(event)">
+                    <div style="margin-bottom:14px;">
+                        <label style="display:block;font-size:.85rem;font-weight:600;color:#555;margin-bottom:5px;">Full Name *</label>
+                        <input type="text" id="tsName" placeholder="Enter full name" required style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;">
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <label style="display:block;font-size:.85rem;font-weight:600;color:#555;margin-bottom:5px;">Mobile Number *</label>
+                        <input type="tel" id="tsPhone" placeholder="10-digit number" pattern="[0-9]{10}" maxlength="10" required style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;">
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+                        <div>
+                            <label style="display:block;font-size:.85rem;font-weight:600;color:#555;margin-bottom:5px;">Size *</label>
+                            <select id="tsSize" required style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;background:var(--white);">
+                                <option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="24">24</option><option value="26">26</option><option value="28">28</option><option value="30">30</option><option value="32">32</option><option value="34">34</option><option value="36">36</option><option value="38">38</option><option value="40">40</option><option value="42">42</option><option value="44">44</option><option value="46">46</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:.85rem;font-weight:600;color:#555;margin-bottom:5px;">Quantity *</label>
+                            <input type="number" id="tsQty" value="1" min="1" max="20" required oninput="tsUpdateTotal()" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;">
+                        </div>
+                    </div>
+                    <div style="background:#fff5f5;border-radius:8px;padding:12px 14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-weight:600;color:#555;font-size:.9rem;">Total Amount:</span>
+                        <span id="tsTotalDisplay" style="font-size:1.3rem;font-weight:800;color:#27ae60;">&#8377;350</span>
+                    </div>
+                    <button type="submit" style="width:100%;padding:11px;background:#e74c3c;color:#fff;border:none;border-radius:8px;font-size:.95rem;font-weight:700;cursor:pointer;">&#10003; Submit Application</button>
+                    <div id="tsFormMsg" style="display:none;margin-top:10px;padding:9px;border-radius:6px;font-size:.85rem;text-align:center;"></div>
+                </form>
+            </div>
+            <div style="background:var(--white);border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e0e0e0;align-self:start;">
+                <h3 style="margin:0 0 18px;color:#2c3e50;font-size:1rem;">&#128202; Volunteer View</h3>
+                <form onsubmit="tsUpdatePrice(event)">
+                    <div style="margin-bottom:14px;">
+                        <label style="display:block;font-size:.85rem;font-weight:600;color:#555;margin-bottom:5px;">Price per T-shirt (&#8377;)</label>
+                        <input type="number" id="tsAdminPrice" value="350" min="0" required style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;">
+                    </div>
+                    <button type="submit" style="padding:10px 18px;background:#3949AB;color:#fff;border:none;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;">&#128190; Save Price</button>
+                    <div id="tsAdminMsg" style="display:none;margin-top:10px;padding:8px;border-radius:6px;font-size:.85rem;"></div>
+                </form>
+            </div>
+        </div>
+                        
+                        <div style="margin-top:28px;">
+                            <!-- Sizes Overview -->
+        <div id="tsSizesOverview" style="background:var(--white);border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e0e0e0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+                <h3 style="margin:0;color:#2c3e50;font-size:1rem;">&#128202; Sizes Overview</h3>
+                <span id="tsTotalCount" style="background:#FFF8F1;color:#E65100;padding:4px 12px;border-radius:12px;font-weight:700;font-size:.85rem;">Total: 0 shirts</span>
+            </div>
+            <div id="tsSizeBoxes" style="display:flex;flex-wrap:wrap;gap:10px;">
+                <div onclick="tsOpenModal(18)" id="tsBox18" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">18</div>
+                    <div id="tsBoxCount18" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(20)" id="tsBox20" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">20</div>
+                    <div id="tsBoxCount20" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(22)" id="tsBox22" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">22</div>
+                    <div id="tsBoxCount22" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(24)" id="tsBox24" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">24</div>
+                    <div id="tsBoxCount24" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(26)" id="tsBox26" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">26</div>
+                    <div id="tsBoxCount26" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(28)" id="tsBox28" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">28</div>
+                    <div id="tsBoxCount28" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(30)" id="tsBox30" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">30</div>
+                    <div id="tsBoxCount30" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(32)" id="tsBox32" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">32</div>
+                    <div id="tsBoxCount32" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(34)" id="tsBox34" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">34</div>
+                    <div id="tsBoxCount34" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(36)" id="tsBox36" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">36</div>
+                    <div id="tsBoxCount36" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(38)" id="tsBox38" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">38</div>
+                    <div id="tsBoxCount38" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(40)" id="tsBox40" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">40</div>
+                    <div id="tsBoxCount40" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(42)" id="tsBox42" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">42</div>
+                    <div id="tsBoxCount42" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(44)" id="tsBox44" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">44</div>
+                    <div id="tsBoxCount44" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div><div onclick="tsOpenModal(46)" id="tsBox46" style="cursor:pointer;min-width:62px;text-align:center;padding:10px 8px;border-radius:8px;background:#f9f9f9;border:1.5px solid #eee;transition:all .2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:1.05rem;font-weight:700;color:#bbb;">46</div>
+                    <div id="tsBoxCount46" style="font-size:.75rem;color:#888;margin-top:3px;">0 req</div>
+                </div>
+            </div>
+            <p style="margin:12px 0 0;font-size:.78rem;color:#aaa;text-align:center;">Click any size to view applicants</p>
+        </div>
+    </div>
+                        </div>
+                    </div>
+                </div>
+
+<!-- ══════════ END T-SHIRT SECTION ══════════ -->
+
+        </main>
+    </div>
+
+    <!-- ── Lightbox Modal ─────────────────────────────────────────── -->
+    <div id="pbLightbox">
+        <span id="pbLightboxClose" onclick="closePbLightbox()">&times;</span>
+        <img id="pbLightboxImg" src="" alt="Passbook image">
+    </div>
+
+    <!-- ── Volunteer Entry Edit Modal ──────────────────────────────── -->
+    <div id="deVolEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
+        <div style="background:var(--white);border-radius:16px;padding:28px 24px;max-width:560px;width:94%;margin:auto;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;color:#222;"><i class="fas fa-edit" style="color:var(--primary-color);margin-right:8px;"></i>Edit Entry</h3>
+                <span onclick="deCloseVolEdit()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
+            </div>
+            <div id="deVolEditStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
+            <form id="deVolEditForm" onsubmit="deSaveVolEdit(event)" autocomplete="off">
+                <input type="hidden" id="deVolEditId">
+                <!-- Details: Landmark, Mode, Status -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                    <div class="form-group" style="margin:0;">
+                        <label>Landmark <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                        <select id="deVolEditLandmark" class="form-control" onchange="deOnVolEditLandmarkChange()"></select>
+                    </div>
+                    <div class="form-group" id="deVolEditAreaGroup" style="margin:0;display:none;">
+                        <label>Area <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                        <select id="deVolEditArea" class="form-control"></select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>Payment Mode <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                        <select id="deVolEditMode" class="form-control">
+                            <option>Cash</option><option>Cheque</option><option>UPI</option><option>RTGS</option><option>Balance</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0;grid-column:1/-1;">
+                        <label>Status <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
+                        <select id="deVolEditStatusField" class="form-control" style="background:#FFF8F1;color:#E65100;font-weight:700;">
+                            <option value="Balance">Balance</option>
+                            <option value="Received">Received</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Photo section -->
+                <div style="border:1.5px dashed #ffe0d0;border-radius:10px;padding:16px;margin-bottom:16px;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--primary-color);margin-bottom:12px;">
+                        <i class="fas fa-camera" style="margin-right:6px;"></i>Receipt Photo
+                    </div>
+                    <!-- Current photo -->
+                    <div id="deVolEditCurrentPhoto" style="display:none;margin-bottom:10px;">
+                        <p style="font-size:.8rem;color:#777;margin:0 0 6px;">Current photo:</p>
+                        <img id="deVolEditCurrentImg" src="" alt="Current receipt" style="max-width:100%;max-height:160px;border-radius:8px;border:1.5px solid #e0e0e0;object-fit:contain;cursor:pointer;">
+                    </div>
+                    <!-- Upload new -->
+                    <button type="button" onclick="document.getElementById('deVolEditPhotoInput').click()"
+                        style="width:100%;padding:12px;border:2px dashed #ddd;border-radius:10px;background:#fff8f5;color:#555;cursor:pointer;font-size:.88rem;font-weight:600;">
+                        <i class="fas fa-upload" style="margin-right:6px;color:var(--primary-color);"></i>Upload / Replace Photo
+                    </button>
+                    <input type="file" id="deVolEditPhotoInput" style="display:none;" accept="image/*">
+                    <div id="deVolEditPhotoPreview" style="display:none;margin-top:10px;">
+                        <img id="deVolEditPhotoThumb" src="" alt="Preview" style="max-width:100%;max-height:160px;border-radius:8px;border:1.5px solid #ffe0d0;object-fit:contain;">
+                        <p id="deVolEditPhotoName" style="font-size:.8rem;color:#555;margin:6px 0 0;"></p>
+                    </div>
+                </div>
+                <!-- Donor name, Amount, Book, Receipt (editable with reason) -->
+                <div style="border:1.5px solid #E3F2FD;border-radius:10px;padding:14px;margin-bottom:14px;background:#F8FBFF;">
+                    <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#1565C0;margin-bottom:10px;"><i class="fas fa-edit" style="margin-right:6px;"></i>DETAILS <span style="font-weight:400;color:#777;">(edit with reason)</span></div>
+                    
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px;">
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:.78rem;">Book Number</label>
+                            <select id="deVolEditBook" class="form-control" onchange="deVolEditBookChange()"></select>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:.78rem;">Receipt Number</label>
+                            <select id="deVolEditReceipt" class="form-control"></select>
+                        </div>
+                    </div>
+                    <div id="deVolNameIndFields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+                        <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">First Name</label><input id="deVolEditFirst" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+                        <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Middle Name</label><input id="deVolEditMid" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+                        <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Last Name</label><input id="deVolEditLast" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+                    </div>
+                    
+                    <div id="deVolNameBizFields" style="display:none;margin-bottom:10px;">
+                        <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Business Name</label><input id="deVolEditBiz" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label style="font-size:.78rem;">Amount (&#8377;)</label>
+                        <input type="number" id="deVolEditAmount" class="form-control" min="0" placeholder="0">
+                    </div>
+                    <div id="deVolNameReasonWrap" style="margin-top:8px;">
+                        <label style="font-size:.78rem;color:#c0392b;font-weight:700;"><i class="fas fa-exclamation-circle" style="margin-right:4px;"></i>Reason for Change <span style="color:#c0392b;">*</span> <span style="color:#aaa;font-weight:400;">(required if any detail above changed)</span></label>
+                        <input id="deVolEditReason" class="form-control" placeholder="e.g. Spelling correction, wrong amount entered..." style="margin-top:4px;">
+                    </div>
+                    <p style="font-size:.76rem;color:#aaa;margin:8px 0 0;"><i class="fas fa-info-circle" style="margin-right:3px;"></i>Submission date cannot be changed. Edits are logged for admin review.</p>
+                </div>
+
+                <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button type="button" class="btn" style="background:#eee;color:#555;" onclick="deCloseVolEdit()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="deVolEditSaveBtn"><i class="fas fa-save" style="margin-right:6px;"></i>Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        } else {
+            document.getElementById('userName').textContent = 'Welcome ' + currentUser.name;
+            document.getElementById('topBarName').textContent = currentUser.name;
+            const avatarEl = document.getElementById('userAvatar');
+            if (currentUser.photoUrl) {
+                avatarEl.innerHTML = '<img src="' + currentUser.photoUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+                avatarEl.style.padding = '0';
+                avatarEl.style.overflow = 'hidden';
+            } else {
+                avatarEl.textContent = currentUser.name.charAt(0);
+            }
+        }
+        
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            // Show selected section
+            const target = document.getElementById(sectionId);
+            if (target) target.style.display = 'block';
+
+            // Update active menu item
+            document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                link.classList.remove('active');
+            });
+            if (event && event.target) {
+                const link = event.target.closest('a');
+                if (link) link.classList.add('active');
+            }
+
+            // Load donation entries when that section is opened
+            if (sectionId === 'donationEntry') { deLoadDropdowns(); deLoadYearFilter().then(() => deLoadMyEntries()); }
+            // Load balance recovery when that section is opened
+            if (sectionId === 'balanceRecovery') { loadVolBalanceRecovery(); }
+            // Load donor search when that section is opened
+            if (sectionId === 'donorSearch') {
+                if (typeof loadDonorSearch === 'function') loadDonorSearch();
+            }
+            if (sectionId === 'tshirtSection' && typeof renderTshirtSection === 'function') renderTshirtSection();
+        }
+
+        // Mobile sidebar helpers
+        function openSidebar() {
+            document.querySelector('.sidebar').classList.add('open');
+            document.getElementById('sidebarOverlay').classList.add('active');
+        }
+        function closeSidebar() {
+            document.querySelector('.sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('active');
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                sessionStorage.removeItem('currentUser');
+                window.location.href = 'login.html';
+            }
+        }
+        
+        // ==================== PASSBOOK DOCUMENT — Camera + Auto-Compress ====================
+        // Works on Android, iOS (via capture=environment) and desktop (file picker)
+        let _pbDocBlob = null;  // compressed Blob ready to upload
+
+        // Canvas-based compression: reduces image to ≤1 MB (or targetKB) using quality loop
+        function _compressImage(file, targetKB, callback) {
+            const MAX_BYTES = (targetKB || 950) * 1024;
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = function() {
+                URL.revokeObjectURL(url);
+                // Determine render size (max 1920px wide)
+                let w = img.naturalWidth, h = img.naturalHeight;
+                const MAX_DIM = 1920;
+                if (w > MAX_DIM) { h = Math.round(h * MAX_DIM / w); w = MAX_DIM; }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+                // Binary-search quality until file fits
+                let lo = 0.1, hi = 0.92, q = 0.82, blob = null;
+                function tryQ(quality) {
+                    canvas.toBlob(function(b) {
+                        blob = b;
+                        if (b.size <= MAX_BYTES || (hi - lo) < 0.03) {
+                            callback(blob);
+                        } else {
+                            hi = quality;
+                            q = (lo + hi) / 2;
+                            tryQ(q);
+                        }
+                    }, 'image/jpeg', quality);
+                }
+                if (file.size <= MAX_BYTES) {
+                    // Already small enough — still convert to JPEG for uniformity
+                    canvas.toBlob(function(b) { callback(b); }, 'image/jpeg', 0.9);
+                } else {
+                    tryQ(q);
+                }
+            };
+            img.onerror = function() { callback(null); }; // fallback: no compression
+            img.src = url;
+        }
+
+        function _fmtBytes(b) {
+            return b < 1024 ? b + ' B' : b < 1048576 ? (b/1024).toFixed(1) + ' KB' : (b/1048576).toFixed(2) + ' MB';
+        }
+
+        const handleImageUpload = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            // Non-image? reject.
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a JPG or PNG image.');
+                this.value = ''; return;
+            }
+            // Show compression spinner
+            const cmpEl  = document.getElementById('pbCompressStatus');
+            const preEl  = document.getElementById('pbDocPreview');
+            const thumbEl = document.getElementById('pbDocThumb');
+            const nameEl  = document.getElementById('pbDocFileName');
+            const sizeEl  = document.getElementById('pbDocFileSize');
+            if (cmpEl)  cmpEl.style.display  = '';
+            if (preEl)  preEl.style.display  = 'none';
+            _pbDocBlob = null;
+
+            _compressImage(file, 950, function(blob) {
+                if (cmpEl) cmpEl.style.display = 'none';
+                if (!blob) {
+                    alert('Could not process image. Please try a different file.');
+                    return;
+                }
+                _pbDocBlob = blob;
+                // Show thumbnail — revoke any previous object URL to prevent memory leak
+                if (thumbEl && thumbEl.src && thumbEl.src.startsWith('blob:')) URL.revokeObjectURL(thumbEl.src);
+                const objURL = URL.createObjectURL(blob);
+                if (thumbEl) { thumbEl.src = objURL; }
+                if (nameEl)  nameEl.textContent  = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+                if (sizeEl)  sizeEl.textContent  = '✅ ' + _fmtBytes(blob.size) + (file.size > blob.size ? '  (compressed from ' + _fmtBytes(file.size) + ')' : '');
+                if (preEl)  preEl.style.display  = '';
+            });
+        };
+
+        document.getElementById('pbDocCamera')?.addEventListener('change', handleImageUpload);
+        document.getElementById('pbDocCameraCapture')?.addEventListener('change', handleImageUpload);
+
+        function pbClearDoc() {
+            _pbDocBlob = null;
+            const inp = document.getElementById('pbDocCamera');
+            if (inp) inp.value = '';
+            const inpCap = document.getElementById('pbDocCameraCapture');
+            if (inpCap) inpCap.value = '';
+            const preEl = document.getElementById('pbDocPreview');
+            if (preEl) preEl.style.display = 'none';
+            const thumb = document.getElementById('pbDocThumb');
+            if (thumb) thumb.src = '';
+        }
+
+        // Android-specific layout modification
+        (function checkAndroidUpload() {
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const pbUploadContainer = document.getElementById('pbUploadContainer');
+            if (isAndroid && pbUploadContainer) {
+                pbUploadContainer.innerHTML = `
+                    <button type="button" onclick="document.getElementById('pbDocCameraCapture').click()"
+                        style="flex:1;min-width:120px;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                        <i class="fas fa-camera" style="font-size:1.3rem;"></i> Take Photo
+                    </button>
+                    <button type="button" onclick="document.getElementById('pbDocCamera').click()"
+                        style="flex:1;min-width:120px;padding:14px;border:2px dashed var(--primary-color);border-radius:12px;background:#fff8f5;color:var(--primary-color);font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                        <i class="fas fa-images" style="font-size:1.3rem;"></i> Select Gallery
+                    </button>
+                `;
+            }
+        })();
+
+        // ==================== LIGHTBOX ====================
+        function openPbLightbox(url) {
+            const lb = document.getElementById('pbLightbox');
+            const img = document.getElementById('pbLightboxImg');
+            img.src = url;
+            lb.classList.add('active');
+        }
+        function closePbLightbox() {
+            document.getElementById('pbLightbox').classList.remove('active');
+            document.getElementById('pbLightboxImg').src = '';
+        }
+        document.getElementById('pbLightbox').addEventListener('click', function(e) {
+            if (e.target === this) closePbLightbox();
+        });
+
+        // ==================== BALANCE RECOVERY MODULE ====================
+        async function loadVolBalanceRecovery() {
+            const container = document.getElementById('volBalCards');
+            if (!container) return;
+            container.innerHTML = '<div style="text-align:center;color:#999;padding:24px;">Loading...</div>';
+            try {
+                // Fetch all donation entries and Pauti books (across entire website)
+                const [deRes, pbRes] = await Promise.all([
+                    fetch('/api/donation-entries?year=' + (window._adminSelectedYear || 'active')),
+                    fetch('/api/pauti-books')
+                ]);
+                const deData = await deRes.json();
+                const pbData = await pbRes.json();
+
+                const pautiPending = [];
+                (pbData.pautiBooks || []).forEach(book => {
+                    (book.slips || []).forEach(slip => {
+                        if (!slip.deleted && slip.uploadedAt &&
+                            (slip.paymentMode === 'balance' || !slip.amount || Number(slip.amount) <= 0)) {
+                            pautiPending.push({
+                                receiptId: `SLIP-${slip.slipNumber}`,
+                                name: slip.donorName || '—',
+                                amount: slip.amount || 0,
+                                photoUrl: slip.photoUrl || null,
+                                submittedAt: slip.uploadedAt,
+                                status: 'pending',
+                                type: 'pauti-slip',
+                                bookNumber: book.bookNumber,
+                                receiptNumber: slip.slipNumber,
+                                landmark: '—'
+                            });
+                        }
+                    });
+                });
+
+                const dePending = (deData.entries || []).filter(e =>
+                    e.paymentMode && e.paymentMode.toLowerCase() === 'balance' && !e.deleted
+                ).map(e => {
+                    const donor = e.donorType === 'Business'
+                        ? (e.businessName || '—')
+                        : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+                    return {
+                        receiptId: e.entryId,
+                        name: donor,
+                        amount: e.amount || 0,
+                        photoUrl: e.photoUrl || null,
+                        submittedAt: e.submittedAt,
+                        status: e.status || 'Balance',
+                        type: 'donation-entry',
+                        bookNumber: e.bookNumber,
+                        receiptNumber: e.receiptNumber,
+                        landmark: e.landmark || '—',
+                        bookType: e.bookType
+                    };
+                });
+
+                const list = [...pautiPending, ...dePending].filter(r => (r.status || '').toLowerCase() !== 'received');
+
+                if (list.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;color:#999;padding:24px;">No pending balance slips found.</div>';
+                    return;
+                }
+
+                // Sort newest first
+                list.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+
+                container.innerHTML = list.map(r => {
+                    const isReceived  = (r.status || '').toLowerCase() === 'received';
+                    const donor = r.name || '—';
+                    const amt   = r.amount && Number(r.amount) > 0 ? '₹' + Number(r.amount).toLocaleString('en-IN') : '—';
+                    const dtObj = new Date(r.submittedAt);
+                    const dtStr = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()
+                                + '\n' + dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+                    const dtParts = dtStr.split('\n');
+                    const photoSection = (r.photoUrl || r.receiptPreviewUrl)
+                        ? `<div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(r.photoUrl || r.receiptPreviewUrl)}')">
+                               <img src="${fixUrl(r.photoUrl || r.receiptPreviewUrl)}?t=${Date.now()}" loading="lazy" alt="Receipt photo"
+                                   style="width:100%;max-height:200px;object-fit:cover;display:block;">
+                               <div style="background:#fff8f5;padding:5px 10px;font-size:.72rem;color:#E65100;font-weight:600;display:flex;align-items:center;gap:5px;">
+                                   <i class="fas fa-expand-alt"></i> Tap to view full receipt
+                               </div>
+                           </div>`
+                        : `<div style="margin-top:10px;border:1.5px dashed #f0e0d0;border-radius:10px;padding:14px;text-align:center;background:#fffaf8;">
+                               <i class="fas fa-camera" style="font-size:1.4rem;color:#ddd;display:block;margin-bottom:6px;"></i>
+                               <span style="font-size:.75rem;color:#ccc;font-weight:600;">No Receipt Photo</span>
+                           </div>`;
+                           
+                    const paymentMode = isReceived ? 'Received' : 'Balance';
+                    const paymentModeColor = isReceived ? 'background:#E8F5E9;color:#2E7D32;' : 'background:#FFF8F1;color:#E65100;';
+
+                    const safeId = r.receiptId.replace(/'/g, "\\'");
+                    const editBtn = r.type === 'donation-entry' && !isReceived
+                        ? `<button onclick="deOpenVolEdit('${safeId}')" style="padding:8px 12px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;flex-shrink:0;margin-left:4px;"><i class="fas fa-edit"></i></button>`
+                        : '';
+                    const markBtn = !isReceived 
+                        ? `<button onclick="markBalanceReceived('${safeId}')" style="padding:8px 12px;border:none;border-radius:8px;background:linear-gradient(135deg,#2E7D32,#4CAF50);color:#fff;cursor:pointer;font-size:.8rem;font-weight:700;flex-shrink:0;margin-left:4px;" title="Mark as Received"><i class="fas fa-check"></i></button>`
+                        : '';
+
+                    return `<div style="border:1px solid #f0e8e0;border-radius:14px;padding:14px;margin:0 0 12px;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.06);">
+                        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:700;font-size:.97rem;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${donor}</div>
+                                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;">
+                                    <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
+                                        <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${r.bookNumber} / #${r.receiptNumber} ${ (r.bookType||'New')==='Old' ? '<span style="background:#FFF8F1;color:#E65100;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.65rem;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;">New</span>' }
+                                    </span>
+                                    ${r.landmark ? `<span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;"><i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${r.landmark}</span>` : ''}
+                                    <span style="${paymentModeColor}padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">${paymentMode}</span>
+                                </div>
+                                <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+                                    <span style="color:#2E7D32;font-weight:700;font-size:1.05rem;">${amt}</span>
+                                    <span style="font-size:.72rem;color:#aaa;text-align:right;">${dtParts[0]}<br><span style="color:#bbb;">${dtParts[1]}</span></span>
+                                </div>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:6px;">
+                                ${markBtn}
+                                ${editBtn}
+                            </div>
+                        </div>
+                        ${photoSection}
+                    </div>`;
+                }).join('');
+            } catch(e) {
+                const container = document.getElementById('volBalCards');
+                if (container) container.innerHTML = '<div style="text-align:center;color:#c00;padding:24px;">Error loading balance data.</div>';
+            }
+        }
+
+        async function markBalanceReceived(id) {
+            if (!confirm('Mark this balance recovery slip as Received?')) return;
+            try {
+                const curUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+                const byName  = curUser.name || 'Unknown';
+                const res  = await fetch(`/api/receipts/${encodeURIComponent(id)}/mark-received?by=${encodeURIComponent(byName)}`, { method: 'PATCH' });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showNotification('Balance slip marked as received!', 'success');
+                    loadVolBalanceRecovery();
+                } else {
+                    showNotification('Error: ' + (data.message || 'Could not update.'), 'error');
+                }
+            } catch (e) {
+                showNotification('Cannot reach server.', 'error');
+            }
+        }
+
+        // ==================== EDIT AMOUNT MODAL ====================
+        let _editReceiptId = null;
+        function openPbEdit(receiptId, currentAmount) {
+            _editReceiptId = receiptId;
+            document.getElementById('pbEditAmountInput').value = currentAmount || '';
+            document.getElementById('pbEditModal').classList.add('active');
+        }
+        function closePbEdit() {
+            _editReceiptId = null;
+            document.getElementById('pbEditModal').classList.remove('active');
+        }
+        async function savePbEditAmount() {
+            const newAmt = Number(document.getElementById('pbEditAmountInput').value);
+            if (!_editReceiptId || isNaN(newAmt) || newAmt <= 0) {
+                alert('Please enter a valid positive amount.');
+                return;
+            }
+            const btn = document.getElementById('pbEditSaveBtn');
+            btn.disabled = true; btn.textContent = 'Saving…';
+            try {
+                const res = await fetch(`/api/receipts/${encodeURIComponent(_editReceiptId)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: newAmt })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    closePbEdit();
+                    loadVolunteerPassbooks();
+                } else {
+                    alert('Error: ' + (data.message || 'Could not save.'));
+                }
+            } catch(e) {
+                alert('Cannot reach server. Make sure server.js is running.');
+            } finally {
+                btn.disabled = false; btn.textContent = 'Save';
+            }
+        }
+
+        // ==================== LOAD VOLUNTEER RECEIPTS ====================
+        async function loadVolunteerPassbooks() {
+            const tbody = document.getElementById('uploadedDocsList');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Loading…</td></tr>';
+            try {
+                const res = await fetch('/api/receipts');
+                const data = await res.json();
+                const myId = currentUser ? (currentUser.id ?? null) : null;
+                // Show all receipts belonging to this user (or all if userId is null)
+                const myReceipts = (data.receipts || []).filter(r =>
+                    myId === null || String(r.userId) === String(myId)
+                );
+                if (myReceipts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">No receipts submitted yet.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = myReceipts.map(r => {
+                    const dateStr = new Date(r.submittedAt).toLocaleDateString('en-IN',
+                        { day: 'numeric', month: 'short', year: 'numeric' });
+                    const amtDisplay = (r.amount !== null && r.amount !== undefined)
+                        ? '₹' + Number(r.amount).toLocaleString('en-IN')
+                        : '<span style="color:#aaa;">—</span>';
+                    const isPdf = r.passbookFile && r.passbookFile.toLowerCase().match(/\.pdf$/);
+                    const hasFile = !!r.passbookUrl;
+                    const viewBtn = hasFile
+                        ? (isPdf
+                            ? `<button class="btn btn-sm btn-primary" onclick="window.open('${r.passbookUrl}','_blank')"><i class="fas fa-file-pdf" style="margin-right:4px;"></i>View PDF</button>`
+                            : `<button class="btn btn-sm btn-primary" onclick="openPbLightbox('${r.passbookUrl}')"><i class="fas fa-image" style="margin-right:4px;"></i>View</button>`)
+                        : `<span style="color:#bbb;font-size:.85rem;">No file</span>`;
+                    return `
+                        <tr id="vol-row-${r.receiptId}">
+                            <td style="font-size:.8rem;color:#888;">${r.receiptId}</td>
+                            <td>${r.name}</td>
+                            <td>${amtDisplay}</td>
+                            <td>${dateStr}</td>
+                            <td>${viewBtn}</td>
+                            <td>
+                                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                    <button class="btn btn-sm" style="background:#E3F2FD;color:#1565C0;" onclick="openPbEdit('${r.receiptId}',${r.amount ?? 0})">
+                                        <i class="fas fa-edit"></i> Edit Amount
+                                    </button>
+                                    <button class="btn btn-sm" style="background:#FFF8F1;color:#E65100;" onclick="reUpload('${r.receiptId}')">
+                                        <i class="fas fa-upload"></i> Re-Upload
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>`;
+                }).join('');
+            } catch(e) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#c0392b;">⚠ Could not load receipts. Is server.js running?</td></tr>';
+            }
+        }
+
+        // ==================== RE-UPLOAD (link file to a specific receipt) ====================
+        let _reUploadReceiptId = null;
+        function reUpload(receiptId) {
+            _reUploadReceiptId = receiptId;
+            // Reuse the existing file input
+            document.getElementById('fileInput').click();
+        }
+
+        // ==================== FILE UPLOAD HANDLER ====================
+        let selectedUploadFile = null;
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        function clearFileSelection() {
+            selectedUploadFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('filePreviewBar').style.display = 'none';
+            document.getElementById('fileUploadStatus').style.display = 'none';
+        }
+
+        function showFileStatus(message, type) {
+            const el = document.getElementById('fileUploadStatus');
+            el.textContent = message;
+            el.style.display = 'block';
+            if (type === 'success') {
+                el.style.background = '#D5F4E6';
+                el.style.color      = '#1a7a45';
+                el.style.border     = '1px solid #a3e6c1';
+            } else {
+                el.style.background = '#FFEBEE';
+                el.style.color      = '#c0392b';
+                el.style.border     = '1px solid #f5b7b1';
+            }
+            if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 7000);
+        }
+
+        // Show preview bar when a file is chosen
+        document.getElementById('fileInput')?.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // 5 MB guard
+            if (file.size > 5 * 1024 * 1024) {
+                showFileStatus('❌ File is too large. Maximum allowed size is 5 MB.', 'error');
+                this.value = '';
+                return;
+            }
+
+            selectedUploadFile = file;
+            document.getElementById('selectedFileName').textContent = file.name;
+            document.getElementById('selectedFileSize').textContent  = formatBytes(file.size);
+
+            const bar = document.getElementById('filePreviewBar');
+            bar.style.display = 'flex';   // reveal the bar
+            document.getElementById('fileUploadStatus').style.display = 'none';
+        });
+
+        // Upload button click → send file via FormData to the server
+        document.getElementById('uploadFileBtn')?.addEventListener('click', async function () {
+            if (!selectedUploadFile) return;
+
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Uploading…';
+
+            try {
+                const formData = new FormData();
+                formData.append('passbook', selectedUploadFile);
+                formData.append('userId',   currentUser ? currentUser.id   : '');
+                formData.append('userName', currentUser ? currentUser.name : '');
+                // Link to the last submitted receipt (if any)
+                // Prefer re-upload target, then the last submitted receipt
+                const linkedId = _reUploadReceiptId
+                    || document.getElementById('linkedReceiptId')?.value
+                    || window._lastReceiptId
+                    || '';
+                if (linkedId) formData.append('receiptId', linkedId);
+
+                const response = await fetch('/api/upload-passbook', {
+                    method: 'POST',
+                    body: formData   // browser sets multipart boundary automatically
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showFileStatus(`✅ "${data.fileName}" uploaded successfully!`, 'success');
+                    clearFileSelection();
+                    _reUploadReceiptId = null;   // reset re-upload target
+                    // Refresh the receipts table to show updated passbook link
+                    loadVolunteerPassbooks();
+                } else {
+                    const err = await response.json().catch(() => ({}));
+                    showFileStatus('❌ Upload failed: ' + (err.message || response.statusText), 'error');
+                }
+            } catch (netErr) {
+                showFileStatus('❌ Cannot reach the server. Make sure server.js is running on port 3000.', 'error');
+                console.error('File upload error:', netErr);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-upload" style="margin-right:8px;"></i>Upload Now';
+            }
+        });
+
+        // ==================== DONOR SEARCH & SYNC ====================
+        // (showSection already handles donorSearch loading — no override needed)
+
+        // Load live record count for hero banner on page load
+        async function _loadHeroCount() {
+            try {
+                const res  = await fetch('/api/donations');
+                if (!res.ok) return;
+                const data = await res.json();
+                const count = (data.records || []).length;
+                const el    = document.getElementById('heroDonorCount');
+                const badge = document.getElementById('sidebarDonorBadge');
+                if (el) el.textContent = count > 0
+                    ? `${count.toLocaleString('en-IN')} Records Available`
+                    : 'No data uploaded yet';
+                if (badge && count > 0) badge.style.display = '';
+            } catch (_) { /* server offline — ignore */ }
+        }
+        _loadHeroCount();
+
+        // BroadcastChannel: auto-refresh when admin uploads new data
+        try {
+            const _donBC = new BroadcastChannel('donations_update');
+            _donBC.onmessage = function(e) {
+                if (e.data && e.data.type === 'refresh') {
+                    // Silently refresh donor data in background
+                    if (typeof loadDonorSearch === 'function') loadDonorSearch();
+                    // Update hero count badge
+                    _loadHeroCount();
+                    // Visual pulse on the banner to indicate new data
+                    const banner = document.getElementById('donorHeroBanner');
+                    if (banner) {
+                        banner.style.boxShadow = '0 0 0 4px rgba(255,255,255,.6), 0 6px 28px rgba(26,35,126,.5)';
+                        const countEl = document.getElementById('heroDonorCount');
+                        if (countEl) countEl.textContent = `\u2705 ${(e.data.uploaded||0).toLocaleString('en-IN')} new records synced!`;
+                        setTimeout(() => {
+                            banner.style.boxShadow = '0 6px 28px rgba(26,35,126,.3)';
+                            _loadHeroCount(); // restore real count
+                        }, 4000);
+                    }
+                }
+            };
+        } catch (_) { /* BroadcastChannel not available */ }
+        // ==================== PAUTI BOOK SLIP SUBMISSION ====================
+
+        function pautiToggleCheck() {
+            const mode = document.getElementById('psMode')?.value;
+            const grp  = document.getElementById('psCheckGroup');
+            if (grp) grp.style.display = mode === 'check' ? '' : 'none';
+        }
+
+        function _pautiStatus(msg, type) {
+            const el = document.getElementById('pautiSlipStatus');
+            if (!el) return;
+            el.style.display    = '';
+            el.style.background = type === 'success' ? '#E8F5E9' : '#FFEBEE';
+            el.style.color      = type === 'success' ? '#1B5E20' : '#B71C1C';
+            el.textContent      = msg;
+        }
+
+        document.getElementById('pautiSlipForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const name   = document.getElementById('psName')?.value.trim();
+            const amount = parseFloat(document.getElementById('psAmount')?.value || '');
+            const mode   = document.getElementById('psMode')?.value || 'cash';
+            const check  = document.getElementById('psCheck')?.value.trim() || null;
+
+            if (!name)           { _pautiStatus('❌ Donor name is required.', 'error'); return; }
+            if (!amount || amount <= 0) { _pautiStatus('❌ A valid positive amount is required.', 'error'); return; }
+
+            const btn = document.getElementById('pautiSlipBtn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Submitting…'; }
+
+            try {
+                const res  = await fetch('/api/pauti-books/next-slip', {
+                    method : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body   : JSON.stringify({
+                        donorName       : name,
+                        amount          : amount,
+                        paymentMode     : mode,
+                        checkNumber     : check,
+                        uploadedBy      : currentUser?.name  || 'Unknown',
+                        uploadedByUserId: currentUser?.id    || null,
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    // Hide form, show confirmation
+                    document.getElementById('pautiSlipStatus').style.display = 'none';
+                    document.getElementById('pautiSlipForm').reset();
+                    pautiToggleCheck();
+                    const confirm = document.getElementById('pautiSlipConfirm');
+                    const numEl   = document.getElementById('pautiConfirmSlipNum');
+                    const bookEl  = document.getElementById('pautiConfirmBook');
+                    if (numEl)  numEl.textContent  = `Slip #${data.slipNumber}`;
+                    if (bookEl) bookEl.textContent = `Book #${data.bookNumber} (Slips ${data.slipsFrom}–${data.slipsTo})`;
+                    if (confirm) { confirm.style.display = ''; confirm.scrollIntoView({ behavior:'smooth', block:'center' }); }
+                    // Auto-hide confirmation after 8s
+                    setTimeout(() => { if (confirm) confirm.style.display = 'none'; }, 8000);
+                    // Refresh my slips list
+                    loadMyPautiSlips();
+                } else {
+                    _pautiStatus('❌ ' + (data.message || 'Could not claim slip. Try again.'), 'error');
+                }
+            } catch (err) {
+                _pautiStatus('❌ Cannot reach server. Make sure server.js is running on port 3000.', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit & Claim Slip'; }
+            }
+        });
+
+        async function loadMyPautiSlips() {
+            const tbody = document.getElementById('myPautiSlipsList');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;">Loading…</td></tr>';
+            try {
+                const res  = await fetch('/api/pauti-books');
+                const data = await res.json();
+                const myName   = (currentUser?.name  || '').toLowerCase();
+                const myUserId = currentUser?.id || null;
+                const mySlips  = [];
+                (data.pautiBooks || []).forEach(book => {
+                    (book.slips || []).forEach(slip => {
+                        if (!slip.uploadedAt || slip.deleted) return;
+                        const matchName = slip.uploadedBy && slip.uploadedBy.toLowerCase() === myName;
+                        const matchId   = myUserId && slip.uploadedByUserId && String(slip.uploadedByUserId) === String(myUserId);
+                        if (matchName || matchId) {
+                            mySlips.push({ ...slip, bookNumber: book.bookNumber });
+                        }
+                    });
+                });
+                mySlips.sort((a, b) => b.slipNumber - a.slipNumber);
+                if (mySlips.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#aaa;">No slips submitted by you yet.</td></tr>';
+                    return;
+                }
+                const fmt = n => n ? '₹' + Number(n).toLocaleString('en-IN') : '—';
+                tbody.innerHTML = mySlips.map((s, i) => {
+                    const bg   = i % 2 === 0 ? '#fff' : '#f9fafe';
+                    const date = s.uploadedAt
+                        ? new Date(s.uploadedAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })
+                        : '—';
+                    const mode = s.paymentMode
+                        ? `<span style="background:#EEF2FF;color:#3730A3;padding:2px 8px;border-radius:12px;font-size:.78rem;font-weight:600;">${s.paymentMode.toUpperCase()}</span>`
+                        : '—';
+                    return `<tr style="background:${bg};">
+                        <td><strong style="color:var(--primary-color);">#${s.slipNumber}</strong></td>
+                        <td>Book #${s.bookNumber}</td>
+                        <td>${s.donorName || '—'}</td>
+                        <td><strong style="color:#2E7D32;">${fmt(s.amount)}</strong></td>
+                        <td>${mode}</td>
+                        <td style="font-size:.85rem;color:#777;">${date}</td>
+                    </tr>`;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#c0392b;">⚠ Cannot reach server.</td></tr>';
+            }
+        }
+
+        // ── Receipt photo file handler — auto-compresses to <1 MB ─────────
+        let _deReceiptPhotoFile = null;
+        document.getElementById('deReceiptPhotoInput')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) { alert('Please select a JPG or PNG image.'); this.value = ''; return; }
+            _deReceiptPhotoFile = null;
+            _compressImage(file, 950, function(blob) {
+                if (!blob) { alert('Could not process image.'); return; }
+                _deReceiptPhotoFile = blob;
+                const thumb = document.getElementById('deReceiptPhotoThumb');
+                const name  = document.getElementById('deReceiptPhotoName');
+                const prev  = document.getElementById('deReceiptPhotoPreview');
+                // Revoke previous object URL to prevent memory leak
+                if (thumb && thumb.src && thumb.src.startsWith('blob:')) URL.revokeObjectURL(thumb.src);
+                if (thumb) thumb.src = URL.createObjectURL(blob);
+                if (name)  name.textContent = '\u2705 ' + file.name.replace(/\.[^.]+$/, '') + '.jpg (' +
+                    (blob.size < 1048576 ? (blob.size/1024).toFixed(1) + ' KB' : (blob.size/1048576).toFixed(2) + ' MB') +
+                    (file.size > blob.size ? ', compressed' : '') + ')';
+                if (prev)  prev.style.display = 'flex';
+            });
+        });
+        function deClearReceiptPhoto() {
+            _deReceiptPhotoFile = null;
+            const inp = document.getElementById('deReceiptPhotoInput');
+            if (inp) inp.value = '';
+            const prev = document.getElementById('deReceiptPhotoPreview');
+            if (prev) prev.style.display = 'none';
+            const thumb = document.getElementById('deReceiptPhotoThumb');
+            if (thumb && thumb.src && thumb.src.startsWith('blob:')) URL.revokeObjectURL(thumb.src);
+            if (thumb) thumb.src = '';
+        }
+
+    </script>
+
+    <!-- Donor Search Section -->
+    <script src="donations.js?v=3"></script>
+    <script src="tshirts.js?v=1780009246876"></script>
+    <script>
+    // ── Volunteer Donor Search ─────────────────────────────────────────────────
+    // Volunteers see ONLY 4 key fields: Donor Name, Address, Landmark, Amount.
+    // All financial columns are hidden. Records grouped by year.
+
+    let _dsRecords  = [], _dsColumns = [], _dsFiltered = [], _dsPage = 1;
+    let _dsAmtCol   = null;  // detected amount column
+    let _dsYearCol  = null;  // detected year column
+    let _dsNameCol  = null;  // detected donor name column
+    let _dsAddrCols = [];    // detected address/location columns
+    let _dsLandCols = [];    // detected landmark/building columns
+    let _dsVolCols  = [];    // final 4 columns shown to volunteer
+    const DS_PAGE   = 30;
+    let _dsFiltersOpen = false;
+
+    // ── Keyword detectors ───────────────────────────────────────────────────────
+    const _KW_AMT   = /amount|amt|donation|don|rupee|\brs\b|inr/i;
+    const _KW_YEAR  = /year|yr|varshe|वर्ष/i;
+    const _KW_NAME  = /donor|name|naam|नाम/i;
+    const _KW_ADDR  = /road|landmark|street|ward|locality|location|address|addr|nagar|galli|lane|plot|flat|house|sector/i;
+    const _KW_LAND  = /landmark|building|bldg|society|chawl|complex|tower|apt|apartment|opposite|near/i;
+
+    function _dsDetectCols() {
+        _dsAmtCol   = _dsColumns.find(c => _KW_AMT.test(c))  || null;
+        _dsYearCol  = _dsColumns.find(c => _KW_YEAR.test(c)) || null;
+        _dsNameCol  = _dsColumns.find(c => _KW_NAME.test(c)) || null;
+        _dsAddrCols = _dsColumns.filter(c => _KW_ADDR.test(c) && c !== _dsAmtCol);
+        _dsLandCols = _dsColumns.filter(c => _KW_LAND.test(c) && c !== _dsAmtCol);
+        // If no dedicated landmark col, pull last address col
+        if (_dsLandCols.length === 0 && _dsAddrCols.length > 1) {
+            _dsLandCols = [_dsAddrCols[_dsAddrCols.length - 1]];
+        }
+        // Build the 4-column volunteer display set (no duplicates, ordered)
+        const seen = new Set();
+        _dsVolCols  = [];
+        const addCol = c => { if (c && !seen.has(c)) { seen.add(c); _dsVolCols.push(c); } };
+        addCol(_dsNameCol);
+        _dsAddrCols.forEach(addCol);
+        _dsLandCols.forEach(addCol);
+        addCol(_dsAmtCol);
+        // Trim to 4 columns max (Name, best-addr, landmark, amount)
+        if (_dsVolCols.length > 4) {
+            const keep = [];
+            if (_dsNameCol)             keep.push(_dsNameCol);
+            if (_dsAddrCols.length)     keep.push(_dsAddrCols[0]);
+            if (_dsLandCols.length)     keep.push(_dsLandCols[0]);
+            if (_dsAmtCol)              keep.push(_dsAmtCol);
+            _dsVolCols = [...new Set(keep)];
+        }
+        // Fallback: if still empty, show up to 4 non-financial cols
+        if (_dsVolCols.length === 0) {
+            const fin = /balance|cash|bank|withdrawn|collection|expense|growth|notes/i;
+            _dsVolCols = _dsColumns.filter(c => !fin.test(c)).slice(0, 4);
+        }
+    }
+
+    // Toggle filter panel
+    function dsToggleFilters() {
+        _dsFiltersOpen = !_dsFiltersOpen;
+        const panel = document.getElementById('dsFilterPanel');
+        const lbl   = document.getElementById('dsToggleBtnLabel');
+        const btn   = document.getElementById('dsToggleFiltersBtn');
+        if (panel) panel.style.display  = _dsFiltersOpen ? '' : 'none';
+        if (lbl)   lbl.textContent      = _dsFiltersOpen ? 'Hide Filters' : 'Filters';
+        if (btn)   btn.style.background = _dsFiltersOpen ? '#e8eaf6' : '#f8f9fa';
+    }
+
+    // ── Get year value from a record ─────────────────────────────────────────
+    function _dsGetYear(r) {
+        if (_dsYearCol && r[_dsYearCol] !== undefined && String(r[_dsYearCol]).trim() !== '')
+            return String(r[_dsYearCol]).trim();
+        for (const col of _dsColumns) {
+            const m = String(r[col] ?? '').match(/\b(19|20)\d{2}\b/);
+            if (m) return m[0];
+        }
+        return 'Unknown';
+    }
+
+    // ── Group records by year, newest first ──────────────────────────────────
+    function _dsGroupByYear(records) {
+        const map = new Map();
+        records.forEach(r => {
+            const yr = _dsGetYear(r);
+            if (!map.has(yr)) map.set(yr, []);
+            map.get(yr).push(r);
+        });
+        return new Map([...map.entries()].sort((a, b) => b[0].localeCompare(a[0])));
+    }
+
+    // Load data from server
+    async function loadDonorSearch() {
+        const msgEl = document.getElementById('dsLoadingMsg');
+        const wrap  = document.getElementById('dsTableWrap');
+        if (msgEl) {
+            msgEl.style.display = '';
+            msgEl.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:1.3rem;margin-bottom:10px;display:block;color:#ccc;"></i>Loading donor records\u2026';
+        }
+        if (wrap) wrap.style.display = 'none';
+        try {
+            const res  = await fetch('/api/donations');
+            const data = await res.json();
+            _dsColumns  = data.columns || [];
+            _dsRecords  = data.records || [];
+            _dsFiltered = _dsRecords;
+            _dsPage     = 1;
+            _dsDetectCols();
+
+            if (_dsVolCols.length > 0) {
+                dsApplyFilters();
+                if (msgEl) msgEl.style.display = 'none';
+            } else if (_dsColumns.length > 0) {
+                if (msgEl) {
+                    msgEl.style.display = '';
+                    msgEl.innerHTML = '<i class="fas fa-lock" style="font-size:1.4rem;opacity:.4;margin-bottom:8px;display:block;color:#888;"></i>No donor details available in current dataset.';
+                }
+            } else {
+                if (msgEl) {
+                    msgEl.style.display = '';
+                    msgEl.innerHTML = '<i class="fas fa-cloud-upload-alt" style="font-size:1.8rem;opacity:.3;margin-bottom:8px;display:block;"></i>No data uploaded yet \u2014 ask your admin to upload the Excel file.';
+                }
+            }
+        } catch (e) {
+            if (msgEl) {
+                msgEl.style.display = '';
+                msgEl.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size:1.4rem;opacity:.5;margin-bottom:8px;display:block;color:#E67E22;"></i>\u26a0 Cannot connect to server.';
+            }
+        }
+    }
+
+    // ── Apply 3 filters (Location, Landmark, Amount) + global search ─────────
+    function dsApplyFilters() {
+        const gq  = (document.getElementById('dsGlobalSearch')?.value || '').toLowerCase().trim();
+        const locQ = (document.getElementById('dsLocSearch')?.value  || '').toLowerCase().trim();
+        const lanQ = (document.getElementById('dsLandSearch')?.value || '').toLowerCase().trim();
+        const mn  = parseFloat(document.getElementById('dsAmtMin')?.value || '') || null;
+        const mx  = parseFloat(document.getElementById('dsAmtMax')?.value || '') || null;
+
+        _dsFiltered = _dsRecords.filter(r => {
+            // Location filter — search address columns
+            if (locQ) {
+                const hay = (_dsAddrCols.length ? _dsAddrCols : _dsColumns)
+                    .map(c => String(r[c] ?? '')).join(' ').toLowerCase();
+                if (!hay.includes(locQ)) return false;
+            }
+            // Landmark filter — search landmark/building columns
+            if (lanQ) {
+                const hay = (_dsLandCols.length ? _dsLandCols : _dsColumns)
+                    .map(c => String(r[c] ?? '')).join(' ').toLowerCase();
+                if (!hay.includes(lanQ)) return false;
+            }
+            // Amount range
+            if (_dsAmtCol && (mn !== null || mx !== null)) {
+                const a = parseFloat(r[_dsAmtCol]) || 0;
+                if (mn !== null && a < mn) return false;
+                if (mx !== null && a > mx) return false;
+            }
+            // Global search — across volunteer-visible columns only
+            if (gq) {
+                const hay = _dsVolCols.map(c => String(r[c] ?? '')).join(' ').toLowerCase();
+                if (!hay.includes(gq)) return false;
+            }
+            return true;
+        });
+
+        const sum = _dsAmtCol ? _dsFiltered.reduce((s, r) => s + (parseFloat(r[_dsAmtCol]) || 0), 0) : 0;
+        const ct  = document.getElementById('dsChipTotal');
+        const cm  = document.getElementById('dsChipMatch');
+        const cs  = document.getElementById('dsChipSum');
+        if (ct) ct.textContent = `${_dsRecords.length.toLocaleString('en-IN')} total`;
+        if (cm) cm.textContent = `${_dsFiltered.length.toLocaleString('en-IN')} shown`;
+        if (cs) cs.textContent = _dsAmtCol ? '\u20b9' + sum.toLocaleString('en-IN') : '';
+        _dsPage = 1;
+        dsRenderTable();
+    }
+
+    // Clear all 3 filters + global search
+    function dsClearFilters() {
+        ['dsGlobalSearch','dsLocSearch','dsLandSearch','dsAmtMin','dsAmtMax'].forEach(id => {
+            const e = document.getElementById(id); if (e) e.value = '';
+        });
+        dsApplyFilters();
+    }
+
+    // ── Render table — 4 volunteer columns, grouped by year ──────────────────
+    function dsRenderTable() {
+        const thead = document.getElementById('dsThead');
+        const tbody = document.getElementById('dsTbody');
+        const wrap  = document.getElementById('dsTableWrap');
+        const noRes = document.getElementById('dsNoResults');
+        const msgEl = document.getElementById('dsLoadingMsg');
+        if (!thead || !tbody) return;
+
+        if (_dsFiltered.length === 0 || _dsVolCols.length === 0) {
+            if (wrap)  wrap.style.display  = 'none';
+            if (noRes) noRes.style.display = '';
+            if (msgEl) msgEl.style.display = 'none';
+            return;
+        }
+        if (wrap)  wrap.style.display  = '';
+        if (noRes) noRes.style.display = 'none';
+        if (msgEl) msgEl.style.display = 'none';
+
+        // Fixed column headers (friendly labels)
+        const colLabels = _dsVolCols.map(c => c); // use actual col names from Excel
+        thead.innerHTML = '<tr>' + colLabels.map(c => `<th>${c}</th>`).join('') + '</tr>';
+
+        // Group filtered records by year
+        const groups   = _dsGroupByYear(_dsFiltered);
+        const flatRows = [];
+        groups.forEach((recs, yr) => {
+            const yearSum = _dsAmtCol
+                ? recs.reduce((s, r) => s + (parseFloat(r[_dsAmtCol]) || 0), 0)
+                : null;
+            flatRows.push({ type: 'header', yr, count: recs.length, sum: yearSum });
+            recs.forEach(r => flatRows.push({ type: 'row', r }));
+        });
+
+        const start    = (_dsPage - 1) * DS_PAGE;
+        const pageRows = flatRows.slice(start, start + DS_PAGE);
+
+        tbody.innerHTML = pageRows.map(item => {
+            if (item.type === 'header') {
+                const sumTxt = item.sum !== null
+                    ? ` &nbsp;&middot;&nbsp; <span style="color:#27AE60;font-weight:700;">\u20b9${item.sum.toLocaleString('en-IN')}</span>`
+                    : '';
+                return `<tr>
+                    <td colspan="${_dsVolCols.length}" class="ds-year-header"
+                        style="padding:9px 12px;background:linear-gradient(90deg,#1a237e0a,transparent);border-top:2px solid #e8eaf0;border-bottom:1px solid #e8eaf0;">
+                        <span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;width:100%;">
+                            <span style="background:linear-gradient(135deg, var(--primary-color), var(--accent-color));color:#fff;border-radius:16px;padding:2px 12px;font-size:.76rem;font-weight:700;letter-spacing:.04em;">
+                                ${item.yr}
+                            </span>
+                            <span style="font-size:.8rem;color:#666;">${item.count.toLocaleString('en-IN')} donors${sumTxt}</span>
+                        </span>
+                    </td>
+                </tr>`;
+            }
+            const { r } = item;
+            const cells = _dsVolCols.map(col => {
+                const v     = r[col] ?? '';
+                const isAmt = col === _dsAmtCol;
+                const disp  = isAmt && v !== ''
+                    ? `<strong style="color:#2E7D32;">\u20b9${Number(v).toLocaleString('en-IN')}</strong>`
+                    : `<span title="${String(v).replace(/"/g,'&quot;')}">${v}</span>`;
+                return `<td data-label="${String(col).replace(/"/g,'&quot;')}">${disp}</td>`;
+            }).join('');
+            return `<tr onmouseover="this.style.background='#eef2ff'" onmouseout="this.style.background=''">${cells}</tr>`;
+        }).join('');
+
+        // Pagination
+        const tp = Math.ceil(flatRows.length / DS_PAGE);
+        const pi = document.getElementById('dsPaginationInfo');
+        const pb = document.getElementById('dsPaginationBtns');
+        if (pi) pi.textContent = `${start+1}\u2013${Math.min(start+DS_PAGE, flatRows.length)} of ${_dsFiltered.length.toLocaleString('en-IN')} records`;
+        if (pb) {
+            pb.innerHTML = '';
+            if (tp > 1) {
+                const mk = (lbl, p, active) => {
+                    const b = document.createElement('button');
+                    b.innerHTML = lbl;
+                    b.style.cssText = `padding:4px 10px;border:1.5px solid ${active?'var(--primary-color)':'#ddd'};border-radius:6px;background:${active?'var(--primary-color)':'#fff'};color:${active?'#fff':'#333'};cursor:pointer;font-size:.78rem;`;
+                    if (!active) { b.onmouseover=()=>b.style.background='#f0f2ff'; b.onmouseout=()=>b.style.background='#fff'; }
+                    b.onclick = () => { _dsPage = p; dsRenderTable(); };
+                    return b;
+                };
+                if (_dsPage > 1) pb.appendChild(mk('\u2039', _dsPage - 1, false));
+                const lo = Math.max(1, _dsPage - 2), hi = Math.min(tp, _dsPage + 2);
+                if (lo > 1) pb.insertAdjacentHTML('beforeend','<span style="padding:0 4px;color:#aaa;font-size:.78rem;">\u2026</span>');
+                for (let p = lo; p <= hi; p++) pb.appendChild(mk(p, p, p === _dsPage));
+                if (hi < tp) pb.insertAdjacentHTML('beforeend','<span style="padding:0 4px;color:#aaa;font-size:.78rem;">\u2026</span>');
+                if (_dsPage < tp) pb.appendChild(mk('\u203a', _dsPage + 1, false));
+            }
+        }
+    }
+
+    // CSV export — volunteer columns only
+    function dsExportCSV() {
+        if (!_dsFiltered.length || !_dsVolCols.length) return;
+        const q   = v => `"${String(v??'').replace(/"/g,'""')}"`;
+        const csv = '\uFEFF' + [
+            _dsVolCols.map(q).join(','),
+            ..._dsFiltered.map(r => _dsVolCols.map(c => q(r[c])).join(','))
+        ].join('\r\n');
+        const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+        const a   = Object.assign(document.createElement('a'), {
+            href: url,
+            download: `donors_${new Date().toISOString().slice(0,10)}.csv`
+        });
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+    
+    // ══════════════════════════════════════════════════════
+    // ── DONATION ENTRY — full JS ──────────────────────────
+    // ══════════════════════════════════════════════════════
+
+    // ── Live clock (only if element exists) ────────────────────
+    (function deStartClock() {
+        const cl = document.getElementById('deLiveClock');
+        const dt = document.getElementById('deLiveDate');
+        if (!cl && !dt) return;
+        function tick() {
+            const now = new Date();
+            if (cl) cl.textContent = now.toLocaleTimeString('en-IN', { hour12: false });
+            if (dt) dt.textContent = now.toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+        }
+        tick();
+        setInterval(tick, 1000);
+    })();
+
+    // ── Book dropdown (Books 1–N) ──────────────────────────
+    function dePopulateBooks() {
+        const sel = document.getElementById('deBookNumber');
+        const bType = document.querySelector('input[name="deBookType"]:checked')?.value || 'New';
+        if (!sel) return;
+        sel.innerHTML = '<option value="">— Select Book —</option>';
+        const maxBooks = bType === 'Old' ? (window._deMaxOldBooks || 30) : (window._deMaxNewBooks || 50);
+        for (let b = 1; b <= maxBooks; b++) {
+            const from = (b - 1) * 50 + 1, to = b * 50;
+            sel.innerHTML += `<option value="${b}">Book ${b}  (Receipts ${from}–${to})</option>`;
+        }
+    }
+
+    // ── When book changes, populate receipt dropdown ─────────
+    async function deOnBookChange() {
+        const bn  = Number(document.getElementById('deBookNumber').value);
+        const sel = document.getElementById('deReceiptNumber');
+        if (!bn) { sel.innerHTML = '<option value="">— Select Book first —</option>'; sel.disabled = true; return; }
+        sel.disabled = true;
+        sel.innerHTML = '<option value="">Loading…</option>';
+        const from = (bn - 1) * 50 + 1, to = bn * 50;
+        let used = [];
+        const bType = document.querySelector('input[name="deBookType"]:checked')?.value || 'New';
+        try {
+            const r = await fetch(`/api/donation-entries/used-receipts/${bn}?type=${bType}`);
+            const d = await r.json();
+            used = d.usedReceipts || [];
+        } catch(e) {}
+        sel.innerHTML = '<option value="">— Select Receipt —</option>';
+        for (let n = from; n <= to; n++) {
+            const taken = used.includes(n);
+            sel.innerHTML += `<option value="${n}" ${taken ? 'disabled style="color:#ccc;"' : ''}>${n}${taken ? ' (used)' : ''}</option>`;
+        }
+        sel.disabled = false;
+    }
+
+    // ── Donor type toggle ────────────────────────────────────
+    function deSetDonorType(type) {
+        document.getElementById('deDonorType').value = type;
+        const indActive = type === 'Individual';
+        const activeStyle = 'display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid var(--primary-color);border-radius:16px;cursor:pointer;font-weight:600;font-size:.82rem;background:var(--primary-color);color:#fff;transition:all .2s;';
+        const inactiveStyle = 'display:flex;align-items:center;gap:6px;padding:7px 18px;border:2px solid #ddd;border-radius:16px;cursor:pointer;font-weight:600;font-size:.82rem;background:#f9f9f9;color:#555;transition:all .2s;';
+        document.getElementById('deBtnInd').style.cssText = indActive  ? activeStyle : inactiveStyle;
+        document.getElementById('deBtnBiz').style.cssText = !indActive ? activeStyle : inactiveStyle;
+        document.getElementById('deIndFields').style.display = indActive  ? 'grid' : 'none';
+        document.getElementById('deBizFields').style.display = !indActive ? 'block' : 'none';
+    }
+
+    // ── Payment mode toggle ──────────────────────────────────
+    const _deModes = { Cash:'deModeCash', Cheque:'deModeChq', UPI:'deModeUPI', RTGS:'deModeRTGS', Balance:'deModeBal' };
+    const _deRefLabels = { Cash:'Reference Number', Cheque:'Cheque Number', UPI:'UPI / Transaction ID', RTGS:'RTGS Reference Number', Balance:'Recovery Notes / Reference' };
+    function deSetMode(mode) {
+        document.getElementById('dePaymentMode').value = mode;
+        Object.entries(_deModes).forEach(([m, id]) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const active = m === mode;
+            el.style.background = active ? 'var(--primary-color)' : '#f9f9f9';
+            el.style.color      = active ? '#fff' : '#555';
+            el.style.border     = active ? '2px solid var(--primary-color)' : '2px solid #ddd';
+        });
+        const lbl = document.getElementById('deRefLabel');
+        if (lbl) {
+            const isReq = (mode === 'Cheque' || mode === 'RTGS');
+            const reqHtml = isReq ? '<span style="color:#e74c3c;font-weight:600;font-size:.85rem;">(required)</span>' : '<span style="color:#aaa;font-weight:400;font-size:.85rem;">(optional)</span>';
+            lbl.innerHTML = `${_deRefLabels[mode] || 'Reference Number'} ${reqHtml}`;
+        }
+    }
+
+    // ── Hierarchical Location Cascade ─────────────────────────────────────────────
+    let _deLandmarks = [], _deAreas = [], _deBuildings = [];
+
+    async function deLoadDropdowns() {
+        try {
+            const [aRes, saRes, bRes, sRes] = await Promise.all([
+                fetch('/api/landmarks'),
+                fetch('/api/areas'), fetch('/api/buildings'),
+                fetch('/api/settings')
+            ]);
+            const [aData, saData, bData, sData] = await Promise.all([
+                aRes.json(), saRes.json(), bRes.json(), sRes.json()
+            ]);
+            _deLandmarks = aData.landmarks || [];
+            _deAreas     = saData.areas    || [];
+            _deBuildings = bData.buildings || [];
+            // Store dynamic book limits globally
+            window._deMaxNewBooks = sData.maxNewBooks || 50;
+            window._deMaxOldBooks = sData.maxOldBooks || 30;
+            // Update radio labels
+            const lblNew = document.getElementById('deLblNewBooks');
+            const lblOld = document.getElementById('deLblOldBooks');
+            if (lblNew) lblNew.textContent = `New Book (${window._deMaxNewBooks} Books)`;
+            if (lblOld) lblOld.textContent = `Old Book (${window._deMaxOldBooks} Books)`;
+            // Repopulate book dropdown
+            dePopulateBooks();
+        } catch(e) {
+            _deLandmarks = []; _deAreas = []; _deBuildings = [];
+        }
+        // Populate landmark dropdown
+        var lSel = document.getElementById('deLandmark');
+        if (lSel) {
+            var cur = lSel.value;
+            lSel.innerHTML = '<option value="">— Select Landmark —</option>';
+            _deLandmarks.forEach(function(l) {
+                lSel.innerHTML += '<option value="' + l.name + '"' + (l.name === cur ? ' selected' : '') + '>' + l.name + '</option>';
+            });
+            var hint = document.getElementById('deLandmarkHint');
+            if (hint) hint.style.display = _deLandmarks.length === 0 ? '' : 'none';
+        }
+        // Show Manage button to admin only
+        var isAdmin = currentUser && currentUser.role === 'admin';
+        var manBtn = document.getElementById('deManageLocBtn');
+        if (manBtn) manBtn.style.display = isAdmin ? '' : 'none';
+        // Show landmark group, hide everything else
+        var lmGrp = document.getElementById('deLandmarkGroup');
+        if (lmGrp) lmGrp.style.display = '';
+        ['deAreaGroup','deBuildingGroup','deFlatNumberGroup'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.style.display = 'none';
+        });
+        dePopulateBooks();
+    }
+
+    function deOnLandmarkChange() {
+        var landmarkName = (document.getElementById('deLandmark') || {}).value || '';
+        // Reset area + building
+        ['deArea','deBuildingName','deFlatNumber'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.value = '';
+        });
+        ['deAreaGroup','deBuildingGroup','deFlatNumberGroup'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.style.display = 'none';
+        });
+        // Reset locked area badge
+        deUnlockArea(true);
+        if (!landmarkName) return;
+        var landmarkObj = _deLandmarks.find(function(a) { return a.name === landmarkName; });
+
+        // Populate Areas for this Landmark
+        var subs = landmarkObj
+            ? _deAreas.filter(function(s) { return s.landmarkId === landmarkObj.id; })
+            : [];
+        var subSel = document.getElementById('deArea');
+        if (subSel) {
+            subSel.innerHTML = '<option value="">— Select Area —</option>';
+            subs.forEach(function(s) {
+                subSel.innerHTML += '<option value="' + s.name + '" data-id="' + s.id + '">' + s.name + '</option>';
+            });
+        }
+        if (subs.length > 0) {
+            var aGrp = document.getElementById('deAreaGroup');
+            if (aGrp) { aGrp.style.display = ''; aGrp.style.animation = 'deSlideDown .25s ease'; }
+            // Hide the "select" and show it (the locked badge is hidden by default)
+            var locked = document.getElementById('deAreaLocked');
+            if (locked) locked.style.display = 'none';
+            if (subSel) subSel.style.display = '';
+        }
+
+        // Pre-populate buildings linked directly to this Landmark
+        dePopulateBuildingsForLandmark(landmarkObj);
+    }
+
+    function deOnAreaChange() {
+        var areaName = (document.getElementById('deArea') || {}).value || '';
+        // Reset building
+        ['deBuildingName','deFlatNumber'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.value = '';
+        });
+        ['deBuildingGroup','deFlatNumberGroup'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.style.display = 'none';
+        });
+        if (!areaName) {
+            deUnlockArea(true);
+            return;
+        }
+        // LOCK the area in — show badge, hide dropdown
+        var lockedDiv  = document.getElementById('deAreaLocked');
+        var lockedName = document.getElementById('deAreaLockedName');
+        var areaSel    = document.getElementById('deArea');
+        if (lockedName) lockedName.textContent = areaName;
+        if (lockedDiv)  { lockedDiv.style.display = 'flex'; }
+        if (areaSel)    areaSel.style.display = 'none';
+
+        // Populate buildings for this area
+        var landmarkName = (document.getElementById('deLandmark') || {}).value || '';
+        var landmarkObj  = _deLandmarks.find(function(l) { return l.name === landmarkName; });
+        var saObj = _deAreas.find(function(s) { return s.name === areaName; });
+        var bldgs = _deBuildings.filter(function(b) {
+            return (saObj && b.areaId === saObj.id) ||
+                   (landmarkObj && b.landmarkId === landmarkObj.id && !b.areaId);
+        });
+        deShowBuildings(bldgs);
+    }
+
+    function deUnlockArea(silent) {
+        var lockedDiv = document.getElementById('deAreaLocked');
+        var areaSel   = document.getElementById('deArea');
+        if (lockedDiv) lockedDiv.style.display = 'none';
+        if (areaSel)  { areaSel.style.display = ''; areaSel.value = ''; }
+        if (!silent) {
+            // reset buildings too
+            ['deBuildingName','deFlatNumber'].forEach(function(id) {
+                var el = document.getElementById(id); if (el) el.value = '';
+            });
+            ['deBuildingGroup','deFlatNumberGroup'].forEach(function(id) {
+                var el = document.getElementById(id); if (el) el.style.display = 'none';
+            });
+        }
+    }
+
+    function dePopulateBuildingsForLandmark(landmarkObj) {
+        var bldgs = landmarkObj
+            ? _deBuildings.filter(function(b) { return b.landmarkId === landmarkObj.id; })
+            : [];
+        // Show building group whether or not there are results
+        deShowBuildings(bldgs);
+    }
+
+    function deShowBuildings(bldgs) {
+        var bSel  = document.getElementById('deBuildingName');
+        var bHint = document.getElementById('deBuildingHint');
+        var bGrp  = document.getElementById('deBuildingGroup');
+        if (!bSel) return;
+        bSel.innerHTML = '<option value="">— Select Building (optional) —</option>';
+        bldgs.forEach(function(b) {
+            bSel.innerHTML += '<option value="' + b.name + '" data-id="' + b.id + '">' + b.name + '</option>';
+        });
+        if (bHint) bHint.style.display = bldgs.length === 0 ? '' : 'none';
+        if (bGrp) { bGrp.style.display = ''; bGrp.style.animation = 'deSlideDown .25s ease'; }
+    }
+
+    function deOnBuildingChange() {
+        var building  = (document.getElementById('deBuildingName') || {}).value || '';
+        var flatGroup = document.getElementById('deFlatNumberGroup');
+        if (!flatGroup) return;
+        if (building) { flatGroup.style.display = ''; flatGroup.style.animation = 'deSlideDown .25s ease'; }
+        else flatGroup.style.display = 'none';
+    }
+
+    // ── Admin: Open the Manage Locations modal ───────────────────────────────
+    async function deOpenManageModal() {
+        if (typeof adeLandmarkModal === 'function') {
+            adeLandmarkModal();
+        } else {
+            // Self-contained lightweight modal for dashboard context
+            const [rL, rA] = await Promise.all([fetch('/api/landmarks'), fetch('/api/areas')]);
+            const [dL, dA] = await Promise.all([rL.json(), rA.json()]);
+            let lms   = dL.landmarks || [];
+            let areas = dA.areas     || [];
+            let selLm = lms.length ? lms[0].id : null;
+
+            var existing = document.getElementById('deMgmtModal');
+            if (existing) existing.remove();
+            var modal = document.createElement('div');
+            modal.id = 'deMgmtModal';
+            modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:3000;align-items:flex-start;justify-content:center;padding-top:40px;overflow-y:auto;';
+
+            function renderMgmt() {
+                var lmObj = lms.find(function(l){ return l.id === selLm; });
+                var lmAreas = selLm ? areas.filter(function(a){ return a.landmarkId === selLm; }) : [];
+                var html = '<div style="background:#fff;border-radius:16px;padding:26px;width:94%;max-width:780px;box-shadow:0 8px 40px rgba(0,0,0,.24);margin-bottom:40px;">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;border-bottom:2px solid #f0f0f0;padding-bottom:12px;">';
+                html += '<h3 style="margin:0;font-size:1.1rem;color:#1a237e;"><i class="fas fa-sitemap" style="color:#F59E0B;margin-right:8px;"></i>Manage Locations</h3>';
+                html += '<span onclick="document.getElementById(\'deMgmtModal\').remove()" style="font-size:1.4rem;cursor:pointer;color:#999;">&times;</span>';
+                html += '</div>';
+                html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">';
+
+                // Col 1: Landmarks
+                html += '<div style="border-right:2px solid #f0f0f0;padding-right:18px;">';
+                html += '<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;color:#E65100;margin-bottom:10px;"><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>Landmarks</div>';
+                html += '<div style="display:flex;gap:6px;margin-bottom:10px;">';
+                html += '<input type="text" id="deMgmtLmInput" class="form-control" placeholder="New landmark" style="flex:1;font-size:.82rem;">';
+                html += '<button onclick="deMgmtAddLm()" style="padding:0 12px;border:none;border-radius:8px;background:#E65100;color:#fff;font-weight:700;cursor:pointer;">+ Add</button>';
+                html += '</div>';
+                html += '<div style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;">';
+                lms.forEach(function(l) {
+                    var isSel = l.id === selLm;
+                    html += '<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:' + (isSel?'#FFF3E0':'#f8f9fa') + ';border:2px solid ' + (isSel?'#F59E0B':'transparent') + ';border-radius:8px;cursor:pointer;" onclick="deMgmtSelLm(this)" data-lid="' + l.id + '">';
+                    html += '<span style="flex:1;font-weight:700;font-size:.85rem;color:' + (isSel?'#E65100':'#333') + '">' + l.name + '</span>';
+                    html += '<button onclick="event.stopPropagation();deMgmtRenLm(this)" data-lid="' + l.id + '" data-lname="' + l.name.replace(/"/g,'&quot;') + '" style="border:none;background:#E3F2FD;color:#1565C0;padding:3px 7px;border-radius:5px;cursor:pointer;font-size:.72rem;" title="Rename"><i class="fas fa-pen"></i></button>';
+                    html += '<button onclick="event.stopPropagation();deMgmtDelLm(this)" data-lid="' + l.id + '" style="border:none;background:#FFEBEE;color:#c0392b;padding:3px 7px;border-radius:5px;cursor:pointer;font-size:.72rem;" title="Delete"><i class="fas fa-trash"></i></button>';
+                    html += '</div>';
+                });
+                if (!lms.length) html += '<div style="color:#aaa;text-align:center;padding:16px;font-size:.83rem;">No landmarks yet.</div>';
+                html += '</div></div>';
+
+                // Col 2: Areas
+                html += '<div>';
+                html += '<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;color:#2E7D32;margin-bottom:10px;"><i class="fas fa-map" style="margin-right:5px;"></i>Areas' + (lmObj ? ' <span style="font-weight:400;text-transform:none;color:#888;">under ' + lmObj.name + '</span>' : '') + '</div>';
+                if (selLm) {
+                    html += '<div style="display:flex;gap:6px;margin-bottom:10px;">';
+                    html += '<input type="text" id="deMgmtAreaInput" class="form-control" placeholder="New area" style="flex:1;font-size:.82rem;">';
+                    html += '<button onclick="deMgmtAddArea(this)" data-lmid="' + selLm + '" style="padding:0 12px;border:none;border-radius:8px;background:#2E7D32;color:#fff;font-weight:700;cursor:pointer;">+ Add</button>';
+                    html += '</div>';
+                }
+                html += '<div style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;">';
+                lmAreas.forEach(function(a) {
+                    html += '<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:#f0fff4;border-radius:8px;">';
+                    html += '<span style="flex:1;font-weight:600;font-size:.85rem;">' + a.name + '</span>';
+                    html += '<button onclick="deMgmtRenArea(this)" data-aid="' + a.id + '" data-aname="' + a.name.replace(/"/g,'&quot;') + '" style="border:none;background:#E3F2FD;color:#1565C0;padding:3px 7px;border-radius:5px;cursor:pointer;font-size:.72rem;" title="Rename"><i class="fas fa-pen"></i></button>';
+                    html += '<button onclick="deMgmtDelArea(this)" data-aid="' + a.id + '" style="border:none;background:#FFEBEE;color:#c0392b;padding:3px 7px;border-radius:5px;cursor:pointer;font-size:.72rem;" title="Delete"><i class="fas fa-trash"></i></button>';
+                    html += '</div>';
+                });
+                if (!lmAreas.length && selLm) html += '<div style="color:#aaa;text-align:center;padding:16px;font-size:.83rem;">No areas yet. Add one above.</div>';
+                if (!selLm) html += '<div style="color:#aaa;text-align:center;padding:16px;font-size:.83rem;">Select a landmark first.</div>';
+                html += '</div></div>';
+
+                html += '</div>';
+                html += '<div style="margin-top:16px;font-size:.75rem;color:#888;text-align:center;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Changes take effect immediately across all volunteer forms.</div>';
+                html += '</div>';
+                modal.innerHTML = html;
+            }
+
+            window.deMgmtSelLm = function(el) { selLm = el.dataset.lid; renderMgmt(); };
+            window.deMgmtAddLm = async function() {
+                var name = ((document.getElementById('deMgmtLmInput')||{}).value||'').trim(); if(!name) return;
+                var r = await fetch('/api/landmarks', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name }) });
+                var d = await r.json();
+                if (r.ok && d.success) { lms.push(d.landmark); selLm = d.landmark.id; deLoadDropdowns(); renderMgmt(); }
+                else alert(d.message||'Could not add.');
+            };
+            window.deMgmtRenLm = async function(btn) {
+                var id = btn.dataset.lid; var nm = prompt('Rename landmark:', btn.dataset.lname); if(!nm||!nm.trim()) return;
+                var r = await fetch('/api/landmarks/'+encodeURIComponent(id), { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: nm.trim() }) });
+                var d = await r.json();
+                if (r.ok && d.success) { var i=lms.findIndex(function(l){return l.id===id;}); if(i>=0) lms[i].name=nm.trim(); deLoadDropdowns(); renderMgmt(); }
+                else alert(d.message||'Rename failed.');
+            };
+            window.deMgmtDelLm = async function(btn) {
+                var id = btn.dataset.lid;
+                if (!confirm('Delete this landmark and all its areas?')) return;
+                var r = await fetch('/api/landmarks/'+encodeURIComponent(id), { method:'DELETE' });
+                if (r.ok) { lms=lms.filter(function(l){return l.id!==id;}); areas=areas.filter(function(a){return a.landmarkId!==id;}); if(selLm===id) selLm=lms.length?lms[0].id:null; deLoadDropdowns(); renderMgmt(); }
+                else alert('Could not delete.');
+            };
+            window.deMgmtAddArea = async function(btn) {
+                var lmid = btn.dataset.lmid;
+                var name = ((document.getElementById('deMgmtAreaInput')||{}).value||'').trim(); if(!name) return;
+                var r = await fetch('/api/areas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name, landmarkId: lmid }) });
+                var d = await r.json();
+                if (r.ok && d.success) { areas.push(d.area); deLoadDropdowns(); renderMgmt(); }
+                else alert(d.message||'Could not add.');
+            };
+            window.deMgmtRenArea = async function(btn) {
+                var id = btn.dataset.aid; var nm = prompt('Rename area:', btn.dataset.aname); if(!nm||!nm.trim()) return;
+                var r = await fetch('/api/areas/'+encodeURIComponent(id), { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: nm.trim() }) });
+                var d = await r.json();
+                if (r.ok && d.success) { var i=areas.findIndex(function(a){return a.id===id;}); if(i>=0) areas[i].name=nm.trim(); deLoadDropdowns(); renderMgmt(); }
+                else alert(d.message||'Rename failed.');
+            };
+            window.deMgmtDelArea = async function(btn) {
+                var id = btn.dataset.aid;
+                if (!confirm('Delete this area?')) return;
+                var r = await fetch('/api/areas/'+encodeURIComponent(id), { method:'DELETE' });
+                if (r.ok) { areas=areas.filter(function(a){return a.id!==id;}); deLoadDropdowns(); renderMgmt(); }
+                else alert('Could not delete.');
+            };
+
+            renderMgmt();
+            document.body.appendChild(modal);
+            modal.addEventListener('click', function(ev) { if (ev.target === modal) modal.remove(); });
+        }
+    }
+
+    async function deAddLandmark() {
+        var name = prompt('Enter new Landmark name:');
+        if (!name || !name.trim()) return;
+        try {
+            var r = await fetch('/api/landmarks', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name: name.trim() }) });
+            var d = await r.json();
+            if (r.ok && d.success) {
+                _deLandmarks.push(d.landmark);
+                var lSel = document.getElementById('deLandmark');
+                if (lSel) { lSel.innerHTML += '<option value="' + d.landmark.name + '">' + d.landmark.name + '</option>'; lSel.value = d.landmark.name; }
+                var hint = document.getElementById('deLandmarkHint');
+                if (hint) hint.style.display = 'none';
+                deOnLandmarkChange();
+            } else { alert(d.message || 'Could not add landmark.'); }
+        } catch(e) { alert('Server error.'); }
+    }
+
+    async function deAddBuilding() {
+        var name = prompt('Enter new Building name:');
+        if (!name || !name.trim()) return;
+        var areaName = (document.getElementById('deArea') || {}).value || '';
+        var saObj = areaName ? _deAreas.find(function(s) { return s.name === areaName; }) : null;
+        var payload = { name: name.trim() };
+        if (saObj) payload.areaId = saObj.id;
+        try {
+            var r = await fetch('/api/buildings', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+            var d = await r.json();
+            if (r.ok && d.success) {
+                _deBuildings.push(d.building);
+                var bSel = document.getElementById('deBuildingName');
+                if (bSel) { bSel.innerHTML += '<option value="' + d.building.name + '">' + d.building.name + '</option>'; bSel.value = d.building.name; }
+                deOnBuildingChange();
+            } else { alert(d.message || 'Could not add building.'); }
+        } catch(e) { alert('Server error.'); }
+    }
+    document.getElementById('donationEntryForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('deSubmitBtn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Saving\u2026'; }
+
+        // ── Build payload with null-safe reads ──────────────────
+        let payload;
+        try {
+            const donorType = (document.getElementById('deDonorType')?.value || 'Individual');
+            const getVal  = id => document.getElementById(id)?.value ?? '';
+            const getTrim = id => getVal(id).trim();
+
+            const lmVal = getVal('deLandmark');
+            if (!lmVal) throw new Error('Landmark is mandatory.');
+            const amtVal = getVal('deAmount');
+            if (amtVal === '') throw new Error('Donation Amount is mandatory.');
+            const pMode = getVal('dePaymentMode') || 'Cash';
+            const refNum = getTrim('deReference');
+            if (pMode === 'Cheque' && !refNum) throw new Error('Cheque number is mandatory for Cheque payments.');
+            if (pMode === 'RTGS' && !refNum) throw new Error('Transaction ID / Reference number is mandatory for RTGS payments.');
+
+            payload = {
+                bookNumber      : Number(getVal('deBookNumber')),
+                receiptNumber   : Number(getVal('deReceiptNumber')),
+                bookType        : document.querySelector('input[name="deBookType"]:checked')?.value || 'New',
+                donorType,
+                firstName       : donorType === 'Individual' ? getTrim('deFirstName').toUpperCase()    : null,
+                middleName      : donorType === 'Individual' ? getTrim('deMiddleName').toUpperCase()   : null,
+                lastName        : donorType === 'Individual' ? getTrim('deLastName').toUpperCase()     : null,
+                businessName    : donorType === 'Business'   ? getTrim('deBusinessName').toUpperCase(): null,
+                whatsappNumber  : getTrim('deWhatsapp')  || null,
+                mobileNumber    : getTrim('deMobile')    || null,
+                mailId          : getTrim('deMail')      || null,
+                buildingName    : getVal('deBuildingName') || null,
+                flatNumber      : getTrim('deFlatNumber') || null,
+                landmark            : getVal('deLandmark')         || null,
+                area         : getVal('deArea')      || null,
+                landmark        : getVal('deLandmark')     || null,
+                amount          : getVal('deAmount') !== '' ? Number(getVal('deAmount')) : null,
+                paymentMode     : getVal('dePaymentMode') || 'Cash',
+                referenceNumber : getTrim('deReference') || null,
+                submittedBy     : currentUser ? currentUser.name : null,
+                submittedByUserId: currentUser ? currentUser.id  : null,
+            };
+        } catch (buildErr) {
+            console.error('[DE Form] Payload build error:', buildErr);
+            deShowStatus('\u274c Form error: ' + buildErr.message, 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Submit Entry'; }
+            return;
+        }
+
+        // ── Submit to server ─────────────────────────────────────
+        try {
+            console.log('[DE Form] Submitting payload:', payload);
+            const res  = await fetch('/api/donation-entries', {
+                method : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body   : JSON.stringify(payload)
+            });
+            const data = await res.json();
+            console.log('[DE Form] Server response:', res.status, data);
+            if (res.ok && data.success) {
+                // Upload passbook photo if one was captured
+                if (_pbDocBlob && data.entry && data.entry.entryId) {
+                    try {
+                        const fd = new FormData();
+                        fd.append('passbook', _pbDocBlob, (document.getElementById('pbDocFileName')?.textContent || 'receipt.jpg'));
+                        fd.append('userId',    currentUser ? String(currentUser.id)   : '');
+                        fd.append('userName',  currentUser ? currentUser.name : '');
+                        fd.append('entryId',   data.entry.entryId);
+                        await fetch('/api/upload-passbook', { method: 'POST', body: fd });
+                        pbClearDoc();
+                    } catch(_) { /* photo upload failure is non-blocking */ }
+                }
+                deShowStatus(`\u2705 Entry saved! Book ${data.entry.bookNumber}, Receipt #${data.entry.receiptNumber}`, 'success');
+                // Save receipt snapshot & capture preview BEFORE resetting form so #de_rcg_receipt is still populated
+                try { await de_rcg_saveSnapshot(data.entry.entryId); } catch(_) {}
+                this.reset();
+                deSetDonorType('Individual');
+                deSetMode('Cash');
+                const rSel = document.getElementById('deReceiptNumber');
+                if (rSel) { rSel.innerHTML = '<option value="">\u2014 Select Book first \u2014</option>'; rSel.disabled = true; }
+                await deLoadMyEntries();
+            } else {
+        // ── Volunteer Entries Table (Mirrored from Admin) ────────────────────────
+    let _vdeAll = [];
+    let _vdeFiltered = [];
+
+    async function vdeLoad() {
+        const tbody = document.getElementById('vdeTbody');
+        const grid = document.getElementById('vdeCardGrid');
+        if(tbody) tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">Loading...</td></tr>';
+        if(grid) grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:30px;grid-column:1/-1;">Loading...</div>';
+        
+        try {
+            const uid = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : null;
+            const res = await fetch('/api/donation-entries?year=' + (window._vdeSelectedYear || 'active'));
+            const data = await res.json();
+            let entries = (data.entries || []).filter(e => !e.deleted);
+            
+            // Filter to only this volunteer's entries
+            if (uid && (typeof currentUser !== 'undefined') && currentUser.role !== 'admin') {
+                entries = entries.filter(e =>
+                    String(e.submittedByUserId) === String(uid) ||
+                    String(e.userId) === String(uid)
+                );
+            }
+            
+            entries.sort((a,b) => new Date(b.submittedAt||0) - new Date(a.submittedAt||0));
+            _vdeAll = entries;
+
+            // Populate filter options dynamically based on available data
+            const lmSet = new Set(), modeSet = new Set();
+            _vdeAll.forEach(e => {
+                if (e.landmark) lmSet.add(e.landmark);
+                if (e.paymentMode) modeSet.add(e.paymentMode);
+            });
+            const selLm = document.getElementById('vdeFilterLandmark');
+            if (selLm) {
+                const currentVal = selLm.value;
+                selLm.innerHTML = '<option value="">All Landmarks</option>' + 
+                    Array.from(lmSet).sort().map(l => '<option value="'+l+'">'+l+'</option>').join('');
+                selLm.value = currentVal;
+            }
+            const selMode = document.getElementById('vdeFilterMode');
+            if (selMode) {
+                const currentVal = selMode.value;
+                selMode.innerHTML = '<option value="">All Modes</option>' + 
+                    Array.from(modeSet).sort().map(m => '<option value="'+m+'">'+m+'</option>').join('');
+                selMode.value = currentVal;
+            }
+
+            vdeFilter();
+        } catch(err) {
+            console.error('vdeLoad err:', err);
+            if(tbody) tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#c00;padding:30px;">Error loading entries.</td></tr>';
+            if(grid) grid.innerHTML = '<div style="text-align:center;color:#c00;padding:30px;grid-column:1/-1;">Error loading entries.</div>';
+        }
+    }
+
+    function vdeFilter() {
+        const name = (document.getElementById('vdeSearchName')?.value || '').toLowerCase();
+        const book = document.getElementById('vdeFilterBook')?.value;
+        const landmark = document.getElementById('vdeFilterLandmark')?.value;
+        const mode = document.getElementById('vdeFilterMode')?.value;
+        const type = document.getElementById('vdeFilterType')?.value;
+        
+        _vdeFiltered = _vdeAll.filter(e => {
+            const donor = e.donorType === 'Business'
+                ? (e.businessName || '')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
+            if (name && !donor.toLowerCase().includes(name)) return false;
+            if (book && String(e.bookNumber) !== String(book)) return false;
+            if (landmark && e.landmark !== landmark) return false;
+            if (mode && e.paymentMode !== mode) return false;
+            if (type && e.donorType !== type) return false;
+            return true;
+        });
+        vdeRender();
+        vdeRenderCards();
+    }
+
+    function vdeClearFilters() {
+        ['vdeSearchName','vdeFilterBook','vdeFilterLandmark','vdeFilterMode','vdeFilterType','vdeCardSearch'].forEach(id => { 
+            const el = document.getElementById(id); 
+            if(el) el.value = ''; 
+        });
+        vdeFilter();
+    }
+
+    function vdeRender() {
+        const tbody = document.getElementById('vdeTbody');
+        if (!tbody) return;
+        const totalAmt = _vdeFiltered.reduce((s,e) => s + (e.amount||0), 0);
+        document.getElementById('vdeSummaryTotal')    && (document.getElementById('vdeSummaryTotal').textContent    = _vdeAll.length);
+        document.getElementById('vdeSummaryFiltered') && (document.getElementById('vdeSummaryFiltered').textContent = _vdeFiltered.length);
+        document.getElementById('vdeSummaryAmt')      && (document.getElementById('vdeSummaryAmt').innerHTML        = '&#x20B9;' + totalAmt.toLocaleString('en-IN'));
+        
+        if (!_vdeFiltered.length) { tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;color:#999;padding:30px;">No entries found.</td></tr>'; return; }
+        
+        // Group entries by Landmark
+        const _vdeLmOrder = [];
+        const _vdeLmGroups = {};
+        _vdeFiltered.forEach(e => {
+            const lm = String(e.landmark || '(No Landmark)').trim();
+            if (!_vdeLmGroups[lm]) { _vdeLmGroups[lm] = []; _vdeLmOrder.push(lm); }
+            _vdeLmGroups[lm].push(e);
+        });
+
+        let _vdeHtml = '';
+        let _vdeRowNum = 0;
+        _vdeLmOrder.forEach(lm => {
+            const cnt = _vdeLmGroups[lm].length;
+            _vdeHtml += '<tr>' +
+                '<td colspan="17" style="background:linear-gradient(90deg,#FFF3E0,#FFF8F5);color:#BF360C;font-weight:700;font-size:.88rem;padding:9px 16px;border-left:4px solid #E65100;border-top:2px solid #FFCC80;">' +
+                '<i class="fas fa-map-marker-alt" style="margin-right:7px;color:#E65100;"></i>' + lm +
+                '<span style="font-weight:400;color:#888;font-size:.78rem;margin-left:10px;">(' + cnt + ' entr' + (cnt === 1 ? 'y' : 'ies') + ')</span>' +
+                '</td></tr>';
+            _vdeLmGroups[lm].forEach(e => {
+                _vdeRowNum++;
+                const i = _vdeRowNum - 1;
+                const donor = e.donorType === 'Business'
+                    ? (e.businessName || '—')
+                    : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+                const dtObj = new Date(e.submittedAt);
+                const dtTime = dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
+                const dtDate = dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+                const dt = '<span style="font-size:.8rem;white-space:nowrap;">' + dtTime + '<br><span style="color:#aaa;">' + dtDate + '</span></span>';
+                const amt = e.amount != null ? '&#x20B9;' + Number(e.amount).toLocaleString('en-IN') : '—';
+                
+                const _tHp  = !!e.photoUrl;
+                const _tHpv = !!e.receiptPreviewUrl;
+                const _tTs  = Date.now();
+                const photoCell = (_tHp || _tHpv)
+                    ? (
+                        (_tHp  ? '<div style="margin-bottom:3px;"><img src="' + fixUrl(e.photoUrl) + '?t=' + _tTs + '" style="width:46px;height:46px;object-fit:cover;border-radius:6px;border:2px solid #E65100;cursor:pointer;" onclick="openPbLightbox(\'' + fixUrl(e.photoUrl) + '\')" title="📷 Photo"></div>' : '') +
+                        (_tHpv ? '<div><img src="' + fixUrl(e.receiptPreviewUrl) + '?t=' + _tTs + '" style="width:46px;height:46px;object-fit:cover;border-radius:6px;border:2px solid #1565C0;cursor:pointer;" onclick="openPbLightbox(\'' + fixUrl(e.receiptPreviewUrl) + '\')" title="🧾 Preview"></div>' : '')
+                      )
+                    : '<span style="font-size:.72rem;color:#aaa;font-style:italic;">No Image</span>';
+
+                // Volunteer Edit buttons (No delete!)
+                const editBtn = (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'volunteer_view') ? ''
+                    : `<button class="btn-icon btn-edit" title="Edit" onclick="deOpenVolEdit('${e.entryId}')"><i class="fas fa-edit"></i></button>`;
+
+                _vdeHtml += '<tr id="vde-row-' + e.entryId + '">' +
+                    '<td style="color:#aaa;font-size:.8rem;">' + (i+1) + '</td>' +
+                    '<td style="font-weight:700;vertical-align:middle;">Bk ' + e.bookNumber + ' ' + ((e.bookType||'New')==='Old' ? '<span style="background:#FFF8F1;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>') + '</td>' +
+                    '<td>#' + e.receiptNumber + '</td>' +
+                    '<td style="font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + donor + '">' + donor + '</td>' +
+                    '<td><span style="padding:2px 9px;border-radius:10px;font-size:.75rem;font-weight:700;background:' + (e.donorType==='Business'?'#E3F2FD':'#E8F5E9') + ';color:' + (e.donorType==='Business'?'#1565C0':'#1B5E20') + ';">' + e.donorType + '</span></td>' +
+                    '<td style="color:#555;font-size:.85rem;">' + (e.whatsappNumber||'') + '</td>' +
+                    '<td style="color:#555;font-size:.85rem;">' + (e.mobileNumber||'') + '</td>' +
+                    '<td style="font-size:.85rem;">' + (e.buildingName||'') + (e.flatNumber ? '<br><span style="font-size:0.75rem;color:#777;">Flat: ' + e.flatNumber + '</span>' : '') + '</td>' +
+                    '<td style="font-size:.85rem;">' + (e.landmark||'') + '</td>' +
+                    '<td style="font-size:.85rem;">' + (e.area||'') + '</td>' +
+                    '<td style="color:#2E7D32;font-weight:700;">' + amt + '</td>' +
+                    '<td><span style="padding:3px 10px;border-radius:12px;background:#FFF8F1;color:#E65100;font-size:.75rem;font-weight:700;">' + e.paymentMode + '</span></td>' +
+                    '<td style="font-size:.82rem;color:#777;">' + (e.referenceNumber||'') + '</td>' +
+                    '<td style="text-align:center;vertical-align:middle;">' + photoCell + '</td>' +
+                    '<td style="font-size:.82rem;color:#888;">' + (e.submittedBy||'') + '</td>' +
+                    '<td style="color:#888;font-size:.82rem;">' + dt + '</td>' +
+                    '<td><div class="action-btns">' + editBtn + '</div></td>' +
+                    '</tr>';
+            });
+        });
+        tbody.innerHTML = _vdeHtml;
+    }
+
+    function vdeRenderCards() {
+        const grid = document.getElementById('vdeCardGrid');
+        if (!grid) return;
+        const q = (document.getElementById('vdeCardSearch')?.value || '').toLowerCase();
+        let list = _vdeFiltered;
+        if (q) {
+            list = list.filter(e => {
+                const donor = e.donorType === 'Business'
+                    ? (e.businessName || '')
+                    : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
+                return donor.toLowerCase().includes(q) || 
+                       String(e.landmark||'').toLowerCase().includes(q) ||
+                       String(e.bookNumber).includes(q) ||
+                       String(e.receiptNumber).includes(q);
+            });
+        }
+        document.getElementById('vdeCardCount') && (document.getElementById('vdeCardCount').textContent = list.length + ' cards');
+        if (!list.length) { grid.innerHTML = '<div style="text-align:center;color:#aaa;padding:30px;grid-column:1/-1;">No entries match your search.</div>'; return; }
+
+        grid.innerHTML = list.map(e => {
+            const donor = e.donorType === 'Business'
+                ? (e.businessName || '—')
+                : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+            const amt = e.amount != null ? '&#x20B9;' + Number(e.amount).toLocaleString('en-IN') : '—';
+            const mode = e.paymentMode || '—';
+            const modeClr = (mode === 'Cash' ? '#2E7D32' : mode === 'Cheque' ? '#1565C0' : mode === 'UPI' ? '#6A1B9A' : mode === 'RTGS' ? '#0277BD' : mode === 'Balance' ? '#E65100' : '#555');
+            const dtObj = new Date(e.submittedAt);
+            const dateStr = isNaN(dtObj) ? '—' : dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+            const timeStr = isNaN(dtObj) ? '' : dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
+            
+            const _hp = !!e.photoUrl, _hpv = !!e.receiptPreviewUrl, _ts = Date.now();
+            const photoSection = (_hp || _hpv)
+                ? `<div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+                       ${_hp ? `<div style="border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')">
+                           <div style="background:#FFF3E0;padding:3px 10px;font-size:.68rem;color:#E65100;font-weight:700;display:flex;align-items:center;gap:5px;"><i class="fas fa-camera"></i>&nbsp;Uploaded Receipt Photo</div>
+                           <img src="${fixUrl(e.photoUrl)}?t=${_ts}" loading="lazy" alt="Receipt photo" style="width:100%;max-height:180px;object-fit:cover;display:block;">
+                           <div style="background:#fff8f5;padding:3px 10px;font-size:.68rem;color:#E65100;font-weight:600;display:flex;align-items:center;gap:5px;"><i class="fas fa-expand-alt"></i>&nbsp;Tap to view full image</div>
+                       </div>` : ''}
+                       ${_hpv ? `<div style="border-radius:10px;overflow:hidden;border:1.5px solid #90CAF9;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.receiptPreviewUrl)}')">
+                           <div style="background:#E3F2FD;padding:3px 10px;font-size:.68rem;color:#1565C0;font-weight:700;display:flex;align-items:center;gap:5px;"><i class="fas fa-file-invoice"></i>&nbsp;Digital Receipt Preview</div>
+                           <img src="${fixUrl(e.receiptPreviewUrl)}?t=${_ts}" loading="lazy" alt="Digital receipt" style="width:100%;max-height:180px;object-fit:cover;display:block;">
+                           <div style="background:#EBF5FF;padding:3px 10px;font-size:.68rem;color:#1565C0;font-weight:600;display:flex;align-items:center;gap:5px;"><i class="fas fa-expand-alt"></i>&nbsp;Tap to view full preview</div>
+                       </div>` : ''}
+                   </div>`
+                : `<div style="margin-top:12px;border:1.5px dashed #f0e0d0;border-radius:10px;padding:12px;text-align:center;background:#fffaf8;">
+                       <i class="fas fa-camera" style="font-size:1.3rem;color:#ddd;display:block;margin-bottom:5px;"></i>
+                       <span style="font-size:.73rem;color:#ccc;font-weight:600;">No Receipt Photo</span>
+                   </div>`;
+
+            // Volunteer Edit button
+            const editBtn = (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'volunteer_view') ? ''
+                : `<button onclick="deOpenVolEdit('${e.entryId}')" title="Edit" style="border:none;background:#E3F2FD;color:#1565C0;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.8rem;flex-shrink:0;"><i class="fas fa-edit"></i></button>`;
+
+            return `<div style="background:var(--white);border:1.5px solid #F0F0F0;border-radius:14px;padding:18px 16px;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 4px 18px rgba(0,0,0,.11)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;">
+                    <div style="font-weight:700;font-size:.97rem;color:var(--dark-color);line-height:1.3;">${donor}</div>
+                    ${editBtn}
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;">
+                    <span style="background:#F3E5F5;color:#6A1B9A;font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:16px;vertical-align:middle;"><i class="fas fa-book" style="margin-right:4px;"></i>Bk ${e.bookNumber} / #${e.receiptNumber}</span> ${ (e.bookType||'New')==='Old' ? '<span style="background:#FFF8F1;color:#E65100;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:2px;vertical-align:middle;">Old</span>' : '<span style="background:#E3F2FD;color:#1565C0;font-size:.7rem;padding:2px 6px;border-radius:10px;font-weight:700;margin-left:2px;vertical-align:middle;">New</span>' }
+                    ${(e.landmark || e.area) ? `<span style="background:#E8F5E9;color:#1B5E20;font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:16px;"><i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>${[e.landmark, e.area].filter(Boolean).join(' - ')}</span>` : ''}
+                    ${e.buildingName ? `<span style="background:#F3E5F5;color:#6A1B9A;font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:16px;"><i class="fas fa-building" style="margin-right:4px;"></i>${e.buildingName}${e.flatNumber ? ` (Flat: ${e.flatNumber})` : ''}</span>` : ''}
+                    <span style="background:#FFF8E1;color:${modeClr};font-size:.73rem;font-weight:700;padding:3px 9px;border-radius:16px;">${mode}</span>
+                </div>
+                
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                    ${(e.editHistory && e.editHistory.length) || (e.nameHistory && e.nameHistory.length) ? `<span onclick="deOpenVolEdit('${e.entryId}')" style="cursor:pointer;font-size:.7rem;font-weight:700;color:#c0392b;background:#FFEBEE;padding:3px 8px;border-radius:12px;border:1px solid #f5b7b1;"><i class="fas fa-pencil-alt" style="margin-right:4px;"></i>Edited</span>` : '<span></span>'}
+                    ${(e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received')).toLowerCase() === 'received' ? `<span style="background:#E8F5E9;color:#1B5E20;font-size:.73rem;font-weight:800;padding:3px 9px;border-radius:16px;border:1px solid #c8e6c9;">STATUS: RECEIVED</span>` : `<span style="background:#FFF8E1;color:#F57F17;font-size:.73rem;font-weight:800;padding:3px 9px;border-radius:16px;border:1px solid #ffe0b2;">STATUS: BALANCE</span>`}
+                         ${(e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received')).toLowerCase() === 'received' ? `<div style="display:flex;gap:4px;"><button onclick="de_rcg_openEditModal('${e.entryId}')" title="Edit Receipt" style="border:none;background:linear-gradient(135deg,#8B1A1A,#B71C1C);color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fas fa-file-invoice"></i> Edit</button>` + (e.receiptPreviewUrl ? `<button onclick="window.open('${e.receiptPreviewUrl}', '_blank')" title="View HD Receipt" style="border:none;background:#FFEBEE;color:#C62828;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fas fa-eye"></i> View</button>` : '') + `</div>` : ''}
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="font-size:1.1rem;font-weight:800;color:#2E7D32;">${amt}</div>
+                    <div style="font-size:.76rem;color:#aaa;text-align:right;line-height:1.4;">${timeStr}<br>${dateStr}</div>
+                </div>
+                ${e.submittedBy ? `<div style="font-size:.75rem;color:#bbb;margin-top:7px;"><i class="fas fa-user" style="margin-right:4px;"></i>${e.submittedBy}</div>` : ''}
+                ${e.markedReceivedBy ? `<div style="font-size:.76rem;font-weight:700;color:#E65100;margin-top:6px;padding:5px 10px;background:#FFF8F1;border-radius:8px;border:1px solid #ffe0b2;"><i class="fas fa-check-circle" style="color:#2E7D32;margin-right:5px;"></i>Marked received by <strong>${e.markedReceivedBy}</strong></div>` : ''}
+                ${photoSection}
+            </div>`;
+        }).join('');
+    }
+
+    // Call vdeLoad when section is displayed
+    async function deLoadMyEntries() {
+        await vdeLoad();
+    }
+
+   });
+
+        if (totalShown === 0) {
+            const msg = filter ? 'No entries match your search.' : 'No entries yet.';
+            tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#999;padding:20px;">${msg}</td></tr>`;
+            if (cards) cards.innerHTML = `<p style="text-align:center;color:#999;padding:20px;">${msg}</p>`;
+        } else {
+            tbody.innerHTML = tableRows;
+            if (cards) cards.innerHTML = cardHtml;
+        }
+    }
+
+
+    // ─── Year Filter for Donation Data Entry ────────────────────────────────
+    async function deLoadYearFilter() {
+        const roles = ['admin', 'volunteer_full', 'volunteer_full_tshirt'];
+        const sel = document.getElementById('deYearFilter');
+        if (!sel) return;
+        if (!currentUser || !roles.includes(currentUser.role)) {
+            sel.style.display = 'none';
+            return;
+        }
+        // Always show the dropdown for eligible roles – even before API response
+        sel.style.display = 'inline-block';
+        try {
+            const r = await fetch('/api/donation-years');
+            const data = await r.json();
+            if (!data.years || !data.years.length) return;
+            sel.innerHTML = '';
+            const activeYear = data.activeYear;
+            // Add an "All Years" option at the top for admins
+            if (currentUser.role === 'admin') {
+                const allOpt = document.createElement('option');
+                allOpt.value = 'all';
+                allOpt.textContent = '📅 All Years';
+                sel.appendChild(allOpt);
+            }
+            data.years.forEach(yr => {
+                const opt = document.createElement('option');
+                opt.value = yr;
+                opt.textContent = yr === activeYear ? '⭐ ' + yr + ' (Active)' : yr;
+                if (!window._deSelectedYear && yr === activeYear) opt.selected = true;
+                if (window._deSelectedYear === yr) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            if (!window._deSelectedYear) window._deSelectedYear = activeYear;
+        } catch(e) {
+            // Even if API fails, keep showing with default "Active Year" option
+            console.warn('Could not load donation years from API:', e);
+            if (!window._deSelectedYear) window._deSelectedYear = 'active';
+        }
+    }
+
+    async function deLoadMyEntries() {
+        const tbody = document.getElementById('deMyEntriesTbody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#999;">Loading…</td></tr>';
+        try {
+            const res  = await fetch('/api/donation-entries?year=' + (window._deSelectedYear || 'active'));
+            const data = await res.json();
+            _deAllEntriesFlat = data.entries || [];
+            const searchVal = ((document.getElementById('deAllEntriesSearch') || {}).value || '').toLowerCase().trim();
+            deRenderAllEntries(_deAllEntriesFlat, searchVal);
+        } catch(err) {
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#c00;">Error loading entries.</td></tr>';
+        }
+    }
+
+
+    // ── Volunteer Edit Modal ────────────────────────────────
+    let _deVolEditBlob = null;
+    let _deVolEditBookType = 'New';
+
+    function deOpenVolEdit(id) {
+        fetch('/api/donation-entries?year=' + (window._deSelectedYear || 'active')).then(r => r.json()).then(data => {
+            const e = (data.entries || []).find(x => x.entryId === id);
+            if (!e) return;
+            _deVolEditBlob = null;
+            _deVolEditBookType = e.bookType || 'New';
+            document.getElementById('deVolEditId').value     = id;
+            document.getElementById('deVolEditAmount').value = e.amount != null ? e.amount : '';
+            // Store original amount to detect changes later
+            document.getElementById('deVolEditAmount').dataset.original = e.amount != null ? e.amount : '';
+            document.getElementById('deVolEditMode').value   = e.paymentMode || 'Cash';
+            
+            const statusField = document.getElementById('deVolEditStatusField');
+            if (statusField) {
+                statusField.value = e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received');
+                // Change style based on status
+                statusField.style.background = statusField.value === 'Received' ? '#E8F5E9' : '#FFF8F1';
+                statusField.style.color = statusField.value === 'Received' ? '#1B5E20' : '#E65100';
+                
+                statusField.onchange = function() {
+                    this.style.background = this.value === 'Received' ? '#E8F5E9' : '#FFF8F1';
+                    this.style.color = this.value === 'Received' ? '#1B5E20' : '#E65100';
+                };
+            }
+
+            const bookSel = document.getElementById('deVolEditBook');
+            bookSel.innerHTML = '';
+            for (let b = 1; b <= 50; b++) {
+                const from = (b-1)*50+1, to = b*50;
+                const opt = document.createElement('option');
+                opt.value = b; opt.textContent = `Book ${b}  (${from}–${to})`;
+                if (b === e.bookNumber) opt.selected = true;
+                bookSel.appendChild(opt);
+            }
+            bookSel.dataset.original = e.bookNumber || '';
+
+            const recSel = document.getElementById('deVolEditReceipt');
+            recSel.dataset.original = e.receiptNumber || '';
+            
+            deVolEditPopulateReceipts(e.bookNumber, e.receiptNumber);
+            const FIXED = ['Patelwadi','Shindewadi','Gurkhawadi'];
+            const landmarkSel = document.getElementById('deVolEditLandmark');
+            landmarkSel.innerHTML = '<option value="">— Select Landmark —</option>' +
+                FIXED.map(n => `<option value="${n}" ${n===e.landmark?'selected':''}>${n}</option>`).join('');
+            fetch('/api/landmarks').then(r2 => r2.json()).then(ad => {
+                (ad.landmarks||[]).forEach(a => {
+                    if (!FIXED.includes(a.name))
+                        landmarkSel.innerHTML += `<option value="${a.name}" ${a.name===e.landmark?'selected':''}>${a.name}</option>`;
+                });
+                deOnVolEditLandmarkChange(e.area);
+            }).catch(()=>{});
+            const curDiv = document.getElementById('deVolEditCurrentPhoto');
+            const curImg = document.getElementById('deVolEditCurrentImg');
+            if (e.photoUrl) {
+                curImg.src = e.photoUrl + '?t=' + Date.now();
+                curImg.onclick = () => openPbLightbox(e.photoUrl);
+                curDiv.style.display = '';
+            } else { curDiv.style.display = 'none'; }
+            document.getElementById('deVolEditPhotoPreview').style.display = 'none';
+            document.getElementById('deVolEditPhotoInput').value = '';
+            document.getElementById('deVolEditStatus').style.display = 'none';
+            // Populate name fields
+            const isBiz = e.donorType === 'Business';
+            const indF  = document.getElementById('deVolNameIndFields');
+            const bizF  = document.getElementById('deVolNameBizFields');
+            if (indF) indF.style.display = isBiz ? 'none' : 'grid';
+            if (bizF) bizF.style.display = isBiz ? 'block' : 'none';
+            const f1 = document.getElementById('deVolEditFirst'); if(f1) f1.value = e.firstName || '';
+            const f2 = document.getElementById('deVolEditMid');   if(f2) f2.value = e.middleName || '';
+            const f3 = document.getElementById('deVolEditLast');  if(f3) f3.value = e.lastName || '';
+            const fb = document.getElementById('deVolEditBiz');   if(fb) fb.value = e.businessName || '';
+            const fr = document.getElementById('deVolEditReason'); if(fr) fr.value = '';
+            document.getElementById('deVolEditModal').style.display = 'flex';
+        }).catch(() => alert('Could not load entry.'));
+    }
+
+    async function deVolEditPopulateReceipts(bookNum, currentReceipt) {
+        const sel = document.getElementById('deVolEditReceipt');
+        sel.disabled = true;
+        sel.innerHTML = '<option>Loading…</option>';
+        const from = (bookNum-1)*50+1, to = bookNum*50;
+        let used = [];
+        try {
+            const r = await fetch(`/api/donation-entries/used-receipts/${bookNum}?type=${_deVolEditBookType}`);
+            const d = await r.json();
+            used = d.usedReceipts || [];
+        } catch(ex) {}
+        sel.innerHTML = '<option value="">— Select Receipt —</option>';
+        for (let n = from; n <= to; n++) {
+            const taken = used.includes(n) && n !== Number(currentReceipt);
+            const opt = document.createElement('option');
+            opt.value = n; opt.textContent = n + (taken ? ' (used)' : '');
+            if (taken) opt.disabled = true;
+            if (n === Number(currentReceipt)) opt.selected = true;
+            sel.appendChild(opt);
+        }
+        sel.disabled = false;
+    }
+
+    async function deVolEditBookChange() {
+        const bn = Number(document.getElementById('deVolEditBook').value);
+        await deVolEditPopulateReceipts(bn, null);
+    }
+
+    async function deOnVolEditLandmarkChange(initialArea = null) {
+        const landmarkName = document.getElementById('deVolEditLandmark')?.value;
+        const group = document.getElementById('deVolEditAreaGroup');
+        const sel = document.getElementById('deVolEditArea');
+        if (!group || !sel) return;
+        
+        sel.innerHTML = '<option value="">— Select Area —</option>';
+        if (landmarkName) {
+            group.style.display = 'block';
+            try {
+                const r1 = await fetch('/api/landmarks');
+                const d1 = await r1.json();
+                const landmarkObj = (d1.landmarks || []).find(a => a.name === landmarkName);
+                if (landmarkObj) {
+                    const r2 = await fetch('/api/areas');
+                    const d2 = await r2.json();
+                    const subs = (d2.areas || []).filter(s => s.landmarkId === landmarkObj.id);
+                    subs.forEach(s => {
+                        sel.innerHTML += `<option value="${s.name}" ${initialArea && s.name === initialArea ? 'selected' : ''}>${s.name}</option>`;
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        } else {
+            group.style.display = 'none';
+        }
+    }
+
+    function deCloseVolEdit() {
+        _deVolEditBlob = null;
+        document.getElementById('deVolEditModal').style.display = 'none';
+        document.getElementById('deVolEditPhotoPreview').style.display = 'none';
+        document.getElementById('deVolEditPhotoInput').value = '';
+    }
+
+    document.getElementById('deVolEditPhotoInput')?.addEventListener('change', function(ev) {
+        const file = ev.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) { alert('Please select a JPG or PNG image.'); this.value=''; return; }
+        const prev  = document.getElementById('deVolEditPhotoPreview');
+        const thumb = document.getElementById('deVolEditPhotoThumb');
+        const name  = document.getElementById('deVolEditPhotoName');
+        _compressImage(file, 950, function(blob) {
+            if (!blob) { alert('Could not process image.'); return; }
+            _deVolEditBlob = blob;
+            // Revoke previous object URL before setting a new one
+            if (thumb && thumb.src && thumb.src.startsWith('blob:')) URL.revokeObjectURL(thumb.src);
+            if (thumb) thumb.src = URL.createObjectURL(blob);
+            if (name)  name.textContent = '\u2705 ' + file.name.replace(/\.[^.]+$/, '') + '.jpg ' +
+                (blob.size < 1048576 ? '(' + (blob.size/1024).toFixed(1) + ' KB)' : '(' + (blob.size/1048576).toFixed(2) + ' MB)');
+            if (prev) prev.style.display = '';
+        });
+    });
+
+    async function deSaveVolEdit(ev) {
+        ev.preventDefault();
+        const id  = document.getElementById('deVolEditId').value;
+        if (!id) return;
+        const btn = document.getElementById('deVolEditSaveBtn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Saving…'; }
+        const st = document.getElementById('deVolEditStatus');
+        function showSt(msg, type) {
+            if (!st) return;
+            st.style.display = ''; st.textContent = msg;
+            st.style.background = type==='success' ? '#D5F4E6' : '#FFEBEE';
+            st.style.color      = type==='success' ? '#1a7a45' : '#c0392b';
+            st.style.border     = type==='success' ? '1px solid #a3e6c1' : '1px solid #f5b7b1';
+        }
+        const amtVal = document.getElementById('deVolEditAmount').value;
+        const bnVal  = Number(document.getElementById('deVolEditBook').value);
+        const rnVal  = Number(document.getElementById('deVolEditReceipt').value);
+        if (!rnVal) { showSt('❌ Please select a Receipt Number.', 'error'); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; } return; }
+        // Detect name changes
+        const _eIsBiz = document.getElementById('deVolNameBizFields')?.style.display !== 'none';
+        const _newFirst = document.getElementById('deVolEditFirst')?.value.trim().toUpperCase() || '';
+        const _newMid   = document.getElementById('deVolEditMid')?.value.trim().toUpperCase()   || '';
+        const _newLast  = document.getElementById('deVolEditLast')?.value.trim().toUpperCase()  || '';
+        const _newBiz   = document.getElementById('deVolEditBiz')?.value.trim().toUpperCase()   || '';
+        const _reason   = document.getElementById('deVolEditReason')?.value.trim()              || '';
+        const _hasNameChange = _eIsBiz ? !!_newBiz : !!(_newFirst || _newMid || _newLast);
+        
+        const origAmt   = document.getElementById('deVolEditAmount').dataset.original || '';
+        const _hasAmountChange = origAmt !== amtVal;
+
+        const origBook  = document.getElementById('deVolEditBook').dataset.original || '';
+        const _hasBookChange = origBook !== '' && Number(origBook) !== bnVal;
+
+        const origRcpt  = document.getElementById('deVolEditReceipt').dataset.original || '';
+        const _hasReceiptChange = origRcpt !== '' && Number(origRcpt) !== rnVal;
+
+        const payload = {
+            _isAdmin      : false,
+            paymentMode   : document.getElementById('deVolEditMode').value,
+            status        : document.getElementById('deVolEditStatusField')?.value || undefined,
+            bookNumber    : bnVal,
+            receiptNumber : rnVal,
+            landmark          : document.getElementById('deVolEditLandmark').value || undefined,
+            area       : document.getElementById('deVolEditArea').value || undefined,
+        };
+        if (amtVal !== '') payload.amount = Number(amtVal);
+        
+        if (_hasNameChange || _hasAmountChange || _hasBookChange || _hasReceiptChange) {
+            if (!_reason) { showSt('❌ Please provide a reason for the change.', 'error'); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; } return; }
+            if (_hasNameChange) {
+                if (_eIsBiz) { payload.businessName = _newBiz; }
+                else { payload.firstName = _newFirst; payload.middleName = _newMid; payload.lastName = _newLast; }
+            }
+            payload.changeReason = _reason;
+            payload.changedBy = currentUser ? currentUser.name : 'Volunteer';
+        }
+        try {
+            const res  = await fetch(`/api/donation-entries/${encodeURIComponent(id)}`, {
+                method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                showSt('❌ ' + (data.message || 'Update failed.'), 'error');
+                if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; }
+                return;
+            }
+            if (_deVolEditBlob) {
+                try {
+                    const fd = new FormData();
+                    fd.append('passbook', _deVolEditBlob, 'receipt.jpg');
+                    fd.append('entryId', id);
+                    fd.append('userId',   currentUser ? String(currentUser.id) : '');
+                    fd.append('userName', currentUser ? currentUser.name : '');
+                    const upRes  = await fetch('/api/upload-passbook', { method:'POST', body:fd });
+                    if (upRes.ok) {
+                        const upData = await upRes.json();
+                        if (upData.fileName) {
+                            const rowImg = document.querySelector(`#de-vol-row-${CSS.escape(id)} img`);
+                            const newSrc = `/uploads/${upData.fileName}?t=${Date.now()}`;
+                            if (rowImg) { rowImg.src = newSrc; rowImg.onclick = () => openPbLightbox(newSrc); }
+                        }
+                    }
+                } catch(_x) { /* photo failure non-blocking */ }
+            }
+            showSt('✅ Entry updated!', 'success');
+            setTimeout(() => deCloseVolEdit(), 900);
+            await deLoadMyEntries();
+        } catch(err) {
+            showSt('❌ ' + err.message, 'error');
+        } finally {
+            if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; }
+        }
+    }
+
+    </script>
+    <!-- Committee Members viewer for volunteer -->
+    <script>
+    async function deShowCommitteeMembers() {
+        const sec = document.getElementById('committeeViewSection');
+        if (!sec) return;
+        sec.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;">Loading…</div>';
+        try {
+            const r = await fetch('/api/committee-members'); const data = await r.json();
+            const members = data.members || [];
+            if (!members.length) { sec.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;">No committee members found.</div>'; return; }
+            sec.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">' +
+                members.map(m => `<div style="background:var(--white);border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;text-align:center;">
+                ${m.photoUrl?'<img src="${fixUrl(m.photoUrl)}" style="width:100%;height:150px;object-fit:cover;">':'<div style=\"width:100%;height:150px;background:linear-gradient(135deg,var(--primary-color),#ff8c42);display:flex;align-items:center;justify-content:center;\"><i class=\"fas fa-user\" style=\"font-size:3rem;color:#fff;opacity:.5;\"></i></div>'}
+                <div style="padding:12px 10px 14px;">
+                    <div style="font-weight:700;">${m.name}</div>
+                    <div style="font-size:.82rem;color:var(--primary-color);font-weight:600;">${m.role||m.department||'Member'}</div>
+                    ${m.phone?'<div style=\"font-size:.78rem;color:#666;\"><i class=\"fas fa-phone\" style=\"margin-right:3px;\"></i>'+m.phone+'</div>':''}
+                </div></div>`).join('') + '</div>';
+        } catch(e) { sec.innerHTML = '<div style=\"text-align:center;color:#c00;padding:40px;\">⚠ Cannot load.</div>'; }
+    }
+    </script>
+</div><!-- Live Updates (SSE) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+                        const evtSource = new EventSource('/api/live-updates');
+            evtSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'donations_updated') {
+                        
+                        
+                        
+                        // Refresh volunteer data if function exists
+                        if (typeof loadRecentEntries === 'function') loadRecentEntries();
+                        
+                          // Refresh Donation Data Entry submitted list if function exists
+                          if (typeof deLoadMyEntries === 'function') {
+                              const deWrap = document.getElementById('deMyEntriesWrap');
+                              if (deWrap && document.getElementById('donationEntry').style.display !== 'none') {
+                                  deLoadMyEntries();
+                              }
+                          }
+                        // Refresh My Donations section if it is currently visible
+                        const _myDonSec = document.getElementById('donations');
+                        if (typeof myDonLoad === 'function' && _myDonSec && _myDonSec.style.display !== 'none') { myDonLoad(); }
+                    } else if (data.type === 'events_updated') {
+                        if (typeof loadEventCountdown === 'function') loadEventCountdown();
+                    }
+                } catch (e) {
+                    console.error('SSE Error:', e);
+                }
+            };
+            evtSource.onerror = function() {
+                console.log('SSE connection lost, reconnecting...');
+            };
+        });
+    </script>
+<script>
+</script>
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,mr',
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+        // Force hide the banner asynchronously just in case CSS fails
+        setInterval(function() {
+            var frames = document.getElementsByClassName('goog-te-banner-frame');
+            for(var i=0; i<frames.length; i++) { frames[i].style.display = 'none'; frames[i].style.visibility = 'hidden'; }
+            if (document.body && document.body.style.top !== '0px') document.body.style.top = '0px';
+            if (document.documentElement && document.documentElement.style.marginTop !== '0px') document.documentElement.style.marginTop = '0px';
+        }, 300);
+        function toggleLanguage() {
+            const isMar = document.getElementById('langMar').classList.contains('active');
+            const targetLang = isMar ? 'en' : 'mr';
+            
+            if(isMar) {
+                document.getElementById('langMar').classList.remove('active');
+                document.getElementById('langEng').classList.add('active');
+            } else {
+                document.getElementById('langEng').classList.remove('active');
+                document.getElementById('langMar').classList.add('active');
+            }
+            
+            const select = document.querySelector('.goog-te-combo');
+            if (select) {
+                select.value = targetLang;
+                select.dispatchEvent(new Event('change'));
+            }
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<script>
+
+// --- MY PROFILE (VOLUNTEER) ---
+function loadMyProfileVol() {
+    const user = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+    document.getElementById('profVolName').value = user.name || '';
+    document.getElementById('profVolEmail').value = user.email || user.username || '';
+    document.getElementById('profVolContact').value = user.contactNumber || '';
+    
+    if (user.photoUrl) {
+        document.getElementById('profVolPhotoPreview').src = user.photoUrl;
+        document.getElementById('profVolPhotoPreview').style.display = 'block';
+    } else {
+        document.getElementById('profVolPhotoPreview').style.display = 'none';
+    }
+}
+
+function previewVolProfileImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('profVolPhotoPreview').src = e.target.result;
+            document.getElementById('profVolPhotoPreview').style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+async function saveVolProfile(e) {
+    e.preventDefault();
+    const btn = document.getElementById('profVolBtn');
+    btn.disabled = true;
+    btn.innerHTML = 'Saving...';
+    
+    const user = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+    const payload = {
+        username: user.username,
+        name: document.getElementById('profVolName').value.trim(),
+        contactNumber: document.getElementById('profVolContact').value.trim()
+    };
+    
+    const photoFile = document.getElementById('profVolPhoto').files[0];
+    if (photoFile) {
+        const reader = new FileReader();
+        payload.photoBase64 = await new Promise((res) => {
+            reader.onload = () => res(reader.result.split(',')[1]);
+            reader.readAsDataURL(photoFile);
+        });
+        payload.photoExt = photoFile.name.split('.').pop();
+    }
+    
+    try {
+        const res = await fetch('/api/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            user.name = data.user.name;
+            user.contactNumber = data.user.contactNumber || '';
+            if (data.user.photoUrl) user.photoUrl = data.user.photoUrl;
+            sessionStorage.setItem('currentUser', JSON.stringify(user));
+            
+            document.getElementById('userName').textContent = 'Welcome ' + user.name;
+            document.getElementById('topBarName').textContent = user.name;
+            const avatarEl = document.getElementById('userAvatar');
+            if (user.photoUrl) {
+                avatarEl.innerHTML = '<img src="' + user.photoUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+                avatarEl.style.padding = '0';
+                avatarEl.style.overflow = 'hidden';
+            } else {
+                avatarEl.innerHTML = '';
+                avatarEl.textContent = user.name.charAt(0);
+                avatarEl.style.padding = '';
+            }
+            alert('Profile updated successfully!');
+        } else {
+            alert('Error updating profile: ' + (data.message || 'Unknown error'));
+        }
+    } catch (err) {
+        alert('Server unreachable');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Update Profile';
+}
+
+// Hook into showSection
+const originalShowSection = window.showSection;
+if (originalShowSection) {
+    window.showSection = function(id) {
+        if (id === 'profile') {
+            loadMyProfileVol();
+        }
+        originalShowSection(id);
+    };
+}
+
+</script>
+
+    <!-- ============================================================
+         MY DONATIONS SECTION — Full JS
+    ============================================================ -->
+    <script>
+    // ── Helpers ──────────────────────────────────────────────────────────
+    /** Convert any UTC ISO string to IST (UTC+5:30) and return
+     *  a date-label like "30 May 2026" and a sort-key "2026-05-30". */
+    function myDonISTLabel(isoStr) {
+        const d = new Date(isoStr);
+        // IST offset = +330 minutes
+        const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+        const day   = ist.getUTCDate();
+        const month = ist.toLocaleString('en-IN', { month: 'long', timeZone: 'UTC' });
+        const year  = ist.getUTCFullYear();
+        const mm    = String(ist.getUTCMonth() + 1).padStart(2,'0');
+        const dd    = String(day).padStart(2,'0');
+        return { label: `${day} ${month} ${year}`, key: `${year}-${mm}-${dd}` };
+    }
+
+    function myDonFmtAmt(n) {
+        if (n == null) return '—';
+        return '₹' + Number(n).toLocaleString('en-IN');
+    }
+
+    function myDonFmtTime(isoStr) {
+        const d = new Date(isoStr);
+        const ist = new Date(d.getTime() + 5.5 * 60 * 60 * 1000);
+        const h = ist.getUTCHours(), m = ist.getUTCMinutes();
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const hh = h % 12 || 12;
+        return hh + ':' + String(m).padStart(2,'0') + ' ' + ampm;
+    }
+
+    // ── Main Load ─────────────────────────────────────────────────────────
+    async function myDonLoad() {
+        const grp = document.getElementById('myDonGroups');
+        if (!grp) return;
+        grp.innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:12px;display:block;color:#E65100;opacity:.5;"></i>Loading&hellip;</div>';
+
+        try {
+            const uid = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : null;
+            const activeParam = 'year=' + (window._adminSelectedYear || 'active');
+            const url = uid ? `/api/donation-entries?userId=${encodeURIComponent(uid)}&${activeParam}` : `/api/donation-entries?${activeParam}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            let entries = (data.entries || []).filter(e => !e.deleted);
+
+            // Filter to only this volunteer's entries (double-check client-side)
+            if (uid && (typeof currentUser !== 'undefined') && currentUser.role !== 'admin') {
+                entries = entries.filter(e =>
+                    String(e.submittedByUserId) === String(uid) ||
+                    String(e.userId) === String(uid)
+                );
+            }
+
+            // Sort newest first
+            entries.sort((a,b) => new Date(b.submittedAt||0) - new Date(a.submittedAt||0));
+
+            // ── Summary stats ─────────────────────────────────────────────
+            const totalEntries = entries.length;
+            const totalAmount  = entries.reduce((s,e) => s + (Number(e.amount)||0), 0);
+            const uniqueDays   = new Set(entries.map(e => myDonISTLabel(e.submittedAt).key)).size;
+            const uniqueBooks  = new Set(entries.map(e => e.bookNumber)).size;
+
+            const safeSet = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            safeSet('myDonTotalEntries', totalEntries);
+            safeSet('myDonTotalAmount',  myDonFmtAmt(totalAmount));
+            safeSet('myDonTotalDays',    uniqueDays);
+            safeSet('myDonTotalBooks',   uniqueBooks);
+
+            if (!totalEntries) {
+                grp.innerHTML = `
+                    <div style="text-align:center;padding:60px 20px;color:#bbb;">
+                        <i class="fas fa-hand-holding-heart" style="font-size:3rem;display:block;margin-bottom:16px;opacity:.2;color:#E65100;"></i>
+                        <div style="font-size:1.05rem;font-weight:600;color:#ccc;">No donation entries yet</div>
+                        <div style="font-size:.85rem;margin-top:6px;">Entries you submit in <strong>Donation Data Entry</strong> will appear here.</div>
+                    </div>`;
+                return;
+            }
+
+            // ── Group by IST date ─────────────────────────────────────────
+            const dayMap = {};
+            entries.forEach(e => {
+                const { label, key } = myDonISTLabel(e.submittedAt);
+                if (!dayMap[key]) dayMap[key] = { label, key, entries: [] };
+                dayMap[key].entries.push(e);
+            });
+
+            // Sort days descending
+            const days = Object.values(dayMap).sort((a,b) => b.key.localeCompare(a.key));
+
+            grp.innerHTML = days.map(day => {
+                const dayTotal = day.entries.reduce((s,e) => s + (Number(e.amount)||0), 0);
+                const today    = myDonISTLabel(new Date().toISOString()).key === day.key;
+
+                const rows = day.entries.map(e => {
+                    const donor = e.donorType === 'Business'
+                        ? (e.businessName || '—')
+                        : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
+                    const bookBadge = (e.bookType||'New') === 'Old'
+                        ? '<span style="background:#FFF8F1;color:#E65100;font-size:.68rem;padding:2px 7px;border-radius:10px;font-weight:700;margin-left:4px;">Old</span>'
+                        : '<span style="background:#E3F2FD;color:#1565C0;font-size:.68rem;padding:2px 7px;border-radius:10px;font-weight:700;margin-left:4px;">New</span>';
+                    const time = myDonFmtTime(e.submittedAt);
+                    const safeId = (e.entryId||'').replace(/'/g,"\'");
+                    const canEdit = !e.entryId?.startsWith('PB-') && !e.entryId?.startsWith('RC-');
+
+                    const dtObj = new Date(e.submittedAt);
+                    const dtStr = dtObj.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()
+                                + '\n' + dtObj.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+                    const dtParts = dtStr.split('\n');
+                    // Show BOTH uploaded photo AND digital receipt preview
+                    const _vHp = !!e.photoUrl, _vHpv = !!e.receiptPreviewUrl, _vTs = Date.now();
+                    const photoSection = (_vHp || _vHpv)
+                        ? `<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+                               ${_vHp ? `<div style="border-radius:10px;overflow:hidden;border:1.5px solid #ffe0d0;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.photoUrl)}')">
+                                   <div style="background:#FFF3E0;padding:3px 10px;font-size:.68rem;color:#E65100;font-weight:700;display:flex;align-items:center;gap:5px;"><i class="fas fa-camera"></i>&nbsp;Uploaded Receipt Photo</div>
+                                   <img src="${fixUrl(e.photoUrl)}?t=${_vTs}" loading="lazy" alt="Receipt photo" style="width:100%;max-height:200px;object-fit:cover;display:block;">
+                                   <div style="background:#fff8f5;padding:3px 10px;font-size:.68rem;color:#E65100;font-weight:600;display:flex;align-items:center;gap:5px;"><i class="fas fa-expand-alt"></i>&nbsp;Tap to view full image</div>
+                               </div>` : ''}
+                               ${_vHpv ? `<div style="border-radius:10px;overflow:hidden;border:1.5px solid #90CAF9;cursor:pointer;" onclick="openPbLightbox('${fixUrl(e.receiptPreviewUrl)}')">
+                                   <div style="background:#E3F2FD;padding:3px 10px;font-size:.68rem;color:#1565C0;font-weight:700;display:flex;align-items:center;gap:5px;"><i class="fas fa-file-invoice"></i>&nbsp;Digital Receipt Preview</div>
+                                   <img src="${fixUrl(e.receiptPreviewUrl)}?t=${_vTs}" loading="lazy" alt="Digital receipt" style="width:100%;max-height:200px;object-fit:cover;display:block;">
+                                   <div style="background:#EBF5FF;padding:3px 10px;font-size:.68rem;color:#1565C0;font-weight:600;display:flex;align-items:center;gap:5px;"><i class="fas fa-expand-alt"></i>&nbsp;Tap to view full preview</div>
+                               </div>` : ''}
+                           </div>`
+                        : `<div style="margin-top:10px;border:1.5px dashed #f0e0d0;border-radius:10px;padding:14px;text-align:center;background:#fffaf8;">
+                               <i class="fas fa-camera" style="font-size:1.4rem;color:#ddd;display:block;margin-bottom:6px;"></i>
+                               <span style="font-size:.75rem;color:#ccc;font-weight:600;">No Receipt Photo</span>
+                           </div>`;
+                    
+                    const paymentModeColor = (e.paymentMode||'').toLowerCase() === 'balance' ? 'background:#FFF8F1;color:#E65100;' : 'background:#E8F5E9;color:#2E7D32;';
+
+                    return `<div style="border:1px solid #f0e8e0;border-radius:14px;padding:14px;margin:0 0 12px;background:var(--white);box-shadow:0 2px 8px rgba(0,0,0,.06);">
+                        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:700;font-size:.97rem;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${donor}</div>
+                                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;">
+                                    <span style="background:#F3E5F5;color:#6A1B9A;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">
+                                        <i class="fas fa-book" style="font-size:.65rem;margin-right:3px;"></i>Bk ${e.bookNumber} / #${e.receiptNumber} ${bookBadge}
+                                    </span>
+                                    ${(e.landmark || e.area || e.buildingName || e.landmark) ? `<span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;"><i class="fas fa-map-marker-alt" style="font-size:.65rem;margin-right:3px;"></i>${[e.landmark, e.area, e.buildingName ? `${e.buildingName}${e.flatNumber ? ` (Flat: ${e.flatNumber})` : ''}` : null, e.landmark].filter(Boolean).join(' &middot; ')}</span>` : ''}
+                                    ${e.paymentMode ? `<span style="${paymentModeColor}padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;">${e.paymentMode}</span>` : ''}
+                                </div>
+                                <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+                                    <span style="color:#2E7D32;font-weight:700;font-size:1.05rem;">${myDonFmtAmt(e.amount)}</span>
+                                    <span style="font-size:.72rem;color:#aaa;text-align:right;">${dtParts[0]}<br><span style="color:#bbb;">${dtParts[1]}</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        ${photoSection}
+                    </div>`;
+                }).join('');
+
+                return `
+                <div style="background:var(--white);border-radius:16px;box-shadow:0 2px 14px rgba(0,0,0,.07);margin-bottom:20px;overflow:hidden;">
+                    <!-- Day header -->
+                    <div style="background:${today ? 'linear-gradient(135deg,#E65100,#ff8c42)' : 'linear-gradient(135deg,#f5f5f5,#eeeeee)'};padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            ${today ? '<span style="background:rgba(255,255,255,.25);color:#fff;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:16px;letter-spacing:.04em;">TODAY</span>' : ''}
+                            <span style="font-weight:700;font-size:1rem;color:${today ? '#fff' : '#333'};">${day.label}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <span style="font-size:.82rem;color:${today ? 'rgba(255,255,255,.85)' : '#888'};">${day.entries.length} entr${day.entries.length===1?'y':'ies'}</span>
+                            <span style="font-weight:700;font-size:.95rem;color:${today ? '#fff' : '#E65100'};">${myDonFmtAmt(dayTotal)}</span>
+                        </div>
+                    </div>
+                    <!-- Entries -->
+                    <div style="padding:14px;">
+                        ${rows}
+                    </div>
+                    <!-- Day footer total -->
+                    <div style="background:#fafafa;border-top:1px solid #f0f0f0;padding:10px 20px;display:flex;justify-content:flex-end;align-items:center;gap:8px;">
+                        <span style="font-size:.82rem;color:#999;">Day Total:</span>
+                        <span style="font-weight:700;color:#2E7D32;font-size:.95rem;">${myDonFmtAmt(dayTotal)}</span>
+                    </div>
+                </div>`;
+            }).join('');
+
+        } catch (err) {
+            if (grp) grp.innerHTML = `<div style="text-align:center;padding:40px;color:#e74c3c;font-size:.88rem;"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;display:block;margin-bottom:10px;"></i>Failed to load donations: ${err.message}</div>`;
+        }
+    }
+
+        // ── Auto-load when section shown ──────────────────────────────────────
+    (function() {
+        const originalShowSection = window.showSection;
+        if (typeof originalShowSection === 'function') {
+            window.showSection = function(id) {
+                originalShowSection(id);
+                if (id === 'donations') {
+                    setTimeout(myDonLoad, 50);
+                }
+            };
+        }
+    })();
+
+    // SSE handled by existing evtSource connection in the page
+
+    // ── CSS animations (pulse dot) ────────────────────────────────────────
+    (function() {
+        if (document.getElementById('myDonStyles')) return;
+        const s = document.createElement('style');
+        s.id = 'myDonStyles';
+        s.textContent = `
+            @keyframes deSlideDown {
+            from { opacity:0; transform:translateY(-6px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        @keyframes myDonPulse {
+                0%   { transform: scale(1);   opacity: 1; }
+                50%  { transform: scale(1.5); opacity: 0.5; }
+                100% { transform: scale(1);   opacity: 1; }
+            }
+            #myDonGroups tbody tr:hover { background:#fffaf8; }
+            #myDonGroups tbody td { padding: 10px 16px; border-bottom: 1px solid #f5f5f5; vertical-align: middle; }
+            @media(max-width:600px) {
+                #myDonGroups table thead { display:none; }
+                #myDonGroups table tbody tr { display:block; border-bottom:2px solid #f0f0f0; padding:10px 0; }
+                #myDonGroups table tbody td { display:flex; justify-content:space-between; padding:5px 16px; border:none; font-size:.82rem; }
+                #myDonGroups table tbody td::before { content: attr(data-label); font-weight:600; color:#999; font-size:.74rem; }
+            }
+        `;
+        document.head.appendChild(s);
+    })();
+    </script>
+    <!-- ============================================================ -->
+
+<script>
+// VOLUNTEER VIEW ONLY RESTRICTIONS
+document.addEventListener('DOMContentLoaded', () => {
+    // We need to wait for currentUser to be populated
+    const checkUserInterval = setInterval(() => {
+        if (typeof currentUser !== 'undefined' && currentUser !== null) {
+            clearInterval(checkUserInterval);
+
+            // ── volunteer_view: strict read-only, donor search only ──────────
+            deLoadYearFilter();
+            if (currentUser.role === 'volunteer_view') {
+                console.log('Applying View-Only restrictions...');
+
+                // Hide sidebar links except Donor Search and Logout
+                const sidebarLinks = document.querySelectorAll('.sidebar-nav ul li a');
+                sidebarLinks.forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href !== '#donorSearch' && href !== '#logout' && !link.onclick?.toString().includes('logout')) {
+                        link.parentElement.style.display = 'none';
+                    }
+                });
+
+                // Hide dashboard overview cards
+                document.querySelectorAll('[onclick*="tshirtSection"]').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('[onclick*="donationEntry"]').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('[onclick*="donations"]').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('[onclick*="balanceRecovery"]').forEach(el => el.style.display = 'none');
+
+                // Force view to Donor Search
+                if (typeof showSection === 'function') {
+                    showSection('donorSearch');
+                } else if (window.showSection) {
+                    window.showSection('donorSearch');
+                }
+            }
+
+            // ── volunteer: full access but NO T-shirt section ────────────────
+            if (currentUser.role === 'volunteer') {
+                console.log('Applying standard Volunteer restrictions (no T-shirt access)...');
+
+                // Hide T-shirt sidebar link
+                document.querySelectorAll('.sidebar-nav ul li a').forEach(link => {
+                    if (link.getAttribute('href') === '#tshirtSection' ||
+                        (link.getAttribute('onclick') || '').includes('tshirtSection')) {
+                        link.parentElement.style.display = 'none';
+                    }
+                });
+
+                // Hide T-shirt overview card on the overview page
+                document.querySelectorAll('[onclick*="tshirtSection"]').forEach(el => el.style.display = 'none');
+
+                // Guard: intercept showSection to block direct navigation to tshirtSection
+                const _origShowSec = window.showSection;
+                if (typeof _origShowSec === 'function') {
+                    window.showSection = function(id) {
+                        if (id === 'tshirtSection') {
+                            console.warn('T-shirt section is not available for this role.');
+                            _origShowSec('overview');
+                            return;
+                        }
+                        _origShowSec(id);
+                    };
+                }
+            }
+        }
+    }, 100);
+});
+</script>
+
+<script>
+// --- SYSTEM WIDE NOTIFICATIONS LOGIC ---
+let lastSeenNotifTime = localStorage.getItem('lastSeenNotifTime') || null;
+let currentNotifications = [];
+
+async function fetchNotifications() {
+    try {
+        const res = await fetch('/api/notifications');
+        if (res.ok) {
+            const data = await res.json();
+            currentNotifications = data.notifications || [];
+            updateNotifBadge();
+            renderNotifList();
+        }
+    } catch(e) { 
+        const errList = document.getElementById('dashNotifList');
+        if (errList) errList.innerHTML = '<li class="notification-empty">Could not load notifications.</li>';
+        console.error('Failed to fetch notifications', e); 
+    }
+}
+
+function updateNotifBadge() {
+    let unreadCount = 0;
+    if (lastSeenNotifTime) {
+        unreadCount = currentNotifications.filter(n => new Date(n.timestamp) > new Date(lastSeenNotifTime)).length;
+    } else {
+        unreadCount = currentNotifications.length;
+    }
+    
+    const badge = document.getElementById('dashNotifBadge');
+    if (badge) {
+        if (unreadCount > 0) {
+            badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+            badge.style.display = 'block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+function renderNotifList() {
+    const list = document.getElementById('dashNotifList');
+    if (!list) return;
+    
+    if (currentNotifications.length === 0) {
+        list.innerHTML = '<li class="notification-empty">No new notifications.</li>';
+        return;
+    }
+    
+    list.innerHTML = currentNotifications.map(n => {
+        const d = new Date(n.timestamp);
+        const timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const dateStr = d.toLocaleDateString();
+        return `
+            <li class="notification-item">
+                <div class="notification-message"><i class="fas fa-sign-in-alt" style="color:var(--primary-color);margin-right:6px;"></i>${n.message}</div>
+                <div class="notification-time">${dateStr} ${timeStr}</div>
+            </li>
+        `;
+    }).join('');
+}
+
+window.toggleNotifDropdown = function(e) {
+    if (e) e.stopPropagation();
+    const dropdown = document.querySelector('.notification-dropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('show');
+        if (dropdown.classList.contains('show')) {
+            // Update last seen
+            if (currentNotifications.length > 0) {
+                lastSeenNotifTime = currentNotifications[0].timestamp;
+                localStorage.setItem('lastSeenNotifTime', lastSeenNotifTime);
+                updateNotifBadge();
+            }
+        }
+    }
+};
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    const dropdown = document.querySelector('.notification-dropdown');
+    const container = document.querySelector('.notification-container');
+    if (dropdown && dropdown.classList.contains('show') && container && !container.contains(e.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+
+// Poll every 5 seconds for near real-time
+setInterval(fetchNotifications, 5000);
+// Re-fetch when tab becomes active (e.g. after logging in on another tab)
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) fetchNotifications();
+});
+
+// Fetch immediately (script is at bottom of body, DOM is already ready)
+fetchNotifications();
+</script>
+
+<!-- ==========================================================================
+     DE RECEIPT GENERATOR (de_rcg_) — Live sync from volunteer donation entry form
+     Fully isolated. Zero changes to existing code. All IDs prefixed de_rcg_.
+     ========================================================================== -->
+<script>
+(function() {
+    'use strict';
+
+    // ── Amount → English words (Indian system) ─────────────────────────────
+    function de_rcg_amtToWords(num) {
+        if (!num || isNaN(num) || num <= 0) return '';
+        num = Math.round(num);
+        const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
+                      'Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen',
+                      'Seventeen','Eighteen','Nineteen'];
+        const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+        function h(n) {
+            if (!n) return '';
+            if (n < 20) return ones[n];
+            if (n < 100) return tens[Math.floor(n/10)] + (n%10 ? ' '+ones[n%10] : '');
+            return ones[Math.floor(n/100)]+' Hundred'+(n%100 ? ' '+h(n%100) : '');
+        }
+        let r = '', n = num;
+        if (n >= 10000000) { r += h(Math.floor(n/10000000))+' Crore '; n %= 10000000; }
+        if (n >= 100000)   { r += h(Math.floor(n/100000))+' Lakh ';   n %= 100000;   }
+        if (n >= 1000)     { r += h(Math.floor(n/1000))+' Thousand '; n %= 1000;      }
+        r += h(n);
+        return r.trim() + ' Only';
+    }
+    // Expose to window so the second IIFE (receipt uploader) can use it
+    window.de_rcg_amtToWords = de_rcg_amtToWords;
+
+    // ── Set a receipt field ─────────────────────────────────────────────────
+    function de_rcg_set(id, html) {
+        var el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+    }
+
+    // ── Master sync — reads all form fields and paints the receipt ──────────
+    window.de_rcg_liveSync = function() {
+        var wrapper = document.getElementById('de_rcg_wrapper');
+        if (!wrapper) return;
+
+        // Donor name
+        var donorType = document.getElementById('deDonorType')?.value || 'Individual';
+        var name = '';
+        if (donorType === 'Business') {
+            name = (document.getElementById('deBusinessName')?.value || '').trim();
+        } else {
+            var fn = (document.getElementById('deFirstName')?.value   || '').trim();
+            var mn = (document.getElementById('deMiddleName')?.value  || '').trim();
+            var ln = (document.getElementById('deLastName')?.value    || '').trim();
+            name = [fn, mn, ln].filter(Boolean).join(' ');
+        }
+
+        var amount    = parseFloat(document.getElementById('deAmount')?.value) || 0;
+        var rcptNo    = document.getElementById('deReceiptNumber')?.value || '';
+        var bookNo    = document.getElementById('deBookNumber')?.value || '';
+        var payMode   = document.getElementById('dePaymentMode')?.value || 'Cash';
+        var dateRaw   = document.getElementById('deReceiptDate')?.value || '';
+
+        // Show the wrapper only when at least a name or amount is entered
+        var hasData = name || amount > 0;
+        wrapper.style.display = hasData ? 'block' : 'none';
+        if (!hasData) return;
+
+        // Year from date
+        var yearStr = '';
+        var formattedDate = '';
+        if (dateRaw) {
+            var parts = dateRaw.split('-');
+            if (parts.length === 3) {
+                var yy = parts[0], mm = parts[1], dd = parts[2];
+                formattedDate = dd + '/' + mm + '/' + yy;
+                // Fiscal year e.g. 2025-26
+                var yr = parseInt(yy, 10);
+                var mo = parseInt(mm, 10);
+                if (window._receiptYear) {
+                    yearStr = window._receiptYear;
+                } else if (mo >= 4) {
+                    yearStr = yr + '-' + String(yr + 1).slice(2);
+                } else {
+                    yearStr = (yr - 1) + '-' + String(yr).slice(2);
+                }
+            }
+        }
+
+        // Composite receipt label: Book-Receipt
+        var rcptLabel = '';
+        if (bookNo && rcptNo) rcptLabel = bookNo + ' / ' + rcptNo;
+        else if (rcptNo)      rcptLabel = rcptNo;
+        else if (bookNo)      rcptLabel = bookNo;
+
+        // Amount words
+        var words = amount > 0 ? de_rcg_amtToWords(amount) : '';
+        var amtFmt = amount > 0 ? ('₹\u00a0' + Number(amount).toLocaleString('en-IN')) : '';
+
+        // Paint receipt fields
+        de_rcg_set('de_rcg_r_year',   yearStr   || '<span style="color:#CCC;font-style:italic;">__</span>');
+        de_rcg_set('de_rcg_r_rcptno', rcptLabel || '<span style="color:#CCC;font-style:italic;">___</span>');
+        de_rcg_set('de_rcg_r_date',   formattedDate || '<span style="color:#CCC;font-style:italic;">___________</span>');
+        de_rcg_set('de_rcg_r_donor',  name
+            ? '<span style="font-weight:700;color:#111;">'+name+'</span>'
+            : '<span style="color:#CCC;font-style:italic;font-weight:400;">__________________________</span>');
+        de_rcg_set('de_rcg_r_words',  words
+            ? '<span style="color:#222;">'+words+'</span>'
+            : '<span style="color:#CCC;font-style:italic;font-weight:400;">______________________________</span>');
+        de_rcg_set('de_rcg_r_amt',    amtFmt
+            ? '<span style="font-weight:700;color:#8B1A1A;">'+amtFmt+'</span>'
+            : '<span style="color:#CCC;font-style:italic;font-weight:400;">₹</span>');
+
+        var modeEl = document.getElementById('de_rcg_r_mode');
+        if (modeEl) modeEl.textContent = payMode ? ('(' + payMode + ')') : '';
+    };
+
+    // ── Wire all form fields to trigger live sync ───────────────────────────
+    function de_rcg_wireListeners() {
+        var ids = ['deFirstName','deMiddleName','deLastName','deBusinessName',
+                   'deAmount','deReceiptNumber','deBookNumber','deReceiptDate'];
+        ids.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el && !el._de_rcg_bound) {
+                el._de_rcg_bound = true;
+                el.addEventListener('input',  window.de_rcg_liveSync);
+                el.addEventListener('change', window.de_rcg_liveSync);
+            }
+        });
+
+        // Payment mode buttons — they update a hidden input, so watch that too
+        var pmEl = document.getElementById('dePaymentMode');
+        if (pmEl && !pmEl._de_rcg_bound) {
+            pmEl._de_rcg_bound = true;
+            // MutationObserver for value changes on hidden input
+            var obs = new MutationObserver(window.de_rcg_liveSync);
+            obs.observe(pmEl, { attributes: true, attributeFilter: ['value'] });
+            // Also intercept the existing deSetMode clicks
+            var origSetMode = window.deSetMode;
+            if (typeof origSetMode === 'function') {
+                window.deSetMode = function(mode) {
+                    origSetMode(mode);
+                    window.de_rcg_liveSync();
+                };
+            }
+        }
+
+        // Donor type change — also triggers sync
+        var dtEl = document.getElementById('deDonorType');
+        if (dtEl && !dtEl._de_rcg_bound_dt) {
+            dtEl._de_rcg_bound_dt = true;
+            var origSetDonorType = window.deSetDonorType;
+            if (typeof origSetDonorType === 'function') {
+                window.deSetDonorType = function(type) {
+                    origSetDonorType(type);
+                    window.de_rcg_liveSync();
+                };
+            }
+        }
+
+        // Set today as default date if blank
+        var dateEl = document.getElementById('deReceiptDate');
+        if (dateEl && !dateEl.value) {
+            var t = new Date();
+            dateEl.value = t.getFullYear() + '-'
+                + String(t.getMonth()+1).padStart(2,'0') + '-'
+                + String(t.getDate()).padStart(2,'0');
+            window.de_rcg_liveSync();
+        }
+    }
+
+    // ── Re-wire every time the form section becomes visible ────────────────────
+    var _origShowSection = window.showSection;
+    document.addEventListener('DOMContentLoaded', function() {
+        // Try to wrap showSection if it exists
+        function tryWrapToggle() {
+            if (typeof window.showSection === 'function' && window.showSection !== _patchedShowSection) {
+                var _prev = window.showSection;
+                window.showSection = _patchedShowSection = function(secId) {
+                    _prev(secId);
+                    if(secId === 'donationEntry') {
+                        setTimeout(de_rcg_wireListeners, 100);
+                    }
+                };
+            }
+        }
+        var _patchedShowSection = null;
+        tryWrapToggle();
+        
+        // Also wire via MutationObserver on donationEntry visibility
+        var formCard = document.getElementById('donationEntry');
+        if (formCard) {
+            var obs = new MutationObserver(function(muts) {
+                muts.forEach(function(m) {
+                    if (m.attributeName === 'style' && formCard.style.display !== 'none') {
+                        de_rcg_wireListeners();
+                    }
+                });
+            });
+            obs.observe(formCard, { attributes: true, attributeFilter: ['style'] });
+        }
+        // Retry wrapping showSection (it may be defined after DOMContentLoaded)
+        setTimeout(tryWrapToggle, 500);
+        setTimeout(tryWrapToggle, 1500);
+        
+        // Ensure it's wired if already visible on load
+        if(formCard && formCard.style.display !== 'none') {
+            setTimeout(de_rcg_wireListeners, 100);
+        }
+    });
+
+    // ── HD WhatsApp send ────────────────────────────────────────────────────
+    window.de_rcg_sendWhatsApp = function() {
+        var name = '';
+        var donorType = document.getElementById('deDonorType')?.value || 'Individual';
+        if (donorType === 'Business') {
+            name = (document.getElementById('deBusinessName')?.value || '').trim();
+        } else {
+            var fn = (document.getElementById('deFirstName')?.value  || '').trim();
+            var mn = (document.getElementById('deMiddleName')?.value || '').trim();
+            var ln = (document.getElementById('deLastName')?.value   || '').trim();
+            name = [fn, mn, ln].filter(Boolean).join(' ');
+        }
+        var amount  = parseFloat(document.getElementById('deAmount')?.value) || 0;
+        var rcptNo  = document.getElementById('deReceiptNumber')?.value || '';
+        var bookNo  = document.getElementById('deBookNumber')?.value || '';
+        var dateRaw = document.getElementById('deReceiptDate')?.value || '';
+        var payMode = document.getElementById('dePaymentMode')?.value || 'Cash';
+        // Prefer WhatsApp number, fallback to mobile
+        var phone   = (document.getElementById('deWhatsapp')?.value || '').replace(/\D/g,'');
+        if (!phone) phone = (document.getElementById('deMobile')?.value || '').replace(/\D/g,'');
+        if (phone.length === 10) phone = '91' + phone; // prefix India code
+
+        if (!name && amount <= 0) {
+            if (typeof showNotification === 'function')
+                showNotification('Please fill in at least the donor name and amount.', 'error');
+            else
+                alert('Please fill in at least the donor name and amount.');
+            return;
+        }
+
+        var btn = document.getElementById('de_rcg_wa_btn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating HD Image…'; }
+
+        function doCapture() {
+            var el = document.getElementById('de_rcg_receipt');
+            if (!el) { if (btn) { btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp"></i> Send Receipt via WhatsApp'; } return; }
+
+            html2canvas(el, {
+                scale: 3,            // ← HD: 3× resolution
+                backgroundColor: null,
+                useCORS: true,
+                logging: false,
+                allowTaint: true
+            }).then(function(canvas) {
+                // Build the WhatsApp text message as a fallback / caption
+                var amtFmt = Number(amount).toLocaleString('en-IN');
+                var dateStr = '';
+                if (dateRaw) {
+                    var pts = dateRaw.split('-');
+                    dateStr = (pts[2]||'')+'/'+(pts[1]||'')+'/'+(pts[0]||'');
+                }
+                var rcptLabel = bookNo && rcptNo ? bookNo+'/'+rcptNo : (rcptNo || bookNo || '—');
+
+                var msg = [
+                    '🙏 *श्री पटेलवाडी सार्वजनिक गणेशोत्सव मंडळ*',
+                    '━━━━━━━━━━━━━━━━━━━━━',
+                    '📋 *Receipt No:* ' + rcptLabel,
+                    '👤 *Donor:* ' + (name || '—'),
+                    '💰 *Amount:* ₹' + amtFmt,
+                    '📅 *Date:* ' + (dateStr || '—'),
+                    '💳 *Payment:* ' + payMode,
+                    '━━━━━━━━━━━━━━━━━━━━━',
+                    'धन्यवाद! रोख/चेक मिळाले. 🙏',
+                    '_Shree Patelwadi Sarvjanik Ganeshostav Mandal_'
+                ].join('\n');
+
+                var encoded = encodeURIComponent(msg);
+                var waUrl   = phone
+                    ? 'https://wa.me/' + phone + '?text=' + encoded
+                    : 'https://wa.me/?text=' + encoded;
+
+                // Also trigger PNG download (HD receipt image)
+                var link = document.createElement('a');
+                link.download = 'receipt_' + (name || 'donor').replace(/[^a-z0-9]/gi,'_').toLowerCase() + '_' + Date.now() + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                // Small delay then open WhatsApp
+                setTimeout(function() {
+                    window.open(waUrl, '_blank');
+                }, 400);
+
+                if (btn) { btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp" style="font-size:1.1rem;"></i> Send Receipt via WhatsApp'; }
+            }).catch(function(err) {
+                console.error('[de_rcg] html2canvas error:', err);
+                if (typeof showNotification === 'function')
+                    showNotification('Could not render receipt image. Please try again.', 'error');
+                else
+                    alert('Could not render receipt image.');
+                if (btn) { btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp" style="font-size:1.1rem;"></i> Send Receipt via WhatsApp'; }
+            });
+        }
+
+        // Lazy-load html2canvas if not already available
+        if (typeof html2canvas !== 'undefined') {
+            doCapture();
+        } else {
+            var s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+            s.onload  = doCapture;
+            s.onerror = function() {
+                if (typeof showNotification === 'function')
+                    showNotification('Could not load image library. Check internet connection.', 'error');
+                else
+                    alert('Could not load image library.');
+                if (btn) { btn.disabled=false; btn.innerHTML='<i class="fab fa-whatsapp" style="font-size:1.1rem;"></i> Send Receipt via WhatsApp'; }
+            };
+            document.head.appendChild(s);
+        }
+    };
+
+})();
+</script>
+<!-- ======= END DE RECEIPT GENERATOR ======= -->
+
+<!-- ═══ DE RECEIPT EDIT MODAL (volunteer) ═══ -->
+<div id="de_rcg_editModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:18px;padding:28px 28px 22px;max-width:480px;width:94%;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative;">
+    <button onclick="de_rcg_closeEditModal()" style="position:absolute;top:14px;right:16px;border:none;background:#f5f5f5;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;color:#555;display:flex;align-items:center;justify-content:center;">&times;</button>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;"><div style="width:40px;height:40px;background:linear-gradient(135deg,#8B1A1A,#B71C1C);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-file-invoice" style="color:#fff;font-size:1.1rem;"></i></div><div><div style="font-weight:800;font-size:1.05rem;color:#8B1A1A;">Edit Receipt</div><div style="font-size:.75rem;color:#aaa;" id="de_rcg_editSubtitle">-</div></div></div>
+    <form id="de_rcg_editForm" onsubmit="de_rcg_submitReceiptEdit(event)">
+      <div style="margin-bottom:14px;"><label style="font-weight:600;font-size:.85rem;color:#333;display:block;margin-bottom:5px;">Donor Name *</label><input type="text" id="de_rcg_editName" style="width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:.95rem;box-sizing:border-box;" placeholder="Full name" required></div>
+      <div style="margin-bottom:14px;"><label style="font-weight:600;font-size:.85rem;color:#333;display:block;margin-bottom:5px;">Amount (&#x20b9;)</label><input type="number" id="de_rcg_editAmount" style="width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:.95rem;box-sizing:border-box;" placeholder="Amount" min="0"></div>
+      <div style="margin-bottom:14px;"><label style="font-weight:600;font-size:.85rem;color:#333;display:block;margin-bottom:5px;">Receipt Date</label><input type="date" id="de_rcg_editDate" style="width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:.95rem;box-sizing:border-box;"></div>
+      <div style="margin-bottom:14px;"><label style="font-weight:600;font-size:.85rem;color:#333;display:block;margin-bottom:5px;">Status</label><select id="de_rcg_editStatus" style="width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:.95rem;box-sizing:border-box;background:#fff;"><option value="Received">Received</option><option value="Balance">Balance</option><option value="Cash">Cash</option><option value="Cheque">Cheque</option><option value="UPI">UPI</option><option value="RTGS">RTGS</option></select></div>
+      <div style="margin-bottom:18px;"><label style="font-weight:600;font-size:.85rem;color:#333;display:block;margin-bottom:5px;">Reason <span style="font-weight:400;color:#aaa;font-size:.78rem;">(optional)</span></label><input type="text" id="de_rcg_editReason" style="width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:.95rem;box-sizing:border-box;" placeholder="Correction, typo fix…"></div>
+      <div id="de_rcg_editHistoryBox" style="display:none;margin-bottom:14px;padding:10px 12px;background:#FFF8F1;border-radius:10px;border:1px solid #ffe0b2;font-size:.78rem;color:#555;max-height:120px;overflow-y:auto;"></div>
+      <div style="display:flex;gap:10px;"><button type="submit" id="de_rcg_editSaveBtn" style="flex:1;padding:12px;background:linear-gradient(135deg,#8B1A1A,#B71C1C);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="fas fa-save"></i> Save &amp; Re-send</button><button type="button" onclick="de_rcg_closeEditModal()" style="padding:12px 20px;background:#f5f5f5;color:#555;border:none;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;">Cancel</button></div>
+    </form>
+    <div id="de_rcg_editStatusMsg" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:.88rem;font-weight:600;"></div>
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  var _deEditId=null,_deEntriesCache=[];
+  // ── Receipt Preview Image Uploader ──
+  // Captures the actual live #de_rcg_receipt element (exactly as displayed on screen)
+  window._deUploadReceiptPreview = async function(entryId, name, amount, dateRaw, payMode, rcptNo, bookNo, statusLabel) {
+      if(!entryId) return;
+
+      var rcptEl = document.getElementById('de_rcg_receipt');
+      var wrapEl = document.getElementById('de_rcg_wrapper');
+      if (!rcptEl) return;
+
+      // Pre-compute display values
+      var amtNum  = Number(amount) || 0;
+      var amtFmt  = amtNum > 0 ? '\u20b9\u00a0' + amtNum.toLocaleString('en-IN') : '';
+      var dateStr = '', yearStr = '';
+      if (dateRaw) {
+          var dp = dateRaw.split('-');
+          dateStr = (dp[2]||'') + '/' + (dp[1]||'') + '/' + (dp[0]||'');
+          var yr = parseInt(dp[0], 10), mo = parseInt(dp[1], 10);
+          yearStr = window._receiptYear || (mo >= 4 ? yr + '-' + String(yr+1).slice(2) : (yr-1) + '-' + String(yr).slice(2));
+      }
+      var rcptLabel = (bookNo && rcptNo) ? bookNo+'/'+rcptNo : (rcptNo || bookNo || '\u2014');
+      var words = (amtNum > 0 && typeof window.de_rcg_amtToWords === 'function') ? window.de_rcg_amtToWords(amtNum) : '';
+
+      return new Promise(function(resolve) {
+          function doCapture() {
+              // Save wrapper state and all receipt span innerHTML
+              var prevWrapDisplay = wrapEl ? wrapEl.style.display : '';
+              var ids = ['de_rcg_r_year','de_rcg_r_rcptno','de_rcg_r_date','de_rcg_r_donor','de_rcg_r_words','de_rcg_r_amt'];
+              var modeEl = document.getElementById('de_rcg_r_mode');
+              var saved = {};
+              ids.forEach(function(id) { var el=document.getElementById(id); if(el) saved[id]=el.innerHTML; });
+              var savedMode = modeEl ? modeEl.textContent : '';
+
+              // Make wrapper visible for capture
+              if (wrapEl && wrapEl.style.display === 'none') wrapEl.style.display = 'block';
+
+              // Populate receipt spans (same format as de_rcg_liveSync)
+              function setEl(id, html) { var el=document.getElementById(id); if(el) el.innerHTML=html; }
+              setEl('de_rcg_r_year',   yearStr   || '<span style="color:#CCC;font-style:italic;">__</span>');
+              setEl('de_rcg_r_rcptno', rcptLabel || '<span style="color:#CCC;font-style:italic;">___</span>');
+              setEl('de_rcg_r_date',   dateStr   || '<span style="color:#CCC;font-style:italic;">___________</span>');
+              setEl('de_rcg_r_donor',  name      ? '<span style="font-weight:700;color:#111;">'+name+'</span>' : '<span style="color:#CCC;font-style:italic;font-weight:400;">__________________________</span>');
+              setEl('de_rcg_r_words',  words     ? '<span style="color:#222;">'+words+'</span>'               : '<span style="color:#CCC;font-style:italic;font-weight:400;">______________________________</span>');
+              setEl('de_rcg_r_amt',    amtFmt    ? '<span style="font-weight:700;color:#8B1A1A;">'+amtFmt+'</span>' : '<span style="color:#CCC;font-style:italic;font-weight:400;">\u20b9</span>');
+              if (modeEl) modeEl.textContent = payMode ? '(' + payMode + ')' : '';
+
+              // Capture the actual receipt element at 3x HD (same as WhatsApp send)
+              html2canvas(rcptEl, { scale: 3, backgroundColor: null, useCORS: true, logging: false, allowTaint: true })
+              .then(function(canvas) {
+                  // Restore spans and wrapper
+                  ids.forEach(function(id) { var el=document.getElementById(id); if(el&&saved[id]!==undefined) el.innerHTML=saved[id]; });
+                  if (modeEl) modeEl.textContent = savedMode;
+                  if (wrapEl) wrapEl.style.display = prevWrapDisplay;
+
+                  canvas.toBlob(async function(blob) {
+                      if (!blob) return resolve();
+                      var fd = new FormData();
+                      fd.append('receiptImage', blob, 'preview.png');
+                      fd.append('entryId', entryId);
+                      try { await fetch('/api/upload-receipt-preview', { method:'POST', body:fd }); } catch(e){}
+                      resolve();
+                  }, 'image/png');
+              }).catch(function() {
+                  // Restore on error
+                  ids.forEach(function(id) { var el=document.getElementById(id); if(el&&saved[id]!==undefined) el.innerHTML=saved[id]; });
+                  if (modeEl) modeEl.textContent = savedMode;
+                  if (wrapEl) wrapEl.style.display = prevWrapDisplay;
+                  resolve();
+              });
+          }
+          if (typeof html2canvas !== 'undefined') doCapture();
+          else {
+              var s = document.createElement('script');
+              s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+              s.onload = doCapture; s.onerror = resolve;
+              document.head.appendChild(s);
+          }
+      });
+  };
+
+  window.de_rcg_saveSnapshot=async function(entryId){
+    if(!entryId)return;
+    var dt=document.getElementById("deDonorType"),dn="";
+    if(dt&&dt.value==="Business"){dn=(document.getElementById("deBusinessName")||{}).value||"";}
+    else{var fn=(document.getElementById("deFirstName")||{}).value||"",mn=(document.getElementById("deMiddleName")||{}).value||"",ln=(document.getElementById("deLastName")||{}).value||"";dn=[fn,mn,ln].filter(Boolean).join(" ");}
+    var snap={donorName:dn.trim().toUpperCase(),amount:parseFloat((document.getElementById("deAmount")||{}).value)||null,receiptDate:(document.getElementById("deReceiptDate")||{}).value||null,receiptNo:(document.getElementById("deReceiptNumber")||{}).value||"",bookNo:(document.getElementById("deBookNumber")||{}).value||"",paymentMode:(document.getElementById("dePaymentMode")||{}).value||"Cash",savedAt:new Date().toISOString(),savedBy:(currentUser?currentUser.name:"Volunteer")};
+    try{await fetch("/api/donation-entries/"+encodeURIComponent(entryId),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({_isAdmin:false,receiptDate:snap.receiptDate,receiptSnapshot:snap})});}catch(e){console.warn("[de_rcg] snapshot save failed:",e.message);}
+    // Upload HD preview image
+    var pm = document.getElementById("dePaymentMode")?document.getElementById("dePaymentMode").value:"Cash";
+    var rno = document.getElementById("deReceiptNumber")?document.getElementById("deReceiptNumber").value:"";
+    var bno = document.getElementById("deBookNumber")?document.getElementById("deBookNumber").value:"";
+    var sl = (pm==="Balance"?"BALANCE":"RECEIVED");
+    await _deUploadReceiptPreview(entryId, dn, snap.amount, snap.receiptDate, pm, rno, bno, sl);
+  };
+  window.de_rcg_openEditModal=function(entryId){
+    fetch("/api/donation-entries?year="+(window._adminSelectedYear || 'active')+"&userId="+(currentUser?currentUser.id:"")).then(function(r){return r.json();}).then(function(data){
+      var e=(data.entries||[]).find(function(x){return x.entryId===entryId;});
+      if(!e){if(typeof showNotification==="function")showNotification("Entry not found.","error");return;}
+      _deEditId=entryId;_deEntriesCache=data.entries||[];
+      var dn=e.donorType==="Business"?(e.businessName||""):[e.firstName,e.middleName,e.lastName].filter(Boolean).join(" ");
+      if(e.receiptSnapshot&&e.receiptSnapshot.donorName)dn=e.receiptSnapshot.donorName;
+      var amt=e.receiptSnapshot&&e.receiptSnapshot.amount!=null?e.receiptSnapshot.amount:(e.amount||"");
+      var dt=e.receiptSnapshot&&e.receiptSnapshot.receiptDate?e.receiptSnapshot.receiptDate:(e.receiptDate||"");
+      var st=e.status||(e.paymentMode==="Balance"?"Balance":"Received");
+      var g=function(id){return document.getElementById(id);};
+      if(g("de_rcg_editName"))g("de_rcg_editName").value=dn;
+      if(g("de_rcg_editAmount"))g("de_rcg_editAmount").value=amt;
+      if(g("de_rcg_editDate"))g("de_rcg_editDate").value=dt;
+      if(g("de_rcg_editStatus"))g("de_rcg_editStatus").value=st;
+      if(g("de_rcg_editReason"))g("de_rcg_editReason").value="";
+      if(g("de_rcg_editSubtitle"))g("de_rcg_editSubtitle").textContent=(e.bookNumber&&e.receiptNumber?"Book "+e.bookNumber+" / Receipt #"+e.receiptNumber:entryId);
+      var hb=g("de_rcg_editHistoryBox"),hist=e.receiptHistory||[];
+      if(hb){if(hist.length){hb.style.display="block";hb.innerHTML="<strong style='color:#E65100;'><i class='fas fa-history'></i> Edit History</strong>"+hist.map(function(h){return"<div style='margin-top:4px;border-top:1px solid #ffe0b2;padding-top:4px;'>"+new Date(h.editedAt).toLocaleString("en-IN")+" by "+h.editedBy+(h.reason?"<br><em>"+h.reason+"</em>":"")+"</div>";}).join("");}else{hb.style.display="none";}}
+      if(g("de_rcg_editStatusMsg"))g("de_rcg_editStatusMsg").style.display="none";
+      var m=g("de_rcg_editModal");if(m)m.style.display="flex";
+    }).catch(function(){if(typeof showNotification==="function")showNotification("Could not load entry.","error");});
+  };
+  window.de_rcg_closeEditModal=function(){_deEditId=null;var m=document.getElementById("de_rcg_editModal");if(m)m.style.display="none";};
+  window.de_rcg_submitReceiptEdit=async function(ev){
+    ev.preventDefault();if(!_deEditId)return;
+    var g=function(id){return document.getElementById(id)||{};};
+    var dn=(g("de_rcg_editName").value||"").trim(),amt=parseFloat(g("de_rcg_editAmount").value)||null,dt=(g("de_rcg_editDate").value||"").trim(),st=g("de_rcg_editStatus").value||"Received",rs=(g("de_rcg_editReason").value||"").trim();
+    if(!dn){if(typeof showNotification==="function")showNotification("Please enter the donor name.","error");return;}
+    var e=(_deEntriesCache||[]).find(function(x){return x.entryId===_deEditId;});
+    var btn=document.getElementById("de_rcg_editSaveBtn");if(btn){btn.disabled=true;btn.innerHTML="<i class='fas fa-spinner fa-spin'></i> Saving…";}
+    try{
+      var res=await fetch("/api/donation-entries/"+encodeURIComponent(_deEditId)+"/receipt",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({donorName:dn,amount:amt,receiptDate:dt,status:st,reason:rs,editedBy:(currentUser?currentUser.name:"Volunteer")})});
+      var data=await res.json();
+      if(res.ok&&data.success){
+        if(typeof deLoadMyEntries==="function")deLoadMyEntries();
+        if(btn){btn.innerHTML="<i class='fas fa-spinner fa-spin'></i> Saving Image…";} await _deUploadReceiptPreview(_deEditId, dn, amt, dt, e?e.paymentMode:"Cash", e?e.receiptNumber:"", e?e.bookNumber:"", st.toUpperCase()); if(typeof showNotification==="function")showNotification("Receipt updated!","success");
+        var doWA=confirm("Receipt saved! Re-send via WhatsApp?");
+        de_rcg_closeEditModal();
+        if(doWA){var ph=(e?(e.whatsappNumber||e.mobileNumber||""):"").replace(/\D/g,"");if(ph.length===10)ph="91"+ph;var pts=dt?dt.split("-"):[];var ds=pts.length===3?(pts[2]+"/"+pts[1]+"/"+pts[0]):"";var rl=e?(e.bookNumber&&e.receiptNumber?e.bookNumber+"/"+e.receiptNumber:(e.receiptNumber||"")):"";var msg=["\uD83D\uDE4F *\u0936\u094D\u0930\u0940 \u092A\u0924\u0947\u0932\u0935\u093E\u0921\u0940 \u0938\u093E\u0930\u094D\u0935\u091C\u0928\u093F\u0915 \u0917\u0923\u0947\u0936\u094B\u0924\u094D\u0938\u0935 \u092E\u0902\u0921\u0933*","\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501","\uD83D\uDCCB *Receipt No:* "+(rl||"\u2014"),"\uD83D\uDC64 *Donor:* "+(dn||"\u2014"),"\uD83D\uDCB0 *Amount:* \u20B9"+(amt?Number(amt).toLocaleString("en-IN"):"\u2014"),"\uD83D\uDCC5 *Date:* "+(ds||"\u2014"),"\uD83D\uDCB3 *Payment:* "+(e?e.paymentMode:""),"\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501","\u2705 *UPDATED RECEIPT* \u2014 \u0927\u0928\u094D\u092F\u0935\u093E\u0926! \uD83D\uDE4F","_Shree Patelwadi Sarvjanik Ganeshostav Mandal_"].join("\n");var url=ph?"https://wa.me/"+ph+"?text="+encodeURIComponent(msg):"https://wa.me/?text="+encodeURIComponent(msg);window.open(url,"_blank");}
+      }else{var sm=document.getElementById("de_rcg_editStatusMsg");if(sm){sm.style.display="block";sm.style.background="#FFEBEE";sm.style.color="#C62828";sm.textContent="\u2717 "+(data.message||"Could not save.");}}
+    }catch(err){if(typeof showNotification==="function")showNotification("Network error: "+err.message,"error");}
+    finally{if(btn){btn.disabled=false;btn.innerHTML="<i class='fas fa-save'></i> Save & Re-send";}}
+  };
+  document.addEventListener("click",function(ev){var m=document.getElementById("de_rcg_editModal");if(m&&ev.target===m)de_rcg_closeEditModal();});
+})();

@@ -1254,6 +1254,12 @@ window._fmtBytesA = function(b) {
                     </a>
                 </li>
                 <li>
+                    <a href="#" onclick="showAdminSection('awal')">
+                        <i class="fas fa-camera"></i>
+                        <span>Awal</span>
+                    </a>
+                </li>
+                <li>
                     <a href="#" onclick="showAdminSection('events')">
                         <i class="fas fa-calendar-alt"></i>
                         <span>Events</span>
@@ -2652,6 +2658,88 @@ window._fmtBytesA = function(b) {
                             <button type="button" class="btn btn-primary" onclick="saveSponsor()" id="sponsorSaveBtn">
                                 <i class="fas fa-save"></i> Save Sponsor
                             </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ Awal Section (Admin) ═══════════ -->
+                <div id="awal" class="content-section">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+                        <div>
+                            <h3><i class="fas fa-camera" style="color:var(--primary-color);margin-right:8px;"></i>Manage Awal Photos</h3>
+                        </div>
+                        <button class="btn btn-primary" onclick="openAwalModal()"><i class="fas fa-plus"></i> Add Photo</button>
+                    </div>
+
+                    <div class="admin-card" style="margin-bottom:24px;">
+                        <p style="color:#666;font-size:0.88rem;margin-bottom:16px;">Add photos for the Awal page. They will be displayed in a vertical sequence based on the order you set.</p>
+                        <div style="display:flex; gap:20px; margin-bottom:20px;">
+                            <div style="background:#f9f9f9;padding:12px 20px;border-radius:8px;border:1px solid #eee;">
+                                <div style="font-size:1.5rem;font-weight:700;color:var(--primary-color);" id="awalTotalCount">0</div>
+                                <div style="font-size:0.8rem;color:#666;margin-top:2px;">Total Photos</div>
+                            </div>
+                            <div style="background:#f9f9f9;padding:12px 20px;border-radius:8px;border:1px solid #eee;">
+                                <div style="font-size:1.5rem;font-weight:700;color:#27ae60;" id="awalActiveCount">0</div>
+                                <div style="font-size:0.8rem;color:#15803d;margin-top:2px;">Active</div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="admin-table" id="awalAdminTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width:80px;">Order</th>
+                                        <th style="width:100px;">Photo</th>
+                                        <th>Description</th>
+                                        <th style="width:100px;">Status</th>
+                                        <th style="width:140px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="awalAdminTbody">
+                                    <tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Add/Edit Awal Modal -->
+                    <div id="awalModal" class="modal-overlay">
+                        <div class="modal-content" style="max-width:500px;">
+                            <div class="modal-header">
+                                <h3 id="awalModalTitle">Add Awal Photo</h3>
+                                <span class="close-modal" onclick="closeAwalModal()">&times;</span>
+                            </div>
+                            <input type="hidden" id="awalEditId">
+                            
+                            <div style="margin-bottom:16px;">
+                                <label style="display:block;margin-bottom:6px;font-weight:600;font-size:0.9rem;">Description / Caption (Optional)</label>
+                                <textarea id="awalDescription" class="form-control" rows="2" placeholder="e.g. Awal 2026 - The grand arrival..."></textarea>
+                            </div>
+
+                            <div style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+                                <input type="checkbox" id="awalActive" checked style="width:18px;height:18px;cursor:pointer;">
+                                <label for="awalActive" style="font-weight:600;font-size:0.9rem;cursor:pointer;">Active (Visible to public)</label>
+                            </div>
+
+                            <div style="margin-bottom:20px;">
+                                <label style="display:block;margin-bottom:6px;font-weight:600;font-size:0.9rem;">Photo</label>
+                                <div style="display:flex;gap:12px;align-items:flex-start;">
+                                    <div id="awalPhotoPreviewWrap" style="width:120px;height:120px;background:#f5f5f5;border:1px solid #ddd;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                                        <span style="font-size:0.8rem;color:#aaa;">No photo</span>
+                                    </div>
+                                    <div style="flex:1;">
+                                        <input type="file" id="awalPhotoInput" accept="image/*" class="form-control" onchange="awalPreviewPhoto(this)">
+                                        <div style="font-size:0.75rem;color:#888;margin-top:6px;">Recommended: High-quality landscape or portrait photo.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
+                                <button type="button" class="btn" onclick="closeAwalModal()" style="background:#f0f0f0;color:#333;">Cancel</button>
+                                <button type="button" class="btn btn-primary" onclick="saveAwal()" id="awalSaveBtn">
+                                    <i class="fas fa-save"></i> Save Photo
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
