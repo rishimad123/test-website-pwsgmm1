@@ -3211,10 +3211,15 @@ window.fixUrl = function(url) {
     // Only applies to Volunteer Full Access and Volunteer Full Access + T-shirt.
     // Mirrors adeAutoReceipt() in admin.html exactly.
     async function deAutoReceipt() {
-        // Guard: only run for the two volunteer-full roles (and admin if ever present here)
-        const _role = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.role : '';
+        // Read currentUser fresh from sessionStorage — the const in the other
+        // script block is not accessible across script tag boundaries.
+        const _cu = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+        const _role = _cu ? (_cu.role || '') : '';
         const _allowed = ['volunteer_full', 'volunteer_full_tshirt', 'admin'];
-        if (!_allowed.includes(_role)) return;
+        if (!_allowed.includes(_role)) {
+            deShowStatus('❌ Auto-assign is only available for Full Access volunteers.', 'error');
+            return;
+        }
 
         try {
             const bType = document.querySelector('input[name="deBookType"]:checked')?.value || 'New';
@@ -3224,13 +3229,16 @@ window.fixUrl = function(url) {
                 deShowStatus('❌ All receipt numbers are used for this book type.', 'error');
                 return;
             }
-            // Set the book dropdown
+            // Set the book dropdown value
             const bookSel = document.getElementById('deBookNumber');
-            if (bookSel) {
-                bookSel.value = slot.bookNumber;
-                bookSel.dispatchEvent(new Event('change'));
-            }
-            // Wait for the receipt dropdown to populate, then set receipt number
+            if (!bookSel) return;
+            bookSel.value = slot.bookNumber;
+
+            // Manually call deOnBookChange (async) and wait for it to finish
+            // instead of relying on dispatchEvent which may not trigger the attr handler
+            await deOnBookChange();
+
+            // Now wait for receipt dropdown to be populated and enabled
             let attempts = 0;
             const waitAndSet = setInterval(function () {
                 attempts++;
@@ -3240,11 +3248,13 @@ window.fixUrl = function(url) {
                     rs.value = slot.receiptNumber;
                     clearInterval(waitAndSet);
                     deShowStatus('✅ Auto: Book ' + slot.bookNumber + ', Receipt #' + slot.receiptNumber, 'success');
-                    // Trigger live receipt preview sync
                     if (typeof window.de_rcg_liveSync === 'function') window.de_rcg_liveSync();
                 }
-                if (attempts > 40) clearInterval(waitAndSet);
-            }, 100);
+                if (attempts > 50) {
+                    clearInterval(waitAndSet);
+                    deShowStatus('❌ Timed out waiting for receipt dropdown.', 'error');
+                }
+            }, 80);
         } catch (e) {
             deShowStatus('❌ Auto-receipt error: ' + e.message, 'error');
         }
