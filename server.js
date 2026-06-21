@@ -3228,6 +3228,7 @@ const server = http.createServer(async (req, res) => {
             if (body.socialInstagram !== undefined) globalSettings.socialInstagram = body.socialInstagram;
             if (body.socialYoutube !== undefined) globalSettings.socialYoutube = body.socialYoutube;
             if (body.socialTwitter !== undefined) globalSettings.socialTwitter = body.socialTwitter;
+            if (body.youtubeLiveLink !== undefined) globalSettings.youtubeLiveLink = body.youtubeLiveLink;
             
             if (colSettings) {
                 await colSettings.updateOne({}, { $set: globalSettings }, { upsert: true });

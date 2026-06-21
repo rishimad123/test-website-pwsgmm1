@@ -438,7 +438,12 @@ async function loadSiteSettings() {
             applySocialLink('socialInstagramLink', s.socialInstagram);
             applySocialLink('heroInstagramLink', s.socialInstagram);
         }
-        if (s.socialYoutube)   applySocialLink('socialYoutubeLink',   s.socialYoutube);
+        if (s.socialYoutube) {
+            applySocialLink('socialYoutubeLink', s.socialYoutube);
+            applySocialLink('heroYoutubeLink', s.socialYoutube);
+            const heroYt = document.getElementById('heroYoutubeLink');
+            if (heroYt) heroYt.style.display = 'inline-flex';
+        }
         if (s.socialTwitter)   applySocialLink('socialTwitterLink',   s.socialTwitter);
 
         // Guarantee hero Instagram button always matches the footer icon,
@@ -449,6 +454,25 @@ async function loadSiteSettings() {
             heroInstaBtn.href = footerInstaIcon.href;
             heroInstaBtn.target = '_blank';
             heroInstaBtn.rel = 'noopener noreferrer';
+        }
+
+        // --- YouTube Live Embed ---
+        const ytLiveSection = document.getElementById('youtubeLiveSection');
+        const ytLiveFrame = document.getElementById('youtubeLiveFrame');
+        if (ytLiveSection && ytLiveFrame && s.youtubeLiveLink && s.youtubeLiveLink.trim()) {
+            let embedUrl = s.youtubeLiveLink.trim();
+            // Convert watch link to embed link if necessary
+            if (embedUrl.includes('watch?v=')) {
+                const videoId = new URL(embedUrl).searchParams.get('v');
+                if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            } else if (embedUrl.includes('youtu.be/')) {
+                const videoId = embedUrl.split('youtu.be/')[1].split('?')[0];
+                if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            }
+            ytLiveFrame.src = embedUrl;
+            ytLiveSection.style.display = 'block';
+        } else if (ytLiveSection) {
+            ytLiveSection.style.display = 'none';
         }
 
         // --- T-shirt Showcase Grid ---

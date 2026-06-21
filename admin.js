@@ -4650,6 +4650,7 @@ async function loadAdminEventDate() {
             if (data.socialInstagram) document.getElementById('adminSocialInstagram').value = data.socialInstagram;
             if (data.socialYoutube) document.getElementById('adminSocialYoutube').value = data.socialYoutube;
             if (data.socialTwitter) document.getElementById('adminSocialTwitter').value = data.socialTwitter;
+            if (data.youtubeLiveLink) document.getElementById('adminYoutubeLive').value = data.youtubeLiveLink;
         }
     } catch (e) {
         console.warn('Failed to load settings:', e.message);
@@ -4666,7 +4667,8 @@ async function saveSiteSettingsForm() {
         socialFacebook: document.getElementById('adminSocialFacebook')?.value || '',
         socialInstagram: document.getElementById('adminSocialInstagram')?.value || '',
         socialYoutube: document.getElementById('adminSocialYoutube')?.value || '',
-        socialTwitter: document.getElementById('adminSocialTwitter')?.value || ''
+        socialTwitter: document.getElementById('adminSocialTwitter')?.value || '',
+        youtubeLiveLink: document.getElementById('adminYoutubeLive')?.value || ''
     };
     
     try {

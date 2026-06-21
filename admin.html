@@ -3150,6 +3150,14 @@ window._fmtBytesA = function(b) {
                                     <input type="text" id="adminSocialTwitter" class="admin-input" placeholder="https://twitter.com/..." style="width:100%;margin:0;">
                                 </div>
                             </div>
+                            
+                            <div style="display:flex; gap:15px; flex-wrap:wrap; margin-top:10px;">
+                                <div style="flex:1; min-width:300px;">
+                                    <label for="adminYoutubeLive" style="display:block;font-size:0.85rem;color:#666;margin-bottom:5px;"><i class="fas fa-video" style="color:#FF0000;"></i> YouTube Live Stream URL (Optional)</label>
+                                    <input type="text" id="adminYoutubeLive" class="admin-input" placeholder="e.g. https://www.youtube.com/embed/LIVE_ID or regular watch link" style="width:100%;margin:0;">
+                                    <small style="color:#888;font-size:0.75rem;margin-top:4px;display:block;">If provided, a Live Stream section will appear on the homepage above the About section.</small>
+                                </div>
+                            </div>
 
                             <div>
                                 <button class="btn btn-primary btn-small" onclick="saveSiteSettingsForm()">
