@@ -2034,22 +2034,26 @@ window.fixUrl = function(url) {
             <form id="deVolEditForm" onsubmit="deSaveVolEdit(event)" autocomplete="off">
                 <input type="hidden" id="deVolEditId">
                 <!-- Details: Landmark, Mode, Status -->
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+                <!-- Landmark & Area: each full-width to prevent overflow -->
+                <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px;">
                     <div class="form-group" style="margin:0;">
                         <label>Landmark <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
-                        <select id="deVolEditLandmark" class="form-control" onchange="deOnVolEditLandmarkChange()"></select>
+                        <select id="deVolEditLandmark" class="form-control" onchange="deOnVolEditLandmarkChange()" style="width:100%;min-width:0;box-sizing:border-box;"></select>
                     </div>
                     <div class="form-group" id="deVolEditAreaGroup" style="margin:0;display:none;">
                         <label>Area <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
-                        <select id="deVolEditArea" class="form-control"></select>
+                        <select id="deVolEditArea" class="form-control" style="width:100%;min-width:0;box-sizing:border-box;"></select>
                     </div>
+                </div>
+                <!-- Payment Mode & Status: 2-col -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
                     <div class="form-group" style="margin:0;">
                         <label>Payment Mode <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
                         <select id="deVolEditMode" class="form-control">
                             <option>Cash</option><option>Cheque</option><option>UPI</option><option>RTGS</option><option>Balance</option>
                         </select>
                     </div>
-                    <div class="form-group" style="margin:0;grid-column:1/-1;">
+                    <div class="form-group" style="margin:0;">
                         <label>Status <span style="color:#aaa;font-size:.8rem;">(editable)</span></label>
                         <select id="deVolEditStatusField" class="form-control" style="background:#FFF8F1;color:#E65100;font-weight:700;">
                             <option value="Balance">Balance</option>
@@ -2102,9 +2106,15 @@ window.fixUrl = function(url) {
                         <div class="form-group" style="margin:0;"><label style="font-size:.78rem;">Business Name</label><input id="deVolEditBiz" class="form-control" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"></div>
                     </div>
 
-                    <div class="form-group" style="margin-bottom:12px;">
-                        <label style="font-size:.78rem;">Amount (&#8377;)</label>
-                        <input type="number" id="deVolEditAmount" class="form-control" min="0" placeholder="0">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:.78rem;">Amount (&#8377;) <span style="color:red;">*</span></label>
+                            <input type="number" id="deVolEditAmount" class="form-control" min="0" placeholder="0">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:.78rem;">Amount Received (&#8377;) <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+                            <input type="number" id="deVolEditAmountReceived" class="form-control" min="0" placeholder="e.g. 500">
+                        </div>
                     </div>
                     <div id="deVolNameReasonWrap" style="margin-top:8px;">
                         <label style="font-size:.78rem;color:#c0392b;font-weight:700;"><i class="fas fa-exclamation-circle" style="margin-right:4px;"></i>Reason for Change <span style="color:#c0392b;">*</span> <span id="deVolReasonHint" style="color:#aaa;font-weight:400;">(required every time)</span></label>
@@ -3952,7 +3962,7 @@ window.fixUrl = function(url) {
                     '<td style="font-size:.85rem;">' + (e.buildingName||'') + (e.flatNumber ? '<br><span style="font-size:0.75rem;color:#777;">Flat: ' + e.flatNumber + '</span>' : '') + '</td>' +
                     '<td style="font-size:.85rem;">' + (e.landmark||'') + '</td>' +
                     '<td style="font-size:.85rem;">' + (e.area||'') + '</td>' +
-                    '<td style="color:#2E7D32;font-weight:700;">' + amt + '</td>' +
+                    '<td style="color:#2E7D32;font-weight:700;">' + amt + (e.amountReceived != null ? '<br><span style="font-size:.72rem;color:#1565C0;font-weight:600;">Rcvd: &#x20B9;' + Number(e.amountReceived).toLocaleString('en-IN') + '</span>' : '') + '</td>' +
                     '<td><span style="padding:3px 10px;border-radius:12px;background:#FFF8F1;color:#E65100;font-size:.75rem;font-weight:700;">' + e.paymentMode + '</span></td>' +
                     '<td style="font-size:.82rem;color:#777;">' + (e.referenceNumber||'') + '</td>' +
                     '<td style="text-align:center;vertical-align:middle;">' + photoCell + '</td>' +
@@ -4039,7 +4049,10 @@ window.fixUrl = function(url) {
                     </div>
                 </div>
                 <div style="display:flex;align-items:center;justify-content:space-between;">
-                    <div style="font-size:1.1rem;font-weight:800;color:#2E7D32;">${amt}</div>
+                    <div>
+                        <div style="font-size:1.1rem;font-weight:800;color:#2E7D32;">${amt}</div>
+                        ${e.amountReceived != null ? `<div style="font-size:.75rem;font-weight:700;color:#1565C0;margin-top:3px;"><i class="fas fa-hand-holding-usd" style="margin-right:4px;font-size:.7rem;"></i>Received: &#x20B9;${Number(e.amountReceived).toLocaleString('en-IN')}</div>` : ''}
+                    </div>
                     <div style="font-size:.76rem;color:#aaa;text-align:right;line-height:1.4;">
                         ${timeStr}<br>${dateStr}
                         ${(e.updatedAt && e.updatedAt !== e.submittedAt && !isNaN(new Date(e.updatedAt))) ? 
@@ -4115,6 +4128,9 @@ window.fixUrl = function(url) {
             document.getElementById('deVolEditAmount').value = e.amount != null ? e.amount : '';
             // Store original amount to detect changes later
             document.getElementById('deVolEditAmount').dataset.original = e.amount != null ? e.amount : '';
+            // Populate Amount Received
+            const _arEl = document.getElementById('deVolEditAmountReceived');
+            if (_arEl) _arEl.value = e.amountReceived != null ? e.amountReceived : '';
             document.getElementById('deVolEditMode').value   = e.paymentMode || 'Cash';
             
             const statusField = document.getElementById('deVolEditStatusField');
@@ -4397,6 +4413,10 @@ window.fixUrl = function(url) {
             area          : document.getElementById('deVolEditArea').value || undefined,
         };
         if (amtVal !== '') payload.amount = Number(amtVal);
+        // Amount Received — stored as a separate field, never changes the main amount
+        const amtRecVal = document.getElementById('deVolEditAmountReceived')?.value;
+        if (amtRecVal !== '' && amtRecVal != null) payload.amountReceived = Number(amtRecVal);
+        else payload.amountReceived = null;
 
         // Always attach name fields
         if (_eIsBiz) { payload.businessName = _newBiz; }

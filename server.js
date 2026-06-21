@@ -2148,13 +2148,15 @@ const server = http.createServer(async (req, res) => {
                 // Admin: all editable fields
                 const fields = ['bookNumber','receiptNumber','bookType','donorType','firstName','middleName','lastName',
                                 'businessName','whatsappNumber','mobileNumber','mailId','buildingName',
-                                'flatNumber','landmark','area','amount','paymentMode','referenceNumber','status'];
+                                'flatNumber','landmark','area','amount','paymentMode','referenceNumber','status','amountReceived'];
                 fields.forEach(f => {
                     if (body[f] !== undefined) {
                         if (['firstName','middleName','lastName','businessName'].includes(f) && body[f])
                             e[f] = String(body[f]).trim().toUpperCase();
                         else if (['bookNumber','receiptNumber','amount'].includes(f))
                             e[f] = Number(body[f]);
+                        else if (f === 'amountReceived')
+                            e[f] = (body[f] !== '' && body[f] != null) ? Number(body[f]) : null;
                         else
                             e[f] = body[f];
                     }
@@ -2176,6 +2178,10 @@ const server = http.createServer(async (req, res) => {
                 if (body.buildingName  !== undefined) e.buildingName  = String(body.buildingName);
                 if (body.flatNumber    !== undefined) e.flatNumber    = String(body.flatNumber);
                 if (body.referenceNumber !== undefined) e.referenceNumber = String(body.referenceNumber);
+                // amountReceived: tracked separately, never affects main amount
+                if (Object.prototype.hasOwnProperty.call(body, 'amountReceived')) {
+                    e.amountReceived = body.amountReceived != null && body.amountReceived !== '' ? Number(body.amountReceived) : null;
+                }
                 
                 // Volunteer name, amount, book, receipt, mode, or status change — requires changeReason for donor details, but we track all
                 const nameFields = ['firstName','middleName','lastName','businessName'];
