@@ -2031,7 +2031,7 @@ window.fixUrl = function(url) {
                 <span onclick="deCloseVolEdit()" style="font-size:1.5rem;cursor:pointer;color:#999;">&times;</span>
             </div>
             <div id="deVolEditStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-weight:600;"></div>
-            <form id="deVolEditForm" onsubmit="deSaveVolEdit(event)" autocomplete="off">
+            <form id="deVolEditForm" autocomplete="off">
                 <input type="hidden" id="deVolEditId">
                 <!-- Details: Landmark, Mode, Status -->
                 <!-- Landmark & Area: each full-width to prevent overflow -->
@@ -2125,7 +2125,7 @@ window.fixUrl = function(url) {
 
                 <div style="display:flex;gap:10px;justify-content:flex-end;">
                     <button type="button" class="btn" style="background:#eee;color:#555;" onclick="deCloseVolEdit()">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="deVolEditSaveBtn"><i class="fas fa-save" style="margin-right:6px;"></i>Save Changes</button>
+                    <button type="button" class="btn btn-primary" id="deVolEditSaveBtn" onclick="deSaveVolEdit(event)"><i class="fas fa-save" style="margin-right:6px;"></i>Save Changes</button>
                 </div>
 
                 <!-- Edit History Log -->
@@ -4338,7 +4338,7 @@ window.fixUrl = function(url) {
     });
 
     async function deSaveVolEdit(ev) {
-        ev.preventDefault();
+        if (ev && ev.preventDefault) ev.preventDefault();
         const id  = document.getElementById('deVolEditId').value;
         if (!id) return;
         const btn = document.getElementById('deVolEditSaveBtn');
@@ -4350,8 +4350,9 @@ window.fixUrl = function(url) {
             st.style.background = type==='success' ? '#D5F4E6' : '#FFEBEE';
             st.style.color      = type==='success' ? '#1a7a45' : '#c0392b';
             st.style.border     = type==='success' ? '1px solid #a3e6c1' : '1px solid #f5b7b1';
-            // Always scroll into view so message is visible regardless of modal scroll position
-            setTimeout(() => st.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+            // Scroll the modal overlay to top so the message is always visible
+            const modalOverlay = document.getElementById('deVolEditModal');
+            if (modalOverlay) modalOverlay.scrollTop = 0;
         }
         const _isAdminUser = currentUser && currentUser.role === 'admin';
         const amtVal = document.getElementById('deVolEditAmount').value;
