@@ -1103,7 +1103,9 @@
     let _deVolEditBookType = 'New';
 
     function deOpenVolEdit(id) {
-        fetch('/api/donation-entries?year=' + (window._deSelectedYear || 'active')).then(r => r.json()).then(data => {
+        // Use whichever year variable is currently active (cards may be loaded by any year filter)
+        const _deYear = window._vdeSelectedYear || window._deSelectedYear || window._adminSelectedYear || 'active';
+        fetch('/api/donation-entries?year=' + _deYear).then(r => r.json()).then(data => {
             const e = (data.entries || []).find(x => x.entryId === id);
             if (!e) return;
             _deVolEditBlob = null;
