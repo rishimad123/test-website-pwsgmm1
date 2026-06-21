@@ -994,6 +994,28 @@
             const dateStr = isNaN(dtObj) ? '—' : dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
             const timeStr = isNaN(dtObj) ? '' : dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
             
+            // --- Auto-generate missing digital receipt previews silently in background ---
+            if (!e.receiptPreviewUrl) {
+                window._genRcptQ = window._genRcptQ || new Set();
+                if (!window._genRcptQ.has(e.entryId)) {
+                    window._genRcptQ.add(e.entryId);
+                    setTimeout(async function() {
+                        if (typeof window._deUploadReceiptPreview === 'function') {
+                            try {
+                                var _dn = e.donorType==="Business"?(e.businessName||""):[e.firstName,e.middleName,e.lastName].filter(Boolean).join(" ");
+                                if(e.receiptSnapshot&&e.receiptSnapshot.donorName) _dn=e.receiptSnapshot.donorName;
+                                var _amt=e.receiptSnapshot&&e.receiptSnapshot.amount!=null?e.receiptSnapshot.amount:(e.amount||"");
+                                var _dt=e.receiptSnapshot&&e.receiptSnapshot.receiptDate?e.receiptSnapshot.receiptDate:(e.receiptDate||"");
+                                var _st=e.status||(e.paymentMode==="Balance"?"Balance":"Received");
+                                var _sl = (_st.toUpperCase() === "BALANCE" ? "BALANCE" : "RECEIVED");
+                                await window._deUploadReceiptPreview(e.entryId, _dn, _amt, _dt, e.paymentMode||"Cash", e.receiptNumber||"", e.bookNumber||"", _sl);
+                                if(typeof deLoadMyEntries === 'function') deLoadMyEntries();
+                            } catch(err) { console.warn("Auto-gen preview failed:", err); }
+                        }
+                    }, Math.random() * 2000 + 1000); // Stagger generation
+                }
+            }
+
             const _hp = !!e.photoUrl, _hpv = !!e.receiptPreviewUrl, _ts = Date.now();
             const photoSection = (_hp || _hpv)
                 ? `<div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
