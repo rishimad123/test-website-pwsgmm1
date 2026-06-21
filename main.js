@@ -468,6 +468,9 @@ async function loadSiteSettings() {
             } else if (embedUrl.includes('youtu.be/')) {
                 const videoId = embedUrl.split('youtu.be/')[1].split('?')[0];
                 if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            } else if (embedUrl.includes('/live/')) {
+                const videoId = embedUrl.split('/live/')[1].split('?')[0];
+                if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
             }
             ytLiveFrame.src = embedUrl;
             ytLiveSection.style.display = 'block';
