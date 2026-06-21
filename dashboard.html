@@ -3289,6 +3289,61 @@ window.fixUrl = function(url) {
         sel.disabled = false;
     }
 
+    // ── Show status message in the Donation Entry section ────────────────────
+    function deShowStatus(msg, type) {
+        const el = document.getElementById('deStatus');
+        if (!el) return;
+        el.textContent = msg;
+        el.style.display = 'block';
+        el.style.background = type === 'success' ? '#D5F4E6' : '#FFEBEE';
+        el.style.color      = type === 'success' ? '#1a7a45' : '#c0392b';
+        el.style.border     = type === 'success' ? '1px solid #a3e6c1' : '1px solid #f5b7b1';
+        if (type === 'success') setTimeout(() => el.style.display = 'none', 6000);
+    }
+
+    // ── Auto-select next free Book + Receipt number ───────────────────────────
+    // Only applies to Volunteer Full Access and Volunteer Full Access + T-shirt.
+    // Mirrors adeAutoReceipt() in admin.html exactly.
+    async function deAutoReceipt() {
+        // Guard: only run for the two volunteer-full roles (and admin if ever present here)
+        const _role = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.role : '';
+        const _allowed = ['volunteer_full', 'volunteer_full_tshirt', 'admin'];
+        if (!_allowed.includes(_role)) return;
+
+        try {
+            const bType = document.querySelector('input[name="deBookType"]:checked')?.value || 'New';
+            const resp = await fetch('/api/donation-entries/next-receipt?type=' + bType);
+            const slot = await resp.json();
+            if (!slot.bookNumber) {
+                deShowStatus('❌ All receipt numbers are used for this book type.', 'error');
+                return;
+            }
+            // Set the book dropdown
+            const bookSel = document.getElementById('deBookNumber');
+            if (bookSel) {
+                bookSel.value = slot.bookNumber;
+                bookSel.dispatchEvent(new Event('change'));
+            }
+            // Wait for the receipt dropdown to populate, then set receipt number
+            let attempts = 0;
+            const waitAndSet = setInterval(function () {
+                attempts++;
+                const rs = document.getElementById('deReceiptNumber');
+                if (!rs) { clearInterval(waitAndSet); return; }
+                if (!rs.disabled && rs.options.length > 1) {
+                    rs.value = slot.receiptNumber;
+                    clearInterval(waitAndSet);
+                    deShowStatus('✅ Auto: Book ' + slot.bookNumber + ', Receipt #' + slot.receiptNumber, 'success');
+                    // Trigger live receipt preview sync
+                    if (typeof window.de_rcg_liveSync === 'function') window.de_rcg_liveSync();
+                }
+                if (attempts > 40) clearInterval(waitAndSet);
+            }, 100);
+        } catch (e) {
+            deShowStatus('❌ Auto-receipt error: ' + e.message, 'error');
+        }
+    }
+
     // ── Donor type toggle ────────────────────────────────────
     function deSetDonorType(type) {
         document.getElementById('deDonorType').value = type;
@@ -5370,7 +5425,7 @@ fetchNotifications();
               var savedMode = modeEl ? modeEl.textContent : '';
 
               // Make wrapper and modal visible for capture so html2canvas doesn't return a blank image
-              var modalEl = document.getElementById('de_rcg_modal');
+              var modalEl = document.getElementById('de_rcg_editModal');
               var prevModalDisplay = modalEl ? modalEl.style.display : '';
               var prevModalOpacity = modalEl ? modalEl.style.opacity : '';
               var prevModalPointer = modalEl ? modalEl.style.pointerEvents : '';
@@ -5378,7 +5433,7 @@ fetchNotifications();
               if (modalEl && modalEl.style.display === 'none') {
                   modalEl.style.opacity = '0';
                   modalEl.style.pointerEvents = 'none';
-                  modalEl.style.display = 'block';
+                  modalEl.style.display = 'flex';
               }
               if (wrapEl && wrapEl.style.display === 'none') wrapEl.style.display = 'block';
 
@@ -5393,7 +5448,17 @@ fetchNotifications();
               if (modeEl) modeEl.textContent = payMode ? '(' + payMode + ')' : '';
 
               // Capture the actual receipt element at 3x HD (same as WhatsApp send)
-              html2canvas(rcptEl, { scale: 3, backgroundColor: null, useCORS: true, logging: false, allowTaint: true })
+              html2canvas(rcptEl, { 
+                  scale: 3, 
+                  backgroundColor: null, 
+                  useCORS: true, 
+                  logging: false, 
+                  allowTaint: true,
+                  onclone: function(clonedDoc) {
+                      var clonedModal = clonedDoc.getElementById('de_rcg_editModal');
+                      if (clonedModal) clonedModal.style.opacity = '1';
+                  }
+              })
               .then(function(canvas) {
                   // Restore spans, wrapper, and modal
                   ids.forEach(function(id) { var el=document.getElementById(id); if(el&&saved[id]!==undefined) el.innerHTML=saved[id]; });
