@@ -1008,12 +1008,9 @@
                            <div style="background:#EBF5FF;padding:3px 10px;font-size:.68rem;color:#1565C0;font-weight:600;display:flex;align-items:center;gap:5px;"><i class="fas fa-expand-alt"></i>&nbsp;Tap to view full preview</div>
                        </div>` : ''}
                    </div>`
-                : `<div style="margin-top:12px;border:1.5px dashed #90CAF9;border-radius:10px;padding:12px;text-align:center;background:#E3F2FD;">
-                       <i class="fas fa-file-invoice" style="font-size:1.3rem;color:#64B5F6;display:block;margin-bottom:5px;"></i>
-                       <span style="font-size:.73rem;color:#1565C0;font-weight:700;">Digital Receipt Not Generated</span>
-                       <div style="margin-top:8px;">
-                           <button id="gen-rcpt-btn-${e.entryId}" onclick="de_rcg_generateMissingPreview('${e.entryId}')" style="background:#1565C0;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;"><i class="fas fa-magic"></i> Generate Receipt</button>
-                       </div>
+                : `<div style="margin-top:12px;border:1.5px dashed #f0e0d0;border-radius:10px;padding:12px;text-align:center;background:#fffaf8;">
+                       <i class="fas fa-camera" style="font-size:1.3rem;color:#ddd;display:block;margin-bottom:5px;"></i>
+                       <span style="font-size:.73rem;color:#ccc;font-weight:600;">No Receipt Photo</span>
                    </div>`;
 
             // Volunteer Edit button
