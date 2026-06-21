@@ -3215,7 +3215,7 @@ window.fixUrl = function(url) {
         // script block is not accessible across script tag boundaries.
         const _cu = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
         const _role = _cu ? (_cu.role || '') : '';
-        const _allowed = ['volunteer_full', 'volunteer_full_tshirt', 'admin'];
+        const _allowed = ['volunteer', 'volunteer_full', 'volunteer_full_tshirt', 'admin'];
         if (!_allowed.includes(_role)) {
             deShowStatus('❌ Auto-assign is only available for Full Access volunteers.', 'error');
             return;
