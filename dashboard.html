@@ -5432,7 +5432,7 @@ fetchNotifications();
   };
   window.de_rcg_openEditModal=function(entryId){
     var _rcgYear = window._vdeSelectedYear || window._adminSelectedYear || window._deSelectedYear || 'active';
-    fetch("/api/donation-entries?year="+_rcgYear+"&userId="+(currentUser?currentUser.id:"")).then(function(r){return r.json();}).then(function(data){
+    fetch("/api/donation-entries?year="+_rcgYear).then(function(r){return r.json();}).then(function(data){
       var e=(data.entries||[]).find(function(x){return x.entryId===entryId;});
       if(!e){if(typeof showNotification==="function")showNotification("Entry not found.","error");return;}
       _deEditId=entryId;_deEntriesCache=data.entries||[];
