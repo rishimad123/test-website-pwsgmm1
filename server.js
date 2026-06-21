@@ -2167,74 +2167,70 @@ const server = http.createServer(async (req, res) => {
                     e.photoUrl  = body.photoFile ? `/uploads/${body.photoFile}` : null;
                 }
             } else {
-                // Volunteer: standard editable fields
-                if (body.amount        !== undefined) e.amount        = Number(body.amount);
-                if (body.paymentMode   !== undefined) e.paymentMode   = String(body.paymentMode);
-                if (body.status        !== undefined) e.status        = String(body.status);
-                if (body.bookNumber    !== undefined) e.bookNumber    = Number(body.bookNumber);
-                if (body.receiptNumber !== undefined) e.receiptNumber = Number(body.receiptNumber);
+                // Volunteer: apply non-tracked field changes immediately
                 if (body.landmark          !== undefined) e.landmark          = String(body.landmark);
-                if (body.area       !== undefined) e.area       = String(body.area);
-                if (body.buildingName  !== undefined) e.buildingName  = String(body.buildingName);
-                if (body.flatNumber    !== undefined) e.flatNumber    = String(body.flatNumber);
-                if (body.referenceNumber !== undefined) e.referenceNumber = String(body.referenceNumber);
+                if (body.area              !== undefined) e.area              = String(body.area);
+                if (body.buildingName      !== undefined) e.buildingName      = String(body.buildingName);
+                if (body.flatNumber        !== undefined) e.flatNumber        = String(body.flatNumber);
+                if (body.referenceNumber   !== undefined) e.referenceNumber   = String(body.referenceNumber);
                 // amountReceived: tracked separately, never affects main amount
                 if (Object.prototype.hasOwnProperty.call(body, 'amountReceived')) {
                     e.amountReceived = body.amountReceived != null && body.amountReceived !== '' ? Number(body.amountReceived) : null;
                 }
-                
-                // Volunteer name, amount, book, receipt, mode, or status change — requires changeReason for donor details, but we track all
+
+                // Detect changes BEFORE applying them (fix: don't mutate e before comparing)
                 const nameFields = ['firstName','middleName','lastName','businessName'];
-                const hasNameChange = nameFields.some(f => body[f] !== undefined);
-                const hasAmountChange = body.amount !== undefined && Number(body.amount) !== Number(e.amount);
-                const hasBookChange = body.bookNumber !== undefined && Number(body.bookNumber) !== Number(e.bookNumber);
+                const hasNameChange    = nameFields.some(f => body[f] !== undefined);
+                const hasAmountChange  = body.amount        !== undefined && Number(body.amount)        !== Number(e.amount);
+                const hasBookChange    = body.bookNumber    !== undefined && Number(body.bookNumber)    !== Number(e.bookNumber);
                 const hasReceiptChange = body.receiptNumber !== undefined && Number(body.receiptNumber) !== Number(e.receiptNumber);
-                const hasModeChange = body.paymentMode !== undefined && String(body.paymentMode) !== String(e.paymentMode);
-                const hasStatusChange = body.status !== undefined && String(body.status) !== String(e.status);
+                const hasModeChange    = body.paymentMode   !== undefined && String(body.paymentMode)   !== String(e.paymentMode);
+                const hasStatusChange  = body.status        !== undefined && String(body.status)        !== String(e.status);
 
                 if (hasNameChange || hasAmountChange || hasBookChange || hasReceiptChange || hasModeChange || hasStatusChange) {
                     if ((hasNameChange || hasAmountChange || hasBookChange || hasReceiptChange) && (!body.changeReason || !String(body.changeReason).trim())) {
                         return sendJSON(res, 400, { message: 'A reason is required when changing donor details (Name, Amount, Book, or Receipt).' });
                     }
-                    const oldName = e.donorType === 'Business'
+                    const oldName    = e.donorType === 'Business'
                         ? (e.businessName || '')
                         : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
-                    const oldAmount = e.amount;
-                    const oldBook = e.bookNumber;
+                    const oldAmount  = e.amount;
+                    const oldBook    = e.bookNumber;
                     const oldReceipt = e.receiptNumber;
-                    const oldMode = e.paymentMode;
-                    const oldStatus = e.status;
+                    const oldMode    = e.paymentMode;
+                    const oldStatus  = e.status;
 
-                    if (hasNameChange) {
-                        nameFields.forEach(f => {
-                            if (body[f] !== undefined) e[f] = String(body[f]).trim().toUpperCase();
-                        });
-                    }
-                    if (hasAmountChange) e.amount = Number(body.amount);
-                    if (hasBookChange) e.bookNumber = Number(body.bookNumber);
+                    // Apply tracked changes
+                    if (hasNameChange)    nameFields.forEach(f => { if (body[f] !== undefined) e[f] = String(body[f]).trim().toUpperCase(); });
+                    if (hasAmountChange)  e.amount        = Number(body.amount);
+                    if (hasBookChange)    e.bookNumber    = Number(body.bookNumber);
                     if (hasReceiptChange) e.receiptNumber = Number(body.receiptNumber);
-                    if (hasModeChange) e.paymentMode = String(body.paymentMode);
-                    if (hasStatusChange) e.status = String(body.status);
+                    if (hasModeChange)    e.paymentMode   = String(body.paymentMode);
+                    if (hasStatusChange)  e.status        = String(body.status);
 
                     const newName = e.donorType === 'Business'
                         ? (e.businessName || '')
                         : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
-                    
+
                     if (!e.editHistory) e.editHistory = [];
-                    // Track everything
                     e.editHistory.push({
                         from: oldName, to: newName,
-                        fromAmount: oldAmount, toAmount: e.amount,
-                        fromBook: oldBook, toBook: e.bookNumber,
-                        fromReceipt: oldReceipt, toReceipt: e.receiptNumber,
-                        fromMode: oldMode, toMode: e.paymentMode,
-                        fromStatus: oldStatus, toStatus: e.status,
-                        reason: String(body.changeReason || 'Status/Mode Updated').trim(),
+                        fromAmount: oldAmount,  toAmount: e.amount,
+                        fromBook:   oldBook,    toBook:   e.bookNumber,
+                        fromReceipt:oldReceipt, toReceipt:e.receiptNumber,
+                        fromMode:   oldMode,    toMode:   e.paymentMode,
+                        fromStatus: oldStatus,  toStatus: e.status,
+                        reason:    String(body.changeReason || 'Status/Mode Updated').trim(),
                         changedAt: new Date().toISOString(),
                         changedBy: body.changedBy || 'Volunteer'
                     });
                 } else {
-                    // No tracked fields changed, but maybe we fallback update them? (Already handled above since we track them all now)
+                    // No tracked fields changed — still apply paymentMode/status/amount in case passed without actual change
+                    if (body.amount        !== undefined) e.amount        = Number(body.amount);
+                    if (body.paymentMode   !== undefined) e.paymentMode   = String(body.paymentMode);
+                    if (body.status        !== undefined) e.status        = String(body.status);
+                    if (body.bookNumber    !== undefined) e.bookNumber    = Number(body.bookNumber);
+                    if (body.receiptNumber !== undefined) e.receiptNumber = Number(body.receiptNumber);
                 }
             }
 

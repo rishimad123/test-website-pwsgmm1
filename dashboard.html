@@ -4350,6 +4350,8 @@ window.fixUrl = function(url) {
             st.style.background = type==='success' ? '#D5F4E6' : '#FFEBEE';
             st.style.color      = type==='success' ? '#1a7a45' : '#c0392b';
             st.style.border     = type==='success' ? '1px solid #a3e6c1' : '1px solid #f5b7b1';
+            // Always scroll into view so message is visible regardless of modal scroll position
+            setTimeout(() => st.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
         }
         const _isAdminUser = currentUser && currentUser.role === 'admin';
         const amtVal = document.getElementById('deVolEditAmount').value;
