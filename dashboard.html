@@ -2107,7 +2107,7 @@ window.fixUrl = function(url) {
                         <input type="number" id="deVolEditAmount" class="form-control" min="0" placeholder="0">
                     </div>
                     <div id="deVolNameReasonWrap" style="margin-top:8px;">
-                        <label style="font-size:.78rem;color:#c0392b;font-weight:700;"><i class="fas fa-exclamation-circle" style="margin-right:4px;"></i>Reason for Change <span style="color:#c0392b;">*</span> <span style="color:#aaa;font-weight:400;">(required if any detail above changed)</span></label>
+                        <label style="font-size:.78rem;color:#c0392b;font-weight:700;"><i class="fas fa-exclamation-circle" style="margin-right:4px;"></i>Reason for Change <span style="color:#c0392b;">*</span> <span id="deVolReasonHint" style="color:#aaa;font-weight:400;">(required every time)</span></label>
                         <input id="deVolEditReason" class="form-control" placeholder="e.g. Spelling correction, wrong amount entered..." style="margin-top:4px;">
                     </div>
                     <p style="font-size:.76rem;color:#aaa;margin:8px 0 0;"><i class="fas fa-info-circle" style="margin-right:3px;"></i>Submission date cannot be changed. Edits are logged for admin review.</p>
@@ -2117,6 +2117,9 @@ window.fixUrl = function(url) {
                     <button type="button" class="btn" style="background:#eee;color:#555;" onclick="deCloseVolEdit()">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="deVolEditSaveBtn"><i class="fas fa-save" style="margin-right:6px;"></i>Save Changes</button>
                 </div>
+
+                <!-- Edit History Log -->
+                <div id="deVolEditHistory" style="display:none;margin-top:18px;border-top:2px solid #f0f0f0;padding-top:14px;"></div>
             </form>
         </div>
     </div>
@@ -3975,7 +3978,10 @@ window.fixUrl = function(url) {
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
                     ${(e.editHistory && e.editHistory.length) || (e.nameHistory && e.nameHistory.length) ? `<span onclick="deOpenVolEdit('${e.entryId}')" style="cursor:pointer;font-size:.7rem;font-weight:700;color:#c0392b;background:#FFEBEE;padding:3px 8px;border-radius:12px;border:1px solid #f5b7b1;"><i class="fas fa-pencil-alt" style="margin-right:4px;"></i>Edited</span>` : '<span></span>'}
                     ${(e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received')).toLowerCase() === 'received' ? `<span style="background:#E8F5E9;color:#1B5E20;font-size:.73rem;font-weight:800;padding:3px 9px;border-radius:16px;border:1px solid #c8e6c9;">STATUS: RECEIVED</span>` : `<span style="background:#FFF8E1;color:#F57F17;font-size:.73rem;font-weight:800;padding:3px 9px;border-radius:16px;border:1px solid #ffe0b2;">STATUS: BALANCE</span>`}
-                         ${(e.status || (e.paymentMode === 'Balance' ? 'Balance' : 'Received')).toLowerCase() === 'received' ? `<div style="display:flex;gap:4px;"><button onclick="de_rcg_openEditModal('${e.entryId}')" title="Edit Receipt" style="border:none;background:linear-gradient(135deg,#8B1A1A,#B71C1C);color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fas fa-file-invoice"></i> Edit</button>` + (e.receiptPreviewUrl ? `<button onclick="window.open('${e.receiptPreviewUrl}', '_blank')" title="View HD Receipt" style="border:none;background:#FFEBEE;color:#C62828;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fas fa-eye"></i> View</button>` : '') + `</div>` : ''}
+                    <div style="display:flex;gap:4px;">
+                        <button onclick="de_rcg_openEditModal('${e.entryId}')" title="Edit Receipt" style="border:none;background:linear-gradient(135deg,#8B1A1A,#B71C1C);color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fas fa-file-invoice"></i> Edit</button>
+                        ${e.receiptPreviewUrl ? `<button onclick="window.open('${e.receiptPreviewUrl}', '_blank')" title="View HD Receipt" style="border:none;background:#FFEBEE;color:#C62828;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i class="fas fa-eye"></i> View</button>` : ''}
+                    </div>
                 </div>
                 <div style="display:flex;align-items:center;justify-content:space-between;">
                     <div style="font-size:1.1rem;font-weight:800;color:#2E7D32;">${amt}</div>
@@ -4114,6 +4120,63 @@ window.fixUrl = function(url) {
             const f3 = document.getElementById('deVolEditLast');  if(f3) f3.value = e.lastName || '';
             const fb = document.getElementById('deVolEditBiz');   if(fb) fb.value = e.businessName || '';
             const fr = document.getElementById('deVolEditReason'); if(fr) fr.value = '';
+
+            // ── Mark fields required / optional based on role ─────────────────
+            const _isVolRole = currentUser && currentUser.role !== 'admin';
+            const _reqFields = ['deVolEditFirst','deVolEditLast','deVolEditAmount','deVolEditReason'];
+            _reqFields.forEach(fid => {
+                const el = document.getElementById(fid);
+                if (el) el.required = _isVolRole;
+            });
+            // Biz name required if business type and volunteer
+            const _bizEl = document.getElementById('deVolEditBiz');
+            if (_bizEl) _bizEl.required = _isVolRole && (e.donorType === 'Business');
+
+            // ── Render edit history ───────────────────────────────────────────
+            const histDiv = document.getElementById('deVolEditHistory');
+            if (histDiv) {
+                const hist = [...(e.editHistory || []), ...(e.nameHistory || [])].sort(
+                    (a, b) => new Date(a.changedAt || a.at || 0) - new Date(b.changedAt || b.at || 0)
+                );
+                if (hist.length) {
+                    histDiv.style.display = '';
+                    histDiv.innerHTML =
+                        `<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#c0392b;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                            <i class="fas fa-history"></i> Edit History <span style="background:#FFEBEE;color:#c0392b;border-radius:10px;padding:1px 8px;font-size:.7rem;">${hist.length}</span>
+                        </div>` +
+                        hist.map(h => {
+                            const dt = new Date(h.changedAt || h.at || '');
+                            const dtStr = isNaN(dt) ? '' :
+                                dt.toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}) + ' · ' +
+                                dt.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase();
+                            const changes = [];
+                            if (h.from !== undefined && h.to !== undefined && h.from !== h.to)
+                                changes.push(`Name: "${h.from || '—'}" → "${h.to || '—'}"`);
+                            if (h.fromAmount !== undefined && h.toAmount !== undefined && h.fromAmount !== h.toAmount)
+                                changes.push(`Amount: ₹${h.fromAmount} → ₹${h.toAmount}`);
+                            if (h.fromBook !== undefined && h.toBook !== undefined && h.fromBook !== h.toBook)
+                                changes.push(`Book: ${h.fromBook} → ${h.toBook}`);
+                            if (h.fromReceipt !== undefined && h.toReceipt !== undefined && h.fromReceipt !== h.toReceipt)
+                                changes.push(`Receipt: #${h.fromReceipt} → #${h.toReceipt}`);
+                            if (h.fromMode !== undefined && h.toMode !== undefined && h.fromMode !== h.toMode)
+                                changes.push(`Mode: ${h.fromMode} → ${h.toMode}`);
+                            if (h.fromStatus !== undefined && h.toStatus !== undefined && h.fromStatus !== h.toStatus)
+                                changes.push(`Status: ${h.fromStatus} → ${h.toStatus}`);
+                            return `<div style="background:#FFF8F1;border:1px solid #ffe0b2;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:.76rem;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:6px;">
+                                    <span style="font-weight:700;color:#E65100;"><i class="fas fa-user" style="margin-right:5px;"></i>${h.changedBy || h.by || 'Unknown'}</span>
+                                    <span style="color:#999;font-size:.7rem;">${dtStr}</span>
+                                </div>
+                                ${changes.length ? `<div style="color:#555;background:#fff;border-radius:6px;padding:4px 8px;margin-bottom:5px;font-size:.72rem;line-height:1.5;">${changes.map(c=>`<div>• ${c}</div>`).join('')}</div>` : ''}
+                                <div style="color:#666;"><i class="fas fa-comment-alt" style="margin-right:5px;color:#bbb;"></i><strong>Reason:</strong> ${h.reason || h.changeReason || '—'}</div>
+                            </div>`;
+                        }).join('');
+                } else {
+                    histDiv.style.display = 'none';
+                    histDiv.innerHTML = '';
+                }
+            }
+
             document.getElementById('deVolEditModal').style.display = 'flex';
         }).catch(() => alert('Could not load entry.'));
     }
@@ -4215,48 +4278,85 @@ window.fixUrl = function(url) {
             st.style.color      = type==='success' ? '#1a7a45' : '#c0392b';
             st.style.border     = type==='success' ? '1px solid #a3e6c1' : '1px solid #f5b7b1';
         }
+        const _isAdminUser = currentUser && currentUser.role === 'admin';
         const amtVal = document.getElementById('deVolEditAmount').value;
         const bnVal  = Number(document.getElementById('deVolEditBook').value);
         const rnVal  = Number(document.getElementById('deVolEditReceipt').value);
         if (!rnVal) { showSt('❌ Please select a Receipt Number.', 'error'); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; } return; }
-        // Detect name changes
-        const _eIsBiz = document.getElementById('deVolNameBizFields')?.style.display !== 'none';
+
+        const _eIsBiz   = document.getElementById('deVolNameBizFields')?.style.display !== 'none';
         const _newFirst = document.getElementById('deVolEditFirst')?.value.trim().toUpperCase() || '';
         const _newMid   = document.getElementById('deVolEditMid')?.value.trim().toUpperCase()   || '';
         const _newLast  = document.getElementById('deVolEditLast')?.value.trim().toUpperCase()  || '';
         const _newBiz   = document.getElementById('deVolEditBiz')?.value.trim().toUpperCase()   || '';
         const _reason   = document.getElementById('deVolEditReason')?.value.trim()              || '';
-        const _hasNameChange = _eIsBiz ? !!_newBiz : !!(_newFirst || _newMid || _newLast);
-        
-        const origAmt   = document.getElementById('deVolEditAmount').dataset.original || '';
-        const _hasAmountChange = origAmt !== amtVal;
 
-        const origBook  = document.getElementById('deVolEditBook').dataset.original || '';
-        const _hasBookChange = origBook !== '' && Number(origBook) !== bnVal;
+        // ── Volunteer mandatory-field validation ──────────────────────────────
+        if (!_isAdminUser) {
+            // Reason is ALWAYS required for volunteers
+            if (!_reason) {
+                showSt('❌ Reason for change is required every time.', 'error');
+                if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; }
+                document.getElementById('deVolEditReason')?.focus();
+                return;
+            }
+            // Donor name is required
+            if (_eIsBiz && !_newBiz) {
+                showSt('❌ Business name is required.', 'error');
+                if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; }
+                document.getElementById('deVolEditBiz')?.focus();
+                return;
+            }
+            if (!_eIsBiz && !_newFirst) {
+                showSt('❌ First name is required.', 'error');
+                if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; }
+                document.getElementById('deVolEditFirst')?.focus();
+                return;
+            }
+            // Amount is required
+            if (amtVal === '' || isNaN(Number(amtVal))) {
+                showSt('❌ Amount is required.', 'error');
+                if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; }
+                document.getElementById('deVolEditAmount')?.focus();
+                return;
+            }
+        }
 
-        const origRcpt  = document.getElementById('deVolEditReceipt').dataset.original || '';
+        const origAmt    = document.getElementById('deVolEditAmount').dataset.original || '';
+        const _hasAmountChange  = origAmt !== amtVal;
+        const origBook   = document.getElementById('deVolEditBook').dataset.original || '';
+        const _hasBookChange    = origBook !== '' && Number(origBook) !== bnVal;
+        const origRcpt   = document.getElementById('deVolEditReceipt').dataset.original || '';
         const _hasReceiptChange = origRcpt !== '' && Number(origRcpt) !== rnVal;
+        const _hasNameChange    = _eIsBiz ? !!_newBiz : !!(_newFirst || _newMid || _newLast);
 
         const payload = {
-            _isAdmin      : false,
+            _isAdmin      : _isAdminUser,
             paymentMode   : document.getElementById('deVolEditMode').value,
             status        : document.getElementById('deVolEditStatusField')?.value || undefined,
             bookNumber    : bnVal,
             receiptNumber : rnVal,
-            landmark          : document.getElementById('deVolEditLandmark').value || undefined,
-            area       : document.getElementById('deVolEditArea').value || undefined,
+            landmark      : document.getElementById('deVolEditLandmark').value || undefined,
+            area          : document.getElementById('deVolEditArea').value || undefined,
         };
         if (amtVal !== '') payload.amount = Number(amtVal);
-        
-        if (_hasNameChange || _hasAmountChange || _hasBookChange || _hasReceiptChange) {
-            if (!_reason) { showSt('❌ Please provide a reason for the change.', 'error'); if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save" style="margin-right:6px;"></i>Save Changes'; } return; }
-            if (_hasNameChange) {
-                if (_eIsBiz) { payload.businessName = _newBiz; }
-                else { payload.firstName = _newFirst; payload.middleName = _newMid; payload.lastName = _newLast; }
-            }
-            payload.changeReason = _reason;
-            payload.changedBy = currentUser ? currentUser.name : 'Volunteer';
+
+        // Always attach name fields
+        if (_eIsBiz) { payload.businessName = _newBiz; }
+        else { payload.firstName = _newFirst; payload.middleName = _newMid; payload.lastName = _newLast; }
+
+        // Always send reason + changedBy (volunteers always provide reason; admin only if they typed one)
+        if (!_isAdminUser || _reason) {
+            payload.changeReason = _reason || 'Updated';
+            payload.changedBy    = currentUser ? currentUser.name : 'Volunteer';
         }
+
+        // Admin-only: optional reason but still logged if provided
+        if (_isAdminUser && (_hasNameChange || _hasAmountChange || _hasBookChange || _hasReceiptChange) && _reason) {
+            payload.changeReason = _reason;
+            payload.changedBy    = currentUser ? currentUser.name : 'Admin';
+        }
+
         try {
             const res  = await fetch(`/api/donation-entries/${encodeURIComponent(id)}`, {
                 method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
@@ -4285,9 +4385,12 @@ window.fixUrl = function(url) {
                     }
                 } catch(_x) { /* photo failure non-blocking */ }
             }
-            showSt('✅ Entry updated!', 'success');
-            setTimeout(() => deCloseVolEdit(), 900);
+            showSt('✅ Entry updated! You can edit again — reason required each time.', 'success');
+            // Refresh the list in background
             await deLoadMyEntries();
+            // Re-open the modal on the same entry so history refreshes and reason field is cleared
+            // (deOpenVolEdit will fetch fresh data and re-render history)
+            deOpenVolEdit(id);
         } catch(err) {
             showSt('❌ ' + err.message, 'error');
         } finally {
