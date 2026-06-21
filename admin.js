@@ -5796,7 +5796,7 @@ async function adminLoadYears() {
         // Update thead to have 4 columns
         const thead = document.querySelector('#adminYearsTable thead tr');
         if (thead && thead.children.length < 4) {
-            thead.innerHTML = '<th>Year</th><th>Status</th><th style="text-align:center;">Edit</th><th style="text-align:center;">Delete</th>';
+            thead.innerHTML = '<th>Year</th><th>Status</th><th style="text-align:center;">Edit</th><th style="text-align:center;">Set Active</th>';
         }
         const active = data.activeYear || '';
         let html = '';
@@ -5808,15 +5808,15 @@ async function adminLoadYears() {
 
             const editBtn = `<button class="btn btn-small" style="background:#3498db;color:#fff;min-width:70px;" onclick="adminEditYear('${y}')" title="Edit / Rename Year"><i class="fas fa-edit"></i> Edit</button>`;
 
-            const deleteBtn = isActive
-                ? '<button class="btn btn-small" style="background:#ccc;color:#999;cursor:not-allowed;min-width:80px;" disabled title="Change active year first to delete this one"><i class="fas fa-lock"></i> Locked</button>'
-                : `<button class="btn btn-small" style="background:#e74c3c;color:#fff;min-width:80px;" onclick="adminDeleteYear('${y}')" title="Delete Year & All Entries"><i class="fas fa-trash"></i> Delete</button>`;
+            const setActiveBtn = isActive
+                ? '<button class="btn btn-small" style="background:#ccc;color:#999;cursor:not-allowed;min-width:120px;" disabled title="This is currently the active year"><i class="fas fa-check-circle"></i> Active</button>'
+                : `<button class="btn btn-small" style="background:#27ae60;color:#fff;min-width:120px;" onclick="adminSetActiveYear('${y}')" title="Set this year as active"><i class="fas fa-play"></i> Set as Active</button>`;
 
             html += `<tr>
                 <td style="font-weight:600;font-size:0.95rem;padding:12px 10px;">${y}</td>
                 <td style="padding:12px 10px;">${statusBadge}</td>
                 <td style="text-align:center;padding:12px 10px;">${editBtn}</td>
-                <td style="text-align:center;padding:12px 10px;">${deleteBtn}</td>
+                <td style="text-align:center;padding:12px 10px;">${setActiveBtn}</td>
             </tr>`;
         });
         tbody.innerHTML = html;
@@ -5918,22 +5918,31 @@ async function adminAddYear() {
     }
 }
 
-async function adminDeleteYear(year) {
-    if (!confirm('⚠️ WARNING\n\nDeleting "' + year + '" will permanently remove ALL donation entries, books, and receipts for that year.\n\nThis CANNOT be undone. Continue?')) return;
+async function adminSetActiveYear(year) {
+    if (!confirm(`Are you sure you want to set "${year}" as the active financial year?\n\nAll new donations entered by volunteers will be recorded in this year.`)) return;
     try {
-        const r = await fetch('/api/donation-years/' + encodeURIComponent(year), {
-            method: 'DELETE',
-            credentials: 'include'
+        const r = await fetch('/api/settings/active-year', {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ year })
         });
         const data = await r.json();
         if (r.ok) {
-            alert('✅ ' + (data.message || 'Year deleted successfully.'));
+            if (typeof showNotification === 'function') showNotification('✅ Active year updated to ' + year, 'success');
+            else alert('✅ Active year updated to ' + year);
+            
+            // Reload the table
             adminLoadYears();
+            
+            // Update the year dropdowns to reflect the change
+            if (typeof adeLoadYearFilter === 'function') adeLoadYearFilter();
+            if (typeof deLoadYearFilter === 'function') deLoadYearFilter();
         } else {
             alert('Error: ' + data.message);
         }
     } catch (e) {
-        alert('Failed to delete year: ' + e.message);
+        alert('Failed to update active year: ' + e.message);
     }
 }
 
