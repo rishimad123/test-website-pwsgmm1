@@ -939,9 +939,6 @@ window.fixUrl = function(url) {
                 <li><a href="#tshirtSection" onclick="showSection('tshirtSection');closeSidebar()">
                     <i class="fas fa-tshirt"></i> T-shirt Section
                 </a></li>
-                <li><a href="#documents" onclick="showSection('documents');closeSidebar()">
-                    <i class="fas fa-folder"></i> Documents
-                </a></li>
                 <li><a href="#" onclick="logout()">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </a></li>
@@ -1984,37 +1981,6 @@ window.fixUrl = function(url) {
 
 <!-- ══════════ END T-SHIRT SECTION ══════════ -->
 
-                <!-- ══════════ DOCUMENTS SECTION ══════════ -->
-                <div id="documents" class="content-section" style="display:none;">
-                    <div class="page-title">
-                        <h1><i class="fas fa-folder-open" style="color:var(--primary-color);margin-right:10px;"></i>My Documents</h1>
-                        <p>Your uploaded profile documents and donation receipt photos</p>
-                    </div>
-
-                    <!-- Profile Documents Card -->
-                    <div class="admin-card" style="margin-bottom:20px;">
-                        <div class="card-header">
-                            <h3><i class="fas fa-id-card" style="color:var(--primary-color);margin-right:8px;"></i>Profile Documents</h3>
-                            <button onclick="loadDocumentsSection()" class="btn btn-small" style="background:var(--light-color);color:#555;font-size:.8rem;"><i class="fas fa-sync-alt"></i> Refresh</button>
-                        </div>
-                        <div id="docProfileCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;padding:10px 0;">
-                            <div style="text-align:center;color:#999;padding:24px;">Loading profile documents…</div>
-                        </div>
-                    </div>
-
-                    <!-- Receipt Photos Card -->
-                    <div class="admin-card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-receipt" style="color:var(--primary-color);margin-right:8px;"></i>Donation Receipt Photos</h3>
-                            <span id="docReceiptCount" style="font-size:.8rem;color:#888;"></span>
-                        </div>
-                        <div id="docReceiptGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;padding:10px 0;">
-                            <div style="text-align:center;color:#999;padding:24px;grid-column:1/-1;">Loading receipt photos…</div>
-                        </div>
-                    </div>
-                </div>
-                <!-- ══════════ END DOCUMENTS SECTION ══════════ -->
-
         </main>
     </div>
 
@@ -2181,77 +2147,6 @@ window.fixUrl = function(url) {
                 if (typeof loadDonorSearch === 'function') loadDonorSearch();
             }
             if (sectionId === 'tshirtSection' && typeof renderTshirtSection === 'function') renderTshirtSection();
-            if (sectionId === 'documents') { loadDocumentsSection(); }
-        }
-
-        // ==================== DOCUMENTS SECTION ====================
-        async function loadDocumentsSection() {
-            const profileGrid = document.getElementById('docProfileCards');
-            const receiptGrid = document.getElementById('docReceiptGrid');
-            const receiptCountEl = document.getElementById('docReceiptCount');
-            if (!profileGrid || !receiptGrid) return;
-
-            profileGrid.innerHTML = '<div style="text-align:center;color:#999;padding:24px;">Loading…</div>';
-            receiptGrid.innerHTML = '<div style="text-align:center;color:#999;padding:24px;grid-column:1/-1;">Loading…</div>';
-
-            try {
-                const cu = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
-                const username = cu.username || cu.name || '';
-
-                // Use profile data already in sessionStorage — no separate /api/profile GET needed
-                // (There is no GET /api/profile endpoint; only PUT exists)
-                let profHtml = '';
-                if (cu.photoUrl) {
-                    const src = fixUrl(cu.photoUrl);
-                    profHtml += `<div style="background:#fff;border-radius:14px;border:1.5px solid #ffe0d0;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);">
-                        <div style="background:#FFF3E0;padding:8px 14px;font-size:.78rem;font-weight:700;color:#E65100;display:flex;align-items:center;gap:6px;"><i class="fas fa-camera"></i> Profile Photo</div>
-                        <img src="${src}" alt="Profile Photo" style="width:100%;aspect-ratio:1;object-fit:cover;cursor:pointer;" onclick="openPbLightbox('${src}')">
-                        <div style="padding:8px 14px;font-size:.75rem;color:#aaa;text-align:center;"><i class="fas fa-expand-alt"></i> Tap to enlarge</div>
-                    </div>`;
-                }
-                if (cu.idProofUrl) {
-                    const src = fixUrl(cu.idProofUrl);
-                    profHtml += `<div style="background:#fff;border-radius:14px;border:1.5px solid #C5CAE9;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);">
-                        <div style="background:#EDE7F6;padding:8px 14px;font-size:.78rem;font-weight:700;color:#4527A0;display:flex;align-items:center;gap:6px;"><i class="fas fa-id-card"></i> ID Proof</div>
-                        <img src="${src}" alt="ID Proof" style="width:100%;aspect-ratio:1;object-fit:cover;cursor:pointer;" onclick="openPbLightbox('${src}')">
-                        <div style="padding:8px 14px;font-size:.75rem;color:#aaa;text-align:center;"><i class="fas fa-expand-alt"></i> Tap to enlarge</div>
-                    </div>`;
-                }
-                profileGrid.innerHTML = profHtml || '<div style="text-align:center;color:#bbb;padding:24px;grid-column:1/-1;"><i class="fas fa-cloud-upload-alt" style="font-size:2rem;display:block;margin-bottom:8px;"></i>No profile documents uploaded yet. Update your profile to add a photo and ID proof.</div>';
-
-                // Fetch donation entries for receipt photos
-                const deRes = await fetch('/api/donation-entries');
-                const deData = await deRes.json();
-
-                // Filter to only this volunteer's entries that have photos
-                const myUsername = username.toLowerCase();
-                const photos = (deData.entries || []).filter(e =>
-                    (e.photoUrl || e.receiptPreviewUrl) && !e.deleted &&
-                    (cu.role === 'admin' || (e.submittedBy || '').toLowerCase() === myUsername || (e.submittedByUserId || '') === (cu.id || cu.username || ''))
-                );
-                if (receiptCountEl) receiptCountEl.textContent = photos.length ? `${photos.length} photo${photos.length === 1 ? '' : 's'}` : '';
-                if (!photos.length) {
-                    receiptGrid.innerHTML = '<div style="text-align:center;color:#bbb;padding:24px;grid-column:1/-1;"><i class="fas fa-receipt" style="font-size:2rem;display:block;margin-bottom:8px;"></i>No receipt photos found for your entries.</div>';
-                    return;
-                }
-                receiptGrid.innerHTML = photos.map(e => {
-                    const src = fixUrl(e.photoUrl || e.receiptPreviewUrl);
-                    const donor = e.donorType === 'Business' ? (e.businessName || '—') : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '—';
-                    const dtObj = new Date(e.submittedAt);
-                    const dateLabel = isNaN(dtObj) ? '' : dtObj.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
-                    return `<div style="background:#fff;border-radius:12px;border:1.5px solid #f0e8e0;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:pointer;" onclick="openPbLightbox('${src}')">
-                        <img src="${src}?t=${Date.now()}" loading="lazy" alt="Receipt" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;">
-                        <div style="padding:6px 10px;">
-                            <div style="font-size:.72rem;font-weight:700;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${donor}">${donor}</div>
-                            <div style="font-size:.68rem;color:#aaa;margin-top:2px;">Bk ${e.bookNumber || '?'} / #${e.receiptNumber || '?'}</div>
-                            ${dateLabel ? `<div style="font-size:.65rem;color:#bbb;">${dateLabel}</div>` : ''}
-                        </div>
-                    </div>`;
-                }).join('');
-            } catch (err) {
-                profileGrid.innerHTML = '<div style="text-align:center;color:#bbb;padding:24px;grid-column:1/-1;"><i class="fas fa-cloud-upload-alt" style="font-size:2rem;display:block;margin-bottom:8px;"></i>No profile documents uploaded yet. Update your profile to add a photo and ID proof.</div>';
-                receiptGrid.innerHTML = '<div style="text-align:center;color:#bbb;padding:24px;grid-column:1/-1;"><i class="fas fa-receipt" style="font-size:2rem;display:block;margin-bottom:8px;"></i>No receipt photos found.</div>';
-            }
         }
 
 
