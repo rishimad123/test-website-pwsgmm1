@@ -5434,7 +5434,7 @@ fetchNotifications();
     var _rcgYear = window._vdeSelectedYear || window._adminSelectedYear || window._deSelectedYear || 'active';
     fetch("/api/donation-entries?year="+_rcgYear).then(function(r){return r.json();}).then(function(data){
       var e=(data.entries||[]).find(function(x){return x.entryId===entryId;});
-      if(!e){if(typeof showNotification==="function")showNotification("Entry not found.","error");return;}
+      if(!e){if(typeof showNotification==="function")showNotification("Entry not found.","error");else alert("Entry not found.");return;}
       _deEditId=entryId;_deEntriesCache=data.entries||[];
       var dn=e.donorType==="Business"?(e.businessName||""):[e.firstName,e.middleName,e.lastName].filter(Boolean).join(" ");
       if(e.receiptSnapshot&&e.receiptSnapshot.donorName)dn=e.receiptSnapshot.donorName;
@@ -5452,7 +5452,7 @@ fetchNotifications();
       if(hb){if(hist.length){hb.style.display="block";hb.innerHTML="<strong style='color:#E65100;'><i class='fas fa-history'></i> Edit History</strong>"+hist.map(function(h){return"<div style='margin-top:4px;border-top:1px solid #ffe0b2;padding-top:4px;'>"+new Date(h.editedAt).toLocaleString("en-IN")+" by "+h.editedBy+(h.reason?"<br><em>"+h.reason+"</em>":"")+"</div>";}).join("");}else{hb.style.display="none";}}
       if(g("de_rcg_editStatusMsg"))g("de_rcg_editStatusMsg").style.display="none";
       var m=g("de_rcg_editModal");if(m)m.style.display="flex";
-    }).catch(function(){if(typeof showNotification==="function")showNotification("Could not load entry.","error");});
+    }).catch(function(){if(typeof showNotification==="function")showNotification("Could not load entry.","error");else alert("Could not load entry.");});
   };
   window.de_rcg_closeEditModal=function(){_deEditId=null;var m=document.getElementById("de_rcg_editModal");if(m)m.style.display="none";};
   window.de_rcg_submitReceiptEdit=async function(ev){
