@@ -929,12 +929,45 @@
                 const _tHp  = !!e.photoUrl;
                 const _tHpv = !!e.receiptPreviewUrl;
                 const _tTs  = Date.now();
+
+                // --- Auto-generate missing or broken digital receipt previews silently in background (Admin View) ---
+                const triggerGenerationTable = () => {
+                    window._genRcptQ = window._genRcptQ || new Set();
+                    if (!window._genRcptQ.has(e.entryId)) {
+                        window._genRcptQ.add(e.entryId);
+                        setTimeout(async function() {
+                            if (typeof window._deUploadReceiptPreview === 'function') {
+                                try {
+                                    var _dn = e.donorType==="Business"?(e.businessName||""):[e.firstName,e.middleName,e.lastName].filter(Boolean).join(" ");
+                                    if(e.receiptSnapshot&&e.receiptSnapshot.donorName) _dn=e.receiptSnapshot.donorName;
+                                    var _amt=e.receiptSnapshot&&e.receiptSnapshot.amount!=null?e.receiptSnapshot.amount:(e.amount||"");
+                                    var _dt=e.receiptSnapshot&&e.receiptSnapshot.receiptDate?e.receiptSnapshot.receiptDate:(e.receiptDate||"");
+                                    var _st=e.status||(e.paymentMode==="Balance"?"Balance":"Received");
+                                    var _sl = (_st.toUpperCase() === "BALANCE" ? "BALANCE" : "RECEIVED");
+                                    await window._deUploadReceiptPreview(e.entryId, _dn, _amt, _dt, e.paymentMode||"Cash", e.receiptNumber||"", e.bookNumber||"", _sl);
+                                    if(typeof deLoadMyEntries === 'function') deLoadMyEntries();
+                                } catch(err) { console.warn("Auto-gen preview failed:", err); }
+                            }
+                        }, Math.random() * 2000 + 1000);
+                    }
+                };
+                if (!e.receiptPreviewUrl) {
+                    triggerGenerationTable();
+                } else {
+                    const imgCheck = new Image();
+                    imgCheck.onload = function() {
+                        if (this.naturalHeight <= 10 || this.naturalWidth <= 10) triggerGenerationTable();
+                    };
+                    imgCheck.src = fixUrl(e.receiptPreviewUrl);
+                }
+
                 const photoCell = (_tHp || _tHpv)
                     ? (
                         (_tHp  ? '<div style="margin-bottom:3px;"><img src="' + fixUrl(e.photoUrl) + '?t=' + _tTs + '" style="width:46px;height:46px;object-fit:cover;border-radius:6px;border:2px solid #E65100;cursor:pointer;" onclick="openPbLightbox(\'' + fixUrl(e.photoUrl) + '\')" title="📷 Photo"></div>' : '') +
                         (_tHpv ? '<div><img src="' + fixUrl(e.receiptPreviewUrl) + '?t=' + _tTs + '" style="width:46px;height:46px;object-fit:cover;border-radius:6px;border:2px solid #1565C0;cursor:pointer;" onclick="openPbLightbox(\'' + fixUrl(e.receiptPreviewUrl) + '\')" title="🧾 Preview"></div>' : '')
                       )
                     : '<span style="font-size:.72rem;color:#aaa;font-style:italic;">No Image</span>';
+
 
                 // Volunteer Edit buttons (No delete!)
                 const editBtn = (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'volunteer_view') ? ''
@@ -994,8 +1027,8 @@
             const dateStr = isNaN(dtObj) ? '—' : dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
             const timeStr = isNaN(dtObj) ? '' : dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
             
-            // --- Auto-generate missing digital receipt previews silently in background ---
-            if (!e.receiptPreviewUrl) {
+            // --- Auto-generate missing or broken digital receipt previews silently in background ---
+            const triggerGeneration = () => {
                 window._genRcptQ = window._genRcptQ || new Set();
                 if (!window._genRcptQ.has(e.entryId)) {
                     window._genRcptQ.add(e.entryId);
@@ -1014,6 +1047,19 @@
                         }
                     }, Math.random() * 2000 + 1000); // Stagger generation
                 }
+            };
+
+            if (!e.receiptPreviewUrl) {
+                triggerGeneration();
+            } else {
+                // Check if existing preview is a broken 1x1 blank image from previous bug
+                const imgCheck = new Image();
+                imgCheck.onload = function() {
+                    if (this.naturalHeight <= 10 || this.naturalWidth <= 10) {
+                        triggerGeneration();
+                    }
+                };
+                imgCheck.src = fixUrl(e.receiptPreviewUrl);
             }
 
             const _hp = !!e.photoUrl, _hpv = !!e.receiptPreviewUrl, _ts = Date.now();
