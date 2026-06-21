@@ -5536,6 +5536,8 @@ window._fmtBytesA = function(b) {
             'Landmark',
             'Area',
             'Amount',
+            'Amount Received',
+            'Amount Balance',
             'Mode',
             'Ref No.',
             'Submitted By',
@@ -5547,22 +5549,27 @@ window._fmtBytesA = function(b) {
             const donor = e.donorType === 'Business'
                 ? (e.businessName || '')
                 : [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ');
+            const amt    = e.amount        != null ? Number(e.amount)        : '';
+            const rcvd   = e.amountReceived != null ? Number(e.amountReceived) : '';
+            const balance = (amt !== '' && rcvd !== '') ? (amt - rcvd) : '';
             return {
-                '#':            idx,
-                'Book No':      e.bookNumber  != null ? Number(e.bookNumber)  : '',
-                'Receipt No':   e.receiptNumber != null ? Number(e.receiptNumber) : '',
-                'Donor Name':   donor,
-                'Type':         e.donorType || '',
-                'WhatsApp':     e.whatsappNumber || '',
-                'Mobile':       e.mobileNumber || '',
-                'Building':     (e.buildingName || '') + (e.flatNumber ? ' Flat:' + e.flatNumber : ''),
-                'Landmark':     e.landmark || '',
-                'Area':         e.area || '',
-                'Amount':       e.amount != null ? Number(e.amount) : '',
-                'Mode':         e.paymentMode || '',
-                'Ref No.':      e.referenceNumber || '',
-                'Submitted By': e.submittedBy || '',
-                'Date':         fmtDate(e.submittedAt)
+                '#':               idx,
+                'Book No':         e.bookNumber    != null ? Number(e.bookNumber)    : '',
+                'Receipt No':      e.receiptNumber != null ? Number(e.receiptNumber) : '',
+                'Donor Name':      donor,
+                'Type':            e.donorType || '',
+                'WhatsApp':        e.whatsappNumber || '',
+                'Mobile':          e.mobileNumber || '',
+                'Building':        (e.buildingName || '') + (e.flatNumber ? ' Flat:' + e.flatNumber : ''),
+                'Landmark':        e.landmark || '',
+                'Area':            e.area || '',
+                'Amount':          amt,
+                'Amount Received': rcvd,
+                'Amount Balance':  balance,
+                'Mode':            e.paymentMode || '',
+                'Ref No.':         e.referenceNumber || '',
+                'Submitted By':    e.submittedBy || '',
+                'Date':            fmtDate(e.submittedAt)
             };
         };
 
@@ -5655,7 +5662,7 @@ window._fmtBytesA = function(b) {
             for (let c = 0; c < COLS.length; c++) {
                 const addr = XLSX.utils.encode_cell({ r: ri, c });
                 if (!ws[addr]) continue;
-                const isAmt = c === 10; // Amount column
+                const isAmt = c >= 10 && c <= 12; // Amount, Amount Received, Amount Balance columns
                 ws[addr].s = isAmt && ws[addr].t === 'n' ? {
                     font: { sz: 10 },
                     numFmt: '#,##0',
@@ -5684,6 +5691,8 @@ window._fmtBytesA = function(b) {
             { wch: 30 },  // Landmark
             { wch: 22 },  // Area
             { wch: 12 },  // Amount
+            { wch: 16 },  // Amount Received
+            { wch: 15 },  // Amount Balance
             { wch: 10 },  // Mode
             { wch: 14 },  // Ref No.
             { wch: 16 },  // Submitted By
