@@ -5369,7 +5369,17 @@ fetchNotifications();
               ids.forEach(function(id) { var el=document.getElementById(id); if(el) saved[id]=el.innerHTML; });
               var savedMode = modeEl ? modeEl.textContent : '';
 
-              // Make wrapper visible for capture
+              // Make wrapper and modal visible for capture so html2canvas doesn't return a blank image
+              var modalEl = document.getElementById('de_rcg_modal');
+              var prevModalDisplay = modalEl ? modalEl.style.display : '';
+              var prevModalOpacity = modalEl ? modalEl.style.opacity : '';
+              var prevModalPointer = modalEl ? modalEl.style.pointerEvents : '';
+              
+              if (modalEl && modalEl.style.display === 'none') {
+                  modalEl.style.opacity = '0';
+                  modalEl.style.pointerEvents = 'none';
+                  modalEl.style.display = 'block';
+              }
               if (wrapEl && wrapEl.style.display === 'none') wrapEl.style.display = 'block';
 
               // Populate receipt spans (same format as de_rcg_liveSync)
@@ -5385,10 +5395,15 @@ fetchNotifications();
               // Capture the actual receipt element at 3x HD (same as WhatsApp send)
               html2canvas(rcptEl, { scale: 3, backgroundColor: null, useCORS: true, logging: false, allowTaint: true })
               .then(function(canvas) {
-                  // Restore spans and wrapper
+                  // Restore spans, wrapper, and modal
                   ids.forEach(function(id) { var el=document.getElementById(id); if(el&&saved[id]!==undefined) el.innerHTML=saved[id]; });
                   if (modeEl) modeEl.textContent = savedMode;
                   if (wrapEl) wrapEl.style.display = prevWrapDisplay;
+                  if (modalEl) {
+                      modalEl.style.display = prevModalDisplay;
+                      modalEl.style.opacity = prevModalOpacity;
+                      modalEl.style.pointerEvents = prevModalPointer;
+                  }
 
                   canvas.toBlob(async function(blob) {
                       if (!blob) return resolve();
@@ -5403,6 +5418,11 @@ fetchNotifications();
                   ids.forEach(function(id) { var el=document.getElementById(id); if(el&&saved[id]!==undefined) el.innerHTML=saved[id]; });
                   if (modeEl) modeEl.textContent = savedMode;
                   if (wrapEl) wrapEl.style.display = prevWrapDisplay;
+                  if (modalEl) {
+                      modalEl.style.display = prevModalDisplay;
+                      modalEl.style.opacity = prevModalOpacity;
+                      modalEl.style.pointerEvents = prevModalPointer;
+                  }
                   resolve();
               });
           }
