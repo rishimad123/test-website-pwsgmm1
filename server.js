@@ -2416,8 +2416,12 @@ const server = http.createServer(async (req, res) => {
         const bn  = Number(pathname.replace('/api/donation-entries/used-receipts/', ''));
         const qp = new URL(`http://x${req.url}`).searchParams;
         const bType = qp.get('type') || 'New';
+        // Scope by year: use ?year= if provided, otherwise use the active donation year.
+        // This ensures each year has its own independent numbering space.
+        const activeYear = globalSettings.activeDonationYear || '2026-27';
+        const yearFilter = qp.get('year') || activeYear;
         const used = donationEntries
-            .filter(e => !e.deleted && e.bookNumber === bn && (e.bookType || 'New') === bType)
+            .filter(e => !e.deleted && e.bookNumber === bn && (e.bookType || 'New') === bType && e.year === yearFilter)
             .map(e => e.receiptNumber);
         return sendJSON(res, 200, { bookNumber: bn, usedReceipts: used });
     }

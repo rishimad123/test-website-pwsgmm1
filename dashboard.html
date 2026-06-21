@@ -4160,7 +4160,11 @@ window.fixUrl = function(url) {
             const recSel = document.getElementById('deVolEditReceipt');
             recSel.dataset.original = e.receiptNumber || '';
             
-            deVolEditPopulateReceipts(e.bookNumber, e.receiptNumber);
+            // Store the entry's year on the id hidden field so receipt populate can use it
+            const idEl = document.getElementById('deVolEditId');
+            if (idEl) idEl.dataset.entryYear = e.year || '';
+
+            deVolEditPopulateReceipts(e.bookNumber, e.receiptNumber, e.year);
             const FIXED = ['Patelwadi','Shindewadi','Gurkhawadi'];
             const landmarkSel = document.getElementById('deVolEditLandmark');
             landmarkSel.innerHTML = '<option value="">— Select Landmark —</option>' +
@@ -4254,14 +4258,16 @@ window.fixUrl = function(url) {
         }).catch(() => alert('Could not load entry.'));
     }
 
-    async function deVolEditPopulateReceipts(bookNum, currentReceipt) {
+    async function deVolEditPopulateReceipts(bookNum, currentReceipt, entryYear) {
         const sel = document.getElementById('deVolEditReceipt');
         sel.disabled = true;
         sel.innerHTML = '<option>Loading…</option>';
         const from = (bookNum-1)*50+1, to = bookNum*50;
         let used = [];
         try {
-            const r = await fetch(`/api/donation-entries/used-receipts/${bookNum}?type=${_deVolEditBookType}`);
+            // Pass the entry's own year so receipts are scoped to the correct year
+            const yearParam = entryYear ? `&year=${encodeURIComponent(entryYear)}` : '';
+            const r = await fetch(`/api/donation-entries/used-receipts/${bookNum}?type=${_deVolEditBookType}${yearParam}`);
             const d = await r.json();
             used = d.usedReceipts || [];
         } catch(ex) {}
@@ -4279,7 +4285,9 @@ window.fixUrl = function(url) {
 
     async function deVolEditBookChange() {
         const bn = Number(document.getElementById('deVolEditBook').value);
-        await deVolEditPopulateReceipts(bn, null);
+        // Retrieve the year stored on the id field when the modal was opened
+        const storedYear = document.getElementById('deVolEditId')?.dataset.entryYear || '';
+        await deVolEditPopulateReceipts(bn, null, storedYear);
     }
 
     async function deOnVolEditLandmarkChange(initialArea = null) {
