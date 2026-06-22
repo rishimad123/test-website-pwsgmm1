@@ -139,7 +139,13 @@ if (loginForm) {
         showAlert('Login successful! Redirecting...', 'success');
         setTimeout(() => {
             // Master user always goes to admin panel (has full access to both)
-            window.location.href = (user.role === 'admin' || isMasterLogin) ? 'admin.html' : 'dashboard.html';
+            if (user.role === 'admin' || isMasterLogin) {
+                window.location.href = 'admin.html';
+            } else if (user.role === 'social_event') {
+                window.location.href = 'social-panel.html';
+            } else {
+                window.location.href = 'dashboard.html';
+            }
         }, 1000);
     });
 }
