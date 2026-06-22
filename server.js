@@ -714,30 +714,40 @@ const server = http.createServer(async (req, res) => {
             if (email !== undefined) updateFields.email = String(email);
             if (password) updateFields.password = String(password); // Simple update since system stores plain text
             
-            // Handle Photo upload — store as base64 data URL in MongoDB so it
-            // survives Render's ephemeral filesystem (no disk writes needed).
+            // Handle Photo upload — upload to Cloudinary; fall back to base64 in MongoDB
+            // (Fix: was base64-only in MongoDB, which bloats the database)
             if (photoBase64) {
                 const pExt = (photoExt || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
                 const mime = pExt === 'png' ? 'image/png' : (pExt === 'gif' ? 'image/gif' : 'image/jpeg');
-                updateFields.photoUrl = `data:${mime};base64,${photoBase64}`;
-                // Also attempt disk write for local dev (silently ignore errors on Render)
-                try {
-                    const filename = `profile_${username}_${Date.now()}.${pExt}`;
-                    const filepath = path.join(__dirname, 'uploads', filename);
-                    fs.writeFileSync(filepath, Buffer.from(photoBase64, 'base64'));
-                } catch (_e) { /* read-only FS on Render — data URL is the source of truth */ }
+                const pBuf = Buffer.from(photoBase64, 'base64');
+                const pName = `profile_${username}_${Date.now()}.${pExt}`;
+                const pCloud = await uploadToCloudinary(pBuf, pName);
+                if (pCloud) {
+                    updateFields.photoUrl = pCloud;
+                } else {
+                    // Fallback: store as base64 so the image is never lost
+                    updateFields.photoUrl = `data:${mime};base64,${photoBase64}`;
+                    try {
+                        fs.writeFileSync(path.join(__dirname, 'uploads', pName), pBuf);
+                    } catch (_e) { /* ephemeral FS — base64 is the fallback source of truth */ }
+                }
             }
-            
-            // Handle ID Proof upload — same approach: store as base64 data URL in MongoDB
+
+            // Handle ID Proof upload — same Cloudinary-first approach
             if (idProofBase64) {
                 const iExt = (idProofExt || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
                 const mime = iExt === 'png' ? 'image/png' : (iExt === 'gif' ? 'image/gif' : 'image/jpeg');
-                updateFields.idProofUrl = `data:${mime};base64,${idProofBase64}`;
-                try {
-                    const filename = `idproof_${username}_${Date.now()}.${iExt}`;
-                    const filepath = path.join(__dirname, 'uploads', filename);
-                    fs.writeFileSync(filepath, Buffer.from(idProofBase64, 'base64'));
-                } catch (_e) { /* read-only FS on Render — data URL is the source of truth */ }
+                const iBuf = Buffer.from(idProofBase64, 'base64');
+                const iName = `idproof_${username}_${Date.now()}.${iExt}`;
+                const iCloud = await uploadToCloudinary(iBuf, iName);
+                if (iCloud) {
+                    updateFields.idProofUrl = iCloud;
+                } else {
+                    updateFields.idProofUrl = `data:${mime};base64,${idProofBase64}`;
+                    try {
+                        fs.writeFileSync(path.join(__dirname, 'uploads', iName), iBuf);
+                    } catch (_e) { /* ephemeral FS — base64 is the fallback source of truth */ }
+                }
             }
             
             if (user) {
@@ -1512,13 +1522,21 @@ const server = http.createServer(async (req, res) => {
             if (filePart) {
                 const ext        = path.extname(filePart.filename).toLowerCase();
                 const uniqueName = `pauti-${bookNum}-${slipNum}-${Date.now()}${ext}`;
-                try {
-                    fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
-                } catch (fsErr) {
-                    console.warn('⚠️  Could not write pauti slip photo to disk:', fsErr.message);
+                // Try Cloudinary first (Fix: was local-disk only)
+                const _cloudUrl = await uploadToCloudinary(filePart.data, uniqueName);
+                if (_cloudUrl) {
+                    photoFile = uniqueName;
+                    photoUrl  = _cloudUrl;
+                } else {
+                    // Fallback to local disk
+                    try {
+                        fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
+                        photoFile = uniqueName;
+                        photoUrl  = `/uploads/${uniqueName}`;
+                    } catch (fsErr) {
+                        console.warn('⚠️  Could not write pauti slip photo to disk:', fsErr.message);
+                    }
                 }
-                photoFile = uniqueName;
-                photoUrl  = `/uploads/${uniqueName}`;
             }
 
             const slip = pautiBooks[bookIdx].slips[slipIdx];
@@ -2330,17 +2348,23 @@ const server = http.createServer(async (req, res) => {
             if (paymentMode !== undefined) e.paymentMode = paymentMode;
             if (statusVal !== undefined) e.status = statusVal;
 
-            // Handle Photo Upload
+            // Handle Photo Upload — Cloudinary primary, local-disk fallback (Fix: was local-disk only)
             const filePart = parts.find(p => p.name === 'photo' && p.filename);
             if (filePart) {
                 const ext = path.extname(filePart.filename).toLowerCase();
-                const uniqueName = `pauti-${e.bookNumber}-${e.receiptNumber}-${Date.now()}${ext}`;
-                try {
-                    fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
+                const uniqueName = `edit-${e.bookNumber}-${e.receiptNumber}-${Date.now()}${ext}`;
+                const _cloudUrl = await uploadToCloudinary(filePart.data, uniqueName);
+                if (_cloudUrl) {
                     e.photoFile = uniqueName;
-                    e.photoUrl = `/uploads/${uniqueName}`;
-                } catch (fsErr) {
-                    console.warn('⚠️ Could not write updated photo to disk:', fsErr.message);
+                    e.photoUrl  = _cloudUrl;
+                } else {
+                    try {
+                        fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data);
+                        e.photoFile = uniqueName;
+                        e.photoUrl  = `/uploads/${uniqueName}`;
+                    } catch (fsErr) {
+                        console.warn('⚠️ Could not write updated photo to disk:', fsErr.message);
+                    }
                 }
             }
 
@@ -2706,17 +2730,23 @@ const server = http.createServer(async (req, res) => {
             const uniqueName = `cm_${Date.now()}_${safeName}`;
             const ext  = path.extname(safeName).toLowerCase();
             const mime = ext === '.png' ? 'image/png' : (ext === '.gif' ? 'image/gif' : 'image/jpeg');
-            // Store as base64 data URL — survives server restarts & ephemeral filesystems
-            const dataUrl = `data:${mime};base64,${filePart.data.toString('base64')}`;
-            // Also attempt disk write for fast local serving (silently ignore errors)
-            try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); } catch (_) {}
+            // Try Cloudinary first (Fix: was base64-only in MongoDB)
+            let cmPhotoUrl = null;
+            const cmCloud = await uploadToCloudinary(filePart.data, uniqueName);
+            if (cmCloud) {
+                cmPhotoUrl = cmCloud;
+            } else {
+                // Fallback: base64 data URL so image is never lost
+                cmPhotoUrl = `data:${mime};base64,${filePart.data.toString('base64')}`;
+                try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); } catch (_) {}
+            }
             const memberIdPart = parts.find(p => p.name === 'memberId' && !p.filename);
             const memberId = memberIdPart ? memberIdPart.data.toString('utf8').trim() : null;
             if (memberId) {
                 const midx = committeeMembers.findIndex(m => m.id === memberId);
                 if (midx !== -1) {
                     committeeMembers[midx].photoFile = uniqueName;
-                    committeeMembers[midx].photoUrl  = dataUrl;
+                    committeeMembers[midx].photoUrl  = cmPhotoUrl;
                     committeeMembers[midx].updatedAt = new Date().toISOString();
                     await saveCommitteeMembers();
                 }
@@ -2798,17 +2828,23 @@ const server = http.createServer(async (req, res) => {
             const uniqueName = `vc_${Date.now()}_${safeName}`;
             const ext  = path.extname(safeName).toLowerCase();
             const mime = ext === '.png' ? 'image/png' : (ext === '.gif' ? 'image/gif' : 'image/jpeg');
-            // Store as base64 data URL — survives server restarts & ephemeral filesystems
-            const dataUrl = `data:${mime};base64,${filePart.data.toString('base64')}`;
-            // Also attempt disk write for fast local serving (silently ignore errors)
-            try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); } catch (_) {}
+            // Try Cloudinary first (Fix: was base64-only in MongoDB)
+            let vcPhotoUrl = null;
+            const vcCloud = await uploadToCloudinary(filePart.data, uniqueName);
+            if (vcCloud) {
+                vcPhotoUrl = vcCloud;
+            } else {
+                // Fallback: base64 data URL so image is never lost
+                vcPhotoUrl = `data:${mime};base64,${filePart.data.toString('base64')}`;
+                try { fs.writeFileSync(path.join(UPLOADS_DIR, uniqueName), filePart.data); } catch (_) {}
+            }
             const cardIdPart = parts.find(p => p.name === 'volunteerId' && !p.filename);
             const cardId = cardIdPart ? cardIdPart.data.toString('utf8').trim() : null;
             if (cardId) {
                 const vidx = volunteerCards.findIndex(v => v.id === cardId);
                 if (vidx !== -1) {
                     volunteerCards[vidx].photoFile = uniqueName;
-                    volunteerCards[vidx].photoUrl  = dataUrl;
+                    volunteerCards[vidx].photoUrl  = vcPhotoUrl;
                     volunteerCards[vidx].updatedAt = new Date().toISOString();
                     await saveVolunteerCards();
                 }
@@ -3521,13 +3557,18 @@ const server = http.createServer(async (req, res) => {
                 if (photoPart) {
                     const safeName = photoPart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
                     const uniqueName = `footer_dev_${Date.now()}_${safeName}`;
-                    // Convert image to Base64 for permanent MongoDB storage on Render
-                    try {
-                        const mime = photoPart.filename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
-                        const b64 = photoPart.data.toString('base64');
-                        fDev.photoUrl = `data:${mime};base64,${b64}`;
-                    } catch(e) {
-                        console.error('Base64 photo save failed:', e);
+                    // Try Cloudinary first (Fix: was base64-only in MongoDB)
+                    const fdCloud = await uploadToCloudinary(photoPart.data, uniqueName);
+                    if (fdCloud) {
+                        fDev.photoUrl = fdCloud;
+                    } else {
+                        // Fallback: base64 data URL so image is never lost
+                        try {
+                            const mime = photoPart.filename.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+                            fDev.photoUrl = `data:${mime};base64,${photoPart.data.toString('base64')}`;
+                        } catch(e) {
+                            console.error('Photo save failed:', e);
+                        }
                     }
                 }
             } else {
