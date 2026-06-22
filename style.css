@@ -991,3 +991,10 @@ html.translated-ltr .sg-english { display: inline !important; }
         white-space: nowrap !important;
     }
 }
+
+/* --- Nav Wrapper Gap Fix --- */
+@media (min-width: 969px) {
+    .nav-wrapper {
+        gap: 20px !important;
+    }
+}
