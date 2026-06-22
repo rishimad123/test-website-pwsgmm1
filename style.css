@@ -977,3 +977,17 @@ select, textarea {
 /* Fix for Secretary General Name in Receipt Translation */
 html.translated-ltr .sg-marathi { display: none !important; }
 html.translated-ltr .sg-english { display: inline !important; }
+
+/* --- Desktop Layout Fixes --- */
+@media (min-width: 969px) {
+    .nav-menu {
+        gap: 15px !important;
+    }
+    .nav-menu a {
+        display: inline-block !important;
+        white-space: nowrap !important;
+    }
+    .logo span {
+        white-space: nowrap !important;
+    }
+}
