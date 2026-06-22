@@ -5158,8 +5158,7 @@ window._fmtBytesA = function(b) {
             var r = await fetch('/api/landmarks');
             var d = await r.json();
             sel.innerHTML = '<option value="">— Select Landmark —</option>';
-            (d.landmarks || []).forEach(function(l) {
-                sel.innerHTML += '<option value="' + l.name + '"' + (l.name === cur ? ' selected' : '') + '>' + l.name + '</option>';
+            (d.landmarks || []).forEach(function(l) { if (['Patelwadi', 'Shindewadi', 'Gurkhawadi'].includes(l.name)) return; sel.innerHTML += '<option value="' + l.name + '"' + (l.name === cur ? ' selected' : '') + '>' + l.name + '</option>';
             });
             _adeAllLandmarks = d.landmarks || [];
         } catch (e) {}
@@ -5279,8 +5278,7 @@ window._fmtBytesA = function(b) {
             if (!sel) return;
             var cur = sel.value;
             sel.innerHTML = '<option value="">— Select Landmark —</option>';
-            (data.landmarks || []).forEach(function(l) {
-                var o = document.createElement('option');
+            (data.landmarks || []).forEach(function(l) { if (['Patelwadi', 'Shindewadi', 'Gurkhawadi'].includes(l.name)) return; var o = document.createElement('option');
                 o.value = l.name;
                 o.textContent = l.name;
                 if (l.name === cur) o.selected = true;
@@ -6873,8 +6871,7 @@ window._fmtBytesA = function(b) {
         if (lSel) {
             var cur = lSel.value;
             lSel.innerHTML = '<option value="">— Select Landmark —</option>';
-            _aneLandmarks.forEach(function(l) {
-                lSel.innerHTML += '<option value="'+l.name+'"'+(l.name===cur?' selected':'')+'>'+l.name+'</option>';
+            _aneLandmarks.forEach(function(l) { if (['Patelwadi', 'Shindewadi', 'Gurkhawadi'].includes(l.name)) return; lSel.innerHTML += '<option value="'+l.name+'"'+(l.name===cur?' selected':'')+'>'+l.name+'</option>';
             });
         }
         // Reset cascade
