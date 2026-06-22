@@ -3329,6 +3329,7 @@ window.fixUrl = function(url) {
             var cur = lSel.value;
             lSel.innerHTML = '<option value="">— Select Landmark —</option>';
             _deLandmarks.forEach(function(l) {
+                if (['Patelwadi', 'Shindewadi', 'Gurkhawadi'].includes(l.name)) return;
                 lSel.innerHTML += '<option value="' + l.name + '"' + (l.name === cur ? ' selected' : '') + '>' + l.name + '</option>';
             });
             var hint = document.getElementById('deLandmarkHint');
