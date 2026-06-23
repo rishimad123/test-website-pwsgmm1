@@ -4277,7 +4277,7 @@ window._fmtBytesA = function(b) {
         </div>
     </div>
 
-    <script src="admin.js?v=9"></script>
+    <script src="admin.js?v=11"></script>
     <script src="donations.js?v=5"></script>
     <script src="tshirts.js?v=1780009246876"></script>
 
@@ -7407,6 +7407,8 @@ window._fmtBytesA = function(b) {
         if (id === 'committeeMembers') { if(typeof cmLoad==='function') cmLoad(); }
         if (id === 'volunteers') { if(typeof switchVolTab==='function') switchVolTab('cards'); }
         if (id === 'events') { if(typeof adminLoadYears === 'function') adminLoadYears(); }
+        if (id === 'sponsors') { if(typeof loadSponsors === 'function') loadSponsors(); }
+        if (id === 'developers') { if(typeof adminLoadDevelopers === 'function') adminLoadDevelopers(); }
         
     };
     </script>

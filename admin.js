@@ -130,6 +130,10 @@ function showAdminSection(sectionId) {
         if (typeof window._contribLoad === 'function') window._contribLoad();
         if (typeof window._contribSetDate === 'function') window._contribSetDate();
     }
+    // Sections that were missing load-on-navigate calls
+    if (sectionId === 'sponsors' && typeof loadSponsors === 'function') loadSponsors();
+    if (sectionId === 'developers' && typeof adminLoadDevelopers === 'function') adminLoadDevelopers();
+    if (sectionId === 'myprofile' && typeof loadMyProfileAdmin === 'function') loadMyProfileAdmin();
 }
 
 // ── Quick Upload (from Admin Dashboard home) ──────────────────────────────────
@@ -6428,4 +6432,3 @@ window.sponsorPreviewBanner = sponsorPreviewBanner;
 // ==================== END SPONSORS MODULE =====================================
 
 // =============================================================================
-=================
