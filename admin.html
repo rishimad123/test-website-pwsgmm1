@@ -5836,7 +5836,15 @@ window._fmtBytesA = function(b) {
                 const dtObj = new Date(e.submittedAt);
                 const dtTime = dtObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
                 const dtDate = dtObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-                const dt = '<span style=\"font-size:.8rem;white-space:nowrap;\">' + dtTime + '<br><span style=\"color:#aaa;\">' + dtDate + '</span></span>';
+                let dt = '<span style=\"font-size:.8rem;white-space:nowrap;\">' + dtTime + '<br><span style=\"color:#aaa;\">' + dtDate + '</span></span>';
+                if (e.updatedAt && e.updatedAt !== e.submittedAt) {
+                    const _upObj = new Date(e.updatedAt);
+                    if (!isNaN(_upObj)) {
+                        const _upTime = _upObj.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }).toUpperCase();
+                        const _upDate = _upObj.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+                        dt += '<div style=\"margin-top:4px;padding:2px 4px;background:#FFF8F1;border:1px solid #ffe0b2;border-radius:4px;color:#E65100;font-size:0.7rem;line-height:1.1;white-space:nowrap;\"><i class=\"fas fa-history\" style=\"font-size:0.6rem;\"></i> Updated:<br>' + _upTime + ' ' + _upDate + '</div>';
+                    }
+                }
                 const amt = e.amount != null ? '&#x20B9;' + Number(e.amount).toLocaleString('en-IN') : '—';
                 // Show BOTH uploaded photo AND digital preview in table
                 const _tHp  = !!e.photoUrl;
