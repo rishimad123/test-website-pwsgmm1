@@ -8360,6 +8360,46 @@ document.addEventListener('DOMContentLoaded',function(){var sec=document.getElem
 
 
 
+
+<script>
+/* ── Live update listener for admin panel ──────────────────────────────────
+   Listens for donations_updated SSE events and refreshes:
+   - Balance/Pending Recovery section (if currently visible)
+   - Admin Donation Data Entry table (if currently visible)
+   No other sections or functionality are affected.
+──────────────────────────────────────────────────────────────────────────── */
+(function() {
+    function adminInitSSE() {
+        var src = new EventSource('/api/live-updates');
+        src.onmessage = function(event) {
+            try {
+                var d = JSON.parse(event.data);
+                if (d.type !== 'donations_updated') return;
+                // Refresh balance recovery if currently visible
+                var balSec = document.getElementById('balanceRecovery');
+                if (typeof loadBalanceRecovery === 'function' && balSec && balSec.style.display !== 'none') {
+                    loadBalanceRecovery();
+                }
+                // Refresh admin DE table (adeRender / adeLoad) if donation entries section visible
+                var deSec = document.getElementById('donationEntries');
+                if (deSec && deSec.style.display !== 'none') {
+                    if (typeof loadAdminDonationEntries === 'function') loadAdminDonationEntries();
+                    if (typeof adeLoad === 'function') adeLoad();
+                }
+            } catch(e) {}
+        };
+        src.onerror = function() {
+            src.close();
+            setTimeout(adminInitSSE, 5000); // reconnect after 5 s
+        };
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', adminInitSSE);
+    } else {
+        adminInitSSE();
+    }
+})();
+</script>
 </body>
 </html>
 

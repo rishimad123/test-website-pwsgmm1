@@ -4382,6 +4382,13 @@ window.fixUrl = function(url) {
             showSt('✅ Entry updated! You can edit again — reason required each time.', 'success');
             // Refresh the list in background
             await deLoadMyEntries();
+            // Also refresh balance recovery section if currently visible
+            (function() {
+                const _balSec = document.getElementById('balanceRecovery');
+                if (typeof loadVolBalanceRecovery === 'function' && _balSec && _balSec.style.display !== 'none') {
+                    loadVolBalanceRecovery();
+                }
+            })();
             // Re-open the modal on the same entry so history refreshes and reason field is cleared
             // (deOpenVolEdit will fetch fresh data and re-render history)
             deOpenVolEdit(id);
@@ -4438,6 +4445,16 @@ window.fixUrl = function(url) {
                         // Refresh My Donations section if it is currently visible
                         const _myDonSec = document.getElementById('donations');
                         if (typeof myDonLoad === 'function' && _myDonSec && _myDonSec.style.display !== 'none') { myDonLoad(); }
+                        // Refresh Balance Recovery if currently visible
+                        const _balSecSSE = document.getElementById('balanceRecovery');
+                        if (typeof loadVolBalanceRecovery === 'function' && _balSecSSE && _balSecSSE.style.display !== 'none') {
+                            loadVolBalanceRecovery();
+                        }
+                        // Refresh All Entries table if Donation Entry section is visible
+                        const _deSecSSE = document.getElementById('donationEntry');
+                        if (typeof vdeLoad === 'function' && _deSecSSE && _deSecSSE.style.display !== 'none') {
+                            vdeLoad();
+                        }
                     } else if (data.type === 'events_updated') {
                         if (typeof loadEventCountdown === 'function') loadEventCountdown();
                     }
