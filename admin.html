@@ -4918,6 +4918,14 @@ window._fmtBytesA = function(b) {
                        <i class="fas fa-camera" style="font-size:1.3rem;color:#ddd;display:block;margin-bottom:5px;"></i>
                        <span style="font-size:.73rem;color:#ccc;font-weight:600;">No Receipt Photo</span>
                    </div>`;
+            // Pre-calculate updatedAt badge (same approach as photoSection above)
+            const updatedBadge = (e.updatedAt && e.updatedAt !== e.submittedAt && !isNaN(new Date(e.updatedAt)))
+                ? ('<div style="margin-top:4px;padding:2px 4px;background:#FFF8F1;border:1px solid #ffe0b2;border-radius:4px;color:#E65100;font-size:0.7rem;line-height:1.1;text-align:right;white-space:nowrap;">'
+                   + '<i class="fas fa-history" style="font-size:0.6rem;"></i> Updated:<br>'
+                   + new Date(e.updatedAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()
+                   + ' ' + new Date(e.updatedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})
+                   + '</div>')
+                : '';
             return `<div style="background:var(--white);border:1.5px solid #F0F0F0;border-radius:14px;padding:18px 16px;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 4px 18px rgba(0,0,0,.11)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'">
                 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;">
                     <div style="font-weight:700;font-size:.97rem;color:var(--dark-color);line-height:1.3;">${donor}</div>
@@ -4941,7 +4949,7 @@ window._fmtBytesA = function(b) {
                         <div style="font-size:1.1rem;font-weight:800;color:#2E7D32;">${amt}</div>
                         ${e.amountReceived != null ? `<div style="font-size:.75rem;font-weight:700;color:#1565C0;margin-top:3px;"><i class="fas fa-hand-holding-usd" style="margin-right:4px;font-size:.7rem;"></i>Received: &#x20B9;${Number(e.amountReceived).toLocaleString('en-IN')}</div>` : ''}
                     </div>
-                    <div style="font-size:.76rem;color:#aaa;text-align:right;line-height:1.4;">${timeStr}<br>${dateStr}${(e.updatedAt && e.updatedAt !== e.submittedAt && !isNaN(new Date(e.updatedAt))) ? `<div style="margin-top:4px;padding:2px 4px;background:#FFF8F1;border:1px solid #ffe0b2;border-radius:4px;color:#E65100;font-size:0.7rem;line-height:1.1;text-align:right;white-space:nowrap;"><i class="fas fa-history" style="font-size:0.6rem;"></i> Updated:<br>${new Date(e.updatedAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}).toUpperCase()} ${new Date(e.updatedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</div>` : ''}</div>
+                    <div style="font-size:.76rem;color:#aaa;text-align:right;line-height:1.4;">${timeStr}<br>${dateStr}${updatedBadge}</div>
                 </div>
                 ${e.submittedBy ? `<div style="font-size:.75rem;color:#bbb;margin-top:7px;"><i class="fas fa-user" style="margin-right:4px;"></i>${e.submittedBy}</div>` : ''}
                 ${e.markedReceivedBy ? `<div style="font-size:.76rem;font-weight:700;color:#E65100;margin-top:6px;padding:5px 10px;background:#FFF8F1;border-radius:8px;border:1px solid #ffe0b2;"><i class="fas fa-check-circle" style="color:#2E7D32;margin-right:5px;"></i>Marked received by <strong>${e.markedReceivedBy}</strong></div>` : ''}
