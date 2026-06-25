@@ -443,6 +443,9 @@ async function loadSiteSettings() {
             applySocialLink('heroYoutubeLink', s.socialYoutube);
             const heroYt = document.getElementById('heroYoutubeLink');
             if (heroYt) heroYt.style.display = 'inline-flex';
+            // Hide Committee btn so YouTube takes its grid slot in row 2
+            const heroCommitteeBtn = document.getElementById('heroCommitteeBtn');
+            if (heroCommitteeBtn) heroCommitteeBtn.style.display = 'none';
         }
         if (s.socialTwitter)   applySocialLink('socialTwitterLink',   s.socialTwitter);
 
