@@ -2861,7 +2861,12 @@ const server = http.createServer(async (req, res) => {
     // ══════════════════════════════════════════════════════════════
 
     if (req.method === 'GET' && pathname === '/api/gallery') {
-        return sendJSON(res, 200, { photos: galleryPhotos });
+        const sorted = [...galleryPhotos].sort((a, b) => {
+            const seqA = a.sequence !== undefined && a.sequence !== null && a.sequence !== '' ? Number(a.sequence) : 999999;
+            const seqB = b.sequence !== undefined && b.sequence !== null && b.sequence !== '' ? Number(b.sequence) : 999999;
+            return seqA - seqB;
+        });
+        return sendJSON(res, 200, { photos: sorted });
     }
     if (req.method === 'POST' && pathname === '/api/gallery') {
         console.log(`[GALLERY] POST /api/gallery hit — Content-Type: ${req.headers['content-type']}`);
@@ -2876,6 +2881,9 @@ const server = http.createServer(async (req, res) => {
 
             const descPart = parts.find(p => p.name === 'description' && !p.filename);
             const description = descPart ? descPart.data.toString('utf8').trim() : '';
+
+            const seqPart = parts.find(p => p.name === 'sequence' && !p.filename);
+            const sequence = seqPart ? seqPart.data.toString('utf8').trim() : '';
 
             const safeName   = filePart.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
             const uniqueName = `gallery_${Date.now()}_${safeName}`;
@@ -2898,6 +2906,7 @@ const server = http.createServer(async (req, res) => {
             const photo = {
                 id: `GAL-${Date.now()}`,
                 description: description,
+                sequence: sequence,
                 photoFile: uniqueName,
                 photoUrl: photoUrl,
                 createdAt: new Date().toISOString()
@@ -2916,6 +2925,9 @@ const server = http.createServer(async (req, res) => {
             const body = await readBody(req);
             if (body.description !== undefined) {
                 galleryPhotos[idx].description = String(body.description).trim();
+            }
+            if (body.sequence !== undefined) {
+                galleryPhotos[idx].sequence = String(body.sequence).trim();
             }
             galleryPhotos[idx].updatedAt = new Date().toISOString();
             await saveGallery();

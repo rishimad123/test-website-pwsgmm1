@@ -3831,6 +3831,7 @@ function renderAdminGallery() {
 function openGalleryModal() {
     document.getElementById('galleryForm').reset();
     document.getElementById('galleryId').value = '';
+    document.getElementById('gallerySequence').value = '';
     document.getElementById('galleryModalTitle').textContent = 'Upload Photo';
     document.getElementById('galleryPhotoGroup').style.display = 'block';
     document.getElementById('galleryPhoto').required = true;
@@ -3848,6 +3849,7 @@ function editGalleryPhoto(id) {
     document.getElementById('galleryForm').reset();
     document.getElementById('galleryId').value = photo.id;
     document.getElementById('galleryDesc').value = photo.description || '';
+    document.getElementById('gallerySequence').value = photo.sequence || '';
     
     document.getElementById('galleryModalTitle').textContent = 'Edit Photo Description';
     document.getElementById('galleryPhotoGroup').style.display = 'none';
@@ -3864,14 +3866,15 @@ async function saveGalleryPhoto(event) {
     
     const id = document.getElementById('galleryId').value;
     const desc = document.getElementById('galleryDesc').value;
+    const seq = document.getElementById('gallerySequence').value;
     
     try {
         if (id) {
-            // Edit existing (only description)
+            // Edit existing (only description and sequence)
             const res = await fetch(`/api/gallery/${encodeURIComponent(id)}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ description: desc })
+                body: JSON.stringify({ description: desc, sequence: seq })
             });
             const data = await res.json();
             if (res.ok && data.success) {
@@ -3894,6 +3897,7 @@ async function saveGalleryPhoto(event) {
             const formData = new FormData();
             formData.append('photo', fileInput.files[0]);
             formData.append('description', desc);
+            formData.append('sequence', seq);
             
             const res = await fetch('/api/gallery', {
                 method: 'POST',
