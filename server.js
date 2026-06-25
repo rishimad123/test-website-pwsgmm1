@@ -1784,16 +1784,21 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 200, { entries: result, total: result.length, slipsPerBook: SLIPS_PER_BOOK_DE, maxNewBooks: globalSettings.maxNewBooks, maxOldBooks: globalSettings.maxOldBooks });
     }
 
-    // ── GET /api/donation-years  (list all distinct years) ───────────────────
     if (req.method === 'GET' && pathname === '/api/donation-years') {
-        const years = new Set(globalSettings.allowedYears || []);
-        donationEntries.forEach(e => {
-            if (!e.deleted && e.year) years.add(e.year);
-        });
-        const activeYear = globalSettings.activeDonationYear || '2026-27';
-        years.add(activeYear); // always include the active year even if no entries yet
-        const sorted = Array.from(years).sort().reverse();
-        return sendJSON(res, 200, { success: true, years: sorted, activeYear });
+        try {
+            const allowed = Array.isArray(globalSettings.allowedYears) ? globalSettings.allowedYears : [];
+            const years = new Set(allowed);
+            donationEntries.forEach(e => {
+                if (!e.deleted && e.year) years.add(e.year);
+            });
+            const activeYear = globalSettings.activeDonationYear || '2026-27';
+            years.add(activeYear); // always include the active year even if no entries yet
+            const sorted = Array.from(years).sort().reverse();
+            return sendJSON(res, 200, { success: true, years: sorted, activeYear });
+        } catch(err) {
+            console.error('GET /api/donation-years Error:', err);
+            return sendJSON(res, 500, { success: false, message: 'Server error' });
+        }
     }
 
     // ── POST /api/donation-years  (add explicit year) ─────────────────────────
@@ -1802,7 +1807,7 @@ const server = http.createServer(async (req, res) => {
             const body = await readBody(req);
             if (!body.year) return sendJSON(res, 400, { message: 'Year is required.' });
             const newYear = String(body.year).trim();
-            if (!globalSettings.allowedYears) globalSettings.allowedYears = [];
+            if (!Array.isArray(globalSettings.allowedYears)) globalSettings.allowedYears = [];
             if (!globalSettings.allowedYears.includes(newYear)) {
                 globalSettings.allowedYears.push(newYear);
                 await colSettings.updateOne({}, { $set: { allowedYears: globalSettings.allowedYears } }, { upsert: true });
@@ -1826,7 +1831,7 @@ const server = http.createServer(async (req, res) => {
             const nowStr = new Date().toISOString();
 
             // 1. Delete from allowedYears
-            if (globalSettings.allowedYears && globalSettings.allowedYears.includes(yearToDelete)) {
+            if (Array.isArray(globalSettings.allowedYears) && globalSettings.allowedYears.includes(yearToDelete)) {
                 globalSettings.allowedYears = globalSettings.allowedYears.filter(y => y !== yearToDelete);
                 await colSettings.updateOne({}, { $set: { allowedYears: globalSettings.allowedYears } }, { upsert: true });
             }
