@@ -402,14 +402,23 @@ const MIME = {
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function sendJSON(res, statusCode, data) {
+function sendJSON_base(res, statusCode, data, reqOrigin) {
     const body = JSON.stringify(data);
+    const allowedOrigins = [
+        'https://patelwadichasukhakarta1.web.app',
+        'https://patelwadichasukhakarta1.firebaseapp.com',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000'
+    ];
+    const originHeader = (reqOrigin && allowedOrigins.includes(reqOrigin)) ? reqOrigin : allowedOrigins[0];
     res.writeHead(statusCode, {
         'Content-Type' : 'application/json',
         'Content-Length': Buffer.byteLength(body),
-        'Access-Control-Allow-Origin' : '*',
+        'Access-Control-Allow-Origin' : originHeader,
         'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Credentials': 'true',
+        'Vary'         : 'Origin',
         'Connection'   : 'close',
     });
     res.end(body);
@@ -498,11 +507,23 @@ const server = http.createServer(async (req, res) => {
     const pathname = parsed.pathname;
 
     // CORS pre-flight
+    const reqOrigin = req.headers['origin'] || '';
+    const allowedOrigins = [
+        'https://patelwadichasukhakarta1.web.app',
+        'https://patelwadichasukhakarta1.firebaseapp.com',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000'
+    ];
+    const corsOrigin = allowedOrigins.includes(reqOrigin) ? reqOrigin : allowedOrigins[0];
+    // Per-request sendJSON that automatically includes the correct CORS origin
+    const sendJSON = (r, code, data) => sendJSON_base(r, code, data, corsOrigin);
     if (req.method === 'OPTIONS') {
         res.writeHead(204, {
-            'Access-Control-Allow-Origin' : '*',
+            'Access-Control-Allow-Origin' : corsOrigin,
             'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Accept',
+            'Access-Control-Allow-Headers': 'Content-Type, Accept, Authorization',
+            'Access-Control-Allow-Credentials': 'true',
+            'Vary': 'Origin',
         });
         return res.end();
     }
