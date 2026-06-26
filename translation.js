@@ -27,7 +27,12 @@ function toggleLanguage() {
     
     const select = document.querySelector('.goog-te-combo');
     if (select) {
-        select.value = targetLang;
+        if (targetLang === 'mr') {
+            select.value = 'mr';
+        } else {
+            // Revert to English (original) without reload
+            select.value = '';
+        }
         select.dispatchEvent(new Event('change'));
     }
 }

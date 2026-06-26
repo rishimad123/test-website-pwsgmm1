@@ -43,7 +43,7 @@ for (const file of privatePages) {
 // Generate sitemap.xml
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${Object.keys(publicPages).map(page => `  <url>\n    <loc>https://test-website-pwsgmm1.onrender.com/${page}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${page === 'index.html' ? '1.0' : '0.8'}</priority>\n  </url>`).join('\n')}
+${Object.keys(publicPages).map(page => `  <url>\n    <loc>https://patelwadichasukhakarta.com/${page}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${page === 'index.html' ? '1.0' : '0.8'}</priority>\n  </url>`).join('\n')}
 </urlset>`;
 fs.writeFileSync("sitemap.xml", sitemapXml);
 console.log("Created sitemap.xml");
@@ -55,7 +55,7 @@ Disallow: /dashboard.html
 Disallow: /login.html
 Disallow: /api/
 
-Sitemap: https://test-website-pwsgmm1.onrender.com/sitemap.xml`;
+Sitemap: https://patelwadichasukhakarta.com/sitemap.xml`;
 fs.writeFileSync("robots.txt", robotsTxt);
 console.log("Created robots.txt");
 
