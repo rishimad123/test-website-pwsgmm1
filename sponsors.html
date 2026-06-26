@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <script src="env-config.js"></script>
+    <script src="firebase-realtime.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Our Sponsors – Shree Patelwadi Sarvjanik Ganesh Utsav Mandal</title>
@@ -325,6 +326,10 @@
                     <i class="fas fa-om"></i>
                     <span>Shree Patelwadi Sarvjanik Ganesh Utsav Mandal</span>
                 </div>
+                                <div class="lang-toggle" onclick="toggleLanguage()">
+                    <span id="langEng" class="active">ENG</span>
+                    <span id="langMar">MAR</span>
+                </div>
                 <button class="mobile-toggle" id="mobileToggle">
                     <span></span>
                     <span></span>
@@ -372,22 +377,29 @@
     </section>
 
     <!-- Footer -->
-    <footer class="footer">
+        <footer class="footer">
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-col">
                     <h3>Developers</h3>
                     <p>Meet the team behind this digital platform</p>
+                    <div id="footerDevProfileContainer" class="footer-dev-profile" style="display:none;">
+                        <img id="footerDevProfilePhoto" src="" class="footer-dev-photo" style="display:none;" alt="Developer">
+                        <div class="footer-dev-info">
+                            <div id="footerDevProfileName" class="footer-dev-name"></div>
+                            <div id="footerDevProfilePosition" class="footer-dev-position"></div>
+                        </div>
+                    </div>
                     <a href="developers.html" class="dev-footer-link"><i class="fas fa-code"></i> Meet the Developers</a>
                 </div>
                 <div class="footer-col">
                     <h3>About Us</h3>
                     <p>Shree Patelwadi Sarvjanik Ganesh Utsav Mandal is dedicated to celebrating Ganesh Chaturthi with devotion and community service.</p>
                     <div class="social-links">
-                        <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                        <a id="socialFacebookLink" href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
                         <a id="socialInstagramLink" href="https://www.instagram.com/patelwadi_cha_sukhakarta_offi/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-                        <a href="https://www.twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a id="socialYoutubeLink" href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                        <a id="socialTwitterLink" href="https://www.twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
                     </div>
                 </div>
                 <div class="footer-col">
@@ -399,7 +411,7 @@
                         <li><a href="gallery.html">Gallery</a></li>
                         <li><a href="tshirt.html">T-shirts</a></li>
                         <li><a href="sponsors.html">Sponsors</a></li>
-                                            </ul>
+                    </ul>
                 </div>
                 <div class="footer-col"></div>
             </div>
@@ -409,7 +421,8 @@
         </div>
     </footer>
 
-    <script src="main.js?v=1.0.5"></script>
+    <script src="main.js"></script>
+    <script src="translation.js"></script>
     <script>
     // ── Load Sponsor Cards ──
     async function loadSponsorsPage() {

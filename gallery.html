@@ -2,25 +2,33 @@
 <html lang="en">
 <head>
     <script src="env-config.js"></script>
+    <script src="firebase-realtime.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    
+    
+    <link rel="icon" href="logo.png" type="image/png">
     <title>Gallery - Shree Patelwadi Sarvjanik Ganesh Utsav Mandal</title>
     <meta name="description" content="View the photo gallery of past events and celebrations by the Mandal.">
     <meta name="keywords" content="Gallery, Photos, Events, Celebrations">
-    <link rel="icon" href="logo.png" type="image/png">
 </head>
 <body class="theme-events">
     <!-- Navigation -->
-    <nav class="navbar" style="background-color: var(--dark-color);">
+    <nav class="navbar">
         <div class="container">
             <div class="nav-wrapper">
                 <div class="logo">
                     <i class="fas fa-om"></i>
                     <span>Shree Patelwadi Sarvjanik Ganesh Utsav Mandal</span>
+                </div>
+                                <div class="lang-toggle" onclick="toggleLanguage()">
+                    <span id="langEng" class="active">ENG</span>
+                    <span id="langMar">MAR</span>
                 </div>
                 <button class="mobile-toggle" id="mobileToggle">
                     <span></span>
@@ -55,7 +63,7 @@
     </section>
 
     <!-- Footer -->
-    <footer class="footer">
+        <footer class="footer">
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-col">
@@ -75,7 +83,7 @@
                     <p>Shree Patelwadi Sarvjanik Ganesh Utsav Mandal is dedicated to celebrating Ganesh Chaturthi with devotion and community service.</p>
                     <div class="social-links">
                         <a id="socialFacebookLink" href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
-                        <a id="socialInstagramLink" href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a id="socialInstagramLink" href="https://www.instagram.com/patelwadi_cha_sukhakarta_offi/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                         <a id="socialYoutubeLink" href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                         <a id="socialTwitterLink" href="https://www.twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
                     </div>
@@ -87,13 +95,11 @@
                         <li><a href="committee.html">Committee</a></li>
                         <li><a href="volunteers.html">Volunteers</a></li>
                         <li><a href="gallery.html">Gallery</a></li>
-                        
+                        <li><a href="tshirt.html">T-shirts</a></li>
+                        <li><a href="sponsors.html">Sponsors</a></li>
                     </ul>
                 </div>
-                <div class="footer-col">
-                    
-                </div>
-                
+                <div class="footer-col"></div>
             </div>
             <div class="footer-bottom">
                 <p>&copy; 2026 Shree Patelwadi Sarvjanik Ganesh Utsav Mandal. All rights reserved. Website develop by HET PATEL</p>
@@ -102,6 +108,7 @@
     </footer>
 
     <script src="main.js"></script>
+    <script src="translation.js"></script>
 </body>
 </html>
 

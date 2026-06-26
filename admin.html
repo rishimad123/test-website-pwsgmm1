@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <script src="env-config.js"></script>
+    <script src="firebase-realtime.js"></script>
 <script>
 /* Portable API base: strip hardcoded localhost:3000 → relative URL on any host */
 (function() {
@@ -1129,16 +1130,7 @@ window._fmtBytesA = function(b) {
         /* Google Translate Customization */
         .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon { display: none !important; }
         body { top: 0px !important; }
-        #google_translate_element { display: none; }
-        .lang-toggle {
-            display: flex; align-items: center; background: #f0f2f5; border-radius: 20px;
-            padding: 2px; cursor: pointer; margin-right: 12px; font-size: 0.8rem;
-            font-weight: 600; color: #555; border: 1px solid #ddd; user-select: none;
-        }
-        .lang-toggle span { padding: 4px 10px; border-radius: 18px; transition: 0.3s; }
-        .lang-toggle span.active { background: #fff; color: #1a237e; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        /* Deep Hide Google Translate Top Bar */
-        .goog-te-banner-frame { display: none !important; visibility: hidden !important; }
+        
         .skiptranslate iframe { display: none !important; visibility: hidden !important; }
         body { top: 0px !important; position: static !important; }
         html { margin-top: 0px !important; }
@@ -1146,9 +1138,11 @@ window._fmtBytesA = function(b) {
         .goog-text-highlight { background: none !important; box-shadow: none !important; border: none !important; }
         .VIpgJd-ZVi9od-aZ2wEe-wOHMyf { display: none !important; visibility: hidden !important; }
         </style>
+    
+    
+    <link rel="icon" href="logo.png" type="image/png">
     <title>Private Area</title>
     <meta name="robots" content="noindex, nofollow">
-    <link rel="icon" href="logo.png" type="image/png">
 </head>
 <body>
 <style id="dashboard-theme-override">
@@ -7464,23 +7458,7 @@ window._fmtBytesA = function(b) {
         });
     </script>
     <script type="text/javascript">
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'en',
-                includedLanguages: 'en,mr',
-                autoDisplay: false
-            }, 'google_translate_element');
-        }
-
-        function toggleLanguage() {
-            const isMar = document.getElementById('langMar').classList.contains('active');
-            const targetLang = isMar ? 'en' : 'mr';
-            
-            // Update toggle UI
-            if(isMar) {
-                document.getElementById('langMar').classList.remove('active');
-                document.getElementById('langEng').classList.add('active');
-            } else {
+         else {
                 document.getElementById('langEng').classList.remove('active');
                 document.getElementById('langMar').classList.add('active');
             }
@@ -7493,7 +7471,7 @@ window._fmtBytesA = function(b) {
             }
         }
     </script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    
 
 <script>
 // --- SYSTEM WIDE NOTIFICATIONS LOGIC ---
@@ -8412,6 +8390,7 @@ document.addEventListener('DOMContentLoaded',function(){var sec=document.getElem
     }
 })();
 </script>
+    <script src="translation.js"></script>
 </body>
 </html>
 

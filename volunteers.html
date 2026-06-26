@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <script src="env-config.js"></script>
+    <script src="firebase-realtime.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
@@ -62,10 +63,13 @@
         
 
     </style>
+    
+    
+    
+    <link rel="icon" href="logo.png" type="image/png">
     <title>Volunteers - Shree Patelwadi Sarvjanik Ganesh Utsav Mandal</title>
     <meta name="description" content="Our volunteers are the backbone of the Mandal. See our volunteer team.">
     <meta name="keywords" content="Volunteers, Team, Social Service, Ganesh Utsav">
-    <link rel="icon" href="logo.png" type="image/png">
 </head>
 <body class="theme-volunteers">
     <!-- Navigation -->
@@ -75,6 +79,10 @@
                 <div class="logo">
                     <i class="fas fa-om"></i>
                     <span>Shree Patelwadi Sarvjanik Ganesh Utsav Mandal</span>
+                </div>
+                                <div class="lang-toggle" onclick="toggleLanguage()">
+                    <span id="langEng" class="active">ENG</span>
+                    <span id="langMar">MAR</span>
                 </div>
                 <button class="mobile-toggle" id="mobileToggle">
                     <span></span><span></span><span></span>
@@ -124,7 +132,7 @@
     </section>
     
     <!-- Footer -->
-    <footer class="footer">
+        <footer class="footer">
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-col">
@@ -137,16 +145,14 @@
                             <div id="footerDevProfilePosition" class="footer-dev-position"></div>
                         </div>
                     </div>
-                    <a href="developers.html" class="dev-footer-link">
-                        <i class="fas fa-code"></i> Meet the Developers
-                    </a>
+                    <a href="developers.html" class="dev-footer-link"><i class="fas fa-code"></i> Meet the Developers</a>
                 </div>
                 <div class="footer-col">
                     <h3>About Us</h3>
                     <p>Shree Patelwadi Sarvjanik Ganesh Utsav Mandal is dedicated to celebrating Ganesh Chaturthi with devotion and community service.</p>
                     <div class="social-links">
                         <a id="socialFacebookLink" href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
-                        <a id="socialInstagramLink" href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a id="socialInstagramLink" href="https://www.instagram.com/patelwadi_cha_sukhakarta_offi/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                         <a id="socialYoutubeLink" href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                         <a id="socialTwitterLink" href="https://www.twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
                     </div>
@@ -159,13 +165,10 @@
                         <li><a href="volunteers.html">Volunteers</a></li>
                         <li><a href="gallery.html">Gallery</a></li>
                         <li><a href="tshirt.html">T-shirts</a></li>
-                        
+                        <li><a href="sponsors.html">Sponsors</a></li>
                     </ul>
                 </div>
-                <div class="footer-col">
-                    
-                </div>
-                
+                <div class="footer-col"></div>
             </div>
             <div class="footer-bottom">
                 <p>&copy; 2026 Shree Patelwadi Sarvjanik Ganesh Utsav Mandal. All rights reserved. Website develop by HET PATEL</p>
@@ -174,6 +177,7 @@
     </footer>
     
     <script src="main.js"></script>
+    <script src="translation.js"></script>
     <script>
         async function loadVolunteers() {
             const grid = document.getElementById('volunteersGrid');

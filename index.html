@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <script src="env-config.js"></script>
+    <script src="firebase-realtime.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
@@ -27,43 +28,6 @@
         --royal-blue:#1D3A6E;
         --white:     #FFFFFF;
     }
-
-    /* ---- NAVBAR ---- */
-    .navbar {
-        background: rgba(26, 10, 0, 0.95);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        box-shadow: 0 2px 20px rgba(185,28,28,0.25);
-        border-bottom: 1px solid rgba(217,119,6,0.3);
-    }
-    .logo { color: var(--gold-lt) !important; letter-spacing: 0.3px; }
-    .logo i { color: var(--gold-lt) !important; }
-
-    .nav-menu a { color: rgba(255,248,238,0.85) !important; font-size: 0.92rem; letter-spacing: 0.3px; }
-    .nav-menu a:hover, .nav-menu a.active { color: var(--gold-lt) !important; }
-    .nav-menu a::after { background: var(--gold-lt) !important; }
-    .mobile-toggle span { background: var(--gold-lt) !important; }
-    @media (max-width: 968px) {
-        .nav-menu {
-            background: rgba(15, 5, 0, 0.97) !important;
-            border-top: 2px solid var(--crimson) !important;
-            z-index: 99999 !important;
-        }
-        .nav-menu.active { left: 0 !important; }
-        .nav-menu li { width: 100%; }
-        .nav-menu a  { display: block; padding: 14px 20px !important; font-size: 1rem !important; color: rgba(255,248,238,0.9) !important; border-bottom: 1px solid rgba(217,119,6,0.1); }
-        .nav-menu a:hover, .nav-menu a.active { color: var(--gold-lt) !important; background: rgba(217,119,6,0.08); }
-        .nav-menu .btn-login { margin: 10px auto !important; display: inline-block !important; width: auto !important; border-bottom: none !important; }
-    }
-    .btn-login {
-        background: linear-gradient(135deg, var(--saffron), var(--crimson)) !important;
-        border: 1px solid var(--gold) !important;
-        border-radius: 20px !important;
-        color: #fff !important;
-        font-weight: 600 !important;
-        letter-spacing: 0.3px;
-    }
-    .btn-login:hover { opacity: 0.9; transform: translateY(-1px) !important; }
 
     /* ---- HERO ---- */
     .hero {
@@ -557,10 +521,13 @@
         .hero-logo-wrap { width: 210px; height: 210px; }
     }
     </style>
+    
+    
+    
+    <link rel="icon" href="logo.png" type="image/png">
     <title>Shree Patelwadi Sarvjanik Ganesh Utsav Mandal - Home</title>
     <meta name="description" content="Welcome to Shree Patelwadi Sarvjanik Ganesh Utsav Mandal. Join us in our cultural and social activities.">
     <meta name="keywords" content="Ganesh Utsav, Mandal, Shree Patelwadi, Festival, Cultural Activities">
-    <link rel="icon" href="logo.png" type="image/png">
 </head>
 <body>
     <!-- Navigation -->
@@ -570,6 +537,10 @@
                 <div class="logo">
                     <i class="fas fa-om"></i>
                     <span>Shree Patelwadi Sarvjanik Ganesh Utsav Mandal</span>
+                </div>
+                                <div class="lang-toggle" onclick="toggleLanguage()">
+                    <span id="langEng" class="active">ENG</span>
+                    <span id="langMar">MAR</span>
                 </div>
                 <button class="mobile-toggle" id="mobileToggle">
                     <span></span>
@@ -1082,7 +1053,7 @@
 
     <!-- Footer -->
 
-    <footer class="footer">
+        <footer class="footer">
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-col">
@@ -1115,13 +1086,10 @@
                         <li><a href="volunteers.html">Volunteers</a></li>
                         <li><a href="gallery.html">Gallery</a></li>
                         <li><a href="tshirt.html">T-shirts</a></li>
-                        
+                        <li><a href="sponsors.html">Sponsors</a></li>
                     </ul>
                 </div>
-                <div class="footer-col">
-                    
-                </div>
-                
+                <div class="footer-col"></div>
             </div>
             <div class="footer-bottom">
                 <p>&copy; 2026 Shree Patelwadi Sarvjanik Ganesh Utsav Mandal. All rights reserved. Website develop by HET PATEL</p>
@@ -1129,7 +1097,8 @@
         </div>
     </footer>
 
-    <script src="main.js?v=1.0.5"></script>
+    <script src="main.js"></script>
+    <script src="translation.js"></script>
     <script>
     // ── Floating particles ──
     (function() {

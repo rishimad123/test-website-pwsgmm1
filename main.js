@@ -444,8 +444,7 @@ async function loadSiteSettings() {
             const heroYt = document.getElementById('heroYoutubeLink');
             if (heroYt) heroYt.style.display = 'inline-flex';
             // Hide Committee btn so YouTube takes its grid slot in row 2
-            const heroCommitteeBtn = document.getElementById('heroCommitteeBtn');
-            if (heroCommitteeBtn) heroCommitteeBtn.style.display = 'none';
+            // Committee button now shown explicitly.
         }
         if (s.socialTwitter)   applySocialLink('socialTwitterLink',   s.socialTwitter);
 

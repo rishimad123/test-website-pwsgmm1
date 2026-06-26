@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <script src="env-config.js"></script>
+    <script src="firebase-realtime.js"></script>
 <script>
 // Apply dynamic receipt format from server settings
 function applyReceiptFormat(rf, prefix) {
@@ -711,16 +712,7 @@ window.fixUrl = function(url) {
         /* Google Translate Customization */
         .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon { display: none !important; }
         body { top: 0px !important; }
-        #google_translate_element { display: none; }
-        .lang-toggle {
-            display: flex; align-items: center; background: #f0f2f5; border-radius: 20px;
-            padding: 2px; cursor: pointer; margin-right: 16px; font-size: 0.8rem;
-            font-weight: 600; color: #555; border: 1px solid #ddd; user-select: none;
-        }
-        .lang-toggle span { padding: 4px 10px; border-radius: 18px; transition: 0.3s; }
-        .lang-toggle span.active { background: #fff; color: #1a237e; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        /* Deep Hide Google Translate Top Bar */
-        .goog-te-banner-frame { display: none !important; visibility: hidden !important; }
+        
         .skiptranslate iframe { display: none !important; visibility: hidden !important; }
         body { top: 0px !important; position: static !important; }
         html { margin-top: 0px !important; }
@@ -892,9 +884,11 @@ window.fixUrl = function(url) {
                 padding: 12px !important;
             }
 </style>
+    
+    
+    <link rel="icon" href="logo.png" type="image/png">
     <title>Private Area</title>
     <meta name="robots" content="noindex, nofollow">
-    <link rel="icon" href="logo.png" type="image/png">
 </head>
 <body>
 <style id="dashboard-theme-override">
@@ -4503,7 +4497,7 @@ window.fixUrl = function(url) {
             }
         }
     </script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    
 
 <script>
 
@@ -5562,6 +5556,7 @@ fetchNotifications();
 })();
 </script>
 <!-- ═══ END DE RECEIPT EDIT MODAL ═══ -->
+    <script src="translation.js"></script>
 </body>
 
 </html>
