@@ -6,6 +6,22 @@
 }
 
 :root {
+    --saffron: #E86100;
+    --deep-saffron: #C45000;
+    --crimson: #B91C1C;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --cream: #FFF8EE;
+    --midnight: #1A0A00;
+    --royal-blue: #1D3A6E;
+    --saffron: #E86100;
+    --deep-saffron: #C45000;
+    --crimson: #B91C1C;
+    --gold: #D97706;
+    --gold-lt: #FCD34D;
+    --cream: #FFF8EE;
+    --midnight: #1A0A00;
+    --royal-blue: #1D3A6E;
     --primary-color: #E86100;
     --secondary-color: #FFB74D;
     --accent-color: #FB8C00;
