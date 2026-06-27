@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <script src="env-config.js"></script>
@@ -709,16 +709,23 @@ window.fixUrl = function(url) {
             /* Donor search section padding */
             #donorSearch > div { padding: 10px !important; }
         }
-        /* Google Translate Customization */
-        .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon { display: none !important; }
-        body { top: 0px !important; }
-        
-        .skiptranslate iframe { display: none !important; visibility: hidden !important; }
-        body { top: 0px !important; position: static !important; }
-        html { margin-top: 0px !important; }
-        #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
-        .goog-text-highlight { background: none !important; box-shadow: none !important; border: none !important; }
-        .VIpgJd-ZVi9od-aZ2wEe-wOHMyf { display: none !important; visibility: hidden !important; }
+        /* ── Deep-hide ALL Google Translate UI ── */
+        .goog-te-banner-frame,
+        .goog-te-banner-frame.skiptranslate,
+        .goog-te-gadget,
+        .goog-te-gadget-icon,
+        .goog-te-gadget-simple,
+        .goog-te-menu-frame,
+        .goog-te-balloon-frame,
+        iframe.goog-te-banner-frame,
+        .skiptranslate                          { display: none !important; visibility: hidden !important; height: 0 !important; overflow: hidden !important; }
+        body                                    { top: 0px !important; }
+        html body                               { margin-top: 0px !important; }
+        #goog-gt-tt,
+        .VIpgJd-ZVi9od-aZ2wEe-wOHMyf           { display: none !important; visibility: hidden !important; }
+        .goog-text-highlight                    { background: none !important; box-shadow: none !important; border: none !important; }
+        #google_translate_element               { display: none !important; width: 0; height: 0; overflow: hidden; position: absolute; pointer-events: none; }
+
     
         /* Responsive styling for My Donations */
         @media (max-width: 768px) {
@@ -956,8 +963,8 @@ window.fixUrl = function(url) {
                 <div style="display:flex;align-items:center;">
                     <div id="google_translate_element"></div>
                     <div class="lang-toggle" onclick="toggleLanguage()">
-                        <span id="langEng" class="active">ENG</span>
-                        <span id="langMar">MAR</span>
+                        <span id="langEng">ENG</span>
+                        <span id="langMar" class="active">MAR</span>
                     </div>
                     <div class="notification-container" id="dashNotifContainer" onclick="toggleNotifDropdown(event)" style="position:relative;cursor:pointer;margin-right:18px;">
                         <i class="fas fa-bell" style="font-size:1.2rem;color:#555;"></i>
@@ -4463,40 +4470,8 @@ window.fixUrl = function(url) {
     </script>
 <script>
 </script>
-    <script type="text/javascript">
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'en',
-                includedLanguages: 'en,mr',
-                autoDisplay: false
-            }, 'google_translate_element');
-        }
-        // Force hide the banner asynchronously just in case CSS fails
-        setInterval(function() {
-            var frames = document.getElementsByClassName('goog-te-banner-frame');
-            for(var i=0; i<frames.length; i++) { frames[i].style.display = 'none'; frames[i].style.visibility = 'hidden'; }
-            if (document.body && document.body.style.top !== '0px') document.body.style.top = '0px';
-            if (document.documentElement && document.documentElement.style.marginTop !== '0px') document.documentElement.style.marginTop = '0px';
-        }, 300);
-        function toggleLanguage() {
-            const isMar = document.getElementById('langMar').classList.contains('active');
-            const targetLang = isMar ? 'en' : 'mr';
-            
-            if(isMar) {
-                document.getElementById('langMar').classList.remove('active');
-                document.getElementById('langEng').classList.add('active');
-            } else {
-                document.getElementById('langEng').classList.remove('active');
-                document.getElementById('langMar').classList.add('active');
-            }
-            
-            const select = document.querySelector('.goog-te-combo');
-            if (select) {
-                select.value = targetLang;
-                select.dispatchEvent(new Event('change'));
-            }
-        }
-    </script>
+    <!-- Translation handled by translation.js -->
+
     
 
 <script>

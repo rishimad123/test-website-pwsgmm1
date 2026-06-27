@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <script src="env-config.js"></script>
@@ -1127,16 +1127,22 @@ window._fmtBytesA = function(b) {
         }
         /* ===== END DONOR SEARCH STYLES ===== */
 
-        /* Google Translate Customization */
-        .goog-te-banner-frame.skiptranslate, .goog-te-gadget-icon { display: none !important; }
-        body { top: 0px !important; }
-        
-        .skiptranslate iframe { display: none !important; visibility: hidden !important; }
-        body { top: 0px !important; position: static !important; }
-        html { margin-top: 0px !important; }
-        #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
-        .goog-text-highlight { background: none !important; box-shadow: none !important; border: none !important; }
-        .VIpgJd-ZVi9od-aZ2wEe-wOHMyf { display: none !important; visibility: hidden !important; }
+        /* ── Deep-hide ALL Google Translate UI ── */
+        .goog-te-banner-frame,
+        .goog-te-banner-frame.skiptranslate,
+        .goog-te-gadget,
+        .goog-te-gadget-icon,
+        .goog-te-gadget-simple,
+        .goog-te-menu-frame,
+        .goog-te-balloon-frame,
+        iframe.goog-te-banner-frame,
+        .skiptranslate                          { display: none !important; visibility: hidden !important; height: 0 !important; overflow: hidden !important; }
+        body                                    { top: 0px !important; }
+        html body                               { margin-top: 0px !important; }
+        #goog-gt-tt,
+        .VIpgJd-ZVi9od-aZ2wEe-wOHMyf           { display: none !important; visibility: hidden !important; }
+        .goog-text-highlight                    { background: none !important; box-shadow: none !important; border: none !important; }
+        #google_translate_element               { display: none !important; width: 0; height: 0; overflow: hidden; position: absolute; pointer-events: none; }
         </style>
     
     
@@ -1310,8 +1316,8 @@ window._fmtBytesA = function(b) {
                 <div class="admin-user-section">
                     <div id="google_translate_element"></div>
                     <div class="lang-toggle" onclick="toggleLanguage()">
-                        <span id="langEng" class="active">ENG</span>
-                        <span id="langMar">MAR</span>
+                        <span id="langEng">ENG</span>
+                        <span id="langMar" class="active">MAR</span>
                     </div>
                     <div class="notification-container" id="adminNotifContainer" onclick="toggleNotifDropdown(event)">
                 <i class="fas fa-bell"></i>
@@ -7457,20 +7463,7 @@ window._fmtBytesA = function(b) {
             };
         });
     </script>
-    <script type="text/javascript">
-         else {
-                document.getElementById('langEng').classList.remove('active');
-                document.getElementById('langMar').classList.add('active');
-            }
-            
-            // Trigger Google Translate
-            const select = document.querySelector('.goog-te-combo');
-            if (select) {
-                select.value = targetLang;
-                select.dispatchEvent(new Event('change'));
-            }
-        }
-    </script>
+    <!-- Translation handled by translation.js -->
     
 
 <script>
