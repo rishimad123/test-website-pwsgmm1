@@ -204,77 +204,258 @@ async function loadPublicData() {
         }
     }
 
-    // Load Gallery (Highlights on index.html)
+    // ── Gallery image registry (shared between highlights & full gallery) ──
+    window._galleryImages = [];
+    window._galleryIndex  = 0;
+
+    // Load Gallery Highlights (index.html → publicGalleryGrid)
     const galleryGrid = document.getElementById('publicGalleryGrid');
     if (galleryGrid) {
         try {
-            const res = await fetch('/api/gallery');
+            const res  = await fetch('/api/gallery');
             const data = await res.json();
             if (res.ok && data.photos && data.photos.length > 0) {
-                // Exactly 9 photos in the highlights
-                galleryGrid.innerHTML = data.photos.slice(0, 9).map(photo => `
-                    <div class="gallery-item" onclick="openPublicLightbox('${photo.photoUrl.replace(/'/g, "\\'")}', '${(photo.description || '').replace(/'/g, "\\'")}')" style="cursor:pointer;">
-                        <img src="${photo.photoUrl}" alt="${(photo.description || '').replace(/"/g, '&quot;')}" style="width:100%;height:100%;object-fit:cover;">
-                        <div class="gallery-overlay">
-                            <span>${photo.description || 'Photo'}</span>
-                        </div>
-                    </div>
-                `).join('');
+                const photos = data.photos.slice(0, 9);
+                // Merge into registry (highlights always go first)
+                photos.forEach(p => {
+                    if (!window._galleryImages.find(x => x.url === p.photoUrl)) {
+                        window._galleryImages.push({ url: p.photoUrl, desc: p.description || '' });
+                    }
+                });
+                galleryGrid.innerHTML = photos.map(photo => {
+                    const idx = window._galleryImages.findIndex(x => x.url === photo.photoUrl);
+                    return `<div class="gallery-item" onclick="openPublicLightbox(${idx})" style="cursor:pointer;">
+                        <img src="${photo.photoUrl}" alt="${(photo.description || '').replace(/"/g, '&quot;')}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+                        <div class="gallery-overlay"><span>${photo.description || 'Photo'}</span></div>
+                    </div>`;
+                }).join('');
             } else {
                 galleryGrid.innerHTML = '<div style="text-align:center;grid-column:1/-1;color:#aaa;">No photos in gallery.</div>';
             }
-        } catch(e) {
-            console.error('Failed to load gallery:', e);
-        }
+        } catch(e) { console.error('Failed to load gallery:', e); }
     }
 
-    // Load Full Gallery (gallery.html)
+    // Load Full Gallery (gallery.html → publicFullGalleryGrid)
     const fullGalleryGrid = document.getElementById('publicFullGalleryGrid');
     if (fullGalleryGrid) {
         try {
-            const res = await fetch('/api/gallery');
+            const res  = await fetch('/api/gallery');
             const data = await res.json();
             if (res.ok && data.photos && data.photos.length > 0) {
-                // All photos
-                fullGalleryGrid.innerHTML = data.photos.map(photo => `
-                    <div class="gallery-item" onclick="openPublicLightbox('${photo.photoUrl.replace(/'/g, "\\'")}', '${(photo.description || '').replace(/'/g, "\\'")}')" style="cursor:pointer;">
-                        <img src="${photo.photoUrl}" alt="${(photo.description || '').replace(/"/g, '&quot;')}" style="width:100%;height:100%;object-fit:cover;">
-                        <div class="gallery-overlay">
-                            <span>${photo.description || 'Photo'}</span>
-                        </div>
-                    </div>
-                `).join('');
+                // Reset registry for the full gallery page (all photos)
+                window._galleryImages = data.photos.map(p => ({ url: p.photoUrl, desc: p.description || '' }));
+                fullGalleryGrid.innerHTML = data.photos.map((photo, idx) => {
+                    return `<div class="gallery-item" onclick="openPublicLightbox(${idx})" style="cursor:pointer;">
+                        <img src="${photo.photoUrl}" alt="${(photo.description || '').replace(/"/g, '&quot;')}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+                        <div class="gallery-overlay"><span>${photo.description || 'Photo'}</span></div>
+                    </div>`;
+                }).join('');
             } else {
                 fullGalleryGrid.innerHTML = '<div style="text-align:center;grid-column:1/-1;color:#aaa;">No photos uploaded yet.</div>';
             }
-        } catch(e) {
-            console.error('Failed to load full gallery:', e);
-        }
+        } catch(e) { console.error('Failed to load full gallery:', e); }
     }
 
     // Load Sponsor Banners (index.html homepage strip)
     await loadSponsorBanners();
 }
 
-// Lightbox logic for public gallery
-window.openPublicLightbox = function(url, desc) {
-    let lb = document.getElementById('publicLightbox');
-    if (!lb) {
+// ═══════════════════════════════════════════════════════════
+// LIGHTBOX — Google-Photos-style with swipe + arrow keys
+// ═══════════════════════════════════════════════════════════
+(function () {
+    var LB_ID   = 'publicLightbox';
+    var _touch0 = null; // touchstart X
+    var _kBound = false;
+
+    function _getOrCreate() {
+        var lb = document.getElementById(LB_ID);
+        if (lb) return lb;
+
         lb = document.createElement('div');
-        lb.id = 'publicLightbox';
-        lb.innerHTML = `
-            <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:10000;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:20px;box-sizing:border-box;">
-                <span style="position:absolute;top:20px;right:30px;color:white;font-size:40px;cursor:pointer;line-height:1;" onclick="document.getElementById('publicLightbox').style.display='none'">&times;</span>
-                <img id="plbImg" src="" style="max-width:100%;max-height:80vh;border-radius:10px;box-shadow:0 5px 25px rgba(0,0,0,0.5);object-fit:contain;">
-                <p id="plbDesc" style="color:white;margin-top:20px;font-size:1.1rem;text-align:center;max-width:800px;line-height:1.4;"></p>
-            </div>
-        `;
+        lb.id = LB_ID;
+        lb.setAttribute('role', 'dialog');
+        lb.setAttribute('aria-modal', 'true');
+        lb.innerHTML = [
+            /* backdrop */
+            '<div id="plbBackdrop" style="',
+                'position:fixed;inset:0;',
+                'background:rgba(0,0,0,0.96);',
+                'z-index:99998;',
+                'opacity:0;transition:opacity .25s ease;">',
+            '</div>',
+            /* panel */
+            '<div id="plbPanel" style="',
+                'position:fixed;inset:0;',
+                'z-index:99999;',
+                'display:flex;align-items:center;justify-content:center;',
+                'flex-direction:column;padding:20px;box-sizing:border-box;">',
+
+                /* close btn */
+                '<button id="plbClose" aria-label="Close lightbox" style="',
+                    'position:absolute;top:16px;right:20px;',
+                    'background:rgba(255,255,255,0.12);border:none;color:#fff;',
+                    'font-size:28px;line-height:1;cursor:pointer;',
+                    'width:44px;height:44px;border-radius:50%;',
+                    'display:flex;align-items:center;justify-content:center;',
+                    'transition:background .2s;z-index:2;">',
+                    '&times;',
+                '</button>',
+
+                /* counter */
+                '<div id="plbCounter" style="',
+                    'position:absolute;top:22px;left:50%;transform:translateX(-50%);',
+                    'color:rgba(255,255,255,0.6);font-size:.8rem;letter-spacing:1px;">',
+                '</div>',
+
+                /* prev arrow */
+                '<button id="plbPrev" aria-label="Previous image" style="',
+                    'position:absolute;left:12px;top:50%;transform:translateY(-50%);',
+                    'background:rgba(255,255,255,0.12);border:none;color:#fff;',
+                    'font-size:26px;cursor:pointer;',
+                    'width:48px;height:48px;border-radius:50%;',
+                    'display:flex;align-items:center;justify-content:center;',
+                    'transition:background .2s;z-index:2;">',
+                    '&#8249;',
+                '</button>',
+
+                /* image wrapper */
+                '<div id="plbImgWrap" style="',
+                    'display:flex;align-items:center;justify-content:center;',
+                    'max-width:100%;max-height:80vh;',
+                    'transition:opacity .2s ease, transform .2s ease;">',
+                    '<img id="plbImg" src="" alt="" style="',
+                        'max-width:min(95vw,1200px);max-height:80vh;',
+                        'border-radius:10px;',
+                        'box-shadow:0 8px 40px rgba(0,0,0,0.7);',
+                        'object-fit:contain;display:block;">',
+                '</div>',
+
+                /* next arrow */
+                '<button id="plbNext" aria-label="Next image" style="',
+                    'position:absolute;right:12px;top:50%;transform:translateY(-50%);',
+                    'background:rgba(255,255,255,0.12);border:none;color:#fff;',
+                    'font-size:26px;cursor:pointer;',
+                    'width:48px;height:48px;border-radius:50%;',
+                    'display:flex;align-items:center;justify-content:center;',
+                    'transition:background .2s;z-index:2;">',
+                    '&#8250;',
+                '</button>',
+
+                /* caption */
+                '<p id="plbDesc" style="',
+                    'color:rgba(255,255,255,0.85);',
+                    'margin-top:16px;font-size:1rem;',
+                    'text-align:center;max-width:800px;line-height:1.5;',
+                    'min-height:1.5em;">',
+                '</p>',
+
+            '</div>'
+        ].join('');
         document.body.appendChild(lb);
+
+        /* ── wire up buttons ── */
+        document.getElementById('plbClose').addEventListener('click', _close);
+        document.getElementById('plbPrev').addEventListener('click', function(e){ e.stopPropagation(); _navigate(-1); });
+        document.getElementById('plbNext').addEventListener('click', function(e){ e.stopPropagation(); _navigate(+1); });
+
+        /* close on backdrop click */
+        document.getElementById('plbBackdrop').addEventListener('click', _close);
+
+        /* ── touch / swipe ── */
+        var wrap = document.getElementById('plbImgWrap');
+        wrap.addEventListener('touchstart', function(e){
+            _touch0 = e.touches[0].clientX;
+        }, { passive: true });
+        wrap.addEventListener('touchend', function(e){
+            if (_touch0 === null) return;
+            var dx = e.changedTouches[0].clientX - _touch0;
+            _touch0 = null;
+            if (Math.abs(dx) < 40) return;   // too short = tap, ignore
+            _navigate(dx < 0 ? +1 : -1);
+        }, { passive: true });
+        /* prevent vertical page scroll while swiping inside lightbox */
+        wrap.addEventListener('touchmove', function(e){ e.preventDefault(); }, { passive: false });
+
+        /* ── hover effects ── */
+        ['plbPrev','plbNext','plbClose'].forEach(function(id){
+            var btn = document.getElementById(id);
+            btn.addEventListener('mouseenter', function(){ this.style.background='rgba(255,255,255,0.25)'; });
+            btn.addEventListener('mouseleave', function(){ this.style.background='rgba(255,255,255,0.12)'; });
+        });
+
+        return lb;
     }
-    document.getElementById('plbImg').src = url;
-    document.getElementById('plbDesc').textContent = desc || '';
-    lb.style.display = 'block';
-};
+
+    function _show(idx) {
+        var imgs = window._galleryImages || [];
+        if (!imgs.length) return;
+        idx = ((idx % imgs.length) + imgs.length) % imgs.length;
+        window._galleryIndex = idx;
+
+        var item   = imgs[idx];
+        var imgEl  = document.getElementById('plbImg');
+        var descEl = document.getElementById('plbDesc');
+        var cntEl  = document.getElementById('plbCounter');
+        var wrap   = document.getElementById('plbImgWrap');
+
+        /* fade out, swap, fade in */
+        wrap.style.opacity   = '0';
+        wrap.style.transform = 'scale(0.96)';
+        setTimeout(function(){
+            imgEl.src  = item.url;
+            imgEl.alt  = item.desc;
+            if (descEl) descEl.textContent = item.desc || '';
+            if (cntEl)  cntEl.textContent  = (idx + 1) + ' / ' + imgs.length;
+            /* hide arrows when only 1 photo */
+            var hide = imgs.length <= 1;
+            document.getElementById('plbPrev').style.display = hide ? 'none' : 'flex';
+            document.getElementById('plbNext').style.display = hide ? 'none' : 'flex';
+            wrap.style.opacity   = '1';
+            wrap.style.transform = 'scale(1)';
+        }, 150);
+    }
+
+    function _navigate(dir) { _show(window._galleryIndex + dir); }
+
+    function _open(idx) {
+        _getOrCreate();
+        /* lock body scroll */
+        document.body.style.overflow = 'hidden';
+        /* show overlay */
+        document.getElementById(LB_ID).style.display = 'block';
+        requestAnimationFrame(function(){
+            document.getElementById('plbBackdrop').style.opacity = '1';
+        });
+        _show(idx);
+        /* keyboard */
+        if (!_kBound) {
+            _kBound = true;
+            document.addEventListener('keydown', function(e){
+                var lb = document.getElementById(LB_ID);
+                if (!lb || lb.style.display === 'none') return;
+                if (e.key === 'ArrowRight') _navigate(+1);
+                if (e.key === 'ArrowLeft')  _navigate(-1);
+                if (e.key === 'Escape')     _close();
+            });
+        }
+    }
+
+    function _close() {
+        var bd = document.getElementById('plbBackdrop');
+        if (bd) bd.style.opacity = '0';
+        setTimeout(function(){
+            var lb = document.getElementById(LB_ID);
+            if (lb) lb.style.display = 'none';
+            document.body.style.overflow = '';
+        }, 250);
+    }
+
+    /* public API */
+    window.openPublicLightbox = _open;
+    window.closeLightbox      = _close;
+})();
+
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', loadPublicData);
