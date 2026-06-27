@@ -35,13 +35,21 @@
         return DEFAULT;
     }
 
-    // ── Write googtrans cookie (required by Google Translate) ────────────────
+    // ── Write googtrans cookie (required by Google Translate) ────────────────────
     function setGoogCookie(lang) {
-        var val = (lang === 'mr') ? '/en/mr' : '/en/en';
         var host = window.location.hostname;
-        document.cookie = COOKIE + '=' + val + '; path=/; SameSite=Lax';
-        if (host && host !== 'localhost' && host !== '127.0.0.1') {
-            document.cookie = COOKIE + '=' + val + '; domain=' + host + '; path=/; SameSite=Lax';
+        if (lang === 'mr') {
+            // Set to Marathi translation
+            document.cookie = COOKIE + '=/en/mr; path=/; SameSite=Lax';
+            if (host && host !== 'localhost' && host !== '127.0.0.1') {
+                document.cookie = COOKIE + '=/en/mr; domain=' + host + '; path=/; SameSite=Lax';
+            }
+        } else {
+            // Delete the cookie so GT shows original English
+            document.cookie = COOKIE + '=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+            if (host && host !== 'localhost' && host !== '127.0.0.1') {
+                document.cookie = COOKIE + '=; domain=' + host + '; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+            }
         }
     }
 
@@ -69,10 +77,24 @@
     function applyLang(lang) {
         var select = document.querySelector('.goog-te-combo');
         if (!select) return false;
-        var targetVal = (lang === 'mr') ? 'mr' : '';
-        if (select.value === targetVal) return true; // already correct, no-op
-        select.value = targetVal;
-        select.dispatchEvent(new Event('change'));
+        if (lang === 'en') {
+            // Switching back to English: GT's "restore original" is triggered
+            // by selecting the blank/empty option and firing both change + input events
+            select.value = '';
+            select.dispatchEvent(new Event('change'));
+            select.dispatchEvent(new Event('input'));
+            // Also try clicking the select to force GT to process it
+            setTimeout(function() {
+                if (select.value !== '') {
+                    select.value = '';
+                    select.dispatchEvent(new Event('change'));
+                }
+            }, 200);
+        } else {
+            // Switching to Marathi
+            select.value = 'mr';
+            select.dispatchEvent(new Event('change'));
+        }
         return true;
     }
 
@@ -96,11 +118,17 @@
         }
     }
 
-    // ── Called once when GT has finished loading ──────────────────────────────
+    // ── Called once when GT has finished loading ─────────────────────────────
     function onGTReady(lang) {
         suppressGTBanner();
 
-        // Allow GT a brief moment to render its select before we use it
+        // If English is selected, page is already in English — nothing to do
+        if (lang === 'en') {
+            setTimeout(suppressGTBanner, 500);
+            return;
+        }
+
+        // Marathi: wait for GT combo to render then apply
         var attempts = 0;
         function tryApply() {
             attempts++;
@@ -142,12 +170,24 @@
         var currentLang = getStoredLang();
         var newLang = (currentLang === 'mr') ? 'en' : 'mr';
 
+        // Save preference BEFORE reload so the new page picks it up
         saveLang(newLang);
         updateToggleUI(newLang);
 
-        if (!applyLang(newLang)) {
-            // GT not loaded yet – reload page; cookie will carry preference
+        var select = document.querySelector('.goog-te-combo');
+        if (!select) {
+            // GT not loaded yet – reload; cookie carries the preference
             window.location.reload();
+            return;
+        }
+
+        if (newLang === 'en') {
+            // For English restore, a page reload is the most reliable method.
+            // The cookie is already set to /en/en above, so GT won't translate on reload.
+            window.location.reload();
+        } else {
+            // Switch to Marathi in-place
+            applyLang('mr');
         }
     };
 
